@@ -22,16 +22,22 @@ test('photoPrior: the unit offset plus (3 - ease) x the calibration of one step;
   assert.strictEqual(photoPrior(null, 0.7, 0.5), 0.7, 'no ease (the corals): the offset alone');
   assert.strictEqual(photoPrior(0, 0.7, 0.5), 0.7, 'ease 0 is none');
   assert.strictEqual(photoPrior(null, undefined, 0.5), null, 'nothing to start from');
+  // centred on its family's mean ease (Q457, model.js easeMid)
+  assert.strictEqual(photoPrior(4, 0.4, 0.5, 4), 0.4, 'at its family’s mean: at its unit');
+  assert.strictEqual(photoPrior(3, 0, 0.5, 2), -0.5, 'easier than its family’s mean: below its unit');
+  assert.strictEqual(photoPrior(3, 0, 0.5, undefined), 0, 'no mean given: the scale’s middle');
 });
 
-test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID and the step is the subject’s calib.ease', () => {
+test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID, the centre easeMid and the step the subject’s calib.ease', () => {
   assert.strictEqual(PRIOR_MID, +/const PDIFF = \{[^}]*MID: (\d+)/.exec(read('model.js'))[1]);
-  assert.match(read('model.js'), /gdOff\(n\) \+ \(p\.e \? \(PDIFF\.MID - p\.e\) \* calibOf\(SUBJ\)\.ease : 0\)/);
+  assert.match(read('model.js'), /gdOff\(n\) \+ \(p\.e \? \(easeMid\(n\) - p\.e\) \* calibOf\(SUBJ\)\.ease : 0\)/);
+  assert.match(read('model.js'), /EMID\.set\(g, L\.length \? L\.reduce\(\(t, p\) => t \+ p\.e, 0\) \/ L\.length : PDIFF\.MID\)/);
 });
 
 // The judged ease's weight (docs/decisions/2026-11-23-judged-ease-weight.md): the shared calibration's 0.3 logit a point,
 // which the subjects with a judged ease read today (none sets its own), where the app reads it: model.js photoDiff (a
-// photo nobody answered) and genusDiff (a unit's difficulty: its offset plus its judged photos' mean prior).
+// photo nobody answered) and genusDiff (a unit's difficulty: its offset plus its judged photos' mean prior), both centred
+// on the family's mean ease (Q457: a unit with no parent is its own family, so its mean prior is 0).
 test('the judged ease weighs the shared 0.3 a point in the fish’s and the sea slugs’ priors, as model.js photoDiff and genusDiff read it', () => {
   assert.strictEqual(C.CALIB.ease, 0.3);
   const w = C.CALIB.ease;
@@ -68,11 +74,13 @@ test('the judged ease weighs the shared 0.3 a point in the fish’s and the sea 
     [F, 'fish'],
     [S, 'sea slugs']
   ].forEach(([M, s]) => {
-    near(M.photoDiff('fam', {f: 'a', e: 5}), 0.2 - 2 * w, `${s}, ease 5`);
-    near(M.photoDiff('fam', {f: 'b', e: 1}), 0.2 + 2 * w, `${s}, ease 1`);
+    // its judged photos' mean ease (5, 1, 4): 10/3, the centre; w a point either side of it
+    near(M.photoDiff('fam', {f: 'a', e: 5}), 0.2 + (10 / 3 - 5) * w, `${s}, ease 5`);
+    near(M.photoDiff('fam', {f: 'b', e: 1}), 0.2 + (10 / 3 - 1) * w, `${s}, ease 1`);
+    near(M.photoDiff('fam', {f: 'b', e: 1}) - M.photoDiff('fam', {f: 'a', e: 5}), 4 * w, `${s}, 4 points apart`);
     near(M.photoDiff('fam', {f: 'u'}), 0.2, `${s}, no judged ease: the offset`);
-    // the unit: its offset plus the mean prior of its judged photos (ease 5, 1, 4: mean 3 − e = −1/3), rounded to 0.01
-    near(M.genusDiff('fam'), Math.round((0.2 - w / 3) * 100) / 100, `${s} unit`);
+    // the unit, a family: its offset alone, whatever its photos' ease
+    near(M.genusDiff('fam'), 0.2, `${s} unit`);
   });
 });
 
@@ -82,7 +90,8 @@ const run = code => {
     ctx = {calibOf: C.calibOf, photoPrior, rawNum: d => String(d), recBadge: (d, o) => `[${d.toFixed(2)}|${o.more}]`};
   vm.runInNewContext(
     [
-      block(src, 'function treePrior(S, ease, own, unit) {', '\n}\n', {file: 'admin.js', through: true}),
+      block(src, 'function treePrior(S, ease, own, unit, mid) {', '\n}\n', {file: 'admin.js', through: true}),
+      block(src, 'function treeEaseMids(R, easeOf) {', '\n}\n', {file: 'admin.js', through: true}),
       block(src, 'function priorHnum(P) {', '\n}\n', {file: 'admin.js', through: true}),
       code
     ].join('\n'),
@@ -109,6 +118,21 @@ test('treePrior: a fish photo’s prior from its ease in force and its family’
   assert.deepStrictEqual(r[3], {d: -ce, ease: 4, off: null}, 'script too old');
   assert.strictEqual(r[4], null);
   assert.deepStrictEqual(r[5], {d: 0.4, ease: null, off: 0.4}, 'no judged ease: the offset');
+});
+
+test('treeEaseMids and treePrior: a photo’s prior centred on its family’s mean ease in force, a genus’s photos on their family’s', () => {
+  const S = C.SUBJECTS.seaslug,
+    R = {
+      fam: {'f:A': 'f:A', 'g:A1': 'f:A', 'g:A2': 'f:A'},
+      ph: {a: {entry: 'g:A1'}, b: {entry: 'g:A1'}, c: {entry: 'g:A2'}, d: {entry: 'f:B'}, u: {entry: 'g:A2'}}
+    },
+    ease = {a: 5, b: 4, c: 3, d: 2},
+    own = {gd: {'g:A1': [0.4, 12]}, photos: {}, v: 189},
+    r = run(`const M = treeEaseMids(${JSON.stringify(R)}, f => (${JSON.stringify(ease)})[f] || null);
+      this.r = [M, treePrior(${JSON.stringify(S)}, 5, ${JSON.stringify(own)}, 'g:A1', M['f:A'])];`),
+    ce = C.calibOf(S).ease;
+  assert.deepStrictEqual(r[0], {'f:A': 4, 'f:B': 2}, 'the family’s photos, its genera’s included; a photo with no ease left out');
+  assert.ok(Math.abs(r[1].d - (0.4 - ce)) < 1e-9, 'ease 5 in a family whose mean is 4: one point below its unit');
 });
 
 test('priorHnum: the caption line names the ease and says in its title what it lacked', () => {

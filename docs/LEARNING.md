@@ -430,7 +430,9 @@ hold the rest of the path back. Every subject.
 One estimate of a unit's difficulty everywhere (`model.js` `genusDiff`: the draw weight, shaky, the comeback's
 stability, the opening's order, the bar's population): the sheet's genus offset (`?stats=1` `gd`, the hierarchical photo
 Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), plus, for a unit with judged photos, the
-mean of their judged-ease priors. Adding or curating out a photo never moves it; 0 before the sheet's first reply.
+mean of their judged-ease priors, centred on its family's mean ease: 0 for a family, so the ease never ranks one
+family against another ("The judged ease, within a family"). Adding or curating out a photo never moves it; 0 before
+the sheet's first reply.
 
 ### Common first
 
@@ -794,13 +796,15 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 - **The starter core**: the families whose record says `first` (fish.json `start`: the Butterflyfishes, Angelfishes,
   Damselfishes and Surgeonfishes) open before any other (`model.js` `openPick`).
 - **Fish photos judged**: every fish photo carries a judged ease from 1 (hard) to 5 (very easy) (judging/FISH.md). It is
-  the photo's prior before any answer: its genus offset + (`PDIFF.MID` − ease) × the subject's `calib.ease`, fading as
-  answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The weight is **one
+  the photo's prior before any answer: its genus offset + (its family's mean ease − ease) × the subject's `calib.ease`,
+  fading as answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `easeMid`, `PDIFF = {W: 5, MID: 3}`;
+  "The judged ease, within a family" below). The weight is **one
   shared value, 0.3 logit an ease point** (`core.js` `CALIB.ease`; "The judged ease weight, measured" below), read by
   every subject whose photos carry a judged ease: today the fish and the sea slugs. A subject may set its own in its
   `SUBJECTS` `calib` only with a declared reason (rule S1); none does. The corals' photos carry no judged ease, so their
-  prior has no ease term. The same prior gives each unit its difficulty, so judged units open easiest first from the
-  first card, and no photo is ever walled off.
+  prior has no ease term. The same prior gives each unit its difficulty, so the judged units below a family (its
+  genera and species) open easiest first within it from the first card, while the families open by their offsets and
+  commonness; no photo is ever walled off.
 - **The first questions on a unit** lean towards its easy photos: the target sits `calib.early` logits lower, fading as
   `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's `calib` = {ref: 3, early: 1.5, u:
   0.25, pool: 30}; the sea slugs' the same with pool 20; the corals keep the shared `core.js`
@@ -1221,8 +1225,8 @@ the photo (a fish photo shown at several ranks; a coral genus moved or renamed),
 offset and keeps the photo's own P (`model.js` `photoDiff`).
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
-its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
-judged"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
+its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior centred on its
+family's mean ease ("Fish photos judged", "The judged ease, within a family"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
 time term is added on top of that blend ("The photo's time term", below). A unit's difficulty is read from the same
 offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
 Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one

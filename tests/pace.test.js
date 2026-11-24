@@ -553,22 +553,26 @@ test('the apology card: greeted by the first word of the sign-in name, else "Hi!
 });
 
 // One genus difficulty (docs/LEARNING.md "One genus difficulty"): genusDiff is the sheet's genus offset (PGD, ?stats=1
-// gd), plus the mean judged-ease prior of a unit's judged photos (the fish); never the mean of its
-// photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses counted twice).
-test('genusDiff: the genus offset, whatever photos the genus has; the judged-ease prior for judged photos', () => {
+// gd), plus the mean judged-ease prior of a unit's judged photos (the fish, the sea slugs), centred on its family's mean
+// ease (model.js easeMid, Q457: a family 0, a genus below it by how far its photos sit from the family's); never the
+// mean of its photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses counted twice).
+test('genusDiff: the genus offset, whatever photos the genus has; the judged-ease prior within a family for judged photos', () => {
   const src = read('model.js'),
+    f1 = {f: 'f1', e: 5},
+    f2 = {f: 'f2', e: 2},
+    f3 = {f: 'f3', e: 2},
     views = {
       A: [{f: 'a1'}, {f: 'a2'}],
       B: [{f: 'b1'}],
-      F: [
-        {f: 'f1', e: 5},
-        {f: 'f2', e: 2}
-      ]
+      F: [f1, f2, f3],
+      'g:F1': [f1],
+      'g:F2': [f2, f3]
     },
+    rec = {F: {}, 'g:F1': {parent: 'F'}, 'g:F2': {parent: 'F'}},
     ctx = {
       VIEWS: [['wide']],
       gamePics: n => views[n] || [],
-      GX: () => ({}),
+      GX: n => rec[n] || {},
       heldOf: C.heldOf,
       PGD: {A: [-0.54, 80], B: [0.9, 12]},
       PDIFF: {W: 5, MID: 3},
@@ -581,7 +585,10 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
     };
   vm.createContext(ctx);
   vm.runInContext(
-    cut(src, 'let GDIFF = {};', '\n};\n', {through: true}) + '\nthis.genusDiff = genusDiff; this.clear = () => (GDIFF = {});',
+    cut(src, 'let GDIFF = {};', '\n};\n', {through: true}) +
+      '\n' +
+      cut(src, 'const PDIFF = {', '\n}\n', {through: true}) +
+      '\nthis.genusDiff = genusDiff; this.clear = () => (GDIFF = {});',
     ctx
   );
   assert.deepStrictEqual(['A', 'B', 'C'].map(ctx.genusDiff), [-0.54, 0.9, 0]);
@@ -590,7 +597,12 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
   views.B = [];
   ctx.clear();
   assert.deepStrictEqual(['A', 'B'].map(ctx.genusDiff), [-0.54, 0.9]);
-  // Judged photos (ease 5 and 2): their priors (3 - 5) x 0.5 and (3 - 2) x 0.5, on top of a genus offset of 0.
-  assert.strictEqual(ctx.genusDiff('F'), -0.25);
+  // Judged photos (ease 5, 2 and 2, the family's mean 3): the family's own prior is 0 whatever its mean (Q457: the ease
+  // never ranks one family against another); its genera, (3 - 5) x 0.5 for the easy one, (3 - 2) x 0.5 for the other.
+  assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, -1, 0.5]);
+  f3.e = 5; // the family's mean now 4: still 0 for the family, its genera centred on 4
+  rec.F = {}; // a data build makes the records again (easeMid is kept per record)
+  ctx.clear();
+  assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, -0.5, 0.25]);
   assert.ok(!/OPEN\.CONF|pooledConf/.test(cut(src, 'const genusDiff = ', '\n};\n', {through: true})));
 });

@@ -250,8 +250,10 @@ note).
 
 **The prior beside the answers** (REE-62, plan PR 9; every subject): each tile also shows the photo's prior, the
 difficulty the app starts it at before any answer, read as "recognised by N%" (`recBadge`) from the same formula as
-`model.js` `photoDiff` (`autosort.js` `photoPrior`: the unit's offset `gd` + (3 − ease) × `calibOf(S).ease`, `PRIOR_MID` =
-`PDIFF.MID`, tested in `tests/priordiff.test.js`). A tree subject (fish, sea slugs): its judged ease in force (the admin's,
+`model.js` `photoDiff` (`autosort.js` `photoPrior`: the unit's offset `gd` + (the family's mean ease − ease) ×
+`calibOf(S).ease`, the mean over the registry's photos of the family with their ease in force, `admin.js` `treeEaseMids`,
+as `model.js` `easeMid` (Q457); `PRIOR_MID` = `PDIFF.MID` without one; tested in `tests/priordiff.test.js`). A tree
+subject (fish, sea slugs): its judged ease in force (the admin's,
 else the judging pass's) and its family's offset from the subject's own ratings (`?stats=1&s=`, `loadOwnStats`, read once
 behind the page: the tile draws first, the prior follows; with the ratings unread or the script too old, the ease alone, and
 the title says "unit offset not read"), on its own line under the answers (`treePrior`, `priorHnum`). The corals: the genus's

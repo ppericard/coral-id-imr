@@ -294,6 +294,9 @@ function page(subject, seed, check, mutate = s => s) {
     introduced: n => MET.has(n),
     imrFormsOf: n => U[n].forms || (n === 'C3' ? ['b', 'm'] : ['b']),
     gamePics: (n, v) => U[n].views[v] || [],
+    // the views and the reserve, read by model.js easeMid (a judged photo's prior centred on its family's mean ease)
+    VIEWS: [['wide'], ['medium'], ['macro']],
+    heldOf: C.heldOf,
     gamePhotoOk: (n, p) => !refused.has(p.f),
     level: n => [(P0(n) || {}).lv || 'new'],
     rankOf: n => (n.startsWith('g:') ? 'genus' : ''),

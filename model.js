@@ -660,7 +660,8 @@ const weight = n => {
 const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200};
 // How much the easy-first order is trusted: the players' weighed answers behind the photo ratings over OPEN.DATA, up to
 // 1; without them every genus offset is 0 and the order stays random. A judged photo (p.e, the fish: judging/FISH.md)
-// counts PDIFF.W answers, its prior's weight in photoDiff, so judged entries open easiest first from the first card.
+// counts PDIFF.W answers, its prior's weight in photoDiff, so judged units open easiest first within a family from the
+// first card (genusDiff: the ease never ranks one family against another).
 const easyTrust = () =>
   Math.min(
     1,
@@ -671,14 +672,15 @@ const easyTrust = () =>
 // Difficulty of a genus (docs/LEARNING.md "One genus difficulty"): the sheet's genus offset (PGD, ?stats=1 gd: the
 // hierarchical photo Elo's estimate of the part of a photo's difficulty its genus shares), the one estimate everywhere
 // (drawW, shaky, stability, openPick); adding or curating out a photo never moves it. A unit with judged photos (p.e,
-// the fish) adds the mean of their judged-ease priors (photoDiff's), so it opens easiest first. 0 offline before the
-// sheet's first reply. Cleared when the photo stats change.
+// the fish, the sea slugs) adds the mean of their judged-ease priors (photoDiff's), centred on its family's (easeMid):
+// a family 0, so families open by their offsets and commonness alone, and the units below a family easiest first
+// within it (Q457). 0 offline before the sheet's first reply. Cleared when the photo stats change.
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
   // its reserved photos too (g.held: core.js heldOf), so a player's reserve does not move it
-  const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e),
-    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
+  const je = judgedOf(n),
+    ease = je.length ? (easeMid(n) - je.reduce((t, p) => t + p.e, 0) / je.length) * calibOf(SUBJ).ease : 0;
   return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
 // Shaky: met, not mastered, and the expected success on an average photo of the genus (4 choices, at its genusDiff)
@@ -1866,9 +1868,10 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // A photo's difficulty: the sheet's rating (its genus's offset + its own residual) blended with the genus's offset as
 // prior, weighing PDIFF.W answers (partial pooling: the photo keeps n / (n + W) of its residual); a photo nobody has
 // answered is its genus's offset (docs/LEARNING.md "Hierarchical photo Elo"). A judged photo (p.e, its ease 1-5: the
-// fish, judging/FISH.md) adds its own prior: (PDIFF.MID - ease) x the subject's calibration ease (SUBJECTS calib,
-// core.js calibOf), so the 5 steps span the spread real photos show; it fades likewise as answers come. No wall: every
-// photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core and judged photos").
+// fish, judging/FISH.md) adds its own prior: (its family's mean ease, easeMid - ease) x the subject's calibration ease
+// (SUBJECTS calib, core.js calibOf), so the 5 steps span the spread real photos show within a family; it fades likewise
+// as answers come. No wall: every photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core
+// and judged photos").
 // A photo shared by units of different ranks (a fish family and its scientific genus) is rated under the last unit that
 // rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
 // keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
@@ -1878,8 +1881,39 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // "The photo's time term"); 0 for a photo without one or before a script that serves them.
 const PDIFF = {W: 5, MID: 3};
 const gdOff = n => (PGD[n] || [0])[0] || 0;
+// The judged ease within a family only (Q457, REE-241; docs/LEARNING.md "The judged ease, within a family"): a judged
+// photo's prior is centred on the mean judged ease of its unit's family (easeMid), not on the middle of the scale, so
+// the ease ranks the photos and the units within a family and never one family against another (between families it
+// predicts nothing: docs/reviews/2026-11-23-fish-ease-vs-answers.md). One rule for every subject whose photos carry a
+// judged ease (the fish, the sea slugs; the corals' carry none). A unit's family (easeTop): the top of its parents (GX
+// parent, else family: a fish genus's or species', a sea slug genus's or species'), else the unit itself (a fish
+// family). Its photos (judgedOf): every game photo of the family with a judged ease, its reserved ones too (core.js
+// heldOf), as genusDiff counts a unit's; PDIFF.MID when none has one. Kept per family record (EMID), so a data build,
+// which makes the records again, makes it again.
+const judgedOf = n => [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e);
+const easeTop = n => {
+  let x = n;
+  for (let i = 0; i < 4; i++) {
+    const g = GX(x) || {},
+      up = g.parent || g.family;
+    if (!up || !GX(up)) break;
+    x = up;
+  }
+  return x;
+};
+const EMID = new WeakMap();
+const easeMid = n => {
+  const f = easeTop(n),
+    g = GX(f);
+  if (!g) return PDIFF.MID;
+  if (!EMID.has(g)) {
+    const L = judgedOf(f);
+    EMID.set(g, L.length ? L.reduce((t, p) => t + p.e, 0) / L.length : PDIFF.MID);
+  }
+  return EMID.get(g);
+};
 function photoDiff(n, p) {
-  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+  const prior = gdOff(n) + (p.e ? (easeMid(n) - p.e) * calibOf(SUBJ).ease : 0),
     o = PSTAT[p.f],
     tm = ptimeOff(PTM[p.f], PDIFF.W);
   if (!o) return prior + tm;

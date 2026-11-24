@@ -5388,12 +5388,14 @@ const REVIEW_BUILD = {
             }
             const V = FISHC ? readView(fuData().F) : null,
               easeOf = f => (V ? ((V.ease || {})[f] != null ? V.ease[f] : (fuJ(f) || {}).e) : null),
+              mids = rows.length && V ? treeEaseMids(FISHA, easeOf) : {},
+              midOf = f => mids[(FISHA.fam || {})[FISHA.ph[f].entry] || FISHA.ph[f].entry],
               plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
               num = o => {
                 const m = missedBy(PH[o.f]);
                 return (
                   `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>` +
-                  priorHnum(treePrior(S, easeOf(o.f), OWNST[S.id], FISHA.ph[o.f].entry))
+                  priorHnum(treePrior(S, easeOf(o.f), OWNST[S.id], FISHA.ph[o.f].entry, midOf(o.f)))
                 );
               };
             return {
@@ -9453,9 +9455,10 @@ function diffByAnswers(PH, min, order) {
     .sort((a, b) => s * (a.r - b.r) || b.n - a.n || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0));
 }
 // The prior beside the answers on By difficulty (REE-62, plan PR 9): a photo's difficulty before any answer on it, as the
-// app starts it (autosort.js photoPrior: its unit's offset in the subject's own ratings + (3 - ease) x calib.ease), read as
-// "recognised by N%" like the learned reading. treePrior(S, ease, own, unit): {d, ease, off} or null when there is neither a
-// judged ease nor an offset; own is OWNST[S.id] (loadOwnStats; none or old: the ease alone, off null). Pure: tests/priordiff.test.js.
+// app starts it (autosort.js photoPrior: its unit's offset in the subject's own ratings + (its family's mean ease - ease) x
+// calib.ease), read as "recognised by N%" like the learned reading. treePrior(S, ease, own, unit, mid): {d, ease, off} or null
+// when there is neither a judged ease nor an offset; own is OWNST[S.id] (loadOwnStats; none or old: the ease alone, off null);
+// mid, the family's mean ease (treeEaseMids; none: the scale's middle). Pure: tests/priordiff.test.js.
 // The corals' prior on their tile: the genus's offset (GD, the sheet's ?stats=1 gd), the photos having no judged ease; nothing
 // before the genus has one.
 function genusPrior(genus) {
@@ -9465,11 +9468,25 @@ function genusPrior(genus) {
     ? ''
     : `<span class="adm-hnum adm-hprior" title="Before any answer on it: its genus's offset (the corals' photos have no judged ease)">prior ${recBadge(d, {short: 1, of: 'a typical photo of the genus', raw: 'genus offset'})}</span>`;
 }
-function treePrior(S, ease, own, unit) {
+function treePrior(S, ease, own, unit, mid) {
   const off = ((own && !own.old && own.gd) || {})[unit],
     o = off ? off[0] : null,
-    d = photoPrior(ease, o, calibOf(S).ease);
+    d = photoPrior(ease, o, calibOf(S).ease, mid);
   return d === null ? null : {d, ease: ease > 0 ? ease : null, off: Number.isFinite(o) ? o : null};
+}
+// The centre of the judged ease in each family of registry R (model.js easeMid, Q457): {family: the mean ease in force
+// (easeOf) of the photos it holds}, a photo's family its unit's (R.fam: a genus's or a species', a family its own).
+function treeEaseMids(R, easeOf) {
+  const sum = {};
+  Object.entries((R && R.ph) || {}).forEach(([f, p]) => {
+    const e = easeOf(f),
+      fam = (R.fam || {})[p.entry] || p.entry;
+    if (!(e > 0) || !fam) return;
+    const s = (sum[fam] = sum[fam] || [0, 0]);
+    s[0] += e;
+    s[1]++;
+  });
+  return Object.fromEntries(Object.entries(sum).map(([k, [t, n]]) => [k, t / n]));
 }
 // Its caption line: the prior as a reading, with the ease it comes from (the same shape as Health's reading line).
 function priorHnum(P) {
