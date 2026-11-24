@@ -1957,13 +1957,31 @@ const MASTERY = [
   ['Instructor', '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v4.8c0 1.6 2.7 3.2 6 3.2s6-1.6 6-3.2V11M22 9v6"/>']
 ];
 const LV_AT = [0.5, 0.8, DOM.EX]; // Open Water, Advanced, Divemaster (the exam's entry: examOpen)
-const lvStep = n => {
+const lvStepCalc = n => {
   const k = level(n)[0];
   if (k === 'new') return 0;
   if (k === 'ok') return 5;
   const g = genScore(n) + 1e-9;
   return 1 + LV_AT.slice(0, 2).filter(x => g >= x).length + (examOn(n) ? 1 : 0);
 };
+// In the app, the levels are a view of the state version (app.js stateView): lvTable holds the level of every unit with a
+// record (its bar and its exam entry computed once each per version), and a unit with no record is at 0 (level: 'new').
+// lvSteps() reads one table for a whole loop (the achievements, My progress: one read of the view, not one per unit);
+// lvStep(n) for one unit. The same values as lvStepCalc by construction: a key of P that names no unit of the data (GX)
+// is left out of the table and computed when read. Outside the app (no stateView: the rated world, the tests), computed.
+const lvTableCalc = () =>
+  new Map(
+    Object.keys(P)
+      .filter(n => P[n] && GX(n))
+      .map(n => [n, lvStepCalc(n)])
+  );
+const lvTable = typeof stateView === 'function' ? stateView('lvTable', lvTableCalc) : null;
+const lvSteps = () => {
+  if (!lvTable) return lvStepCalc;
+  const T = lvTable();
+  return n => (!P[n] ? 0 : T.has(n) ? T.get(n) : lvStepCalc(n));
+};
+const lvStep = n => lvSteps()(n);
 // The icon of a level (24 px grid, 1.75 stroke, currentColor: the app's icon set), with its name for screen readers.
 const lvIcon = (k, cls = 'lvi') =>
   MASTERY[k][1]
@@ -1973,11 +1991,14 @@ const progPct = (L = slateGenera()) => Math.round((100 * L.reduce((t, n) => t + 
 // The subject's global score and its components when it has one (core.js SUBJECTS score: the fish), from one computation
 // (core.js treeScore over its tree, app.js UNITS tree); null otherwise.
 // The sheet ranks the leaderboard by it (Code.gs board_), so the leaderboard and My progress show one scale.
-const headScore = () => {
+// In the app, a view of the state version (app.js stateView): headScoreCalc computes it once per version for its readers
+// (the header pill, My progress, the circle-3 gate app.js treeC3, the achievements); its readers never change it.
+const headScoreCalc = () => {
   const U = typeof UNITS === 'object' ? UNITS[SUBJ.id] : null,
     T = SUBJ.score && U && U.tree ? U.tree() : null;
   return T ? treeScore(P, T, SUBJ.score) : null;
 };
+const headScore = typeof stateView === 'function' ? stateView('headScore', headScoreCalc) : headScoreCalc;
 // The headline % (the header pill, My progress's ring, the achievements, the update card): the subject's global score,
 // else the mean of its units' bars (progPct).
 const headPct = (L = slateGenera()) => {
