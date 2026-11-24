@@ -1984,8 +1984,10 @@ async function quizAndProgress(b, base, errs) {
     const im = introMap(),
       c3a = TREEU.c3[0];
     im[c3a] = [answersSoFar(), 0, Date.now(), 'c'];
+    stateBump('rec'); // the intro map written here by hand: the units met (model.js introduced) are a view of it
     ok(TREEU.c3.every(mayOpen) && !openOfferDue(), 'circle 3 already open: kept on, no card');
     delete im[c3a];
+    stateBump('rec');
     closeCards();
     openOfferShow();
     const c3card = document.querySelector('.unlock.intro');

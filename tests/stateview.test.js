@@ -29,14 +29,20 @@ const ROOT = path.join(__dirname, '..'),
   QUIZ = src('quiz.js'),
   SYNC = src('sync.js');
 
-// The units in play before the views (app.js before), verbatim but for the names: each reader computed them again.
-const REF = `const bonusList0 = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
-const shareFree0 = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+// The units in play before the views (app.js before), verbatim but for the names: each reader computed them again, and
+// a set's units and auto were asked of the set at every read (autoOf0). The rank classes (rankUnits0), each unit's set
+// (setOf0) and class (kindRank0) before their data views.
+const REF = `const autoOf0 = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? S.auto() : []);
+const bonusList0 = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf0(S)]))];
+const shareFree0 = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf0(S)] : []));
 const pool0 = () => [...slateGenera(), ...bonusList0()].filter(photoAny);
 const sciUp0 = () =>
-  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
+  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf0(S)]))]);
 const sciNow = () =>
-  TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];`;
+  TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];
+const kindRank0 = n => rankOf(n) + (kindOf(n) ? ':' + kindOf(n) : '');
+const rankUnits0 = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => kindRank0(n) === rk);
+const setOf0 = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;`;
 // The scientific genera in the game now (app.js sciNow) are a view too; the sets read them by that name.
 
 const SV = 'reefid-sheet-v',
@@ -62,13 +68,17 @@ const SHARED = [
   block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'function sciOpen(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'const SCI_SP = {', '\n};\n', {through: 1, file: 'app.js'}),
+  line(APP, 'const setAuto = ', 'app.js'),
+  line(APP, 'const setUnits = ', 'app.js'),
   line(APP, 'const autoOf = ', 'app.js'),
   'const SETS_OF = {coral: [{' +
     block(APP, "        k: 'bon',", '\n      }\n    ]', {file: 'app.js'}) +
     '}], fish: [' +
     block(APP, '      // The scientific genera (treeGenera, sciOpen)', '      SCI_SP\n    ],', {file: 'app.js'}) +
     'SCI_SP], seaslug: [SCI_SP]};',
-  'const SETS = () => SETS_OF[SUBJ.id];'
+  'const SETS = () => SETS_OF[SUBJ.id];',
+  block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
+  line(APP, 'const kindOf = ', 'app.js')
 ].join('\n');
 // The views (app.js now) and the reference, each under the names its sets read (SCI_SP's auto reads sciUp).
 const NEW = [
@@ -81,10 +91,18 @@ const NEW = [
   line(APP, 'const poolCalc = ', 'app.js'),
   line(APP, 'const pool = stateView(', 'app.js'),
   line(APP, 'const sciNowCalc = ', 'app.js'),
-  line(APP, 'const sciNow = stateView(', 'app.js'),
-  'this.F = {bonusList, pool, sciUp, shareFree, sciNow, store, stateBump, stateNow, VIEW_CHECK, STATE_KEYS, ver: () => STATE_V};'
+  line(APP, 'const sciNow = dataView(', 'app.js'),
+  line(APP, 'const kindRankCalc = ', 'app.js'),
+  line(APP, 'const kindRank = ', 'app.js'),
+  block(APP, 'const rankClassesCalc = ', 'const rankUnits = ', {file: 'app.js'}),
+  line(APP, 'const rankUnits = ', 'app.js'),
+  block(APP, 'const setMapCalc = ', 'const setOf = ', {file: 'app.js'}),
+  line(APP, 'const setOf = ', 'app.js'),
+  'this.F = {bonusList, pool, sciUp, shareFree, sciNow, rankUnits, setOf, kindRank, store, stateBump, stateNow, dataNow, VIEW_CHECK, STATE_KEYS, ver: () => STATE_V, dver: () => DATA_V};'
 ].join('\n');
-const OLD = REF + '\nconst sciUp = sciUp0;\nthis.F = {bonusList: bonusList0, pool: pool0, sciUp: sciUp0, shareFree: shareFree0, sciNow};';
+const OLD =
+  REF +
+  '\nconst sciUp = sciUp0;\nthis.F = {bonusList: bonusList0, pool: pool0, sciUp: sciUp0, shareFree: shareFree0, sciNow, rankUnits: rankUnits0, setOf: setOf0, kindRank: kindRank0};';
 
 // Two pages over one world W (its subject, tree, settings Q, records' readers and storage): the views and the code
 // before them. W's members are read at every use (getters), so a switch or a new Q is seen by both.
@@ -114,7 +132,9 @@ function pages(W, check) {
     ctx.photoAny = n => W.photoAny(n);
     ctx.genScore = n => W.genScore(n);
     ctx.introduced = n => W.introduced(n);
+    ctx.introducedFn = () => n => W.introduced(n); // model.js: introduced for a loop
     ctx.askedOpen = n => W.introduced(n);
+    ctx.unitRankOf = C.unitRankOf;
     ctx.slateGenera = () => W.slate();
     vm.createContext(ctx);
     vm.runInContext(SHARED + '\n' + code, ctx);
@@ -124,17 +144,34 @@ function pages(W, check) {
 }
 const items = v => (v instanceof Set || (v && v.constructor && v.constructor.name === 'Set') ? [...v] : [...v]);
 // Every view against the reference, in a random order, a few times over (the reads after the first are the kept value).
-function same(N, O, r, st, label) {
-  const names = ['bonusList', 'pool', 'sciUp', 'shareFree', 'sciNow'];
+// The views of one argument (rankUnits by class, setOf and kindRank by unit) are read for a few of the classes and units
+// the tree has (st.units of W: every unit of its sets and slate).
+function same(N, O, r, st, label, W) {
+  const names = ['bonusList', 'pool', 'sciUp', 'shareFree', 'sciNow', 'rankUnits', 'setOf', 'kindRank'];
   for (let k = 0; k < 2 + Math.floor(r() * 3); k++) {
     const nm = names[Math.floor(r() * names.length)],
-      v0 = st.ver(),
-      a = items(N[nm]()),
-      b = items(O[nm]());
-    assert.deepStrictEqual(a, b, `${label}: ${nm}`);
+      v0 = st.ver();
+    if (['rankUnits', 'setOf', 'kindRank'].includes(nm)) {
+      const T = W.TREEU || {},
+        all = [...W.slate(), ...(T.sci || []), ...(T.spl || []), ...(T.ssl || []), ...C.BONUS, 'nowhere'];
+      for (let j = 0; j < 6; j++) {
+        const n = pick(r, all),
+          arg = nm === 'rankUnits' ? O.kindRank(n) : n,
+          a = N[nm](arg),
+          b = O[nm](arg);
+        // each page has its own sets: the same set is the same key
+        if (nm === 'setOf') assert.strictEqual(a && a.k, b && b.k, `${label}: setOf ${n}`);
+        else assert.deepStrictEqual(nm === 'rankUnits' ? [...a] : a, nm === 'rankUnits' ? [...b] : b, `${label}: ${nm} ${arg}`);
+        if (nm === 'rankUnits') st.classes = Math.max(st.classes || 0, a.length);
+      }
+    } else {
+      const a = items(N[nm]()),
+        b = items(O[nm]());
+      assert.deepStrictEqual(a, b, `${label}: ${nm}`);
+      if (nm === 'pool') st.units = Math.max(st.units, a.length);
+    }
     st.reads++;
     if (st.ver() === v0) st.kept++;
-    if (nm === 'pool') st.units = Math.max(st.units, a.length);
   }
 }
 const rng = seed => () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647);
@@ -222,11 +259,12 @@ function played(sub, profile, seed, N, check, st) {
   st.ver = Fn.ver;
   for (let i = 0; i < N; i++) {
     pl.step(i);
-    Fn.stateBump(); // the scorer's caller (quiz.js recordAnswer) and the progress saved
+    // the scorer's caller (quiz.js recordAnswer) and the progress saved: the player's records, the data views kept
+    Fn.stateBump('rec');
     for (let j = 0; j < 1 + Math.floor(r() * 3); j++) {
       const op = write(W, Fn, r, U.setK);
       st.ops[op] = (st.ops[op] || 0) + 1;
-      same(Fn, Fo, r, st, `${sub} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`);
+      same(Fn, Fo, r, st, `${sub} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`, W);
     }
   }
   assert.deepStrictEqual(W.later, [], 'no VIEW_CHECK difference thrown later');
@@ -316,7 +354,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
           if (r() < 0.7) met.add(n);
           else met.delete(n);
         }
-        Fn.stateBump();
+        Fn.stateBump('rec');
       } else if (y < 0.55) {
         // a subject switch (app.js subjectLoad: its tree, its records and settings, then the bump)
         const fish = W.SUBJ.id !== 'fish';
@@ -325,7 +363,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
         W.Q = {};
         Fn.stateBump();
       } else write(W, Fn, r, W.SUBJ.id === 'fish' ? 'sci' : 'ssp');
-      same(Fn, Fo, r, st, `${W.SUBJ.id} state ${s}${check ? ', VIEW_CHECK' : ''}`);
+      same(Fn, Fo, r, st, `${W.SUBJ.id} state ${s}${check ? ', VIEW_CHECK' : ''}`, W);
     }
     assert.deepStrictEqual(W.later, [], 'no VIEW_CHECK difference thrown later');
   }
@@ -477,29 +515,55 @@ test('the declared names: sync.js SHEETV and model.js OWN_STATS are the keys app
 });
 
 // Every writer the version declares (app.js STATE_V's comment) bumps it after it writes: a test on the code, so a writer
-// that loses its bump fails here, not only in a smoke that happens to read a view after it.
-test('every declared writer bumps the version', () => {
-  const has = (S, from, to, file, n = 1) => {
-    const b = block(S, from, to, {through: 1, file});
-    assert.ok((b.match(/stateBump\(\)/g) || []).length >= n, `${file} ${from.trim()}: ${n} stateBump() at least`);
+// that loses its bump fails here, not only in a smoke that happens to read a view after it. The writers of the player's
+// records and settings bump the state version alone (stateBump('rec')); every other writer bumps the data version too
+// (stateBump(), no argument): the data, the tree, the subject, the photo statistics, a file loaded.
+test('every declared writer bumps the version, the data version for every input but the player’s records', () => {
+  const has = (S, from, to, file, n = 1, rec = false) => {
+    const b = block(S, from, to, {through: 1, file}),
+      re = rec ? /stateBump\('rec'\)/g : /stateBump\(\)/g;
+    assert.ok((b.match(re) || []).length >= n, `${file} ${from.trim()}: ${n} ${rec ? "stateBump('rec')" : 'stateBump()'} at least`);
   };
-  has(APP, 'const st = n =>', ';\n', 'app.js');
+  has(APP, 'const st = n =>', ';\n', 'app.js', 1, true);
   has(APP, 'function subjectLoad(S, keep) {', '\n}\n', 'app.js', 2);
   has(APP, 'function inSubject(id, fn) {', '\n}\n', 'app.js', 2);
   has(APP, 'function treePull() {', '\n}\n', 'app.js');
   has(APP, 'const treeBuild = () => {', '\n};\n', 'app.js');
   has(APP, 'function build() {', '\n}\n', 'app.js');
   has(APP, 'function rankPhotos() {', '\n}\n', 'app.js');
-  has(APP, "  const rb = document.getElementById('reset');", 'introReset();', 'app.js');
-  assert.match(APP, /if \(STATE_KEYS\.has\(k\)\) stateBump\(\);/, 'store.set: an input key bumps');
-  has(MODEL, 'function mxRecalc(fn, why', '\n}\n', 'model.js');
-  has(MODEL, 'function answeredAt(s, good', '\n}\n', 'model.js');
-  has(MODEL, 'function varRight(n, L) {', '\n}\n', 'model.js');
+  has(APP, "  const rb = document.getElementById('reset');", 'introReset();', 'app.js', 1, true);
+  assert.match(APP, /if \(STATE_KEYS\.has\(k\)\) stateBump\(REC_KEYS\.has\(k\) \? 'rec' : undefined\);/, 'store.set: an input key bumps');
+  has(MODEL, 'function mxRecalc(fn, why', '\n}\n', 'model.js', 1, true);
+  has(MODEL, 'function answeredAt(s, good', '\n}\n', 'model.js', 1, true);
+  has(MODEL, 'function varRight(n, L) {', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function statsJoin(base = PBASE) {', '\n}\n', 'model.js');
   has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js');
   assert.match(MODEL, /\nif \(typeof stateBump === 'function'\) stateBump\(\);\n$/, 'model.js: a bump once loaded');
-  has(QUIZ, 'function recordAnswer({', '\n}\n', 'quiz.js', 2);
-  has(SYNC, 'function replayAdoptS(', '\n}\n', 'sync.js');
-  has(SYNC, 'function mergeSubject(', '\n}\n', 'sync.js', 2);
+  has(QUIZ, 'function recordAnswer({', '\n}\n', 'quiz.js', 2, true);
+  has(SYNC, 'function replayAdoptS(', '\n}\n', 'sync.js', 1, true);
+  has(SYNC, 'function mergeSubject(', '\n}\n', 'sync.js', 2, true);
   assert.match(SYNC, /\nif \(typeof stateBump === 'function'\) stateBump\(\);\n$/, 'sync.js: a bump once loaded');
+});
+
+// The data version: bumped by every writer but the player's records and settings, so the data views (the rank classes,
+// each unit's set and class, the scientific genera in the game) are kept across the answers and made again when the
+// sheet's version changes (here, or written by another tab).
+test('the data version: kept across the player’s writes, moved by the sheet’s version and every other bump', () => {
+  const {W, N} = tiny(false);
+  N.rankUnits('genus'); // the first read compares the stored texts (the sheet's version: data)
+  const d0 = N.dver();
+  for (const k of [C.subjKey('fish', 'progress'), C.subjKey('fish', 'quiz'), C.subjKey('fish', 'intro'), C.startKey('fish')])
+    N.store.set(k, 1);
+  N.stateBump('rec');
+  assert.strictEqual(N.dataNow(), d0, 'the player’s records and settings: the data views kept');
+  N.store.set(SV, 170);
+  const d1 = N.dataNow();
+  assert.ok(d1 > d0, 'the sheet’s version: a new data version');
+  W.localStorage.setItem(SV, '180'); // another tab (no task here: compared at the next read)
+  assert.ok(N.dataNow() > d1, 'the sheet’s version written round store.set');
+  const d2 = N.dataNow();
+  W.localStorage.setItem(C.startKey('fish'), '{"c":"imr"}');
+  assert.ok(N.ver() >= 0 && N.dataNow() === d2, 'a first-launch record written round store.set: the player’s, the data kept');
+  N.stateBump();
+  assert.ok(N.dataNow() > d2, 'a bump with no argument: the data too');
 });
