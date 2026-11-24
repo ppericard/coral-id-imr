@@ -217,7 +217,7 @@ put(queries(601)['world'], [ob(20, lic='cc0', ll=(27.9, 34.3), inph=False), ob(2
 put(queries(602)['ph'], [ob(30), ob(31, an=[(1, 8)]), ob(32), ob(33), ob(34), ob(35, an=[(1, 8), (1, 7)])])
 put(phase_query('juvenile', [602], 'ph'), [ob(31, an=[(1, 8)], tx=[602, 60])], FIELDS + ',taxon.ancestor_ids')
 put(phase_query('juvenile', [602], 'world'), [], FIELDS + ',taxon.ancestor_ids')
-# Pierre's own search, asked for every species with room for his: none here (his own: the next test).
+# Pierre's own search, asked for every species, full or not: none of his here (his own: the next tests).
 put(queries(601)['own'], [])
 put(queries(602)['own'], [])
 json.dump(c, open(d + '/cache.json', 'w'))`,
@@ -268,7 +268,7 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
-test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, on top of a full list up to max, in the target on a new one; --own asks nothing else", () => {
+test("Pierre's own (Q386, the fish's rule): his Needs ID species photos enter first, on top of a full list, in the target on a new one; --own asks nothing else", () => {
   const dir = mkTmp('slugown-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
@@ -344,6 +344,88 @@ json.dump(c2, open(d + '/cache2.json', 'w'))`,
   const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run('cache2.json');
   assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test("Pierre's own come in whatever the room and the ceiling max, every photo (REE-252): a full list takes all of his and no one else's; pick takes his at room 0", () => {
+  const out = J(`${OBS}
+from collections import Counter
+P = 'ppericard'
+mk = lambda: [usable(o, EGG) for o in (ob(1), ob(2, u=P, n=3), ob(3, u=P, g='needs_id', n=2), ob(4, u=P, lic=[None]), ob(5))]
+r = lambda room: [[o['id'], len(o['P']), o['cost']] for o in pick(mk(), room, Counter(), set(), Counter())]
+print(json.dumps([r(0), r(1), sorted(r(4))]))`);
+  const his = [
+    [2, 3, 2],
+    [3, 2, 1.5],
+    [4, 1, 1]
+  ];
+  const mine = L => L.filter(([id]) => [2, 3, 4].includes(id)).sort((a, b) => a[0] - b[0]);
+  assert.deepStrictEqual(mine(out[0]), his, 'room 0: all three of his observations, every photo');
+  assert.strictEqual(out[0].length, 3, 'and no one else’s');
+  assert.deepStrictEqual(mine(out[1]), his);
+  assert.strictEqual(out[1].length, 3);
+  assert.deepStrictEqual(mine(out[2]), his);
+  assert.strictEqual(out[2].length, 3, 'room 4 is spent by his 4.5: nothing left');
+
+  const dir = mkTmp('slugown2-');
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(
+    at('src.json'),
+    JSON.stringify({
+      photoTarget: {...T, candidates: 2, max: 3, perJuvenileForm: 0, juvenile: {}},
+      species: [{name: 'Slugus fullus', inat: 701, circle: 1}]
+    })
+  );
+  const old = i => ({
+    f: `seaslug-701-cand-${i * 10}`,
+    a: '(c) x',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: 'Slugus fullus',
+    own: false,
+    loc: 'ph',
+    src: 'x',
+    r: 1
+  });
+  // The list is full (2 = its target) and past nothing: his 4 observations (9 photos, 6 of room) go over max (3) all the same.
+  fs.writeFileSync(at('data/cand.json'), JSON.stringify({v: 1, cand: {701: [801, 802].map(old)}}));
+  py(
+    `${OBS}
+from fetch_fish import API, FIELDS, queries
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+P = 'ppericard'
+Q = queries(701)
+put(Q['own'], [ob(901, u=P, n=4), ob(902, u=P, n=3), ob(903, u=P, g='needs_id'), ob(904, u=P)])
+# Others: not asked at all on a full list (offline would stop on it), and never taken.
+put(Q['ph'], [ob(911), ob(912)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const run = () =>
+    execFileSync(
+      'python3',
+      ['tools/fetch_seaslugs.py', '--offline', '--src', at('src.json'), '--cand', at('data/cand.json'), '--cache', at('cache.json')],
+      {
+        cwd: ROOT,
+        encoding: 'utf8'
+      }
+    );
+  run();
+  const C = JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand['701'];
+  const ids = C.map(p => +p.o.split('/').pop());
+  assert.deepStrictEqual(ids.slice(0, 2), [801, 802], 'nothing removed');
+  assert.deepStrictEqual(
+    ids.slice(2).sort(),
+    [901, 901, 901, 901, 902, 902, 902, 903, 904],
+    'every photo of every observation of his, over max (3)'
+  );
+  assert.ok(!ids.includes(911) && !ids.includes(912), 'no one else’s on a full list');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
+  run();
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before, 'a rerun adds nothing');
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
@@ -477,6 +559,121 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const before = fs.readFileSync(at('data/cand.json'), 'utf8');
   run('--informal', '--genus-level');
   assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test("Pierre's own agreed observations of the genus-level and no-name lists come in whatever the room; --own --informal --genus-level asks his search only (REE-252)", () => {
+  // His search filters no licence (his photo needs none: usable_gl checks each photo), the others' do.
+  const [others, his] = J(`print(json.dumps([gl_query([60]), gl_query([60], OWN_ONLY)]))`);
+  assert.ok(others.includes('photo_license=') && !his.includes('photo_license=') && his.endsWith('&user_login=ppericard'));
+  const dir = mkTmp('sluggl-own-');
+  const at = x => path.join(dir, x);
+  const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;
+  fs.writeFileSync(
+    at('src.json'),
+    JSON.stringify({
+      photoTarget: {...T, candidates: 2, max: 30, perJuvenileForm: 0, juvenile: {}},
+      species: [
+        {name: 'Slugus slugii', genus: 'Slugus', inat: 601, circle: 1},
+        {name: 'Limax limacis', genus: 'Limax', inat: 701, circle: 3}
+      ]
+    })
+  );
+  const pres = {obs: 4, observers: 3, nearObs: 1, nearObservers: 1, near: false, confirmed: true};
+  const inf = {
+    species: [
+      {
+        key: 'slugus-sp1',
+        name: 'Slugus sp. 1',
+        genus: 'Slugus',
+        src: 'A 2020',
+        cite: 'A',
+        field: {id: 5, name: 'Slugus sp. 1?', value: 'Yes'},
+        presence: pres
+      }
+    ]
+  };
+  fs.writeFileSync(at('inf.json'), JSON.stringify(inf));
+  // The lists 'Slugus' and 'slugus-sp1' are full (2 = their target), held by others' observations 10, 11 and 20, 21.
+  const old = (key, i, gl) => ({
+    f: `seaslug-${key}-cand-${i * 10}`,
+    a: '(c) x',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: key,
+    own: false,
+    loc: 'ph',
+    src: 'x',
+    r: 1,
+    ...(gl ? {gl: 1} : {})
+  });
+  fs.writeFileSync(
+    at('data/cand.json'),
+    JSON.stringify({
+      v: 1,
+      cand: {Slugus: [10, 11].map(i => old('Slugus', i, true)), 'slugus-sp1': [20, 21].map(i => old('slugus-sp1', i, false))}
+    })
+  );
+  py(
+    `${OBS}
+from fetch_fish import API, TAXA
+d = sys.argv[1]
+INF = json.load(open(d + '/inf.json'))['species']
+P = 'ppericard'
+c = {}
+def gl(i, ag=2, dg=0, g='needs_id', tid=60, **k):
+    o = ob(i, g=g, rk='genus', **k)
+    o.update({'t': {60: 'Slugus', 70: 'Limax'}[tid], 'tid': tid, 'ag': ag, 'dg': dg})
+    return o
+def put(url, results): c[url] = {'total': len(results), 'results': results}
+anc = lambda gid, name: [[1, 'Animalia', 'kingdom'], [gid, name, 'genus']]
+c[TAXA + '701,601?fields=id,ancestors.id,ancestors.name,ancestors.rank'] = {'results': [{'id': 601, 'anc': anc(60, 'Slugus')}, {'id': 701, 'anc': anc(70, 'Limax')}]}
+c[TAXA + '601?fields=id,ancestors.id,ancestors.name,ancestors.rank'] = {'results': [{'id': 601, 'anc': anc(60, 'Slugus')}]}
+# His: 41 (two photos, Needs ID agreed by 2), 42 (not agreed: left out), 43 (Research Grade at the genus), 40 (carries the label).
+mine = [gl(41, u=P, n=2), gl(42, u=P, tid=70, ag=1), gl(43, u=P, tid=70, g='research', ag=1)]
+put(API + gl_query([60, 70], OWN_ONLY) + '&fields=' + GL_FIELDS, mine)
+put(API + label_query(60, INF[0]['field'], OWN_ONLY) + '&fields=' + GL_FIELDS, [gl(40, u=P)])
+# The general genus-level search, for the normal run only: his 41 among others; Slugus is full, Limax has room for one.
+put(API + gl_query([60, 70]) + '&fields=' + GL_FIELDS, [gl(50), gl(41, u=P, n=2), gl(51), gl(60, tid=70)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const run = (...more) =>
+    execFileSync(
+      'python3',
+      [
+        'tools/fetch_seaslugs.py',
+        '--offline',
+        '--src',
+        at('src.json'),
+        '--informal-src',
+        at('inf.json'),
+        '--cand',
+        at('data/cand.json'),
+        '--cache',
+        at('cache.json'),
+        ...more
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    );
+  const ids = L => L.map(p => +p.o.split('/').pop());
+  const cand = () => JSON.parse(fs.readFileSync(at('data/cand.json'), 'utf8')).cand;
+  // 1. A normal genus-level run: the full 'Slugus' list takes his 41 (both photos) and neither 50 nor 51; Limax takes 60 for its room.
+  run('--genus-level');
+  let C = cand();
+  assert.deepStrictEqual(ids(C.Slugus).slice(2).sort(), [41, 41], 'his, whole, on a full list; no one else’s');
+  assert.deepStrictEqual(ids(C.Limax), [60]);
+  // 2. --own --informal --genus-level: his search only (the general search is not asked again), the presence kept as it is.
+  const infBefore = fs.readFileSync(at('inf.json'), 'utf8');
+  run('--own', '--informal', '--genus-level');
+  C = cand();
+  assert.deepStrictEqual(ids(C['slugus-sp1']).slice(2), [40], 'his observation carrying the label, on a full list');
+  assert.deepStrictEqual(ids(C.Slugus).slice(2).sort(), [41, 41], '41 is not taken twice');
+  assert.deepStrictEqual(ids(C.Limax).sort(), [43, 60], 'his Research Grade genus-level observation; 42 (not agreed) stays out');
+  assert.strictEqual(fs.readFileSync(at('inf.json'), 'utf8'), infBefore, 'the presence is not measured again');
+  const before = fs.readFileSync(at('data/cand.json'), 'utf8');
+  run('--own', '--informal', '--genus-level');
+  assert.strictEqual(fs.readFileSync(at('data/cand.json'), 'utf8'), before, 'a rerun adds nothing');
   fs.rmSync(dir, {recursive: true, force: true});
 });
 

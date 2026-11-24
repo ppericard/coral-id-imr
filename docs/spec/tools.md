@@ -95,6 +95,10 @@ written with `tools/datajson.py`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
   keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
+- **`issue_guard.py`**: the same on Linear's `save_issue` (matcher `^mcp__.*[Ll]inear.*__save_issue$`, any server name
+  holding "linear"): refuses a new issue (no `id`; an update passes) whose description has no line
+  `Searched: <what> — <what was found>`, and says where to search and to fold into an existing issue instead.
+  `--check JSON`; `tests/issue_guard.test.js`.
 - **`instr_log.py`**: the core trial's log (#1200 §3), `claude-instructions.jsonl` in the git common dir: InstructionsLoaded,
   SessionStart and SubagentStart hooks note which file loaded for which agent and why (with its hash and core line);
   SubagentStart gives the Manila time and main's core line. Missing tools and recording failures are surfaced.
@@ -131,7 +135,7 @@ written with `tools/datajson.py`.
 - **`health.py`, `infra.json`**: the hourly Health workflow's script (`.github/workflows/health.yml`;
   [PAGES.md › Infrastructure health](../PAGES.md#infrastructure-health)): the live site (`index.html` and `data.json` with
   their stamps), the sheet script's public read-only request and its `v`, the weekly backup's age (only with the admin
-  token), and the infrastructure numbers against their free-tier limits (Pages 1 GB from `main`'s tree, R2 10 GB from
+  token), and the infrastructure numbers against their free-tier limits (Pages 1 GB from `main`'s tree, R2 50 GB (the free tier is 10 GB) from
   `infra.json`, measured by hand; the sheet's cells and slowest operation through `readInfra` with the token), a
   warning past 70%. Standard library only, every request injectable; `tests/infra.test.js` on `tests/infra.fixtures.py`.
   `brief.py` shows the numbers as one `Infra:` line, read from the run's annotation; the admin's To do › Alerts card reads
@@ -302,7 +306,8 @@ The work one answer makes on the device, counted so that a change can be judged 
 
 - **`fetch_approved.py`, `fetch_local.py`**: the candidates' download and refill, run by the Candidate photos workflow
   ([photos.md › The Candidate photos workflow](photos.md#the-candidate-photos-workflow)). `fetch_local.py <Genus…>`
-  limits a run, `--plan` shows offline what it would refill, `--tidy` runs the tidy step alone; it searches the
+  limits a run, `--plan` shows offline what it would refill, `--tidy` runs the tidy step alone, `--own` takes only
+  Pierre's own observations (below: every genus, whatever its room); it searches the
   iNaturalist taxon `taxonomy.json` gives each genus (`taxonomy.py` `inat_taxon`). `fetch_approved.py --games` (the
   workflow passes it) also downloads any photo of Millepora and the bonus genera still remote (`r: 1`, as
   `build_extra.py` imports them), so every game photo is hosted like the others; the other extra Dauin genera (Coral ID
@@ -464,9 +469,11 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     The new candidates wait unjudged and out of play for the judging pass (rule P7);
   - **Pierre's own observations: the fish's rule** (rule P1's fish exception, rule S2): identified to the species
     they are usable even when Needs ID (`ni`), his photos whatever their licence, read by `fetch_fish.usable_obs`
-    itself; asked on his own search (`--own`: that search only, every species together) and taken first, so none is left
-    out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the
-    rubric like any candidate;
+    itself; asked on his own search (`--own`: that search only, every species together, full or not) and taken first,
+    so none is left out, every one with every usable photo, whatever the list's room, target and `max` (30): on top of a
+    list already full too, and in the genus-level and no-name lists his agreed observations are taken the same way; they
+    count in the room, so a full list takes no other observer's photo; never boosted, judged on the rubric like any
+    candidate ([record](../decisions/2026-11-24-own-observations-everywhere.md));
   - it reuses `fetch_fish.py`'s searches, cache and pacing (~1 request/s, cached in
     `tools/.cache/seaslug_photos.json`). The file has `data/fish-cand.json`'s shape and record fields, keyed by the species'
     iNaturalist taxon id, `f` = `seaslug-<taxon id>-cand-<photo id>` (the docstring lists the differences);

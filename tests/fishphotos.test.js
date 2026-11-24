@@ -120,8 +120,8 @@ print(json.dumps([[o['id'] for o in select(pools, r, {}, None, W)] for r in (1, 
   // The licence is the last key (variety before licences): distance first, so the NC photo
   // of Dauin comes before the CC0 one of the region; within a tier, an open photo before an NC one of equal variety.
   assert.deepStrictEqual(out, [
-    [3], // Pierre's own first, whatever its licence
-    [3, 8], // his own abroad too
+    [3, 8], // Pierre's own first, whatever its licence, and whatever the room: his abroad one too (docs/decisions/2026-11-24-own-observations-everywhere.md)
+    [3, 8], // nobody else's: his took the room
     [3, 8, 2, 1, 4], // then Dauin (CC BY before CC BY-NC: a tie), the region
     [3, 8, 2, 1, 4, 5, 6], // then the rest of the Philippines, CC BY before CC BY-NC
     [3, 8, 2, 1, 4, 5, 6, 7] // the Philippines exhausted: abroad
@@ -1299,6 +1299,178 @@ test('fetch_fish.py game_photos: the photos in play and the sheet photos, each o
     ['fish-s1-cand-1', 'fi3']
   );
   assert.ok(!('ph' in got.s1[0]) && got.s1[0].jt === g.jt);
+});
+
+test("fetch_fish.py --refill offline: a full species is not refilled but takes Pierre's own observations (REE-252); a rerun adds nothing", () => {
+  const dir = mkTmp('fishrefillown-');
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
+      {id: 's2', name: 'Fishus vulgaris', inat: 502, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  const rec = (sid, i) => ({
+    f: `fish-${sid}-cand-${i * 10}`,
+    a: '(c) u',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: 'Fishus fishii',
+    own: false,
+    loc: 'dauin',
+    src: 'x',
+    r: 1
+  });
+  // Both species hold 5 candidates, their cap (5): no room, so the refill picks neither.
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('data/fish-cand.json', {v: 1, cand: {s1: [1, 2, 3, 4, 5].map(i => rec('s1', i)), s2: [6, 7, 8, 9, 10].map(i => rec('s2', i))}});
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+# His: two photos on s1 and a Needs ID one (no licence) on s2; no general search is cached: a full species asks none.
+put(queries(501)['own'], [ob(91, u='ppericard', n=2)])
+put(queries(502)['own'], [ob(92, u='ppericard', g='needs_id', lic=None)])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const at = x => path.join(dir, x);
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
+  const files = ['fish.json', 'data/fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json', 'mem.json'];
+  const argv = flags.flatMap((f, i) => [f, at(files[i])]);
+  const run = () =>
+    execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--refill', '--cap', '5', '--today', '2026-11-06', '--offline'], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    });
+  const log = run();
+  const got = JSON.parse(fs.readFileSync(at('data/fish-cand.json'), 'utf8')).cand;
+  const ids = L => L.map(p => +p.o.split('/').pop());
+  assert.deepStrictEqual(ids(got.s1).slice(5), [91, 91], 'his two photos, on a full species');
+  assert.deepStrictEqual(ids(got.s2).slice(5), [92], 'his Needs ID one, with no licence');
+  assert.strictEqual(got.s2[5].ni, 1);
+  assert.match(log, /refill: 2 short species .* 0 refilled now/, 'no room, so neither is refilled (both are short of easy adults only)');
+  const before = fs.readFileSync(at('data/fish-cand.json'), 'utf8');
+  run();
+  assert.strictEqual(fs.readFileSync(at('data/fish-cand.json'), 'utf8'), before, 'a rerun adds nothing');
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test("select: Pierre's own observations come in whatever the room, every photo, their cost off the room; nobody else's then (REE-252)", () => {
+  const out = J(`${OBS}
+it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
+mk = lambda: {'ph': [it(1, 'cc-by'), it(2, 'cc0'), it(3, 'cc-by', u='ppericard', n=4), it(4, 'cc-by-nc', u='ppericard', g='needs_id', n=2)]}
+r = lambda room, **k: [[o['id'], len(o['P']), o['cost']] for o in select(mk(), room, {}, None, photos=True, **k)]
+print(json.dumps([r(0), r(1), r(5), r(0, own_only=True), r(5, own_only=True), r(0.5)]))`);
+  // His two observations (4 photos for 2.5 of room, 2 for 1.5) are taken whole at room 0 or 1; room goes negative, so no
+  // other observer's. At room 5 they cost 4 and the others share the 1 left.
+  const mine = L => L.filter(([id]) => id >= 3).sort((a, b) => a[0] - b[0]);
+  const his = [
+    [3, 4, 2.5],
+    [4, 2, 1.5]
+  ];
+  assert.deepStrictEqual(mine(out[0]), his);
+  assert.strictEqual(out[0].length, 2, 'room 0: his only');
+  assert.deepStrictEqual(mine(out[1]), his);
+  assert.strictEqual(out[1].length, 2);
+  assert.deepStrictEqual(mine(out[2]), his);
+  assert.strictEqual(out[2].length, 3, 'room 5: 4 for his, 1 left for one other observation');
+  assert.deepStrictEqual(mine(out[3]), his, 'own_only: his, nothing else');
+  assert.strictEqual(out[3].length, 2);
+  assert.deepStrictEqual(mine(out[4]), his);
+  assert.strictEqual(out[4].length, 2);
+  assert.deepStrictEqual(mine(out[5]), his, 'a half photo of room: his are never cut to it');
+  assert.strictEqual(out[5].length, 2);
+});
+
+test("fetch_fish.py offline, a full species: Pierre's own observations come in whole, no one else's; --own asks his search only; a rerun adds nothing (REE-252)", () => {
+  const dir = mkTmp('fishown-');
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
+      {id: 's2', name: 'Fishus rarus', inat: 502, circle: 1, present: {ph: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  const rec = (sid, i) => ({
+    f: `fish-${sid}-cand-${i * 10}`,
+    a: '(c) u',
+    lic: 'cc-by',
+    o: `https://www.inaturalist.org/observations/${i}`,
+    t: 'Fishus fishii',
+    own: false,
+    loc: 'dauin',
+    src: 'x',
+    r: 1
+  });
+  // s1 holds 3 candidates, its cap (3): no room. s2 is empty.
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  fs.writeFileSync(path.join(dir, 'data/fish-cand.json'), JSON.stringify({v: 1, cand: {s1: [1, 2, 3].map(i => rec('s1', i))}}));
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+P = 'ppericard'
+Q = queries(501)
+# His: an observation of 4 photos, a Needs ID one, one without a licence, one at the genus (not a species photo: left out).
+put(Q['own'], [ob(91, u=P, n=4), ob(92, u=P, g='needs_id'), ob(93, u=P, lic=None), ob(94, u=P, g='needs_id', rk='genus')])
+c2 = dict(c)
+# The general searches, for the normal run only: a full species must not take from them.
+for k in ('dauin', 'region', 'ph', 'world'):
+    c2[API + Q[k] + '&fields=' + FIELDS] = {'total': 2, 'results': [ob(60), ob(61)]}
+Q = queries(502)
+put(Q['own'], [])
+c2[API + Q['own'] + '&fields=' + FIELDS] = {'total': 1, 'results': [ob(95, u=P, n=2)]}
+for k in ('dauin', 'region', 'ph', 'world'):
+    c2[API + Q[k] + '&fields=' + FIELDS] = {'total': 4, 'results': [ob(70), ob(71), ob(72), ob(73)]}
+json.dump(c, open(d + '/own.json', 'w'))
+json.dump(c2, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const at = x => path.join(dir, x),
+    base = [
+      '--fish',
+      at('fish.json'),
+      '--cand',
+      at('data/fish-cand.json'),
+      '--cur',
+      at('none.json'),
+      '--suggest',
+      at('none.json'),
+      '--cap',
+      '3'
+    ];
+  const run = (cache, ...a) =>
+    execFileSync('python3', ['tools/fetch_fish.py', ...base, '--cache', at(cache), ...a], {cwd: ROOT, encoding: 'utf8'});
+  const cands = () => JSON.parse(fs.readFileSync(at('data/fish-cand.json'), 'utf8')).cand,
+    obsOf = L => L.map(p => +p.o.split('/').pop());
+  // --own: the cache holds the own searches only (a general search of either species would stop --offline).
+  run('own.json', '--offline', '--own');
+  let C = cands();
+  assert.deepStrictEqual(
+    obsOf(C.s1).slice(3).sort(),
+    [91, 91, 91, 91, 92, 93],
+    'the full list takes his, every photo: 4 + 1 + 1, the genus-level one left out'
+  );
+  assert.ok(!C.s2, 'a species with nothing of his gets nothing from a run of his alone');
+  const by = Object.fromEntries(C.s1.slice(3).map(p => [p.f, p]));
+  assert.strictEqual(by['fish-s1-cand-920'].ni, 1, 'his Needs ID observation is marked');
+  assert.strictEqual(by['fish-s1-cand-930'].lic, 'own', 'his photo without a licence is taken');
+  // A normal run: the full species takes none of the others; the one with room takes his 2 photos (cost 1.5) then room for 2.
+  run('cache.json', '--offline');
+  C = cands();
+  assert.strictEqual(C.s1.length, 3 + 6, 's1: nothing more than his');
+  assert.deepStrictEqual(obsOf(C.s2).slice(0, 2), [95, 95], 'his first');
+  assert.ok(obsOf(C.s2).length >= 3 && obsOf(C.s2).length <= 4, 'then the room his photos left (3 - 1.5)');
+  // A rerun adds nothing.
+  const before = JSON.stringify(C);
+  run('cache.json', '--offline');
+  run('cache.json', '--offline', '--own');
+  assert.strictEqual(JSON.stringify(cands()), before);
+  fs.rmSync(dir, {recursive: true, force: true});
 });
 
 // A temporary tree as the repository has it: the tools' and the admin's data live in data/.

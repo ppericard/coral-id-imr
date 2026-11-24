@@ -42,8 +42,11 @@ module.exports = async function labGamesCheck(p, w, fails, tag = '', rounds = 4)
     // The unit a game photo shows, from its address (the unit whose game photos hold that file), null when none does.
     unitOf = src =>
       p.evaluate(src => {
-        const x = photoFileOf(src);
-        return x ? pool().find(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).some(q => q.f === x.f))) || null : null;
+        // A photo on R2 by its file; one still read from iNaturalist (r: 1, a sea slug not downloaded yet) by its photo id.
+        const x = photoFileOf(src),
+          id = (/inaturalist-open-data\.s3\.amazonaws\.com\/photos\/(\d+)\//.exec(src) || [])[1],
+          is = q => (x ? q.f === x.f : String(q.src || '').includes('/photos/' + id + '/'));
+        return x || id ? pool().find(n => ['wide', 'medium', 'macro'].some(v => gamePics(n, v).some(is))) || null : null;
       }, src),
     names = () => p.evaluate(() => unlocked().map(n => [n, unameT(n), rankOf(n)])),
     text = () => p.evaluate(() => document.getElementById('view').innerText),

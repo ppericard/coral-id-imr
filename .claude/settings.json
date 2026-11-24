@@ -83,6 +83,17 @@
             "onFailure": "block"
           }
         ]
+      },
+      {
+        "matcher": "^mcp__.*[Ll]inear.*__save_issue$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 2; F=tools/issue_guard.py; M=refs/remotes/origin/main; g() { git show \"origin/main:$F\" </dev/null 2>/dev/null; }; has() { git rev-parse -q --verify \"$M\" </dev/null >/dev/null 2>&1; }; S=\"$(g)\" || { has || GIT_TERMINAL_PROMPT=0 $(command -v timeout >/dev/null && echo timeout 3) git fetch -q origin \"+refs/heads/main:$M\" </dev/null >/dev/null 2>&1 || sleep 1; S=\"$(g)\"; }; if [ -n \"$S\" ]; then python3 -I -c \"$S\"; elif has; then exit 0; else echo 'Refused by the session hook (.claude/settings.json): this checkout has no origin/main ref and fetching it failed, and the issue guard (tools/issue_guard.py) runs only its copy on origin/main, never a branch copy. Run exactly this in Bash, then save the issue again: git fetch origin +refs/heads/main:refs/remotes/origin/main' >&2; exit 2; fi",
+            "timeout": 5,
+            "onFailure": "block"
+          }
+        ]
       }
     ]
   }

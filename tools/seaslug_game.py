@@ -6,8 +6,8 @@ seaslug, app.js UNITS seaslug) as it reads fish.json and fish-game.json (core.js
 Inputs, all in the repository (no network but --r2's downloads):
   - tools/seaslugs.json (tools/build_seaslugs.py): the species confirmed in the Philippines, their circles (Q377: circle
     1, the 21 stars and the 24 most common other species; circles 2 and 3, the next 60 and 100 by commonness), their
-    WoRMS names, commonness, presence and the photo target (photoTarget: start 6, game cap 12, +5 for a documented
-    juvenile form; Pierre, 2026-11-15, Q377);
+    WoRMS names, commonness, presence and the photo target (photoTarget: start 6, 20 candidates, +5 candidates for a
+    documented juvenile form; Pierre, 2026-11-15, Q377; no game cap since Pierre's «oui» of 2026-11-24 14:47, REE-272);
   - data/seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos (every usable photo of an observation), by iNaturalist taxon id;
   - data/suggest.json "seaslug" (tools/judging_fish.py --subject seaslug, from judging/seaslug/*.json): the judgements on
     judging/SEASLUG.md's rubric, the caps applied;
@@ -65,25 +65,25 @@ seaslug-game.json, in fish-game.json's record shape (core.js fishPhotos, fishGam
 line:
   - the photos in play: a candidate judged sure (fish_game.py cand_sure's rule on the sea slugs' rubric: no unsure
     field, keep best or alt, never dup, never an egg mass, valid tags and ease, a count an automatic route may put in
-    play, never out of the water), at most photoTarget.gameCap a species, the easiest first, plus up to
-    photoTarget.perJuvenileForm juvenile photos for a species with a documented juvenile form (photoTarget.juvenile);
-    a species with fewer than photoTarget.start such photos has none in play (it cannot be played yet). The same rule
+    play, never out of the water), every one of them, as the fish's (no game cap: Pierre, 2026-11-24 14:47, «oui»,
+    REE-272), the adults first and the juveniles after, the easiest first, but for a species with a documented juvenile
+    form (photoTarget.juvenile), whose juveniles stay at photoTarget.perJuvenileForm; a species with fewer than
+    photoTarget.start such photos has none in play (it cannot be played yet). The same rule
     for every circle. Which photos are in play and their records are the fish's (tools/fish_game.py in_play and record,
     with the sea slugs' part of the curation, their sure rule and their lists): never the same photo twice (pid), the
-    species' lists read first, by circle and rank, then the genus-level ones, before the cap and start apply (a photo
+    species' lists read first, by circle and rank, then the genus-level ones, before start applies (a photo
     in a species' list and a genus-level one plays for the species, or nowhere when that species does not play);
   - Pierre's curation (curation.json seaslug, the sea slugs' part: core.js SUBJECTS seaslug admin.cur; written by the
     admin's Photos › Tree and a report's photo tools, never here: rule A1), as a fish photo follows the fish part
     (tools/fish_game.py in_play, record): a photo he removed (seen), excluded (exclude, or the top-level exclude, by
-    name or photo id) or moved with Not this (out) is not in play, nor an automatic add of his he undid, and the next
-    sure photo takes its place under the cap; his adds (add {photo: species or genus id}, core.js fishOn) are in play
-    whatever their judgement, never trimmed by the cap, named after the species he moved them to; his ease and tags are
+    name or photo id) or moved with Not this (out) is not in play, nor an automatic add of his he undid; his adds (add {photo: species or genus id}, core.js fishOn) are in play
+    whatever their judgement, named after the species he moved them to; his ease and tags are
     the record's (fish_game.py mine_tags), and a count he set to other species one could take for its subject (k) or
     unclear keeps the photo out (rule P3); his crop (crop, his whole-photo [0, 0, 1, 1] included) replaces the judge's,
     and his rotation (rot) turns the files, both applied when the photo is downloaded for R2 (ro on the record);
   - each record {f, o, src, a, lic, t, sp, gl, loc, own, e, jt, ph, bb, auto: "cand"} (no auto on Pierre's adds), ph
     a fish record's phase (tools/fish_game.py phase: Pierre's phase choice, else the judge's juvenile flag, else the
-    source's life stage, st); the cap counts a juvenile by the juvenile flag of its tags (juv); and then either
+    source's life stage, st); the juveniles, by the juvenile flag of their tags (juv), come after the adults; and then either
       r: 1, the photo read from iNaturalist (app.js img), until a run with --r2 has put it on R2; or
       ar, cr, ro, iv and no r: its four files on R2, as a fish game photo (study §9 step 6; tools/fish_game.py
       download: Pierre's crop, else the judge's proposed one, and his rotation applied, tools/photos.py's four sizes),
@@ -209,7 +209,7 @@ def sure(j):
 
 
 def juv(jt):
-    """A juvenile for the photo target's cap (kept): the juvenile flag of the tags in force."""
+    """A juvenile, for the order of a list's photos (kept): the juvenile flag of the tags in force."""
     return 'j' in (jt or '')[7:]
 
 
@@ -331,7 +331,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     V_ = names_of(names)
     vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
-    start, cap, plus = T['start'], T['gameCap'], T.get('perJuvenileForm', 0)
+    start, plus = T['start'], T.get('perJuvenileForm', 0)
     documented = set(T.get('juvenile') or {})
     sp = sorted((s for s in L['species'] if s.get('circle') in CIRCLES), key=lambda s: (s['circle'], s['rank']))
     sid = {s['name']: 's%d' % s['inat'] for s in sp}
@@ -446,16 +446,16 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
         return {**out, **({'bb': bb} if bb else {}), **({'auto': r['auto']} if 'auto' in r else {}), 'r': 1}
 
     def kept(L1, documented_juvenile):
-        """The photos in play of one list: Pierre's adds always (as a fish add), then at most cap adults with them, the
-        easiest first, then the juveniles (perJuvenileForm for a documented juvenile form, else what the cap leaves). A
-        juvenile: the juvenile flag of the record's tags (juv)."""
+        """The photos in play of one list, no game cap (Pierre, 2026-11-24 14:47, «oui», REE-272): Pierre's adds, then
+        every adult the build put in play, the easiest first, then the juveniles, the easiest first: all of them, but for
+        a documented juvenile form, whose juveniles stay at perJuvenileForm (unchanged by that decision). A juvenile: the
+        juvenile flag of the record's tags (juv)."""
         order = lambda p: (-(p.get('e') or 0), p['f'])  # noqa: E731
         his = sorted((p for p in L1 if 'auto' not in p), key=order)
-        room = max(0, cap - sum(1 for p in his if not juv(p.get('jt'))))
         auto = [p for p in L1 if 'auto' in p]
-        adults = sorted((p for p in auto if not juv(p['jt'])), key=order)[:room]
+        adults = sorted((p for p in auto if not juv(p['jt'])), key=order)
         young = sorted((p for p in auto if juv(p['jt'])), key=order)
-        return his + adults + (young[:plus] if documented_juvenile else young[:max(0, room - len(adults))])
+        return his + adults + (young[:plus] if documented_juvenile else young)
 
     def place(keep, fid):
         for r in keep:
@@ -503,7 +503,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
             place(keep, me['family'])
     # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level): the sure
     # ones of each genus, sp its genus id and gl 1 (core.js treeGenUnits plays them for the genus, never for a species),
-    # at most cap, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
+    # every one, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
     for gid, G in gens.items():
         keep = kept(play.get(gid) or [], False)
         mine = sum(1 for p in photos.get(G['family']) or [] if p['sp'] in G['species'])
