@@ -176,6 +176,43 @@
    "form": "E",
    "keep": "best",
    "note": "Soft at 100%; date stamp"
+  },
+  "pavona-cand-595593391": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "best",
+   "note": "Tentacles out over the fronds"
+  },
+  "pavona-cand-595593392": {
+   "view": "wide",
+   "quality": 2,
+   "form": "F",
+   "keep": "alt",
+   "note": "Same colony from another angle, fluorescent tentacles"
+  },
+  "pavona-cand-745206236": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best"
+  },
+  "pavona-cand-745206243": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best"
+  },
+  "pavona-cand-576250372": {
+   "view": "wide",
+   "quality": 1,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "genus",
+    "quality"
+   ],
+   "note": "Small dark patch with blue polyps among sponges; genus not readable"
   }
  }
 }

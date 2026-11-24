@@ -506,6 +506,173 @@
     1.0
    ],
    "note": "Shallow focus at the edges"
+  },
+  "porites-cand-175106715": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Purple cast, soft at 100%"
+  },
+  "porites-cand-175106120": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "note": "A branching coral fills a third of the frame"
+  },
+  "porites-cand-269733482": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Night; honeycomb visible"
+  },
+  "porites-cand-606658016": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "genus": "exclude",
+   "note": "Colony cut at the edge; rubble and two butterflyfish are the subject"
+  },
+  "porites-cand-175093412": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "genus",
+    "multi"
+   ],
+   "note": "Massive with white wavy lines; soft corals around"
+  },
+  "porites-cand-607128313": {
+   "view": "medium",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Polyps out cover the skeleton; Goniopora possible"
+  },
+  "porites-cand-269460148": {
+   "view": "medium",
+   "quality": 3,
+   "form": "S",
+   "keep": "best",
+   "unsure": [
+    "form"
+   ],
+   "note": "Plates and columns, crisp honeycomb; night flash"
+  },
+  "porites-cand-269460273": {
+   "view": "medium",
+   "quality": 2,
+   "form": "S",
+   "keep": "alt",
+   "unsure": [
+    "form"
+   ],
+   "note": "Another part, columns; two pufferfish"
+  },
+  "porites-cand-175101838": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Cyan cast, soft"
+  },
+  "porites-cand-175105885": {
+   "view": "wide",
+   "quality": 1,
+   "form": "M",
+   "keep": "alt",
+   "note": "Strong blue cast, murky, other corals in front"
+  },
+  "porites-cand-606658015": {
+   "view": "wide",
+   "quality": 2,
+   "form": "S",
+   "keep": "best",
+   "note": "Haze; rock fills the top half",
+   "crop": [
+    0,
+    0.35,
+    1,
+    1
+   ]
+  },
+  "porites-cand-175106688": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "Microatoll; damselfish"
+  },
+  "porites-cand-175106705": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "alt",
+   "note": "Same microatoll from farther"
+  },
+  "porites-cand-606658001": {
+   "view": "wide",
+   "quality": 2,
+   "form": "E",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Small; a thin encrusting strip on rock, soft"
+  },
+  "porites-cand-746236417": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "porites-cand-746236405": {
+   "view": "macro",
+   "quality": 3,
+   "form": "x",
+   "keep": "best"
+  },
+  "porites-cand-745206561": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Sharp on one branch only"
+  },
+  "porites-cand-745206545": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "dup"
+  },
+  "porites-cand-745205945": {
+   "view": "medium",
+   "quality": 2,
+   "form": "M",
+   "keep": "best",
+   "note": "White lesions"
+  },
+  "porites-cand-745206039": {
+   "view": "wide",
+   "quality": 2,
+   "form": "M",
+   "keep": "best"
+  },
+  "porites-cand-745205930": {
+   "view": "macro",
+   "quality": 2,
+   "form": "x",
+   "keep": "best",
+   "note": "Sharp on a strip only"
   }
  }
 }

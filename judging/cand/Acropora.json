@@ -537,6 +537,137 @@
    "quality": 2,
    "form": "B",
    "keep": "best"
+  },
+  "acropora-cand-269292446": {
+   "view": "wide",
+   "quality": 3,
+   "form": "T",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.15,
+    0.9,
+    0.95
+   ]
+  },
+  "acropora-cand-269292865": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "alt",
+   "note": "Same table from farther, another angle",
+   "crop": [
+    0.15,
+    0.2,
+    1,
+    0.9
+   ]
+  },
+  "acropora-cand-726640339": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-629460573": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.15,
+    0.85,
+    1
+   ]
+  },
+  "acropora-cand-174426372": {
+   "view": "medium",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-174425409": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "alt",
+   "note": "Another part of the colony, pale tips"
+  },
+  "acropora-cand-174426377": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-606605957": {
+   "view": "medium",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Green haze, soft at 100%"
+  },
+  "acropora-cand-311984064": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "keep": "best",
+   "crop": [
+    0.1,
+    0.1,
+    0.85,
+    0.85
+   ]
+  },
+  "acropora-cand-27992821": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best"
+  },
+  "acropora-cand-600517142": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "unsure": [
+    "quality"
+   ],
+   "note": "Fragments on a restoration disc among dead sticks; subject unclear"
+  },
+  "acropora-cand-269514479": {
+   "view": "wide",
+   "quality": 3,
+   "form": "B",
+   "keep": "best",
+   "multi": true,
+   "unsure": [
+    "multi"
+   ],
+   "note": "Finger coral fills the foreground"
+  },
+  "acropora-cand-269514664": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "dup"
+  },
+  "acropora-cand-733944892": {
+   "view": "wide",
+   "quality": 2,
+   "form": "B",
+   "keep": "best",
+   "note": "Thicket; a crinoid and a damselfish"
+  },
+  "acropora-cand-585934376": {
+   "view": "wide",
+   "quality": 2,
+   "form": "T",
+   "genus": "exclude",
+   "unsure": [
+    "genus"
+   ],
+   "note": "Dozens of damselfish over the table take the eye"
   }
  }
 }
