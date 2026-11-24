@@ -114,7 +114,9 @@ const IS_ADMIN =
 // recalculation (model.js mxRecalc), sync.js's refills of P, a subject switch or visit (subjectLoad, inSubject), a data
 // or tree build (build, treeBuild, treePull, rankPhotos), the statistics joined (model.js statsJoin), a record made (st),
 // a reset, and the files whose functions the views read, as they load (model.js, sync.js). The other keys an answer
-// writes (its queue, the comeback, the pending question, the achievements) are no input and bump nothing.
+// writes (its queue, the comeback, the pending question, the achievements) are no input and bump nothing. The writers
+// outside this block call it guarded (typeof), as in model.js, quiz.js and sync.js: the unit tests run parts of these
+// files without it.
 let STATE_V = 0;
 const stateBump = () => void STATE_V++;
 // sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names).
@@ -750,7 +752,7 @@ function build() {
   // the data made (not enumerable: nothing that reads or copies DATA meets it).
   Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
   DATA = d;
-  stateBump(); // the data in force: an input of the views
+  if (typeof stateBump === 'function') stateBump(); // the data in force: an input of the views
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
 // The content version of subject S's answers (core.js contentVersion) from what its units were made from (cvIn: DATA's,
@@ -1345,10 +1347,9 @@ const sciTop = (L, n) =>
 const sciStars = L => L.filter(u => !!((TREEU && TREEU.sps && TREEU.sps[GX(u).sp]) || {}).star);
 // The units in play a species by its scientific name may hang from (sciPlay up): the slate and the units the other
 // sets have in play (the fish's scientific genera; a sea slug genus is on the slate). A view of the state version
-// (stateView): sciUpCalc computes it.
+// (sciUp, with bonusList below): sciUpCalc computes it.
 const sciUpCalc = () =>
   new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
-const sciUp = stateView('sciUp', sciUpCalc);
 // The species by their scientific names, for every subject that asks them (SUBJECTS names 'sci'; UNITS sets: the
 // fish's, the sea slugs'): no offer and no switch of its own (the fish's come with their scientific genera, Q404 A's
 // names row; every sea slug player's); auto: sciPlay, once the level is on (sciSpOn, rule D4); all: every such unit
@@ -1424,7 +1425,7 @@ const treeBuild = () => {
     configurable: true
   });
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
-  stateBump(); // the tree in force: an input of the views
+  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
   return TREEU;
 };
 // This player's reserve (core.js reserveOf, reserveSplit; docs/LEARNING.md "The reserve in the game"): a few
@@ -1484,7 +1485,7 @@ const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, TREEU: null, TREEP: null, TREEH: null, TREERAW: null, TREEF: null, TREEST: '', TREEON: false});
 function treePull() {
   if (TREE_AT) ({TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON} = treeOf(TREE_AT));
-  stateBump(); // the tree in force: an input of the views
+  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
 }
 function treePush() {
   if (TREE_AT) Object.assign(treeOf(TREE_AT), {TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON});
@@ -1676,7 +1677,7 @@ function rankPhotos() {
     // (seenCover; licences break ties).
     if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, treeSeen, p => photoDiff(n, p), treeSpPick)).f;
   });
-  stateBump(); // the tree's photo lists: an input of the views
+  if (typeof stateBump === 'function') stateBump(); // the tree's photo lists: an input of the views
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
 // questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
@@ -1688,9 +1689,10 @@ function subjectLoad(S, keep) {
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
-  stateBump(); // the subject, its records and settings: inputs of the views (and again after the hooks' own state)
+  // the subject, its records and settings: inputs of the views (and again after the hooks' own state)
+  if (typeof stateBump === 'function') stateBump();
   SUBJ_HOOKS.forEach(f => f(keep));
-  stateBump();
+  if (typeof stateBump === 'function') stateBump();
 }
 // fn() run as if S were the current subject, then back (the sync's summary and merge, sign-in, sign-out). Synchronous.
 // SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
@@ -1706,12 +1708,13 @@ function inSubject(id, fn) {
   } finally {
     SUBJ_VISIT--;
     SUBJ = was.S;
-    stateBump(); // the subject on screen back: an input of the views, as its records and settings below
+    // the subject on screen back: an input of the views, as its records and settings below
+    if (typeof stateBump === 'function') stateBump();
     if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
-    stateBump();
+    if (typeof stateBump === 'function') stateBump();
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
@@ -2140,7 +2143,7 @@ const save = () => {
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
 // A unit's record, made empty at its first use (a record made: an input of the views, stateBump).
-const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), stateBump(), P[n]);
+const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump(), P[n]);
 // The false-alarm table (core.js faArm; docs/LEARNING.md "Long rated runs: the false-alarm table") held on P for one
 // synchronous handler that reads the bars (quiz.js answer, quizPhoto, planNext; progress.js achCheck): every bar reads
 // faOf, which otherwise scans every record of P for each unit, so the work of an answer grew with the history. The table
@@ -3142,6 +3145,7 @@ const namesOptsHtml = cur =>
 // the state version (stateView), computed once per version instead of by each of its readers: bonusCalc computes it.
 const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
 const bonusList = stateView('bonusList', bonusCalc);
+const sciUp = stateView('sciUp', sciUpCalc);
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
 // waits while a slate unit in play is still to open (model.js openPick), unless its set brings it by itself (auto: an
 // IMR player's IMR genera) or the player turned the set on by hand before it was due (Q[k + 'H']). Open all is
@@ -4029,7 +4033,7 @@ document.getElementById('signb').onclick = e => {
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due, the What I learn rows back
         // to their defaults
         SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
-        stateBump(); // the records and settings emptied: inputs of the views
+        if (typeof stateBump === 'function') stateBump(); // the records and settings emptied: inputs of the views
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();
