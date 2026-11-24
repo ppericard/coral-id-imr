@@ -1,13 +1,13 @@
 {
- "about": "REE-265 step 0: the ceilings of the work one answer may make, per state (tools/answercost.js, tests/answercost.test.js). Each is the count measured on main (the states of tools/answercost.js, signed out, seed 1) times the margin, rounded up to two significant digits, at least 100 calls: a step that lowers a count tightens its ceilings in the same PR (node tools/answercost.js --write-budget tools/answercost-budget.json --margin 1.1).",
+ "about": "REE-265 step 0: the ceilings of the work one answer may make, per state (tools/answercost.js, tests/answercost.test.js), for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. Each is the largest count measured on main after #1522 over the page's seeds 1 to 3 and one regeneration of the state (the same state and seed give counts that differ by up to 15% from run to run, the seeds by up to 50% on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --write-budget tools/answercost-budget.json --margin 1.1 --also <the --out files of other seeds>.",
  "margin": 1.25,
  "states": {
   "coral:3000": {
-   "namedCalls": 35000,
-   "getCalls": 260,
+   "namedCalls": 38000,
+   "getCalls": 270,
    "getChars": 5700000,
    "setChars": 1700000,
-   "fn:introduced": 580,
+   "fn:introduced": 770,
    "fn:scoreOf": 400,
    "fn:faOf": 200,
    "fn:lvStep": 100,
@@ -33,34 +33,34 @@
    "fn:sheetV": 22000
   },
   "fish:500": {
-   "namedCalls": 1300000,
-   "getCalls": 22000,
-   "getChars": 2400000,
-   "setChars": 560000,
-   "fn:introduced": 64000,
-   "fn:scoreOf": 150000,
-   "fn:faOf": 28000,
+   "namedCalls": 1200000,
+   "getCalls": 26000,
+   "getChars": 3000000,
+   "setChars": 580000,
+   "fn:introduced": 69000,
+   "fn:scoreOf": 73000,
+   "fn:faOf": 39000,
    "fn:lvStep": 5900,
    "fn:bonusList": 100,
-   "fn:lvlNext": 100,
+   "fn:lvlNext": 110,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 22000
+   "fn:sheetV": 25000
   },
   "fish:3000": {
-   "namedCalls": 6400000,
-   "getCalls": 64000,
-   "getChars": 9800000,
-   "setChars": 2300000,
-   "fn:introduced": 1100000,
-   "fn:scoreOf": 30000,
-   "fn:faOf": 11000,
+   "namedCalls": 3300000,
+   "getCalls": 89000,
+   "getChars": 8700000,
+   "setChars": 2200000,
+   "fn:introduced": 150000,
+   "fn:scoreOf": 360000,
+   "fn:faOf": 74000,
    "fn:lvStep": 5900,
    "fn:bonusList": 100,
-   "fn:lvlNext": 1500,
-   "fn:treeScore": 100,
+   "fn:lvlNext": 3000,
+   "fn:treeScore": 200,
    "fn:achSnap": 100,
-   "fn:sheetV": 61000
+   "fn:sheetV": 87000
   }
  }
 }

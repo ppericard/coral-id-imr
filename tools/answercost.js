@@ -15,13 +15,14 @@
 //
 // A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the fish or coral subject, the page's own
 // answers) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in the temporary directory, shared by
-// every worktree); a state of 3,000 fish answers takes about 14 minutes to make, 3,000 corals about 1 minute 20. The
+// every worktree); a state of 3,000 fish answers takes 5 to 14 minutes to make (by the machine's load), 3,000 corals about 1 minute 20. The
 // page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
 // formats), each through the tap, the feedback, the deferred planning, Next and its top-up. V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; store.get and store.set are wrapped to count calls and characters. The page's
-// Math.random is seeded (--seed off: not), so a state gives the same counts at each run: the questions drawn change the
-// counts by several percent otherwise. The page's clock starts --clock seconds (30) after the state's last answer, so the
+// Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
+// seed (fish 3,000 answers: 1.8 to 2.6 M calls over seeds 1 to 3); with the seed fixed the same state still differs by up
+// to 15% from run to run (what the page schedules for idle time), so a ceiling carries a margin. The page's clock starts --clock seconds (30) after the state's last answer, so the
 // player is in the middle of a session whenever the file is played: a gap of several hours since the last answer starts
 // a comeback (model.js rustNow), which draws from fewer units and costs less (fish 50 answers: 0.36 M calls an answer after
 // a gap of hours, 0.51 M inside a session). --clock off: the machine's clock, so the file's age decides.
@@ -474,7 +475,7 @@ async function main() {
     const bad = rows.flatMap(r => over(r, budget)),
       none = rows.filter(r => !(budget.states || {})[r.state]).map(r => r.state);
     if (none.length) console.log(`\nNo ceiling for ${none.join(', ')} in ${budgetFile}: not checked.`);
-    for (const b of bad) console.log(`OVER BUDGET ${b.state}: ${b.metric} ${fmt(b.value)} a answer, ceiling ${fmt(b.ceiling)}`);
+    for (const b of bad) console.log(`OVER BUDGET ${b.state}: ${b.metric} ${fmt(b.value)} per answer, ceiling ${fmt(b.ceiling)}`);
     if (bad.length) {
       console.log(`\n${bad.length} count${bad.length > 1 ? 's' : ''} over the budget of ${budgetFile}: an answer now does more work than it did.`);
       process.exitCode = 1;

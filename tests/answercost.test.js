@@ -67,7 +67,10 @@ test('a ceiling is the count times the margin, two significant digits up, never 
   assert.strictEqual(c['fn:scoreOf'], A.FLOOR, '50.6 calls: the floor');
   assert.strictEqual(c['fn:lvlNext'], A.FLOOR, 'a function the state does not call today may call a few');
   assert.ok(c.getChars >= 5000);
-  const two = A.ceilings([row('fish:50'), row('fish:50', {namedCalls: 2000, store: {getCalls: 1, getChars: 1, setCalls: 1, setChars: 1}})], 1.25);
+  const two = A.ceilings(
+    [row('fish:50'), row('fish:50', {namedCalls: 2000, store: {getCalls: 1, getChars: 1, setCalls: 1, setChars: 1}})],
+    1.25
+  );
   assert.strictEqual(two.namedCalls, 2500, 'several runs of a state: the largest count counts');
   assert.ok(two.getChars >= 5000, 'in each count, not in one run');
 });
@@ -95,7 +98,7 @@ test("the table is the study's, one line a state", () => {
   const t = A.table([row('fish:50', {namedCalls: 319464})]).split('\n');
   assert.strictEqual(t.length, 3);
   assert.match(t[0], /^\| State \| U \| V \| T \| R \| Calls per answer/);
-  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 319,464 \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
+  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
 });
 
 test('--write-budget writes the ceilings of the states measured and keeps the others', () => {
