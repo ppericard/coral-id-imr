@@ -85,7 +85,9 @@ const server = http.createServer((req, res) => {
     // too early, the first genera asked.
     const play = (mk, rate, N) => {
       P = {};
+      stateBump();
       INTROS = {};
+      stateBump();
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
@@ -175,7 +177,9 @@ const server = http.createServer((req, res) => {
     // genus's photos rated easy and its offset low, another's hard and high.
     {
       P = {};
+      stateBump();
       INTROS = {};
+      stateBump();
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
@@ -225,10 +229,13 @@ const server = http.createServer((req, res) => {
     const B = BONUS.filter(n => GX(n));
     if (B.length) {
       P = {};
+      stateBump();
       INTROS = {};
+      stateBump();
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       G.forEach(g => (P[g] = {ok: 8, ko: 2, h: '1101111011', th: 1.5, pg: 0.5}));
+      stateBump();
       out.bonusOpen = openChance([...G, ...B]);
       out.bonusPick = B.includes(openPick([...G, ...B].filter(n => !introduced(n))));
       out.bonusOff = (bonusSet(false), pool().filter(isBonus).length);
@@ -237,7 +244,9 @@ const server = http.createServer((req, res) => {
     // rated twins (made-up ratings at each photo's own prior difficulty: its genus offset, model.js photoDiff).
     {
       P = {};
+      stateBump();
       INTROS = {};
+      stateBump();
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
       store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
@@ -260,6 +269,7 @@ const server = http.createServer((req, res) => {
       PSTAT = Object.fromEntries(L.filter(x => x.f !== f0).map(x => [x.f, [photoDiff(g, x), 40, 30, 40]]));
       // Calibration questions come on a genus the player already holds (met, not shaky).
       P[g] = {ok: 20, ko: 2, h: '1111111111', th: 1.5, L: 0.9};
+      stateBump();
       out.cal = {genus: g, photo: f0, without: shown(false), with: shown(true)};
       PSTAT = keep;
     }

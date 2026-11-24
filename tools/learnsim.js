@@ -26,7 +26,8 @@
 // a paired comparison (tools/learncmp.js).
 // --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
 // against the scan, and a difference stops the run; the same --out as without it, slower. Every storage value kept
-// parsed (sync.js KEPT_CHECK) is checked against a fresh read too.
+// parsed (sync.js KEPT_CHECK) is checked against a fresh read too, and every view of the state version read again
+// (app.js VIEW_CHECK: the units in play) against a computation now.
 // --dump DIR [--dump-at 50,500,3000]: the page's saved state (localStorage) at those questions (every checkpoint without
 // --dump-at, which adds its questions to the checkpoints), one file DIR/<subject>-<profile>-<seed>-<question>.json each,
 // the states tools/answercost.js plays on. Written by a run of the full length only (never a budget's calibration run).
@@ -585,6 +586,7 @@ function play(cfg) {
   // A fresh player (the context's storage is empty): no hold, no gentle restart, no Open all unless --openall.
   P = {};
   INTROS = {};
+  if (typeof stateBump === 'function') stateBump(); // the records and cards written here: the views made again (app.js)
   HOLDS = 0;
   const old = typeof CB === 'undefined'; // an app with the gentle restart (warmLeft) instead of the comeback
   if (old) warmLeft = 0;
@@ -1152,6 +1154,7 @@ function play(cfg) {
       Object.keys(Q).forEach(k => delete Q[k]);
       Object.assign(Q, JSON.parse(snap.Q));
       INTROS = null;
+      if (typeof stateBump === 'function') stateBump(); // the records, settings and cards restored (app.js)
       HOLDS = snap.HOLDS;
       Object.assign(know, snap.know);
       Object.keys(LS).forEach(k => delete LS[k]);
