@@ -2053,3 +2053,34 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   observation's first photo: «ça c'est une exception forte qui n'a pas lieu d'être». On doing as the fish do: «D'accord
   pour que par défaut on fasse partout pareil !». His 2026-11-23 21:05 «il faut justement toutes les prendre» pointed
   the same way. Applied: #1525 (docs/decisions/2026-11-24-seaslug-every-photo.md).
+- **13:50, the digest of the engine's aims (3A-1).** «ok». Applied: LEARNING.md "The players we design for" (#1500).
+- **13:50, the absolute expert (3A-2).** «Le rôle existe déjà en parti. C'est le niveau qui est attendu d'un Curator
+  et/ou d'un Trainer. Mais on pourrait effectivement aussi avoir des experts externes qui jouent. Je ne suis pas
+  forcément très chaud pour leur proposer un "job" pour notre app, donc je préfèrerais qu'on les identifie grace à leur
+  données, et que le moteur fasse son boulot de proposer des challenges. C'est finalement un joueur comme un autre, mais
+  qui est super utile pour notre calibrage». Replaces the aims' sentence on the absolute expert. Applied: LEARNING.md
+  "The players we design for" (#1500).
+- **13:50, the rule of 2026-11-06 on photos under ease 4 before Open Water (3B).** «A mon avis, la règle est trop dure,
+  et appelle des seuils en dur. Comme partout on veut un moteur dynamique et adaptatif, qui s'adapte au joueur et à la
+  base de donnée». On the continuous draw (3B-1): «ok». On where the effect ends, at Open Water or at Advanced (3B-2):
+  «A nouveau ça me gène. Ca veut dire qu'on a une mécanique qui ne s'applique que pour une partie de la progression au
+  lieu d'un mécanisme continue géré par le moteur quelque soit le niveau dans la progression du joueur. Est-ce qu'on
+  peut faire mieux?». Applied: pending (a mechanism continuous over the whole progression, to design).
+- **13:50, #1519 (the ease weight 0.3 and its simulation cost).** «Donc ça va dans le bon sens» and «ok». Applied:
+  pending (#1519).
+- **13:50, judging the 86 older unjudged fish candidates of the REE-243 species.** «ok». Applied: pending (Linear
+  REE-243).
+- **13:50, his own photos.** «Oui. La seule exception que j'ai demandé pour mes photos c'est qu'elles soient
+  systématiquement intégrées à la base de données, et puis jugées comme les autres. Mais ça veut effectivement dire que
+  l'ensemble de mes photos qui remplissent les critères doivent être intégré à l'app et aux jeux, même si on dépasse les
+  seuils. Et puis en pratique peut-être que les seuils eux-même ont besoin d'être relevés vu nos discussions
+  récentes???». Applied: pending.
+- **13:50, reference photos.** «Globalement je pense qu'une note de 5 (qui reste un apriori susceptible d'être faux)
+  doit être donné pour les photos qui cochent toutes les cases de photos d'identifications sur les livres d'ID ou les
+  sites de référence. Ca peut vouloir dire des poses de références différentes selon les sujets. Du coup la ou les poses
+  de références doivent être définies par sujet.». Applied: pending.
+- **13:50, adding photos.** «J'ai l'impression qu'on traine des pieds pour ajouter des photos alors qu'on a
+  effectivement constaté qu'on en manquait. Est-ce que c'est parce qu'on est limité par le stockage en pratique? Faut-il
+  déjà commencé à faire évoluer une partie de nos solutions techniques?». A question to answer. Applied: pending.
+- **13:50, two warnings on unjustified subject differences.** «Warning: mécanisme non commun non justifié», «Warning:
+  exception non justifiée» (the sea slug `dup` room and the sea slug blur cap). Applied: #1525 and #1532.

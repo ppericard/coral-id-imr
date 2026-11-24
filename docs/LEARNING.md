@@ -79,8 +79,10 @@ his to correct). Every change to the draw, the opening, the formats or the photo
    doubt left is the one photo we show when the identifier also saw the observation's other photos (REE-252 measures
    it; REE-194 lists photos other players also miss). A small photo is a fair challenge, not a defect: identifying from
    it is a real skill, and a tap enlarges it (Pierre, 21:05). An expert's challenges come from their own weaknesses,
-   which the engine finds, and from such photos. An absolute expert answers even far, low-detail photos; we accept they can
-   hardly be challenged on identification.
+   which the engine finds, and from such photos. An expert is a player like any other: recognised from their answers,
+   never declared, given no job; the engine's task is to offer them challenges, and their answers are especially useful
+   to calibration. The expert tasks themselves belong to the Curator and Trainer roles (Pierre, 2026-11-24 13:50, his
+   reading; see docs/ANSWERS.md).
 3. **Content is the binding constraint.** Every unit needs a stock at every level: a deep stock of easy photos for the
    beginner, a stock of hard and identifiable photos for the expert. Seeing a photo again is acceptable for a
    beginner; what counts is that what they learn holds on photos they have never seen (the exams and the reserve
