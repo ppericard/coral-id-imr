@@ -430,13 +430,14 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
   detail in its collapsible "Agent notes".
 - **Every open issue is to be done unless it carries a reason not to be** (Pierre, 2026-11-25, REE-244; earlier
-  form 2026-11-21 in ANSWERS). Linear is organised for the agents; Pierre works from the app and the chat. The four
+  form 2026-11-21 in ANSWERS). Linear is organised for the agents; Pierre works from the app and the chat. The five
   reasons:
   1. a choice of Pierre's (label Decision for Pierre, asked in the chat in French);
   2. a checkable condition: a blocked-by relation to an issue or a PR, or a Scheduled date. A free-text "after X" is
      not one;
   3. an idea not decided yet (Idea: building it is a new requirement, his OK first);
-  4. Parked by him.
+  4. Parked by him;
+  5. a Study › Open inquiry with no pass assigned to an agent the integrator can launch.
 
   Backlog holds only issues with one of these reasons; an open issue without one goes to Todo. Every Todo issue not
   assigned to him and not in progress has an agent, High first, evenings and nights included (Rule 0 stops questions,
@@ -445,6 +446,13 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   current directory, and one started inside a PR's worktree takes it over.
 - **The night report counts the night's launches**: the issues launched, and those left open with their reason. An
   issue left without a reason is a rule not followed.
+- **Two kinds of study** (Pierre, 2026-11-25; the label group Study, one kind per issue):
+  - **Decision input**: a study that serves a development decision. It is treated like development work: launched
+    when ready, one pass, done when its note merges with a recommendation.
+  - **Open inquiry**: a deep reflection (design, strategy, critique, market). Its description names in advance who
+    runs its passes (agents and models, some launched by the integrator, some by Pierre). Only the passes assigned to
+    agents the integrator can launch are launched, by the sweep or the drain. Each pass files a dated report; one pass
+    never concludes it. It closes only when Pierre has decided what to do with the synthesis.
 - **Pierre never enters tickets**, relays a subagent's result or approves ordinary bookkeeping. Subagents report; the
   integrator updates Linear, unless the brief tells the subagent to.
 - **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in

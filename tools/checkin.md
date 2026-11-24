@@ -10,7 +10,7 @@ live signals.
 2. **Queue.** Read the queue log (`~/.cache/reefid-queue/nightq.log`, its last line above). Merge only through
    `tools/queue/nightq.sh` ([tools/queue](queue/README.md)). Restart whatever stopped.
 3. **Work comes from Linear, never from this prompt.** Every open issue is to be done unless it carries one of the
-   four reasons of [INTEGRATOR "Linear"](../docs/INTEGRATOR.md#linear). List every open issue, whatever its column,
+   five reasons of [INTEGRATOR "Linear"](../docs/INTEGRATOR.md#linear). List every open issue, whatever its column,
    and give an agent to each one that has no valid reason and is not already in progress, High first, as far as the
    machine slots allow (rule W24). Sensitive files go one PR at a time (rule W27); a held lane is no reason to idle:
    launch the other lanes in parallel. A list of your own that is exhausted is not an empty queue. A judging or

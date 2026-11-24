@@ -2133,3 +2133,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   lancées, parce que justement les développements récents ont permis de débloquer.» To «par défaut, toute issue
   ouverte est à faire […] quatre raisons» and the sweep wording: «oui pour les deux»; to the wording shown: «ok».
   Applied: docs/INTEGRATOR.md "Linear", tools/checkin.md steps 3-4.
+- **06:37-06:47, two kinds of study.** «il y a des issues qui ne dépendent pas forcément complètement de l'équipe de
+  développement et de l'intégrateur, mais plutôt d'agents qui réfléchissent à la conception […] elles peuvent pas être
+  fermées juste parce que y a un agent qui est passé dessus […] Il y a des issues et des tâches qui méritent des
+  réflexions poussées, éventuellement même des réflexions croisées entre plusieurs agents et plusieurs modèles.» On
+  the label: «study, en fait, c'est quelque chose qui est très large comme mot […] est-ce qu'il ne faut pas spécifier
+  ces labels en les rendant un peu plus longs et en faisant des sous-catégories?» To the group Study with Decision
+  input and Open inquiry: «ok». On who runs it: «Ou pas forcément, mais en tout cas elle doit être traité
+  différemment». On launching: «Sauf si on a décidé à l'avance de qui le traitait et que tu couvre au moins une partie
+  de ces agents. Du coup elle peut être lancé et traité partiellement. Jamais complètement conclue». Applied: Linear
+  labels Study › Decision input and Study › Open inquiry; docs/INTEGRATOR.md "Linear" (reason 5, two kinds of study).
+- **06:43-06:46, a PR that waits for Pierre yields the lane.** On whether a PR blocks the rest by function or by
+  method: «c'est pas la même chose en termes de blocage». To «une PR qui attend ta réponse cède la voie»: «oui !!!!!!»;
+  to launching REE-38 at once: «ok»; to the W27 wording shown: «ok». Applied: docs/rules/ship.md W27.
