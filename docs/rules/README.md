@@ -13,6 +13,13 @@ Use an imperative, a short *Why* in our words, and a *Source* with Pierre, the d
 context in the PR description. A friction first gets a guard (hook, test or tool check). Use prose when a guard
 cannot express the requirement.
 
+Prefer to word a rule by what it acts on rather than by the subjects that have it today: a subject's ranks and
+content change (the corals may get their species), and a rule that lists subjects makes an exception by its wording
+alone (Pierre, 2026-11-23 21:25: «que ça soit pas une règle qui crée des exceptions elle-même par la formulation de la
+règle»). Where a rule acts on something a subject lacks, it simply does nothing there. This is a guide to wording, not
+a ban: a real difference between subjects is still named, declared and tested as rule S1 says, and "Corals:" or
+"Fish:" still marks a part that holds for one subject.
+
 ## Words the rules use
 
 The rules are written for every subject (corals, fish…) unless they say otherwise.
