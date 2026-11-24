@@ -31,8 +31,8 @@ section 3 had more clauses; they were not put to him and are not applied).
 **One declared difference, corals** (rule S1; its reason is rule P2): colony, close-up and corallites are separate views,
 so a coral photo is judged `best`, `alt` or `dup` within its observation **and view**, and a zoom that moves it to
 another view is judged within that view, not as an `alt` of the first. A coral `dup` also holds against a photo of the observation already
-live or added (Pierre, 2026-11-03). The sea slugs follow the shared wording; their fetch takes one photo per
-observation today, which is Linear REE-252's change, not a difference this record keeps.
+live or added (Pierre, 2026-11-03). The sea slugs follow the shared wording, and their fetch takes every photo of an
+observation too ([the sea slugs' every photo](2026-11-24-seaslug-every-photo.md)).
 
 ## Consequences
 

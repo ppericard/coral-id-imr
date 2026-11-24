@@ -109,7 +109,7 @@ JF.ROOT = ${JSON.stringify(dir)}
 JF.use('seaslug')
 ${code}`);
 
-test('the judging files: keep optional (one photo per observation), the egg rule, no phase; the fish curation never read', () => {
+test('the judging files: keep optional (read as best: one candidate per observation), the egg rule, no phase; the fish curation never read', () => {
   const dir = world({
     'judging/seaslug/900.json': {
       photos: {

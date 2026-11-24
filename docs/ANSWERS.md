@@ -1993,3 +1993,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   `dup`, a burst or the same framing, with nothing new to see; `alt`, another zoom, framing, angle or pose of the same
   animal or colony (his word is «ok», the wording is the integrator's). Nothing judged again. Applied: judging/FISH.md,
   judging/SEASLUG.md, judging/BRIEF.md `keep`; decisions/2026-11-24-what-a-duplicate-is.md (#1524).
+- **06:45, the sea slugs take every photo of an observation (REE-252).** On the sea slug fetcher taking only each
+  observation's first photo: «ça c'est une exception forte qui n'a pas lieu d'être». On doing as the fish do: «D'accord
+  pour que par défaut on fasse partout pareil !». His 2026-11-23 21:05 «il faut justement toutes les prendre» pointed
+  the same way. Applied: #1525 (docs/decisions/2026-11-24-seaslug-every-photo.md).

@@ -51,7 +51,8 @@ function appOf(subj, X0, Fx, {sheet = 1000, bar = {}, met = new Set()} = {}) {
   vm.runInContext(
     [
       block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
-      block(APP, 'function lvlNext(O, L, met) {', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
       block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const kindOf = n =>', '// The scientific genera in play', {file: 'app.js'}),
       block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
