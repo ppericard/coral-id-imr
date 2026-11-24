@@ -72,13 +72,13 @@ Every workflow in `.github/workflows/` (`tests/docs.test.js` checks that this ta
 | `checks.yml` — Checks | Pull requests, pushes to a merge train's branch `train/*` (`tools/train.py`, rule W26) and manual dispatch (not pushes to `main`). The fast checks in the job `checks`, the unit tests (`tests/docs.test.js` among them) in two shards, `unit tests (1/2)` and `(2/2)`, on runners of their own, and the sheet's `VERSION` rules (rule D3). Commits nothing. | No |
 | `smokes.yml` — Smokes | Pull requests that change more than docs (`paths-ignore`: `docs/**`, `*.md`, the PR template, `LICENSE`; Pierre, 2026-11-08, Q305), every push to `train/*`, and manual dispatch. Its jobs named `smoke (<name>)` run the Playwright smoke tests in parallel, pages in four groups, fish in two, admin whole at 390 px and in three groups at 1280, and `staged`, the copy as the deploy builds it (`tests/smokeparts.test.js` checks every group has a job here). Commits nothing. | No |
 | `approved-photos.yml` — Candidate photos | Push to `main` changing `curation.json` (admin Publish or a PR merge touching it), `data/suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json`, `tools/fish_game.py` or `fish-photos.json` (a sheet-only fish photo to download); also manual dispatch, and weekly (Wednesday 03:47 Manila) for the licence refresh (`tools/licences.py`, which runs on the schedule and by hand only). Its `photos` job (read-only) makes the commit `Candidate photos: download added ones, refill the lists` (`data.json`, `data/cand.json`, `data/excluded.json`, `fish-game.json`, `fish-photos.json`, `data/fish-cand.json` and `tools/fish_refs.json` (the licence refresh), `img/`) and hands it as a patch to `photos-push`, which checks it touches only those files and pushes it; its `fish` job (read-only) does the same for `Candidate photos: refill the short fish species` (`data/fish-cand.json`, `tools/fish_refill.json`), pushed by `fish-push`; its `r2` job copies `img/` to R2. Read-only token but for the two push jobs, which run no repository code and hold it in their `Commit` step only; no checkout keeps credentials; Pillow installed by hash (docs/SECURITY.md). | No (its completion starts Deploy Pages, a few seconds after the run's last job, `r2` included: about 6 minutes after the photos commit, measured 2026-11-21) |
-| `pages.yml` — Deploy Pages | Every push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. Stages the commit (`git archive`), builds the copy (`tools/build_site.py`: the players' curation, the stamps, the scripts minified; "The build at deploy" below), plays it (`tests/staged.smoke.js`), then publishes it. Commits nothing. | **Yes, the only deployer** |
+| `pages.yml` — Deploy Pages | Every push to `main`, manual dispatch on `main`, and completion of Candidate photos on `main` (any conclusion). No path filter, so curation-only publishes deploy too. Stages the commit (`git archive`), builds the copy (`tools/build_site.py`: the players' curation, the stamps, the scripts minified; "The build at deploy" below), plays it (`tests/staged.smoke.js`), then waits, at most 60 s, until the run lists its artifact ("The artifact wait" below), then publishes it. Commits nothing. | **Yes, the only deployer** |
 | `photos-r2.yml` — Photos to R2 | Push to `main` changing `img/**`, and manual dispatch. Copies `img/` to the Cloudflare R2 bucket and checks it (`tools/r2_sync.sh`); commits nothing. | No |
 | `photo-recheck.yml` — Photo re-check | Weekly schedule (Wednesday 20:17 UTC) and manual dispatch, permission `contents: read`, no secret. Asks iNaturalist again for every game photo's observation and judges it by its fetcher's own predicate (`tools/photo_recheck.py`), then uploads the artifact `photo-recheck` (report, failing list, JSON). Changes no data, never `curation.json` (rule A1), not the sheet; commits nothing. | No |
 | `r2-unused.yml` — R2 unused files | Manual dispatch only, permission `contents: read`. Lists the whole R2 bucket (`tools/r2_list.sh`, rclone `lsjson`, read only), compares it with what the repository uses (`tools/r2_unused.py`) and uploads the artifact `r2-unused` (report, unused and doubtful lists). Deletes and changes nothing; commits nothing. | No |
 | `reefid-originals.yml` — IMR lecture originals to R2 | Push to `main` changing `tools/imr_frames.json`, and manual dispatch. Downloads the 86 Corals of the World originals of the IMR lecture photos (one request every 2 s, `www.coralsoftheworld.org` only), cuts them with the framing in force (Pierre's crop over the lecture's) and uploads their four sizes to R2 (`tools/r2_sync.sh r2-upload`); read only, commits nothing. Same `candidate-photos` concurrency group as `approved-photos.yml` (which remakes a lecture photo when Pierre crops it), not `photos-r2` (both would deadlock with that workflow's `r2` job). | No |
 | `analyses.yml` — Analyses report | Hourly schedule and manual dispatch (`force`). Reads the answer log and stores the report in the sync sheet (`tools/analyses.js`); skipped without `ANALYSES_ADMIN_TOKEN`; commits nothing. | No |
-| `health.yml` — Health | Hourly schedule (minute 41) and manual dispatch. Checks the live site, the sync script and the infrastructure numbers (`tools/health.py`; "Infrastructure health" below); a failed check fails the job (GitHub e-mails it) and opens one issue labelled `health` unless one is open. The script takes a few seconds (2.4 s by hand, 2026-11-18), a run well under a minute; read-only repository token plus issues, no secret; commits nothing. | No |
+| `health.yml` — Health | Hourly schedule (minute 41) and manual dispatch. Checks the live site, **that the live build holds main's recent commits** (REE-279, "Infrastructure health" below), the sync script and the infrastructure numbers (`tools/health.py`); a failed check fails the job (GitHub e-mails it) and opens one issue labelled `health` unless one is open. The script takes a few seconds (2.4 s by hand, 2026-11-18), a run well under a minute; read-only repository token plus issues, no secret; commits nothing. | No |
 | `learncheck.yml` — Learning check (tier 2) | Manual dispatch only: two versions (`before`, `after`), a subject, the app world, the rated world or both, seeds, questions or answers, the primary declared and its world, the looks, more learnsim options. Runs `tools/learnsim.js` on both versions with the same seeds and `tools/learncmp.js` on them; the report goes to the run's summary (rule L11, docs/LEARNING.md "Validating a learning change"). Commits nothing, no artifact. | No |
 | `clean.yml` — Clean branches and Actions | Weekly schedule (Sundays 18:37 UTC) and manual dispatch (`dry_run` by default, `also_delete`). Deletes merged branches, merge-train branches older than two days, and the runs of workflows no longer on `main`; keeps open-PR branches and its `KEEP` list (docs/HANDOVER.md "Clean branches and Actions"). Commits nothing. | No |
 | `pages-cancel.yml` — Cancel stuck Pages deployment | Manual dispatch only, with the SHA named in the error. Cancels that Pages deployment ("Manual recovery" below). | No |
@@ -106,6 +106,46 @@ cleanup. `deploy-pages` also handles cancellation signals. This prevents ordinar
 Actions queue blockage; **it cannot guarantee that GitHub's Pages backend will
 release an orphan lock**. That is a different state, with its own cancellation API.
 
+## The artifact wait (REE-279, 2026-11-24)
+
+**What failed.** From 2026-11-23 20:43 UTC, 16 of 32 Deploy Pages runs on `main` failed with the same error:
+`actions/deploy-pages@v5` logged `Found 0 artifact(s)` and `No artifacts named github-pages were found for this workflow
+run`, about 0.5 s after `upload-pages-artifact` had finalised the artifact, which the run listed a moment later (retention 1
+day, 17.5 MB, same action SHAs and runner as the passing runs; no githubstatus.com incident). A failed deploy leaves the
+site on the previous good build: each deploy publishes `main` as it stands when its job starts, so the next good deploy
+catches everything up. The reading is a read-after-write lag on GitHub's side (an inference from the logs), the same kind
+of "GitHub-side, not ours" failure as the stuck lock above. The evidence is in the REE-279 comments.
+
+**The wait.** A step between the upload and `deploy-pages` (`pages.yml`, "Wait until the run lists its Pages artifact")
+asks `repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages` at once, then every 2 s, for at most
+60 s, and prints each attempt with when its call was sent and answered, in milliseconds since the step began (which follows
+the upload step directly). Listed: a `::notice title=pages-artifact-lag` ("listed at attempt K (call sent at +A ms, answered
+at +B ms)") and a line in the run's summary, so the lag is counted across runs rather than hidden. Never listed:
+`::error title=pages-artifact-lag` and the job fails there; if no listing call was ever answered, the error says the
+listing never answered, with its last error, instead of claiming the artifact was not listed. A listing call that itself
+fails (HTTP error) is one more attempt, not a crash. It needs the job permission `actions: read` (added to the job only;
+the workflow's own stays `contents: read`), and it never re-runs or retries the deploy itself. Only a push to `main` runs
+the job, so a pull request's CI cannot exercise the step: `tests/pageswait.test.js` runs its script on a fake clock, and the
+first Deploy Pages run after the merge is its first real run.
+
+**What it does not prove** (read this before trusting it). `deploy-pages` v5 does not read the run's artifacts from this REST
+listing: its `getArtifactMetadata` (`src/internal/api-client.js` at the pinned `368f825`) calls the Actions results
+service's `ListArtifacts` (Twirp) with the runtime token, once, with no retry. The wait polls a neighbouring listing, which
+may or may not lag as the one the action reads (not verified: the runtime token is not available to a `run:` step). How to
+read the next failure:
+Discriminate by the attempt number, not by the milliseconds (a call takes some time even when it answers at once, so attempt 1
+reads a few hundred ms on a real runner):
+- `listed at attempt 1` and `deploy-pages` still finds 0: the wait watches the wrong listing; it helped nothing, and the lag
+  it printed is that of the REST listing only;
+- `listed at attempt 1` and `deploy-pages` passes: proves nothing, since the step's own duration also delays `deploy-pages`
+  (the delay alone may be what helps); a fall in failures cannot be credited to the poll;
+- `listed at attempt 2` or later, then `deploy-pages` passes: the REST listing lagged and the wait absorbed it (the lag is
+  printed); the same, then `deploy-pages` finds 0, shows the two listings lag differently;
+- the wait fails after 60 s: the artifact really was not listed that long (a different failure: look at the upload step), or
+  the listing never answered (the error says which).
+If failures continue with attempt 1 every time, the wait has done what it can: a fresh dispatch of Deploy Pages on `main`
+catches the site up ("Manual recovery"; the Health check below says when it is behind), and the cause is GitHub's to fix.
+
 ## Infrastructure health
 
 Pierre, 2026-11-18 11:21 ("lance 1, 2, 3 et 4"): an hourly check that the platform answers, and the numbers to watch before
@@ -116,6 +156,23 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
 **The hourly check** (`health.yml`, `tools/health.py`; nothing it prints holds a secret, the log is public):
 - the site: `index.html` answers 200 and every `file.js?v=` in it is stamped with 10 hex (an unstamped `?v=N` means the
   deploy's stamping did not run), and the `data.json?v=…` its preload names answers 200 with JSON;
+- **the live build against `main`** (REE-279; the integrator's call, easy to correct): the live `index.html`'s
+  `<meta name="build">` is the run number of a Deploy Pages run (`tools/stamp_versions.py`, `--build "${{ github.run_number }}"`),
+  found among the latest 300 successful runs of `pages.yml` on `main`. A deploy publishes `main` as it stands when its job
+  starts, so a commit whose committer date is after that run's `run_started_at` is **not live**. The date is when the commit
+  reached `main` for a squash merge through the API, a bot commit and the admin's Publish, so the clock starts there. The
+  oldest commit not live waiting **more than 45 minutes** (`STALE_MIN`; the 30 latest successful deploys took 46 to 82 s, measured
+  2026-11-24, and a bot commit is published about 6 minutes after it, so 45 minutes allows several failed runs) fails the check, which
+  fails the job (e-mail, and the `health` issue below), naming up to five of the commits (short SHA and subject); fewer
+  minutes is a note ("a deploy is expected"). A gap on GitHub's side (no build number, the API refusing, a run out of the
+  list) is a note naming the HTTP status, never a failure. An approximation: dates stand for ancestry, so a commit that
+  reached `main` between the job's start and its checkout counts as not live even if that run published it (a newer run normally replaces it
+  within minutes, and a false alarm needs 45), and a commit that reached `main` with an older date (a fast-forward, which the project does not use) would count as
+  live. **Where it shows**: the run's report and issue, the failed job's e-mail, and
+  the brief's `Infra:` line (`Site STALE: N commit(s) of main not live, the oldest M min, live build B (…)`, also in the short
+  brief). Not in the admin: its To do › Alerts card reads the sheet and GitHub live with the admin's own token, never the
+  Health run, so a stale site does not reach it from here. It is read with the job's `GITHUB_TOKEN` (`contents: read`); if the
+  first runs say `HTTP 403`, Health's permissions need `actions: read` (an access decision, left to the integrator);
 - the sync script answers the app's own public read-only request (`?stats=1&av=health`: an `av` that is no build number, so
   the script writes nothing to Events for it) with `ok` and its `v`; behind `main`'s `VERSION` is a note inside the
   self-update window (an hour after `Code.gs` last changed on `main`) and a failure after it (`autoUpdate` is stuck); the

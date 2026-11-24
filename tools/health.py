@@ -18,6 +18,14 @@ Checks, each read-only and with no name, code or secret in anything it prints (a
    without INFRA_TOKEN the line says so and passes; with it, `readInfra` says when the last backup saved, and one older
    than BACKUP_DAYS fails. The workflow does not pass the token (an access decision for Pierre: docs/PAGES.md).
 
+4. the live build against main (REE-279, option 3: Deploy Pages failed about every second run from 2026-11-23, 'Found 0
+   artifact(s)', leaving the site on an older build with nobody looking): the `<meta name="build">` of the live index.html is
+   a Deploy Pages run number; that run's start time says which commits of main it could hold (a deploy publishes main as it
+   stands when its job starts), and a commit of main dated after it is not live. The oldest not-live commit waiting more than
+   STALE_MIN (45) minutes fails the check (the job fails, its issue and e-mail follow) and names the commits; fewer minutes is a
+   note. A gap on GitHub's side (no build number, the API refusing, the run out of the last 300 successes) is a note naming
+   the HTTP status, never a failure. The snapshot keeps a small `deploy` entry for `tools/brief.py`'s Infra line.
+
 The infrastructure numbers (what to watch before the platform outgrows its free tiers), in the run's summary and, as one
 `::notice title=infra::{json}` annotation, for `tools/brief.py` to read: the published site's size against GitHub Pages' 1 GB
 (the tracked files of `main` the deploy does not leave out: `.gitattributes` export-ignore; before minifying), R2's storage
@@ -49,6 +57,8 @@ WARN = 0.70  # a warning past 70 % of a limit (the same in tools/brief.py and ad
 # TIM.SLOW: an operation the script keeps whole whenever it is that slow; our own budget, not a platform quota).
 LIMITS = {'cells': 10_000_000, 'pages': 10**9, 'r2': 10 * 10**9, 'slow': 5000}
 BACKUP_DAYS = 8  # the backup is weekly (Sundays about 02:00 Manila)
+STALE_MIN = 45  # a commit on main not live after 45 minutes: the site is stale (REE-279; the 30 latest successful deploys took 46-82 s, 2026-11-24, a bot commit about 6 min)
+DEPLOY_PAGES = 'pages.yml'  # the only deployer (docs/PAGES.md); its run number is the live build number
 BEHIND_MIN = 60  # the script updates itself every 15 minutes: an hour behind main is stuck
 VERSIONS_MAX = 200  # Apps Script keeps 200 versions a project (Code.gs SELF_VERSIONS.MAX): at 200 the self-update stops
 INFRA_STALE_DAYS = 30  # the hand-measured R2 figure is old after a month
@@ -119,12 +129,23 @@ def res(name, ok, note, level_='ok'):
 # --- 1. the site ---------------------------------------------------------------------------------------------------------
 
 
-def check_site(get, base=SITE, pause=3):
+def build_of(html):
+    """The deploy's run number, from `<meta name="build" content="N">` (tools/stamp_versions.py), or None."""
+    m = re.search(r'<meta name="build" content="(\d+)">', html)
+    return int(m.group(1)) if m else None
+
+
+def check_site(get, base=SITE, pause=3, info=None):
+    """info, when given, receives `build`: the live build number (None when index.html was not read or names none)."""
     out = []
+    if info is not None:
+        info['build'] = None
     s, b = twice(get, base + 'index.html', pause, lambda s, b: s == 200 and b'?v=' in b)
     if s != 200:
         return [res('site: index.html', False, 'HTTP %s' % s if s else 'no answer (%s)' % b.decode('ascii', 'replace')[:40])]
     html = b.decode('utf8', 'replace')
+    if info is not None:
+        info['build'] = build_of(html)
     refs = REF.findall(html)
     bad = sorted({'%s?v=%s' % r for r in refs if not HEX10.match(r[1])})
     if not refs:
@@ -146,6 +167,80 @@ def check_site(get, base=SITE, pause=3):
         res('site: data.json', bool(j), '200, %d bytes' % len(b) if j else ('HTTP %s' % s if s != 200 else 'not JSON or empty'))
     )
     return out
+
+
+# --- 1b. the live build against main (REE-279) --------------------------------------------------------------------------------
+
+
+def when(s):
+    """A GitHub timestamp (2026-11-24T07:21:34Z) as an aware datetime, or None."""
+    try:
+        return datetime.strptime(s, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def deploy_run(get, build, token):
+    """(the successful Deploy Pages run on main whose run number is `build`, why not): the build number stamped in the live
+    index.html is that run's `github.run_number` (pages.yml, `tools/build_site.py --build`). Looks in the latest 300 successes."""
+    for page in (1, 2, 3):
+        s, j = api_status(get, 'repos/%s/actions/workflows/%s/runs?branch=main&status=success&per_page=100&page=%d' % (REPO, DEPLOY_PAGES, page), token)
+        if not isinstance(j, dict) or not isinstance(j.get('workflow_runs'), list):
+            hint = ' (this job\'s token may need actions: read)' if s in (401, 403) else ''
+            return None, 'the Deploy Pages runs: %s%s' % ('HTTP %s' % s if s else 'no answer', hint)
+        runs = j['workflow_runs']
+        for r in runs:
+            if r.get('run_number') == build:
+                return r, None
+        if len(runs) < 100:
+            break
+    return None, 'build %d is not among the latest successful Deploy Pages runs on main' % build
+
+
+def check_deploy(get, build, token, now, stale_min=STALE_MIN):
+    """(result, what the snapshot keeps or None): is main's tip live, and if not, for how long has it waited?
+
+    The live site is the Deploy Pages run whose number is the stamped build. A deploy publishes main as it stands when its
+    job starts (pages.yml checks out `main`; docs/PAGES.md), so a commit is **live** when its committer date is not after that
+    run's `run_started_at`, and **not live** when it is after: for a squash merge (the API's date is the merge), the bot
+    commits and the admin's Publish, the date is when the commit reached main. The oldest commit not live decides: waiting
+    more than `stale_min` minutes fails (REE-279 option 3: Health's issue and e-mail), inside it is a note. Every gap on
+    GitHub's side (no build number, the API down or refusing, a run out of the list) is a "not read" note naming the
+    status, never a failure: this check must not fail for what it cannot see."""
+    name = 'site: live build vs main'
+
+    def unread(why):
+        return res(name, True, why, 'notice'), None
+
+    if build is None:
+        return unread('not read: index.html names no build number')
+    run, why = deploy_run(get, build, token)
+    if run is None:
+        return unread('not read: ' + why)
+    started = when(run.get('run_started_at') or run.get('created_at'))
+    if started is None:
+        return unread('not read: Deploy Pages run %d has no start time' % build)
+    s, j = api_status(get, 'repos/%s/commits?sha=main&since=%s&per_page=100' % (REPO, started.strftime('%Y-%m-%dT%H:%M:%SZ')), token)
+    if not isinstance(j, list):
+        return unread("not read: main's commits: %s" % ('HTTP %s' % s if s else 'no answer'))
+    ahead = []
+    for c in j:
+        d = when(((c.get('commit') or {}).get('committer') or {}).get('date'))
+        if d and d > started:
+            subject = ((c.get('commit') or {}).get('message') or '').split('\n')[0].strip()
+            ahead.append((d, '%s %s' % (str(c.get('sha', ''))[:7], subject[:60])))
+    at = started.strftime('%H:%MZ')
+    if not ahead:
+        return res(name, True, 'build %d (run started %s) has every commit on main' % (build, at)), {'build': build, 'ahead': 0}
+    ahead.sort()
+    waited = max(0, int((now - ahead[0][0]).total_seconds() // 60))
+    n = '%d%s' % (len(ahead), '+' if len(j) >= 100 else '')
+    shown = [t for _, t in ahead[:5]]
+    names = '; '.join(shown) + (' (and %d more)' % (len(ahead) - 5) if len(ahead) > 5 else '')
+    snap = {'build': build, 'ahead': len(ahead), 'min': waited, 'stale': waited > stale_min, 'commits': shown}
+    if waited > stale_min:
+        return res(name, False, 'main is %s commit(s) ahead of the live build %d (run started %s); the oldest has waited %d min (limit %d). Not live: %s' % (n, build, at, waited, stale_min, names)), snap
+    return res(name, True, '%s commit(s) on main since the live build %d (run started %s), the oldest %d min ago: a deploy is expected. Not live: %s' % (n, build, at, waited, names), 'notice'), snap
 
 
 # --- 2. the sheet script -------------------------------------------------------------------------------------------------
@@ -264,15 +359,20 @@ def pages_size(tree, ignored):
     )
 
 
-def api(get, path, token=None):
+def api_status(get, path, token=None):
+    """(HTTP status, the parsed JSON or None): the status is kept for the checks whose "not read" note names it."""
     h = {'Accept': 'application/vnd.github+json'}
     if token:
         h['Authorization'] = 'Bearer ' + token
     s, b = get('https://api.github.com/' + path, headers=h)
     try:
-        return json.loads(b) if s == 200 else None
+        return s, (json.loads(b) if s == 200 else None)
     except ValueError:
-        return None
+        return s, None
+
+
+def api(get, path, token=None):
+    return api_status(get, path, token)[1]
 
 
 def code_gs_age_min(get, token, now=None):
@@ -317,8 +417,12 @@ def items_of(pages, hand, infra, today):
 # --- the run ----------------------------------------------------------------------------------------------------------------
 
 
-def snapshot(results, items, now):
-    return {'at': now.strftime('%Y-%m-%dT%H:%M:%SZ'), 'ok': all(r['ok'] for r in results), 'items': items}
+def snapshot(results, items, now, deploy=None):
+    """The `infra` annotation tools/brief.py reads. `deploy` (REE-279): the live build against main, kept small (at most 5 commits)."""
+    snap = {'at': now.strftime('%Y-%m-%dT%H:%M:%SZ'), 'ok': all(r['ok'] for r in results), 'items': items}
+    if deploy:
+        snap['deploy'] = deploy
+    return snap
 
 
 def markdown(results, items):
@@ -361,8 +465,9 @@ def run(get, post, env, root=ROOT, today=None, now=None, pause=3):
     def infra():
         return read_infra(post, url, itok) if itok and url else None
 
+    live = {}  # check_site leaves the live build number here
     with ThreadPoolExecutor(max_workers=4) as pool:
-        f = {'site': pool.submit(check_site, get, SITE, pause), 'sheet': pool.submit(sheet), 'tree': pool.submit(tree), 'infra': pool.submit(infra)}
+        f = {'site': pool.submit(check_site, get, SITE, pause, live), 'sheet': pool.submit(sheet), 'tree': pool.submit(tree), 'infra': pool.submit(infra)}
         got = {}
         for k, fut in f.items():
             try:
@@ -373,9 +478,13 @@ def run(get, post, env, root=ROOT, today=None, now=None, pause=3):
     infra_reply = got['infra'] if itok else None
     if itok and infra_reply is None:
         infra_reply = {}
-    results = got['site'] + [sheet_res, check_backup(infra_reply, now.timestamp())]
+    try:  # after the site check, which reads the build number; one more GitHub read or two, never able to stop the rest
+        dep, deploy = check_deploy(get, live.get('build'), gh, now)
+    except Exception as e:  # noqa: BLE001
+        dep, deploy = res('site: live build vs main', True, 'not read: ' + type(e).__name__, 'notice'), None
+    results = got['site'] + [dep, sheet_res, check_backup(infra_reply, now.timestamp())]
     items = items_of(got['tree'], hand, got['infra'] if isinstance(got['infra'], dict) else None, today)
-    return results, items, snapshot(results, items, now)
+    return results, items, snapshot(results, items, now, deploy)
 
 
 def main():

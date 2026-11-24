@@ -50,6 +50,82 @@ test('the site check: stamps, data.json, one retry, and what fails', () => {
   assert.strictEqual(level('data_bad', 'site: data.json'), 'fail');
 });
 
+// ---- the live build against main (REE-279, option 3) ------------------------------------------------------------------------------
+const LIVE = 'site: live build vs main';
+test('the live build against main: the build number is a Deploy Pages run, a commit dated after its start is not live', () => {
+  assert.strictEqual(level('ok', LIVE), 'ok');
+  assert.match(note('ok', LIVE), /^build 1490 \(run started 04:50Z\) has every commit on main$/);
+  const asked = S.ok.calls.map(c => c.url);
+  assert.ok(
+    asked.includes(
+      'https://api.github.com/repos/ppericard/coral-id-imr/actions/workflows/pages.yml/runs?branch=main&status=success&per_page=100&page=1'
+    ),
+    'the successful Deploy Pages runs of main'
+  );
+  assert.ok(
+    asked.includes('https://api.github.com/repos/ppericard/coral-id-imr/commits?sha=main&since=2026-11-18T04:50:00Z&per_page=100'),
+    "main's commits since the live run started"
+  );
+  assert.strictEqual(level('deploy_edge', LIVE), 'ok', 'dated exactly at the run start: it was there');
+  assert.strictEqual(level('deploy_page2', LIVE), 'ok', 'a run past the first 100: the next page is read');
+  assert.strictEqual(S.deploy_page2.calls.filter(c => c.url.includes('/pages.yml/runs')).length, 2);
+});
+
+test('the live build: waiting past 45 minutes fails and names the commits; inside it is a note; the snapshot keeps them', () => {
+  assert.strictEqual(level('deploy_ahead_recent', LIVE), 'notice');
+  assert.strictEqual(S.deploy_ahead_recent.ok, true, 'a deploy under way is not a failure');
+  assert.match(note('deploy_ahead_recent', LIVE), /^1 commit\(s\) on main since the live build 1490 .*5 min ago.*aaaaaaa Fish judging/);
+  assert.strictEqual(level('deploy_ahead_exactly_45', LIVE), 'notice', 'exactly 45 minutes is not past it');
+  assert.strictEqual(level('deploy_stale', LIVE), 'fail');
+  assert.strictEqual(S.deploy_stale.ok, false, 'the job fails: GitHub e-mails it and the workflow opens the health issue');
+  assert.match(
+    note('deploy_stale', LIVE),
+    /^main is 2 commit\(s\) ahead of the live build 1490 \(run started 03:40Z\); the oldest has waited 50 min \(limit 45\)/
+  );
+  assert.match(
+    note('deploy_stale', LIVE),
+    /ddddddd Photo curation: tile photos; ccccccc Candidate photos/,
+    'the commits not live, oldest first'
+  );
+  assert.doesNotMatch(note('deploy_stale', LIVE), /eeeeeee/, 'a commit dated before the live run started is live');
+  assert.match(note('deploy_many', LIVE), /7 commit\(s\) ahead.*commit 4 \(and 2 more\)$/, 'five named, the rest counted');
+  assert.deepStrictEqual(
+    S.deploy_stale.md.match(/\| site: live build vs main \| FAILED: [^|]*\|/)?.length,
+    1,
+    'the report the issue is opened from'
+  );
+  assert.strictEqual(S.ok.md.match(/live build vs main \| ok:/).length, 1);
+});
+
+test("the live build: every gap on GitHub's side is a note naming the status, never a failure", () => {
+  for (const k of ['deploy_runs_403', 'deploy_runs_down', 'deploy_run_missing', 'deploy_commits_500', 'deploy_no_build']) {
+    assert.strictEqual(level(k, LIVE), 'notice', k);
+    assert.strictEqual(S[k].ok, true, k + ': no failure for what the check cannot see');
+    assert.match(note(k, LIVE), /^not read: /, k);
+  }
+  assert.match(note('deploy_runs_403', LIVE), /HTTP 403.*actions: read/, "the token's missing permission is named");
+  assert.match(note('deploy_runs_down', LIVE), /no answer/);
+  assert.match(note('deploy_run_missing', LIVE), /build 1490 is not among the latest successful Deploy Pages runs/);
+  assert.match(note('deploy_commits_500', LIVE), /HTTP 500/);
+  assert.match(note('deploy_no_build', LIVE), /index\.html names no build number/);
+  assert.strictEqual(S.deploy_no_build.calls.filter(c => c.url.includes('/pages.yml/')).length, 0, 'no build number: no run is asked');
+});
+
+test('the live build: the snapshot carries a small `deploy` entry the brief names the commits from; healthy leaves the line as it was', () => {
+  assert.strictEqual(F.B.stale[1], true, 'a look is asked');
+  assert.match(
+    F.B.stale[0],
+    /Health check FAILED .* · Site STALE: 2 commit\(s\) of main not live, the oldest 50 min, live build 1490 \(ddddddd Photo curation: tile photos; ccccccc Candidate photos/
+  );
+  assert.ok(!F.B.stale[0].includes('\n'), 'one line');
+  assert.doesNotMatch(F.B.ahead_recent[0], /STALE/, 'inside the window: nothing in the brief');
+  assert.strictEqual(F.B.ahead_recent[1], false);
+  assert.doesNotMatch(F.B.healthy[0], /STALE|build/);
+  const src = read('tools/health.py');
+  assert.match(src, /STALE_MIN = 45/);
+  assert.match(src, /DEPLOY_PAGES = 'pages\.yml'/);
+});
+
 test('the sheet script check: the public read-only request, its version, behind main', () => {
   const asked = S.ok.calls.filter(c => c.url.includes('?stats=1'));
   assert.deepStrictEqual(

@@ -21,6 +21,8 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      # Only to list this run's artifacts in the wait step before deploy-pages (REE-279).
+      actions: read
     # Job-level so an off-main dispatch cannot cancel production before its if.
     concurrency:
       group: pages
@@ -96,6 +98,53 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ runner.temp }}/pages
+      # REE-279: since 2026-11-23 about half the deploys failed with "Found 0 artifact(s)" from deploy-pages, about 0.5 s after
+      # the upload finalised an artifact that the run lists a moment later. This step waits, bounded, until the run lists its
+      # `github-pages` artifact through the REST listing, and prints every attempt with when its call was sent and answered
+      # (milliseconds from the start of this step, which follows the upload step at once), so the lag is counted, not hidden.
+      # It never re-runs or retries the deploy; if the artifact never shows, the job fails here with its own error. Caveat:
+      # deploy-pages v5 reads the run's artifacts from the Actions results service (Twirp ListArtifacts, the runtime token),
+      # not from this REST listing (actions/deploy-pages src/internal/api-client.js at 368f825), so a listing here is evidence
+      # about a neighbour of what the action reads: "listed at attempt 1, deploy still found 0" means this wait watches the
+      # wrong listing (docs/PAGES.md "The artifact wait").
+      - name: Wait until the run lists its Pages artifact (bounded, logged)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          start=$(date +%s%3N)
+          limit=60000
+          attempt=0
+          answered=0
+          failure=
+          while :; do
+            attempt=$((attempt + 1))
+            asked=$(( $(date +%s%3N) - start ))
+            if reply=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq '.total_count' 2>&1); then
+              count=$reply
+              answered=$((answered + 1))
+            else
+              count=0
+              failure=$(echo "$reply" | head -c 200)
+              echo "attempt $attempt: the listing call failed: $failure"
+            fi
+            lag=$(( $(date +%s%3N) - start ))
+            echo "attempt $attempt, sent at +${asked} ms, answered at +${lag} ms after the upload step: $count artifact(s) named github-pages listed"
+            if [ "$count" -ge 1 ] 2>/dev/null; then
+              echo "::notice title=pages-artifact-lag::listed at attempt $attempt (call sent at +${asked} ms, answered at +${lag} ms)"
+              echo "Artifact listed at attempt $attempt (call sent at +${asked} ms, answered at +${lag} ms after the upload step)." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [ "$lag" -ge "$limit" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ "$answered" = 0 ]; then
+            echo "::error title=pages-artifact-lag::the artifact listing never answered in $((limit / 1000)) s (${attempt} attempts; last error: $failure). Nothing was deployed; see docs/PAGES.md."
+          else
+            echo "::error title=pages-artifact-lag::the run listed no github-pages artifact $((limit / 1000)) s after the upload step (${attempt} attempts, ${answered} answered). Nothing was deployed; see docs/PAGES.md."
+          fi
+          exit 1
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

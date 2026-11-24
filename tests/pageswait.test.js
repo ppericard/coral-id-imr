@@ -1,0 +1,137 @@
+'use strict';
+require('./slot.js').testGuard();
+// REE-279: the step of .github/workflows/pages.yml that waits, bounded and logged, until the run lists its `github-pages`
+// artifact before deploy-pages (docs/PAGES.md "The artifact wait"). The step's own script runs here under bash, with `gh`,
+// `date` and `sleep` replaced by shims on a fake clock: no network, no real wait (rule D1).
+const test = require('node:test'),
+  assert = require('node:assert'),
+  fs = require('fs'),
+  os = require('os'),
+  path = require('path'),
+  {spawnSync} = require('child_process');
+
+const YML = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'pages.yml'), 'utf8');
+const NAME = 'Wait until the run lists its Pages artifact (bounded, logged)';
+const at = s => YML.indexOf(s);
+
+// The step's `run:` script, from its block (the lines indented by 10 spaces under `run: |`).
+function script() {
+  const from = at('- name: ' + NAME);
+  assert.ok(from > 0, 'the wait step is missing from pages.yml');
+  const rest = YML.slice(from),
+    next = rest.indexOf('\n      - ', 1),
+    step = next < 0 ? rest : rest.slice(0, next),
+    m = /\n {8}run: \|\n([\s\S]*)$/.exec(step);
+  assert.ok(m, 'the wait step has no run block');
+  return m[1]
+    .split('\n')
+    .map(l => l.replace(/^ {10}/, ''))
+    .join('\n');
+}
+
+// Runs the script as the runner does (`bash -e`) with shims. `replies`: what each successive `gh` call does: a number is the
+// listing's total_count, 'fail' is a call that exits 1 with an error text. The last reply repeats.
+function run(replies) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'pageswait-')),
+    bin = path.join(d, 'bin');
+  fs.mkdirSync(bin);
+  const sh = (name, body) => fs.writeFileSync(path.join(bin, name), '#!/bin/bash\n' + body, {mode: 0o755});
+  fs.writeFileSync(path.join(d, 'clock'), '1000000');
+  fs.writeFileSync(path.join(d, 'replies'), replies.join('\n'));
+  fs.writeFileSync(path.join(d, 'calls'), '');
+  // The fake clock moves only by sleep: `date +%s%3N` reads it.
+  sh('date', `cat "${d}/clock"\n`);
+  sh('sleep', `echo $(( $(cat "${d}/clock") + $1 * 1000 )) > "${d}/clock"\n`);
+  sh(
+    'gh',
+    `echo "$*" >> "${d}/calls"\nn=$(wc -l < "${d}/calls")\nr=$(sed -n "\${n}p" "${d}/replies")\n` +
+      `[ -z "$r" ] && r=$(tail -n 1 "${d}/replies")\n` +
+      `if [ "$r" = fail ]; then echo "HTTP 502: Bad Gateway" >&2; exit 1; fi\necho "$r"\n`
+  );
+  const summary = path.join(d, 'summary');
+  const r = spawnSync('bash', ['-e', '-c', script()], {
+    env: {
+      PATH: bin + ':' + process.env.PATH,
+      GH_TOKEN: 'ghs_FAKE',
+      GITHUB_REPOSITORY: 'o/r',
+      GITHUB_RUN_ID: '42',
+      GITHUB_STEP_SUMMARY: summary
+    },
+    encoding: 'utf8',
+    timeout: 30000
+  });
+  const calls = fs.readFileSync(path.join(d, 'calls'), 'utf8').split('\n').filter(Boolean);
+  const sum = fs.existsSync(summary) ? fs.readFileSync(summary, 'utf8') : '';
+  fs.rmSync(d, {recursive: true, force: true});
+  return {status: r.status, out: r.stdout, err: r.stderr, calls, summary: sum};
+}
+
+test('the wait step sits between the upload and deploy-pages, with the one permission it needs', () => {
+  const up = at('uses: actions/upload-pages-artifact@'),
+    wait = at('- name: ' + NAME),
+    dep = at('uses: actions/deploy-pages@');
+  assert.ok(up > 0 && wait > up && dep > wait, 'upload, then the wait, then deploy-pages');
+  assert.match(YML, /permissions:\n {2}contents: read\njobs:/, 'the workflow-level permissions stay contents: read');
+  const job = /\n {4}permissions:\n((?: {6}[^\n]*\n)+)/.exec(YML);
+  assert.ok(job, 'the job-level permissions');
+  assert.deepStrictEqual(
+    job[1]
+      .split('\n')
+      .filter(l => /^ {6}[a-z-]+:/.test(l))
+      .map(l => l.trim()),
+    ['contents: read', 'pages: write', 'id-token: write', 'actions: read'],
+    'actions: read added, nothing broader'
+  );
+  const s = script();
+  assert.match(s, /actions\/runs\/\$GITHUB_RUN_ID\/artifacts\?name=github-pages/);
+  assert.match(s, /limit=60000/, 'at most 60 s');
+  const code = YML.replace(/^\s*#.*$/gm, '');
+  assert.ok(!/continue-on-error/.test(code), 'a failed wait fails the job');
+  assert.ok(!/gh run rerun|run rerun|workflow run|retry/i.test(s), 'the wait never re-runs or retries the deploy');
+});
+
+test('the wait: listed at once, listed late, never listed, and a failing call is an attempt not a crash', () => {
+  const now = run([1]);
+  assert.strictEqual(now.status, 0);
+  assert.strictEqual(now.calls.length, 1);
+  assert.match(now.out, /attempt 1, sent at \+0 ms, answered at \+0 ms after the upload step: 1 artifact\(s\) named github-pages listed/);
+  assert.match(now.out, /::notice title=pages-artifact-lag::listed at attempt 1 \(call sent at \+0 ms, answered at \+0 ms\)/);
+  assert.match(now.summary, /Artifact listed at attempt 1 \(call sent at \+0 ms, answered at \+0 ms after the upload step\)/);
+  assert.match(now.calls[0], /^api repos\/o\/r\/actions\/runs\/42\/artifacts\?name=github-pages --jq \.total_count$/);
+
+  const late = run([0, 0, 1]);
+  assert.strictEqual(late.status, 0);
+  assert.strictEqual(late.calls.length, 3);
+  assert.match(late.out, /attempt 1, sent at \+0 ms, answered at \+0 ms .*: 0 artifact/);
+  assert.match(late.out, /attempt 2, sent at \+2000 ms, answered at \+2000 ms .*: 0 artifact/);
+  assert.match(
+    late.out,
+    /::notice title=pages-artifact-lag::listed at attempt 3 \(call sent at \+4000 ms, answered at \+4000 ms\)/,
+    'the lag is printed, not hidden'
+  );
+
+  const hiccup = run(['fail', 'fail', 1]);
+  assert.strictEqual(hiccup.status, 0, 'an API error is one more attempt');
+  assert.match(hiccup.out, /attempt 1: the listing call failed: HTTP 502/);
+  assert.match(hiccup.out, /listed at attempt 3 \(call sent at \+4000 ms/);
+
+  const never = run([0]);
+  assert.strictEqual(never.status, 1, 'it fails loudly');
+  assert.strictEqual(never.calls.length, 31, 'every 2 s up to 60 s: attempts at 0, 2, ..., 60 s, then it stops');
+  assert.match(never.out, /attempt 31, sent at \+60000 ms/);
+  assert.match(
+    never.out,
+    /::error title=pages-artifact-lag::the run listed no github-pages artifact 60 s after the upload step \(31 attempts, 31 answered\)/
+  );
+  assert.strictEqual(never.summary, '');
+
+  const down = run(['fail']);
+  assert.strictEqual(down.status, 1, 'a listing that never answers fails after the bound, not before');
+  assert.strictEqual(down.calls.length, 31);
+  assert.match(
+    down.out,
+    /::error title=pages-artifact-lag::the artifact listing never answered in 60 s \(31 attempts; last error: HTTP 502: Bad Gateway\)/,
+    'a dead listing is not reported as an artifact that was not listed'
+  );
+  assert.doesNotMatch(down.out, /the run listed no github-pages artifact/);
+});
