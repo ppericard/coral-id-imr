@@ -1,9 +1,9 @@
 {
- "about": "REE-265 step 0, every subject since REE-274: the ceilings of the work one answer may make, per state (tools/answercost.js; CI's \"answer cost\" job counts every state, tests/answercost.test.js holds the pure parts): fish, corals and sea slugs, each at 50, 500 and 3,000 answers, for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. The players AND the data the page loads (every .json file) are the pinned tree's (answercost.js PLAYERS_AT, a commit of main), the code counted is the tree under test's, so neither a change of the draw nor a bot's refill of the photos moves a count; and a count is repeatable (REE-281: virtual clock, random numbers started over at each tick, every photo a 1 x 1 picture served at once, the boot started over from a settled page: the same state and seed give the same questions and the same count to a few calls, on a loaded machine too). Each ceiling is the largest count measured over the page's seeds 1 to 3 (the seeds change the questions drawn, by up to 2x on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. History: fish and corals at 3,000 were set on main after #1522, tightened when the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc in place of fn:bonusList) and when the tree's score and the levels did (step 4: fn:lvStepCalc in place of fn:lvStep); all nine states were set again on the pinned players when REE-274 added the sea slugs and the corals at 50 and 500 and moved the counts to CI, and again, with the pinned data and the repeatable count, for REE-281 (twice: the second time for the boot, which asked another sequence from the third question under load); the storage reads (getCalls, getChars) of every state were tightened when the stored texts came to be compared once per task (REE-265: app.js freshSeen). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --seed 1,2,3 --write-budget tools/answercost-budget.json --margin 1.25 (--states for the states it touches).",
+ "about": "REE-265 step 0, every subject since REE-274: the ceilings of the work one answer may make, per state (tools/answercost.js; CI's \"answer cost\" job counts every state, tests/answercost.test.js holds the pure parts): fish, corals and sea slugs, each at 50, 500 and 3,000 answers, for a player in the middle of a session (the page's clock 30 s after the state's last answer), signed out. The players AND the data the page loads (every .json file) are the pinned tree's (answercost.js PLAYERS_AT, a commit of main), the code counted is the tree under test's, so neither a change of the draw nor a bot's refill of the photos moves a count; and a count is repeatable (REE-281: virtual clock, random numbers started over at each tick, every photo a 1 x 1 picture served at once, the page booted on About, which draws no question, and at rest before the quiz opens: the same state and seed give the same questions and the same count to a few calls, on a loaded machine too). Each ceiling is the largest count measured over the page's seeds 1 to 3 (the seeds change the questions drawn, by up to 2x on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. History: fish and corals at 3,000 were set on main after #1522, tightened when the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc in place of fn:bonusList) and when the tree's score and the levels did (step 4: fn:lvStepCalc in place of fn:lvStep); all nine states were set again on the pinned players when REE-274 added the sea slugs and the corals at 50 and 500 and moved the counts to CI, and again, with the pinned data and the repeatable count, for REE-281 (twice: the second time for the boot, which asked another sequence from the third question under load); the storage reads (getCalls, getChars) of every state were tightened when the stored texts came to be compared once per task (REE-265: app.js freshSeen); every ceiling was set again when the boot's own question stopped being kept (REE-281, a third time: the first question was the boot's, which differed from one load to the next, and the questions that followed with it). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --seed 1,2,3 --write-budget tools/answercost-budget.json --margin 1.25 (--states for the states it touches).",
  "margin": 1.25,
  "states": {
   "coral:50": {
-   "namedCalls": 17000,
+   "namedCalls": 20000,
    "getCalls": 110,
    "getChars": 83000,
    "setChars": 58000,
@@ -18,11 +18,11 @@
    "fn:sheetV": 100
   },
   "coral:500": {
-   "namedCalls": 36000,
+   "namedCalls": 38000,
    "getCalls": 100,
    "getChars": 630000,
    "setChars": 460000,
-   "fn:introduced": 750,
+   "fn:introduced": 800,
    "fn:scoreOf": 450,
    "fn:faOf": 1100,
    "fn:lvStepCalc": 100,
@@ -33,12 +33,12 @@
    "fn:sheetV": 100
   },
   "coral:3000": {
-   "namedCalls": 30000,
+   "namedCalls": 33000,
    "getCalls": 100,
    "getChars": 2400000,
    "setChars": 1700000,
-   "fn:introduced": 750,
-   "fn:scoreOf": 390,
+   "fn:introduced": 830,
+   "fn:scoreOf": 400,
    "fn:faOf": 100,
    "fn:lvStepCalc": 100,
    "fn:bonusCalc": 100,
@@ -48,26 +48,26 @@
    "fn:sheetV": 100
   },
   "fish:50": {
-   "namedCalls": 160000,
+   "namedCalls": 190000,
    "getCalls": 120,
    "getChars": 110000,
    "setChars": 71000,
-   "fn:introduced": 4500,
-   "fn:scoreOf": 3100,
-   "fn:faOf": 400,
+   "fn:introduced": 4900,
+   "fn:scoreOf": 3200,
+   "fn:faOf": 450,
    "fn:lvStepCalc": 100,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 100,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 290
+   "fn:sheetV": 300
   },
   "fish:500": {
-   "namedCalls": 310000,
+   "namedCalls": 280000,
    "getCalls": 110,
    "getChars": 800000,
    "setChars": 580000,
-   "fn:introduced": 8800,
+   "fn:introduced": 9300,
    "fn:scoreOf": 3900,
    "fn:faOf": 3900,
    "fn:lvStepCalc": 100,
@@ -75,42 +75,42 @@
    "fn:lvlNext": 100,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 310
+   "fn:sheetV": 320
   },
   "fish:3000": {
-   "namedCalls": 500000,
-   "getCalls": 100,
-   "getChars": 3000000,
+   "namedCalls": 570000,
+   "getCalls": 110,
+   "getChars": 3100000,
    "setChars": 2300000,
-   "fn:introduced": 16000,
+   "fn:introduced": 17000,
    "fn:scoreOf": 4000,
-   "fn:faOf": 2800,
+   "fn:faOf": 2900,
    "fn:lvStepCalc": 190,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 140,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 290
+   "fn:sheetV": 300
   },
   "seaslug:50": {
-   "namedCalls": 49000,
+   "namedCalls": 48000,
    "getCalls": 110,
    "getChars": 110000,
-   "setChars": 71000,
-   "fn:introduced": 1600,
-   "fn:scoreOf": 2100,
-   "fn:faOf": 1600,
+   "setChars": 72000,
+   "fn:introduced": 1500,
+   "fn:scoreOf": 2000,
+   "fn:faOf": 1500,
    "fn:lvStepCalc": 100,
    "fn:bonusCalc": 100,
    "fn:lvlNext": 100,
    "fn:treeScore": 100,
    "fn:achSnap": 100,
-   "fn:sheetV": 120
+   "fn:sheetV": 110
   },
   "seaslug:500": {
-   "namedCalls": 71000,
+   "namedCalls": 70000,
    "getCalls": 100,
-   "getChars": 790000,
+   "getChars": 780000,
    "setChars": 590000,
    "fn:introduced": 2000,
    "fn:scoreOf": 1500,
@@ -123,7 +123,7 @@
    "fn:sheetV": 120
   },
   "seaslug:3000": {
-   "namedCalls": 130000,
+   "namedCalls": 120000,
    "getCalls": 100,
    "getChars": 3100000,
    "setChars": 2300000,
