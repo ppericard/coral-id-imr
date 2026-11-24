@@ -436,8 +436,10 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    has decided on since its judgement stays in the file as judged: not checked again, imported unchanged, its `best`
    still the best of its observation, so a new candidate there is an `alt` or a `dup`):
    - `code`: the code of "Tags" above, ease included (`p1g0sm14`). The tool adds the phase flag `p` and applies the caps.
-   - `keep`: `best` (exactly one per observation: its most useful photo), `alt` (the same fish, adding something:
-     another side, another phase or pose, other light), `dup` (adds nothing over the best: a burst, the same framing).
+   - `keep`: `best` (exactly one per observation: its most useful photo), `alt` or `dup`, by the definition shared by
+     every subject (Pierre, 2026-11-24, «ok»; [the decision](../docs/decisions/2026-11-24-what-a-duplicate-is.md)):
+     `alt`: another zoom, framing, angle or pose of the same animal or colony; `dup`: a burst or the same framing,
+     with nothing new to see. Another side, another phase or other light is an `alt` too.
      An observation of which Pierre already added a photo (its other photos come at a later run) shows that photo
      first on its sheet, marked as context and not to judge: its new photos are judged against it, at most one of
      them `best` (when it beats his), none needed.

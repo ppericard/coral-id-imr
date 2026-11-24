@@ -25,7 +25,9 @@ const curPlay = () => {
     execFileSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), ROOT], {stdio: 'ignore'});
 };
 // Each context also gets tests/lightstub.js first: a test's sheet stub reads the app's light saves as the script does;
-// and tests/facheck.js: every false-alarm rate read from the app's table checked against the scan (core.js FA_CHECK).
+// and tests/facheck.js: every false-alarm rate read from the app's table checked against the scan (core.js FA_CHECK),
+// every storage value kept parsed against a fresh read (sync.js KEPT_CHECK), every view of the state version read again
+// against a computation now (app.js VIEW_CHECK).
 const LIGHTSTUB = path.join(__dirname, 'lightstub.js'),
   FACHECK = path.join(__dirname, 'facheck.js');
 const calm = b => {

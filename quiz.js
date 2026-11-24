@@ -453,7 +453,8 @@ function question(cur, target, choices, prompt, set, kq) {
   };
   let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition
   const go = c => {
-    const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
+    const hintOpen = hintShown, // read before showHint opens it for the feedback: a hint left closed was not seen
+      cor = hintOpen || ph.some(p => p.view === 'macro' || p.view === 'close'),
       tm = tm0 || {rt: qclockRead(), zm: QCLOCK.zm};
     showHint();
     reveal();
@@ -462,7 +463,7 @@ function question(cur, target, choices, prompt, set, kq) {
     pendDone(); // an answered question is no more kept: the next one is drawn
     // A Find the X: the photo tapped (its four units are distinct, so the tile of the unit given), logged with the answer.
     const tap = fx ? (fx.find(x => x.n === c) || {}).p : null;
-    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tap);
+    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintOpen || !set.hint ? null : set.hint, tm, tap);
     // Find the X: each tile now says its unit (the right one ticked, the one tapped crossed: never colour alone), its
     // source (rule P5) and opens the four photos whole.
     if (fx)
@@ -787,6 +788,8 @@ function recordAnswer({
   });
   const res = scoreAnswer(P, q),
     {th0, dm} = res;
+  // The records the scorer wrote, and those written below: inputs of the views (app.js stateBump).
+  if (typeof stateBump === 'function') stateBump();
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   // A look-alike contrast won (the duel achievement): the Duel tab, a duel slipped into the quiz or an Again (core.js
@@ -827,6 +830,7 @@ function recordAnswer({
   // back, for the genus shown and for the one answered (mxKept). Only at a miss, as the full replay's lm (a mark the
   // replay kept with its bar under DOM.KEEP must not go at a right answer).
   if (!good) [target, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
+  if (typeof stateBump === 'function') stateBump();
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed.
@@ -913,7 +917,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // First answer played while signed out: remember the progress as it was (ANONB), so signing in later adds only what
     // was played since, not progress an older sign-out left on the device. Only the subject with that baseline (SUBJECTS
     // anonBase) and its own first answer: a fish answer waiting in LOG0 is not a coral one.
-    if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(store.get(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
+    if (SUBJ.anonBase && !SYNC && SYNC_URL && !subjEntries(keptGet(LOG0, []), SUBJ.id).length) store.set(ANONB, P);
     // A typed question (TYPEDQ, set by question): c is the genus read from what was typed, '' for "I don't know" (a miss
     // for the genus shown only). No choices were offered, so no pair counts as offered; a genus typed by mistake counts
     // against it as a wrong pick does, and the mix-up is counted.
@@ -1327,12 +1331,13 @@ const cvField = () => {
 };
 // An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
 // twice or lost offline; not signed in, it waits on this device (LOG0) and also goes to the sheet anonymously
-// (sync.js sendAnon).
+// (sync.js sendAnon). Both queues written as store.set would, their text kept parsed for the next read (sync.js keptPush).
+// LOG0's readers in this file only read it (keptGet: one parsed copy, not one per reader).
 function logAnswer(ans) {
   if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
   else if (SYNC_URL) {
-    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
-    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
+    keptPush(LOG0, ans, 2000);
+    keptPush(ANONQ, ans, 2000);
     anonSoon();
   }
 }
@@ -1792,7 +1797,7 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null), run = true) => {
   let seed = [];
   if (!raw)
     try {
-      seed = ((SYNC && SYNC.log) || store.get(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
+      seed = ((SYNC && SYNC.log) || keptGet(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
     } catch (e) {}
   const st = tipsInit(raw, seed);
   // The log does not say which answers were the Custom quiz's: a saved selection shows it was used before c was counted.
@@ -1801,7 +1806,7 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null), run = true) => {
   let dueled = !!c.u.d;
   if (!dueled)
     try {
-      dueled = ((SYNC && SYNC.log) || store.get(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
+      dueled = ((SYNC && SYNC.log) || keptGet(LOG0, [])).some(a => a && String(a.m || '').startsWith('quiz-duel'));
     } catch (e) {}
   const d = dueled && !c.u.d ? {...c, u: {...c.u, d: 1}} : c;
   // The view the Custom quiz kept (CQ.VIEW) is the last one the player chose: My mix-ups shows it was seen before m was counted.
@@ -1817,7 +1822,7 @@ const tipRun = st => {
   let k = 0;
   if (st.u.k < TIPR.IDK)
     try {
-      k = tipIdkRun((SYNC && SYNC.log) || store.get(LOG0, []));
+      k = tipIdkRun((SYNC && SYNC.log) || keptGet(LOG0, []));
     } catch (e) {}
   return k > st.u.k ? {...st, u: {...st.u, k}} : st;
 };

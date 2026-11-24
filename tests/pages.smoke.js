@@ -1070,6 +1070,74 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // The answer log's photos are those seen when answering: a corallites hint left closed is not logged in ph (the hint
+  // revealed after the answer is sc.h, and the montage of a wrong answer does not show it), one opened first is. The
+  // question is put on screen, not drawn: a colony with a wide, a medium and a corallites photo, the corallites the hint
+  // (model.js photoSet's shape), so no draw decides whether a hinted question comes.
+  for (const [opened, ok] of [
+    [false, true],
+    [true, true],
+    [false, false]
+  ]) {
+    const at = `Hint log, hint ${opened ? 'opened' : 'left closed'}, ${ok ? 'right' : 'wrong'} answer`;
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await qa.ready(p);
+    const r = await p.evaluate(
+      ([opened, ok]) => {
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        const key = p => p.o || p.f;
+        let t = null,
+          set = null;
+        for (const n of slateGenera()) {
+          const [W, M, C] = ['wide', 'medium', 'macro'].map(v => gamePics(n, v).filter(p => gamePhotoOk(n, p)));
+          const w = W.find(x => x.form !== 'x' && M.some(y => key(y) === key(x)) && C.some(y => key(y) === key(x)));
+          if (w) {
+            t = n;
+            set = {
+              shown: [
+                {...w, view: 'wide'},
+                {...M.find(y => key(y) === key(w)), view: 'medium'}
+              ],
+              hint: {...C.find(y => key(y) === key(w)), view: 'macro'}
+            };
+            break;
+          }
+        }
+        if (!set) return {none: true};
+        SHOWNQ = null;
+        question('quiz', t, shuffle([t, ...distractors(t, pool(), 3)]), 'Which genus?', set);
+        const hb = document.getElementById('hintb'),
+          files = () => [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f);
+        if (!hb) return {t, nohint: true};
+        if (opened) hb.click();
+        const before = files(),
+          a = smokeAnswer(ok),
+          after = files(),
+          row = store.get(LOG0, []).pop() || {},
+          hint = (row.sc || {}).h || after.filter(f => !before.includes(f)).pop() || after.pop(),
+          montage = [...document.querySelectorAll('#view .qstage.qvs img')].map(i => i.currentSrc || i.src);
+        return {t: a.t, asked: t, g: row.g, before, hint, ph: row.ph || '', h: (row.sc || {}).h, montage};
+      },
+      [opened, ok]
+    );
+    if (r.none) fails.push(`${at}: no genus has a wide, a medium and a corallites photo of one colony`);
+    else if (r.nohint) fails.push(`${at}: the question put on screen has no hint button ${JSON.stringify(r)}`);
+    else if (r.g !== r.asked) fails.push(`${at}: the last log row is not this question's ${JSON.stringify(r)}`);
+    else if (
+      opened
+        ? !r.ph.split(' ').includes(r.hint) || r.h
+        : r.ph !== r.before.join(' ') || r.ph.split(' ').includes(r.hint) || r.h !== r.hint || r.montage.some(s => s.includes(r.hint))
+    )
+      fails.push(`${at}: ${JSON.stringify(r)}`);
+    await c.close();
+  }
   // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
   // own id, its own kind and note).
   {
@@ -1740,6 +1808,7 @@ async function signin(base) {
         // The Scientific names offer answered too: it may come inside these 20 answers (a family at Advanced),
         // and an offer card holds the sign-in card the same way.
         Q.sci = false;
+        stateBump();
         saveQ();
         // The juvenile and colour-phase cards already seen: the first such photo (an angelfish juvenile, early class, can come
         // at any answer) arms its card for the break at Next and that answer gives the sign-in card its turn (quiz.js answer,
@@ -2922,6 +2991,7 @@ async function startSmoke(b, base) {
     await p.evaluate(
       ([n, th]) => {
         P['~level'] = {ok: n - 10, ko: 10, th, at: Date.now()};
+        stateBump();
         location.hash = 'practice/quiz';
       },
       [n, th]
@@ -3539,6 +3609,7 @@ async function tipsCheck(b, base) {
           [L[2], L[3]]
         ].slice(0, n))
           P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        stateBump();
         return L.length;
       }, n);
     {
@@ -4210,6 +4281,7 @@ async function duelReliefCheck(b, base) {
       const aim = await p.evaluate(() => {
         const P0 = JSON.stringify(P);
         ['Pocillopora', 'Stylophora'].forEach(n => (P[n] = {...(P[n] || {}), ok: 10, ko: 2, h: '1101101111', th: 1, pg: 0.5}));
+        stateBump();
         const d = h => {
           HOLDS = h;
           let s = 0;
@@ -4223,6 +4295,7 @@ async function duelReliefCheck(b, base) {
         const r = {off: d(0), on: d(INTRO.HOLD + 3)};
         HOLDS = 0;
         P = JSON.parse(P0);
+        stateBump();
         return r;
       });
       if (!(aim.on < aim.off - 0.05)) fails.push(`${W} the duel's photo not aimed lower with the hold on: ${JSON.stringify(aim)}`);

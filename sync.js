@@ -1,6 +1,84 @@
 // IMR Reef ID: the link with the sync sheet (tools/sync/Code.gs): progress under a name and 4-digit code, photo
 // statistics, reports, anonymous answers, events, sign-in. Shares app.js's top-level names and its sync state (SYNC_URL,
 // LOCAL, SYNC, syncTrouble); loaded right after it and required (retried by the loader, else start-up offers Try again).
+// Storage read once (REE-263; docs/reviews/2026-11-24-per-answer-cost.md, fix 5): the keys an answer's work reads many
+// times (sheetV, model.js startV and imrSaid, once for every unit; the answer logs LOG0 and ANONQ, about 600 KB each at
+// their cap, read whole several times an answer by quiz.js) are parsed once and kept, with what is read from them, as
+// long as the key's stored text stays the same. Every read still asks the storage for the text (core.js keyGet, as
+// app.js store.get does: about a microsecond, a log's too, measured in Chromium) and compares it with the text kept; any
+// write (store.set, a removeItem, a sign-out, another tab of the app, a test) changes the text the next read sees, so a
+// kept value is never older than the storage and no storage event is needed. As store.get: d when the storage throws,
+// holds nothing or holds no JSON (d is never kept). A kept value is shared, not a copy: keptGet only for readers that
+// never change it; keptBy keeps a value read from it (f: a function of the stored value alone, one per name).
+// KEPT_CHECK.on (the smokes: tests/facheck.js): every kept value is checked against a fresh store.get, and a difference
+// throws.
+const KEPT = new Map(),
+  KEPT_CHECK = {on: typeof window !== 'undefined' && window.KEPT_CHECK_ON === true};
+function keptEntry(k) {
+  let raw;
+  try {
+    raw = keyGet(localStorage, k);
+  } catch (e) {
+    return null;
+  }
+  if (raw === null) return (KEPT.delete(k), null);
+  let e = KEPT.get(k);
+  if (!e || e.raw !== raw) {
+    e = {raw, ok: true, v: undefined, by: new Map()};
+    try {
+      e.v = JSON.parse(raw);
+    } catch (x) {
+      e.ok = false;
+    }
+    KEPT.set(k, e);
+  }
+  return e;
+}
+const keptSame = (a, b) => Object.is(a, b) || JSON.stringify(a) === JSON.stringify(b);
+// Thrown, and again in a task of its own, so a reader that catches its errors (quiz.js tipsLoad) cannot hide it.
+const keptFail = (k, what) => {
+  const e = new Error(`kept storage read: ${k} ${what} differs from a fresh store.get`);
+  setTimeout(() => {
+    throw e;
+  });
+  throw e;
+};
+// store.get(k, d), shared.
+function keptGet(k, d) {
+  const e = keptEntry(k),
+    v = e && e.ok ? e.v : d;
+  if (KEPT_CHECK.on && !keptSame(v, store.get(k, d))) keptFail(k, 'value');
+  return v;
+}
+// f(store.get(k, d)), kept under name while k's text is the same.
+function keptBy(k, d, name, f) {
+  const e = keptEntry(k);
+  let v;
+  if (!e || !e.ok) v = f(d);
+  else {
+    if (!e.by.has(name)) e.by.set(name, f(e.v));
+    v = e.by.get(name);
+  }
+  if (KEPT_CHECK.on && !keptSame(v, f(store.get(k, d)))) keptFail(k, name);
+  return v;
+}
+// store.set(k, [...store.get(k, []), x].slice(-cap)): the text written is kept with its value, so the next read parses
+// nothing. A stored value that is no list goes the old way (store.get's value spread, a throw included).
+function keptPush(k, x, cap) {
+  const L = keptGet(k, []);
+  if (!Array.isArray(L)) return store.set(k, [...store.get(k, []), x].slice(-cap));
+  const ref = KEPT_CHECK.on ? JSON.stringify([...store.get(k, []), x].slice(-cap)) : null,
+    v = [...L, x].slice(-cap);
+  let raw;
+  try {
+    raw = JSON.stringify(v);
+    localStorage.setItem(k, raw);
+  } catch (e) {
+    return;
+  }
+  if (KEPT_CHECK.on && raw !== ref) keptFail(k, 'push');
+  KEPT.set(k, {raw, ok: true, v, by: new Map()});
+}
 // Photo difficulty (the pooled Elo; without it every prior is 0), kept offline with the sheet's version (v): refreshed
 // every 10 minutes while visible (the sheet caches it as long) and on return to a tab left longer.
 let statsAt = 0;
@@ -445,6 +523,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
+    if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
     clockTick(); // and right after: the log's count the clock's baseline before another answer is counted
     store.set(rvKey(S), rp.rv);
     if (stamp !== null) store.set(stKey(S), stamp); // the structure it was replayed under ('' for the base's)
@@ -600,6 +679,7 @@ function mergeSubject(j, d, S, mine) {
     introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
     P = R;
+    if (typeof stateBump === 'function') stateBump(); // another object: an input of the views (app.js)
     SYNC[BK] = copy(R);
     store.set('reefid-account', SYNC);
     store.set(sKey('reset'), rr);
@@ -644,6 +724,7 @@ function mergeSubject(j, d, S, mine) {
       clockTick(); // before the merge moves the level's count (another device's adoption may have lowered it)
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
+      if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
       clockTick(); // and right after: the merged count the clock's baseline
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
@@ -1386,7 +1467,7 @@ const anonSoon = () => {
   anonTimer = setTimeout(sendAnon, ANON_SEND.MS);
 };
 function sendAnon() {
-  const q = store.get(ANONQ, []);
+  const q = keptGet(ANONQ, []); // read only (keptGet): sliced, its answers copied by logOut
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
   const batch = q.slice(0, 100),
     cut = store.get('reefid-sync-coral-reset', '') || '', // the replay's cutoff, as sent (replayAdopt)
@@ -1634,7 +1715,7 @@ function notesSeen(j) {
 // below the gate floor (core.js SHEET_FLOOR, a version already confirmed live), also before any reply: a new device or an
 // offline first launch plays today's rules, never those of a script long replaced.
 // The full replay checks each reply's own v (replayAdopt).
-const sheetV = () => Math.max(Number(store.get(SHEETV, 0)) || 0, SHEET_FLOOR);
+const sheetV = () => keptBy(SHEETV, 0, 'sheetV', v => Math.max(Number(v) || 0, SHEET_FLOOR)); // read once (keptBy)
 // The genus of a page key, or of a link's address ('#…', core.js routeIn).
 const pvGenus = h => {
   const g = String(h || '').startsWith('#') ? routeIn(h).key || '' : String(h || ''),
@@ -2224,3 +2305,6 @@ function viewDeleteAccount(h) {
   };
   step1();
 }
+// The functions the views read (speciesOn, generaOn, sciOn, keptBy) are here now: a view made before this file came
+// (app.js stateView) is made again.
+if (typeof stateBump === 'function') stateBump();
