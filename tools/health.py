@@ -18,7 +18,7 @@ Checks, each read-only and with no name, code or secret in anything it prints (a
    without INFRA_TOKEN the line says so and passes; with it, `readInfra` says when the last backup saved, and one older
    than BACKUP_DAYS fails. The workflow does not pass the token (an access decision for Pierre: docs/PAGES.md).
 
-4. the live build against main (REE-279, option 3: Deploy Pages failed about every second run from 2026-11-23, 'Found 0
+4. the live build against main (REE-279, option 3: Deploy Pages failed about every second run from 2026-11-23 20:43Z, first seen 2026-11-15, 'Found 0
    artifact(s)', leaving the site on an older build with nobody looking): the `<meta name="build">` of the live index.html is
    a Deploy Pages run number; the commit that run archived (its `published-source` notice) says which commits of main it held,
    and the commits after it are not live (a run from before the notice is read by its start time and the commits' dates). The

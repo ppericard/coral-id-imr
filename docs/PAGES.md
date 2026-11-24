@@ -108,21 +108,29 @@ release an orphan lock**. That is a different state, with its own cancellation A
 
 ## The artifact wait (REE-279, 2026-11-24)
 
-**What failed.** From 2026-11-23 20:43 UTC, 16 of 32 Deploy Pages runs on `main` failed with the same error:
-`actions/deploy-pages@v5` logged `Found 0 artifact(s)` and `No artifacts named github-pages were found for this workflow
+**What failed.** The first `Found 0 artifact(s)` was on 2026-11-15 (run 773), with bursts on 11-20 and 11-21 (13 of 93 runs
+that reached the deploy on 11-21) and, from 2026-11-23 20:43 UTC, 23 of 40 runs (the second REE-279 investigation, which read
+the logs of every failed Deploy Pages run since the Pages reset; the first one had put the start at 11-23). Each failed with
+the same error: `actions/deploy-pages@v5` logged `Found 0 artifact(s)` and `No artifacts named github-pages were found for this workflow
 run`, about 0.5 s after `upload-pages-artifact` had finalised the artifact, which the run listed a moment later (retention 1
 day, 17.5 MB, same action SHAs and runner as the passing runs; no githubstatus.com incident). A failed deploy leaves the
 site on the previous good build: each deploy publishes `main` as it stands when its job starts, so the next good deploy
 catches everything up. The reading is a read-after-write lag on GitHub's side (an inference from the logs), the same kind
-of "GitHub-side, not ours" failure as the stuck lock above. The evidence is in the REE-279 comments.
+of "GitHub-side, not ours" failure as the stuck lock above. No cause on our side was found (rate, concurrency, trigger kind,
+storage, billing and the Pages limits are ruled out by the data: REE-279, second investigation); the rate varies over time
+(0 of 78 runs on 11-21 to 11-23, then about half). The evidence is in the REE-279 comments.
 
 **The wait.** A step between the upload and `deploy-pages` (`pages.yml`, "Wait until the run lists its Pages artifact")
 asks `repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages` at once, then every 2 s, for at most
 60 s, and prints each attempt with when its call was sent and answered, in milliseconds since the step began (which follows
 the upload step directly). Listed: a `::notice title=pages-artifact-lag` ("listed at attempt K (call sent at +A ms, answered
-at +B ms)") and a line in the run's summary, so the lag is counted across runs rather than hidden. Never listed:
-`::error title=pages-artifact-lag` and the job fails there; if no listing call was ever answered, the error says the
-listing never answered, with its last error, instead of claiming the artifact was not listed. A listing call that itself
+at +B ms)") and a line in the run's summary, so the lag is counted across runs rather than hidden. Never listed within the
+60 s: `::warning title=pages-artifact-lag` (and a summary line), and the deploy attempts go on. **The wait never fails the
+job**: the REST listing is not the one `deploy-pages` reads and has misbehaved here (the `github-pages` artifacts of passing
+runs 1455 to 1460 and 1469 to 1471 answer 404 by id, and the runs 1420 to 1454 list none, before their 1-day retention ran
+out; cause unknown), so only the second deploy attempt decides the job's outcome. If no listing call was ever answered, the
+warning says the listing never answered, with its last error, instead of claiming the artifact was not listed. When the
+listing is broken like this, every deploy pays the 60 s. A listing call that itself
 fails (HTTP error) or stalls is one more attempt, not a crash: each call is cut by `timeout` at the time left of the 60 s
 (10 s at most), so a stalled request cannot outlast the bound. It needs the job permission `actions: read` (added to the job only;
 the workflow's own stays `contents: read`); it only measures and never retries anything (the second attempt below does). Only a push to `main` runs
@@ -142,8 +150,9 @@ reads a few hundred ms on a real runner):
   (the delay alone may be what helps); a fall in failures cannot be credited to the poll;
 - `listed at attempt 2` or later, then `deploy-pages` passes: the REST listing lagged and the wait absorbed it (the lag is
   printed); the same, then `deploy-pages` finds 0, shows the two listings lag differently;
-- the wait fails after 60 s: the artifact really was not listed that long (a different failure: look at the upload step), or
-  the listing never answered (the error says which).
+- the wait warns after 60 s (the job goes on): the REST listing showed no artifact for 60 s, or never answered (the warning
+  says which). The deploy attempts then say what the artifact's state really is: a first attempt that passes shows the REST
+  listing is the unreliable one.
 If failures continue with attempt 1 every time, the wait has done what it can: a fresh dispatch of Deploy Pages on `main`
 catches the site up ("Manual recovery"; the Health check below says when it is behind), and the cause is GitHub's to fix.
 
@@ -168,7 +177,8 @@ visibly; the failure seen so far ends before any deployment exists.
 - the warning and a red job: both attempts failed. Read the second attempt's log: the same "Found 0 artifact(s)" 20 s later
   would say the artifact is not there at all (look at the upload step); another error is a different failure (the lock above, a
   Pages setting);
-- `pages-artifact-lag` as an error: the wait itself failed, and neither deploy step ran.
+- `pages-artifact-lag` as a warning (never listed in 60 s): not a failure by itself. With a green job, the REST listing was
+  wrong and the deploy did not need it; with a red job, read the second attempt's log as above.
 The count of runs with the warning is the rate of the GitHub-side failure that the second attempt now absorbs; once it is
 steadily zero, or GitHub has said it fixed the lag, the second attempt and this paragraph can go.
 

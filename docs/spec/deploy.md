@@ -20,9 +20,9 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
   `cancel-in-progress: true`. Settings > Pages must use **GitHub Actions**; the workflow fails early while the legacy
   branch source is selected.
 - **The artifact wait** (REE-279): before `deploy-pages`, a step polls the run's REST artifact listing every 2 s, for at most
-  60 s, logs each attempt and the lag (`::notice title=pages-artifact-lag`, and the run's summary), and fails the job with
-  `::error title=pages-artifact-lag` if `github-pages` is never listed. It needs the job permission `actions: read` and only
-  measures. `deploy-pages` reads the artifact from the results service, not this listing, so the wait is a proxy
+  60 s, logs each attempt and the lag (`::notice title=pages-artifact-lag`, and the run's summary), and only warns
+  (`::warning title=pages-artifact-lag`) if `github-pages` is never listed: it never fails the job, the deploy attempts go on
+  and the second one decides. It needs the job permission `actions: read` and only measures. `deploy-pages` reads the artifact from the results service, not this listing, so the wait is a proxy
   ([PAGES.md › The artifact wait](../PAGES.md#the-artifact-wait-ree-279-2026-11-24)); `tests/pageswait.test.js` runs the
   step's script on a fake clock.
 - **The second deploy attempt** (REE-279): the first `deploy-pages` step has `continue-on-error: true`; when it fails, a

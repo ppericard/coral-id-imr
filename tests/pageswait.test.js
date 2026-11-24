@@ -88,6 +88,7 @@ test('the wait step sits between the upload and deploy-pages, with the one permi
   const s = script();
   assert.match(s, /actions\/runs\/\$GITHUB_RUN_ID\/artifacts\?name=github-pages/);
   assert.match(s, /limit=60000/, 'at most 60 s');
+  assert.ok(!/::error|exit 1/.test(s), 'the wait only measures: it warns and never fails the job');
   const code = YML.replace(/^\s*#.*$/gm, '');
   assert.strictEqual(code.match(/continue-on-error/g).length, 1, 'only the first deploy attempt may fail without failing the job');
   assert.ok(!/gh run rerun|run rerun|workflow run|retry/i.test(s), 'the wait never re-runs or retries the deploy');
@@ -160,34 +161,37 @@ test('the wait: listed at once, listed late, never listed, and a failing call is
   assert.match(hiccup.out, /listed at attempt 3 \(call sent at \+4000 ms/);
 
   const never = run([0]);
-  assert.strictEqual(never.status, 1, 'it fails loudly');
+  // The REST listing is not what deploy-pages reads and has misbehaved (artifacts of passing runs answer 404 by id): a listing
+  // that never shows the artifact is a warning, the deploy attempts go on, and only the second attempt decides the job.
+  assert.strictEqual(never.status, 0, 'a warning, never a failure of the job');
   assert.strictEqual(never.calls.length, 31, 'every 2 s up to 60 s: attempts at 0, 2, ..., 60 s, then it stops');
   assert.match(never.out, /attempt 31, sent at \+60000 ms/);
   assert.match(
     never.out,
-    /::error title=pages-artifact-lag::the run listed no github-pages artifact 60 s after the upload step \(31 attempts, 31 answered\)/
+    /::warning title=pages-artifact-lag::the run's REST listing showed no github-pages artifact 60 s after the upload step \(31 attempts, 31 answered\)\. Going on to the deploy attempts/
   );
-  assert.strictEqual(never.summary, '');
+  assert.doesNotMatch(never.out, /::error/);
+  assert.match(never.summary, /Artifact wait: .*showed no github-pages artifact.*The deploy attempts went on\./);
 
   const down = run(['fail']);
-  assert.strictEqual(down.status, 1, 'a listing that never answers fails after the bound, not before');
+  assert.strictEqual(down.status, 0, 'a listing that never answers warns after the bound, not before, and does not fail');
   assert.strictEqual(down.calls.length, 31);
   assert.match(
     down.out,
-    /::error title=pages-artifact-lag::the artifact listing never answered in 60 s \(31 attempts; last error: HTTP 502: Bad Gateway\)/,
+    /::warning title=pages-artifact-lag::the artifact listing never answered in 60 s \(31 attempts; last error: HTTP 502: Bad Gateway\)\. Going on/,
     'a dead listing is not reported as an artifact that was not listed'
   );
-  assert.doesNotMatch(down.out, /the run listed no github-pages artifact/);
+  assert.doesNotMatch(down.out, /showed no github-pages artifact/);
 
   // Codex, PR #1547: a request that stalls must not outlast the 60 s. Each call is cut by `timeout`, the attempt is counted,
   // and the loop reaches its deadline check (the stalled calls take 20 s of the fake clock each).
   const stall = run(['hang']);
-  assert.strictEqual(stall.status, 1);
+  assert.strictEqual(stall.status, 0);
   assert.strictEqual(stall.calls.length, 3, '0, 22, 44 s: then the next check is past the bound');
   assert.match(stall.out, /attempt 1: the listing call failed: no answer in 1 s/);
   assert.match(
     stall.out,
-    /::error title=pages-artifact-lag::the artifact listing never answered in 60 s \(3 attempts; last error: no answer in 1 s\)/
+    /::warning title=pages-artifact-lag::the artifact listing never answered in 60 s \(3 attempts; last error: no answer in 1 s\)/
   );
   const slow = run(['hang', 1]);
   assert.strictEqual(slow.status, 0, 'a stalled call is one attempt, the next one lists the artifact');

@@ -102,12 +102,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ runner.temp }}/pages
-      # REE-279: since 2026-11-23 about half the deploys failed with "Found 0 artifact(s)" from deploy-pages, about 0.5 s after
-      # the upload finalised an artifact that the run lists a moment later. This step waits, bounded, until the run lists its
-      # `github-pages` artifact through the REST listing, and prints every attempt with when its call was sent and answered
-      # (milliseconds from the start of this step, which follows the upload step at once), so the lag is counted, not hidden.
-      # It does not retry the deploy itself (the second attempt below does); if the artifact never shows, the job fails here
-      # with its own error. Caveat:
+      # REE-279: deploy-pages has failed with "Found 0 artifact(s)" (first seen 2026-11-15, bursts on 11-20/21 and from
+      # 2026-11-23 20:43Z, about half the runs since), about 0.5 s after the upload finalised an artifact that the run lists a
+      # moment later. This step waits, bounded, until the run lists its `github-pages` artifact through the REST listing, and
+      # prints every attempt with when its call was sent and answered (milliseconds from the start of this step, which follows
+      # the upload step at once), so the lag is counted, not hidden. It is a MEASUREMENT: it does not retry the deploy (the
+      # second attempt below does) and it never fails the job. If the artifact never shows in this listing within the bound it
+      # only warns (`::warning title=pages-artifact-lag`) and the deploy attempts go on, because that listing has itself
+      # misbehaved here (artifacts of passing runs answer 404 by id) and only the second deploy attempt decides the job's
+      # outcome. Caveat:
       # deploy-pages v5 reads the run's artifacts from the Actions results service (Twirp ListArtifacts, the runtime token),
       # not from this REST listing (actions/deploy-pages src/internal/api-client.js at 368f825), so a listing here is evidence
       # about a neighbour of what the action reads: "listed at attempt 1, deploy still found 0" means this wait watches the
@@ -150,14 +153,17 @@ jobs:
             fi
             sleep 2
           done
+          # A warning, not a failure: the deploy attempts below go on, and the second one decides the job's outcome.
           if [ "$answered" = 0 ]; then
-            echo "::error title=pages-artifact-lag::the artifact listing never answered in $((limit / 1000)) s (${attempt} attempts; last error: $failure). Nothing was deployed; see docs/PAGES.md."
+            msg="the artifact listing never answered in $((limit / 1000)) s (${attempt} attempts; last error: $failure)"
           else
-            echo "::error title=pages-artifact-lag::the run listed no github-pages artifact $((limit / 1000)) s after the upload step (${attempt} attempts, ${answered} answered). Nothing was deployed; see docs/PAGES.md."
+            msg="the run's REST listing showed no github-pages artifact $((limit / 1000)) s after the upload step (${attempt} attempts, ${answered} answered)"
           fi
-          exit 1
+          echo "::warning title=pages-artifact-lag::$msg. Going on to the deploy attempts; see docs/PAGES.md."
+          echo "Artifact wait: $msg. The deploy attempts went on." >> "$GITHUB_STEP_SUMMARY"
+          exit 0
       # REE-279, the integrator's call: deploy-pages v5 asks the results service for the artifact once, and has failed with
-      # "Found 0 artifact(s)" on about half the runs since 2026-11-23, which the wait above cannot watch. So the first attempt
+      # "Found 0 artifact(s)" (about half the runs since 2026-11-23 20:43Z), which the wait above cannot watch. So the first attempt
       # may fail without failing the job (continue-on-error), and ONE second attempt follows, after a logged pause, only if the
       # first one failed. This is one bounded attempt inside this run, not a re-run of a job; the second has no
       # continue-on-error, so a second failure fails the job. Both are the same action and inputs. A failed first attempt that
