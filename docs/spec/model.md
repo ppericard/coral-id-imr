@@ -35,6 +35,39 @@ larger `dd`, and takes `pg`, `ds`, `mx` and `ex` from the device that played.
 **A wrong answer is a failed observation for the unit shown and the unit given** (rule L2): the unit wrongly given
 counts it in its progress, recent results and runs, but gets no Elo step (below).
 
+## The state version and its views
+
+What is read across the units is computed once per version of the player's state, not by each reader
+([the design](../reviews/2026-11-24-incremental-engine-state.md), section 4.3). `app.js` `STATE_V` is one counter,
+bumped (`stateBump`) by every write of an input and only by those. The inputs are the records `P`, the quiz settings
+`Q`, the intro map and its offer, the first-launch records, the sheet's version, the photo statistics, the data in force
+(`DATA`, the tree `TREEU`, the curation) and the subject.
+
+Their writers bump it:
+
+- `store.set` of an input's key (`STATE_KEYS`: each subject's `progress`, `quiz`, `intro`, `intro-offer` and `start`,
+  `reefid-sheet-v`, the photo statistics);
+- the scorer's caller and its writes to the record (`quiz.js` `recordAnswer`, `model.js` `answeredAt`, `varRight`), and
+  every recalculation (`model.js` `mxRecalc`);
+- `sync.js`'s refills of `P` (`replayAdoptS`, `mergeSubject`);
+- a subject switch or visit (`subjectLoad`, `inSubject`), a data or tree build (`build`, `treeBuild`, `treePull`,
+  `rankPhotos`), the statistics joined (`statsJoin`), a record made (`st`) and a reset;
+- `model.js` and `sync.js` once loaded, since the views read their functions.
+
+The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
+sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
+is compared at each read of a view (`stateNow`), so a write that went round `store.set` (another tab) bumps the version
+too.
+
+A view (`stateView`) is a function of the inputs alone, computed at its first read in a version and read as it is until
+the next; a list keeps its order, so every draw that reads it draws the same, and it is shared, never changed by its
+readers. Nothing a view keeps is stored or synced: the records stay the only source, and a replay or a merge that
+refills them bumps the version. The views now are the units in play: `bonusList`, `pool`, `sciUp` and `shareFree`
+(their computations `bonusCalc`, `poolCalc`, `sciUpCalc`, `shareFreeCalc`). With `VIEW_CHECK` on (every smoke page and
+`tools/learnsim.js --facheck`, through `tests/facheck.js`), every read of a kept view computes it again and compares,
+order included; a difference throws, and again in a task of its own. `tests/stateview.test.js` compares the views with
+the code before them over rated-world runs and made-up states, and checks that every declared writer bumps.
+
 ## Which unit next
 
 `weight()` draws the unit to ask (LEARNING.md "One draw weight"): `drawW` = 1 − x·c, x the chance to recognise an average

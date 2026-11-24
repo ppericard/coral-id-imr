@@ -431,6 +431,22 @@
   "fish-s414-cand-450600381": {
    "code": "d1g0sl1c2",
    "keep": "best"
+  },
+  "fish-s414-cand-113093472": {
+   "code": "o0g0sl1c3",
+   "keep": "alt"
+  },
+  "fish-s414-cand-113093466": {
+   "code": "d1g1sl1c3",
+   "keep": "best"
+  },
+  "fish-s414-cand-317509410": {
+   "code": "d1g1mm1c3",
+   "keep": "best"
+  },
+  "fish-s414-cand-609112212": {
+   "code": "p1g0sl1cw5",
+   "keep": "best"
   }
  }
 }

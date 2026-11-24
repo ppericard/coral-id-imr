@@ -86,7 +86,7 @@ page), any other opens Home, and the address is replaced. The former forms (`#g-
   (`app.js` `UNITS` `sheetParts`: the corals' `genus`, the tree subjects' `family`, `genus` and `species`), which
   `sheetBody` draws from the sheet's builders of those names; a declared part with no builder throws, and a builder
   that returns `null` (a part this sheet does not have, such as a species' `phases` with no cited phase) gets no line. **A unit's card on a Learn list** (the ID tips view here, the fish families and the sea slug
-  genera, `learn.js` `viewList`): one shared builder, `app.js` `listCard` (rule S1; the subject's own line under the
+  genera, `learn.js` `viewList`): one shared builder, `idtips.js` `listCard` (rule S1; the subject's own line under the
   name and its notes are its arguments), on the `.lcard` surface (DESIGN.md "Components"). The whole card opens the
   unit's sheet (Pierre, 2026-11-20): one link, the unit's name (`a.tipsheet`), stretched over the card, a chevron, no
   "Open the sheet" line; its cues without their heading or source (`tipsList` `bare`), which the sheet shows (rule C2);
@@ -212,6 +212,10 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   and follows it on resize. `fitTiles` honours `data-minw` (the phone progress wall: the names stay readable, the wall
   may scroll).
 - `IS_ADMIN`: true in Pierre's admin browser (the token vault present); gates Pierre-only controls.
+- The ID tips and their sources (`idtips.js`, tier 1, after `gloss.js`): `tipsList` (the short ID tips, or the
+  summary), `notesList` (the lecture notes of the genus sheet), `tipsText`, the content editor's sources (`esrcHtml`,
+  `esrcTag`, `critRef`; rule C2), `altName` (a name's other spelling), and the Learn list's `listCard`, `tipsHead` and
+  `tipCard`. Declarations only: nothing runs at load.
 
 ## Settings (⚙, `index.html` and `app.js`)
 
@@ -240,7 +244,7 @@ genera for the corals, Scientific names for the fish. The rows:
 A small inline script in `index.html` applies the theme, palette and colour-blind mode before the first paint. There is
 no "Photos from Dauin / PH / All" setting, and none is to come back.
 
-## Install the app (`app.js`)
+## Install the app (`install.js`)
 
 Phone players are nudged to install the app (an icon on the home screen) instead of opening a link in the browser.
 `installNudge` offers one card (`installCard`, `cardShow` kind `feature`, `.unlock.install`, the app's icon in the

@@ -1,10 +1,10 @@
 # The level's answer count and the checkpoints that hang on it (2026-11-09)
 
-**Status: decided work, its readers built (2026-11-23, "Step 1 built", below), the count itself to come.** Written on
-2026-11-09 on the branch `claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and brought to
-`main` on 2026-11-17 (rule W6), checked again against `origin/main` at 2c6815ba. The branch also held `model.js`
-`countShift`, a shift this note shows is not enough (below, "The problem"); it is not brought over. On `main` the level's count still
-keeps the larger of the device's and the log's (`core.js` `replayedOf`, its comment names this note's branch).
+**Status: decided work, built (2026-11-23, "Step 1 built", "Step 2 built" and "The opt-ins' Not now built", below).**
+Written on 2026-11-09 on the branch `claude/level-count-from-log` (a follow-up parked from #840, rule W27's cut) and
+brought to `main` on 2026-11-17 (rule W6), checked again against `origin/main` at 2c6815ba. The branch also held
+`model.js` `countShift`, a shift this note shows is not enough (below, "The problem"); it is not brought over. Until
+step 2 (below) the level's count kept the larger of the device's and the log's (`core.js` `replayedOf`).
 
 Rule D9 (Pierre, 2026-11-09, Q322, Q330) wants the log's counts everywhere, the level's "answers so far" too, so answers
 counted twice leave the device. #840 does it for every unit but keeps the level's count as the larger of the two (main's
@@ -75,4 +75,48 @@ clock instead of one counter per checkpoint.
   answer; then `core.js` `replayedOf` and `replayBase` (the sheet's embedded copy too, rule D3) and a rules version (rule
   D5). Not on the clock yet: the opt-ins' "Not now" (`app.js` writes `Q[k + 'A']` and the count `core.js` reads against
   it). A checkpoint written on another device carries that device's clock: the same as its count until the drops, after
-  them off by the difference of the doubles the two devices dropped.
+  them off by the difference of the doubles the two devices dropped (step 2 keeps the clocks aligned on those marks,
+  below).
+
+## Step 2 built: the count follows the log (2026-11-23)
+
+- **The count** (`core.js` `replayedOf`, `replayBase`; the sheet's embedded copy, its changes file, rule D3): the level's
+  answer count (`ok`, `ko`) is the replay's, as every unit's already was, in the record adopted and in the merge
+  baseline. With no answer in the log at all, the level goes as a unit goes: dropped when the saved copy counts answers
+  there, kept (none of the log's fields) when it counts none (rule D9, Q330: no exception).
+- **Rules versions** (rule D5): the corals' 15, the fish's 7, the sea slugs' 4, no card (rule D6), so every device takes
+  the replay once and the doubles leave it; the leaderboards follow (rule D8). What moves, for whom: only a player whose
+  saved level counts more answers than the log (doubles from before #824, or answers from before a subject's log began)
+  sees that count come down to the log's: the thresholds on the count itself (`OPEN.STUCK_FROM`, `CHOICE.ASK`,
+  `WINK.AT`, `PULSE.FIRST`), the level's Elo step size in the game until the next replay (`core.js` `eloStep`, from the
+  count) and the leaderboard's `ELO_MIN` gate read the log's count. No bar, ability or learned mark moves: the
+  ability was already the log's. A player whose count agrees with the log sees nothing.
+- **The clock across a sync** (`sync.js` `clockTick`): `tally()` before a merge and before a replay's adoption, so a
+  count that goes up then down in one sync, or a clock not started before the drop, loses no answer, and right after
+  each, so the new count is the clock's baseline before the next answer (Codex, #1497). Before model.js is in (the quiz
+  tier) there is no clock to tick: it starts at the count it finds then.
+- **Two devices' clocks** (Codex, #1497): once a count goes down, two devices' clocks differ by the doubles each counted
+  (a new device's, or one after a sign-in, starts at the log's count), so a synced mark from a device ahead (an exam's
+  `s.ex.at`, a card's mark, a surprise card shown) would hold a gap back by the difference. The clock is kept as a
+  Lamport clock over those marks: it starts at the latest synced mark when that is ahead of the count (`model.js`
+  `clockMarks`), and after each subject's merge it moves up to the latest mark if it is behind (`clockSync`, from
+  `sync.js` `mergeSubject`). A mark of this device's is then due as much sooner; no mark is ever ahead of the clock.
+  Tests: `tests/trustlog.test.js` (the clock tests, a new device loading an exam in course), `tests/intro.test.js`.
+
+## The opt-ins' Not now built (2026-11-23)
+
+- **The mark** (`app.js` `openNo`): a "Not now" to a part opened by choice (the fish's circle 3) keeps the answer clock
+  (`tally()`) in `Q[k + 'A']`, and `openOf` gives `core.js` `openState` the clock as `at`, so the offer's one second ask
+  comes `OPEN_AGAIN` (200) answers after the "Not now" whatever the level's count did meanwhile. `core.js` is unchanged:
+  `openState` compares the two values it is given.
+- **Synced like the others**: the mark travels with the choice in the quiz settings (`sync.js` `mergeSubject`, the
+  `S.optin` keys, the latest choice winning), so it is a synced mark of the Lamport clock: `model.js` `clockMarks` reads
+  it (`opensNow`), a clock that starts takes it when it is ahead of the count, and `clockSync` (from `sync.js`
+  `clockSeen`, after the quiz settings are merged) moves a clock behind it up to it.
+- **Marks written before**: on the count, never ahead of the clock (the clock is at least the count), so such a mark
+  brings the second ask no later than before, and sooner by a drop that came before it. An app from before this change
+  reads a clock mark against its count: later by the drop, as before this change.
+- **No rules version** (rule D5): the mark times an offer card; it is not a progress rule, the replay neither reads nor
+  writes the quiz settings, and no bar, ability or count moves.
+- Tests: `tests/livelocked.test.js` (a count that goes down after "Not now"; a mark synced from a device ahead, and a
+  clock that starts at it), `tests/fish.smoke.js` (`SMOKE_ONLY=quiz`: the card's "Not now" marked on the clock).

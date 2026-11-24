@@ -36,7 +36,8 @@ vm.createContext(ctx);
 vm.runInContext(
   [
     block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
-    block(src('app.js'), 'function lvlNext(O, L, met) {', '\n}\n', {through: 1, file: 'app.js'}),
+    block(src('app.js'), 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
+    block(src('app.js'), 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
     block(src('app.js'), 'function spPlay(L, score, met, on) {', '\n}\n', {through: 1, file: 'app.js'}),
     'const GX = n => GXS[n];',
     'this.T = {treeGenera, spPlay};'

@@ -1070,6 +1070,74 @@ async function overlays(b, base) {
     if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
     await c.close();
   }
+  // The answer log's photos are those seen when answering: a corallites hint left closed is not logged in ph (the hint
+  // revealed after the answer is sc.h, and the montage of a wrong answer does not show it), one opened first is. The
+  // question is put on screen, not drawn: a colony with a wide, a medium and a corallites photo, the corallites the hint
+  // (model.js photoSet's shape), so no draw decides whether a hinted question comes.
+  for (const [opened, ok] of [
+    [false, true],
+    [true, true],
+    [false, false]
+  ]) {
+    const at = `Hint log, hint ${opened ? 'opened' : 'left closed'}, ${ok ? 'right' : 'wrong'} answer`;
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+    });
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await qa.ready(p);
+    const r = await p.evaluate(
+      ([opened, ok]) => {
+        document.querySelectorAll('.unlock').forEach(x => x.remove());
+        const key = p => p.o || p.f;
+        let t = null,
+          set = null;
+        for (const n of slateGenera()) {
+          const [W, M, C] = ['wide', 'medium', 'macro'].map(v => gamePics(n, v).filter(p => gamePhotoOk(n, p)));
+          const w = W.find(x => x.form !== 'x' && M.some(y => key(y) === key(x)) && C.some(y => key(y) === key(x)));
+          if (w) {
+            t = n;
+            set = {
+              shown: [
+                {...w, view: 'wide'},
+                {...M.find(y => key(y) === key(w)), view: 'medium'}
+              ],
+              hint: {...C.find(y => key(y) === key(w)), view: 'macro'}
+            };
+            break;
+          }
+        }
+        if (!set) return {none: true};
+        SHOWNQ = null;
+        question('quiz', t, shuffle([t, ...distractors(t, pool(), 3)]), 'Which genus?', set);
+        const hb = document.getElementById('hintb'),
+          files = () => [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f);
+        if (!hb) return {t, nohint: true};
+        if (opened) hb.click();
+        const before = files(),
+          a = smokeAnswer(ok),
+          after = files(),
+          row = store.get(LOG0, []).pop() || {},
+          hint = (row.sc || {}).h || after.filter(f => !before.includes(f)).pop() || after.pop(),
+          montage = [...document.querySelectorAll('#view .qstage.qvs img')].map(i => i.currentSrc || i.src);
+        return {t: a.t, asked: t, g: row.g, before, hint, ph: row.ph || '', h: (row.sc || {}).h, montage};
+      },
+      [opened, ok]
+    );
+    if (r.none) fails.push(`${at}: no genus has a wide, a medium and a corallites photo of one colony`);
+    else if (r.nohint) fails.push(`${at}: the question put on screen has no hint button ${JSON.stringify(r)}`);
+    else if (r.g !== r.asked) fails.push(`${at}: the last log row is not this question's ${JSON.stringify(r)}`);
+    else if (
+      opened
+        ? !r.ph.split(' ').includes(r.hint) || r.h
+        : r.ph !== r.before.join(' ') || r.ph.split(' ').includes(r.hint) || r.h !== r.hint || r.montage.some(s => s.includes(r.hint))
+    )
+      fails.push(`${at}: ${JSON.stringify(r)}`);
+    await c.close();
+  }
   // Two reports from one answer: the answer's Report button stays live after a send, each send is its own report (its
   // own id, its own kind and note).
   {
@@ -1608,6 +1676,15 @@ const SHEET = () => {
         ...JSON.parse(localStorage.getItem('test-sheet-scopes') || '{}')
       };
     if (!q.get('name')) return {ok: false};
+    // A name that looks like Anna's (a Cyrillic A first): a new account under it would be refused (Code.gs nameIssue_).
+    if (q.get('name') === '\u{410}nna') return {ok: true, found: false, taken: 'lookalike'};
+    // Zoe and its accent, made decomposed (REE-35): found as typed, as any script finds it; its NFC spelling is no
+    // account, and a new one under it would look like it (Code.gs nameIssue_).
+    if (q.get('name').toLowerCase() === 'zoe\u{301}')
+      return q.get('pin') === '1234'
+        ? {ok: true, found: true, updated: '2026-10-20T10:00:00.000Z', rev: 3, data: account}
+        : {ok: false, error: 'pin'};
+    if (q.get('name').toLowerCase() === 'zo\u{E9}') return {ok: true, found: false, taken: 'lookalike'};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
     // test-sheet-acct: the account's generation (the sheet's _acct), as a name taken again after an archive has another
@@ -1731,6 +1808,7 @@ async function signin(base) {
         // The Scientific names offer answered too: it may come inside these 20 answers (a family at Advanced),
         // and an offer card holds the sign-in card the same way.
         Q.sci = false;
+        stateBump();
         saveQ();
         // The juvenile and colour-phase cards already seen: the first such photo (an angelfish juvenile, early class, can come
         // at any answer) arms its card for the break at Next and that answer gives the sign-in card its turn (quiz.js answer,
@@ -1835,6 +1913,31 @@ async function signin(base) {
         if (said !== 'This name is reserved, please choose another.') fails.push(`sign-in: the reserved name ${nm} says "${said}"`);
         if (st.sync || st.posts.length) fails.push(`sign-in: the reserved name ${nm} signed in or sent something`);
       }
+      // REE-35: a name that looks like a taken one (the sheet's taken), and one with an invisible character (the form's
+      // own check, core.js nameHidden), typed decomposed: said on the form, nothing signed in or saved, and the name
+      // sent to the sheet in NFC (core.js nameClean).
+      for (const [nm, re, sent] of [
+        ['\u{410}nna', /looks the same is already taken/, '\u{410}nna'],
+        ['Zoe\u{301}\u{200B}', /invisible character/, 'Zo\u{E9}\u{200B}']
+      ]) {
+        await submit(p, nm, '1234');
+        await p
+          .waitForFunction(r => new RegExp(r).test(document.querySelector('.signnudge [role=status]').textContent), re.source, {
+            timeout: 5000
+          })
+          .catch(() => {});
+        const said = await p.textContent('.signnudge [role=status]'),
+          st = await state(p),
+          gets = await p.evaluate(() =>
+            JSON.parse(localStorage.getItem('test-sheet-log') || '[]')
+              .filter(x => x.get)
+              .map(x => x.name)
+          );
+        if (!re.test(said)) fails.push(`sign-in: the name ${JSON.stringify(nm)} says "${said}"`);
+        if (st.sync || st.posts.length) fails.push(`sign-in: the name ${JSON.stringify(nm)} signed in or sent something`);
+        if (gets[gets.length - 1] !== sent)
+          fails.push(`sign-in: the name ${JSON.stringify(nm)} reached the sheet as ${JSON.stringify(gets[gets.length - 1])}`);
+      }
       // The right code: "Is it you?" with the account's numbers, nothing merged yet.
       await submit(p, 'Anna', '1234');
       await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
@@ -1876,6 +1979,33 @@ async function signin(base) {
         );
     }
   );
+  // REE-35: an account whose name was made decomposed. Typed so, the sheet is asked about it as typed (any script finds
+  // it; not its NFC form). Typed in NFC, it is another name that looks like it: said, nothing signed in or sent (the
+  // player types their name as they first did, as the message says).
+  await run(seen, async p => {
+    await card(p);
+    await submit(p, 'Zoe\u{301}', '1234');
+    await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});
+    let gets = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('test-sheet-log') || '[]')
+        .filter(x => x.get && x.name)
+        .map(x => x.name)
+    );
+    if (!(await p.$('.signnudge .sconfirm')) || gets.join('|') !== 'Zoe\u{301}')
+      fails.push(`sign-in: a decomposed account typed as it was made was not asked as typed: ${JSON.stringify(gets)}`);
+    await p.click('.signnudge .sconfirm button[type=button]');
+    await p.waitForTimeout(1000);
+    await submit(p, 'Zo\u{E9}', '1234');
+    await p
+      .waitForFunction(() => /looks the same is already taken/.test(document.querySelector('.signnudge [role=status]').textContent), null, {
+        timeout: 5000
+      })
+      .catch(() => {});
+    const said = await p.textContent('.signnudge [role=status]'),
+      st = await state(p);
+    if (!/looks the same is already taken/.test(said)) fails.push(`sign-in: the NFC form of a decomposed account says "${said}"`);
+    if (st.sync || st.posts.length) fails.push('sign-in: the NFC form of a decomposed account signed in or sent something');
+  });
   // A fresh device: the question too (everyone confirms the account), with no "this device" line.
   await run(seen, async p => {
     await card(p);
@@ -2861,6 +2991,7 @@ async function startSmoke(b, base) {
     await p.evaluate(
       ([n, th]) => {
         P['~level'] = {ok: n - 10, ko: 10, th, at: Date.now()};
+        stateBump();
         location.hash = 'practice/quiz';
       },
       [n, th]
@@ -3011,7 +3142,7 @@ async function startSmoke(b, base) {
     }
     await p.evaluate(() => (location.hash = 'learn/genera'));
     await drawn(p);
-    // The ID tips view: each genus one card that opens its sheet (app.js listCard, shared with the fish and sea slugs;
+    // The ID tips view: each genus one card that opens its sheet (idtips.js listCard, shared with the fish and sea slugs;
     // Pierre, 2026-11-20): one link, its name, stretched over the card; its look-alikes' Compare links above it.
     await p.evaluate(() => document.querySelector('[data-gv="tips"]').click());
     await p.waitForSelector('#azgrid .lcard', {timeout: 8000});
@@ -3478,6 +3609,7 @@ async function tipsCheck(b, base) {
           [L[2], L[3]]
         ].slice(0, n))
           P[a] = {...(P[a] || {}), conf: {...((P[a] || {}).conf || {}), [b]: 3}};
+        stateBump();
         return L.length;
       }, n);
     {
@@ -4149,6 +4281,7 @@ async function duelReliefCheck(b, base) {
       const aim = await p.evaluate(() => {
         const P0 = JSON.stringify(P);
         ['Pocillopora', 'Stylophora'].forEach(n => (P[n] = {...(P[n] || {}), ok: 10, ko: 2, h: '1101101111', th: 1, pg: 0.5}));
+        stateBump();
         const d = h => {
           HOLDS = h;
           let s = 0;
@@ -4162,6 +4295,7 @@ async function duelReliefCheck(b, base) {
         const r = {off: d(0), on: d(INTRO.HOLD + 3)};
         HOLDS = 0;
         P = JSON.parse(P0);
+        stateBump();
         return r;
       });
       if (!(aim.on < aim.off - 0.05)) fails.push(`${W} the duel's photo not aimed lower with the hold on: ${JSON.stringify(aim)}`);
@@ -6576,7 +6710,7 @@ async function tourArrowsCheck(b, base) {
   return fails;
 }
 
-// The offer to install the app (app.js installNudge, installCard), at 390 px on a touch screen: an
+// The offer to install the app (install.js installNudge, installCard), at 390 px on a touch screen: an
 // Android-like browser (a beforeinstallprompt event, made here: headless Chromium sends none), iPhone Safari (the steps),
 // the installed app (standalone), the 2nd visit, a quiz question, and ⚙ Settings › Install the app. The decision itself is
 // in tests/install.test.js.
@@ -7405,7 +7539,7 @@ const PARTS = [
         // A glossary term on a card opens its definition on top of the card.
         const gt = await q2.$('.unlock.intro .gt');
         if (gt) {
-          // Which event hid the definition, if one did (app.js: a click elsewhere, Escape, or a scroll once the term has
+          // Which event hid the definition, if one did (gloss.js: a click elsewhere, Escape, or a scroll once the term has
           // moved, glossMoved), and where the term was when shown (glossAt) and is now: a failure then says why (seen
           // failing under load, cause not established).
           await q2.evaluate(() => {

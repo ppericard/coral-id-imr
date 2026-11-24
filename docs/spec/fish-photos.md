@@ -62,6 +62,17 @@ the circle-1 entries (`--circle` for the other circles).
     a one-species family, 6 each for two, 4 each for three, `EASY_NEED` (3) from four species on. 12: the families
     with 12 easy observations or more showed almost no near repeat ([the review](../reviews/2026-11-21-photo-diversity.md)).
   - Faves are sparse (most thin species' observations have none), so the neutral order still decides most picks.
+  - **Beyond the cap** (Pierre, 2026-11-23 17:22, REE-243: «Dans un deuxième temps si le jugement ne rempli pas
+    assez»; 18:37: «on y est au "deuxième temps"»): such a species may also hold `BEYOND_PER` (3) room per easy adult
+    observation it lacks (`easy_need` - `easy_obs`) beyond its cap, at most `BEYOND_MAX` (30), counted as the cap
+    counts (`beyond_cap`), for faved observations only (`faves_count` > 0, not annotated juvenile: `faved`), the
+    most-faved first, from the same searches and buckets (an observation cut by the room under the cap brings its
+    other photos). Those candidates carry `bc: 1`: `species_room` counts them apart (`bonus`), so the room under the cap
+    and each phase's reservation stay as without them (FishBase or a later run still fills an open phase).
+    Never a wink entry's species; nothing is removed when the shortfall shrinks. **Only in a refill run by hand with
+    `--beyond-cap`**, when the integrator decides (a second stage, not a standing loop): the scheduled refill never
+    takes that room, and it is never remembered as searched to the end, so each `--beyond-cap` run searches it again.
+    [The decision](../decisions/2026-11-23-faved-beyond-cap.md).
 
 ### The cap, weighted by phases
 
@@ -101,7 +112,7 @@ the circle-1 entries (`--circle` for the other circles).
   then at most one new `best`, none needed).
 - **`--topup`** (`topup`, run by every `--refill` first, over all the species of its circles, whatever their room): the
   observations fetched under the former limit of 4 photos per observation (`OLD_LIMIT`: exactly 4 candidate records,
-  none sent elsewhere) are asked again by id, 200 a request, and bring their other photos; one with exactly 4 photos on
+  none sent elsewhere and none taken beyond the cap, `bc`, fetched since that limit) are asked again by id, 200 a request, and bring their other photos; one with exactly 4 photos on
   iNaturalist is asked again at each refill (about 2-3 requests a run).
 - One function for both tools: `species_room` (cap, phases, photos kept per phase, room per phase).
 
@@ -146,8 +157,9 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   before Open Water; 3 is the refill's own count, not `RARE.FEW`; no juvenile or phase, which the draw holds back before Open Water: `easy_obs`
   reads the judged tags, Pierre's, and a candidate source's life stage; a game photo by its tags only) in play or
   sure to come (Pierre's adds, the pre-sort's sure adds `sure_add`, the mirror of `treeSure`'s adds, the game photos of
-  `fish-photos.json`). Only room is refilled: a species short of easy photos at its cap stays as it is (the cap holds;
-  its waiting candidates need the pass or Pierre), listed as `at_cap` by `--refill --plan`.
+  `fish-photos.json`). Only room is refilled: under the cap, or, in a `--refill --beyond-cap` run by hand, beyond it for
+  faved observations of a species short of easy adults (`beyond_cap`, above; `--refill --plan --beyond-cap` lists it as
+  `beyond`); a species with neither stays as it is, listed as `at_cap`. `--only` limits the species considered (the other records are kept).
 - **Which**: at most `REFILL_MAX` (40) species a run (rule C7: a few requests each, the general searches batched, plus
   the batched phase searches), the shortest first (short of easy photos with nothing waiting for the judging pass, then
   the largest share of the cap missing, then teaching order).
@@ -158,7 +170,7 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   `id_below`, up to `GEN_PAGES` = 5 pages of 200) while it brings fewer usable photos than the room; then FishBase
   (`fetch_fishbase.py`, offline) fills what iNaturalist left and `--rep` tags the covers, for the refilled species only.
 - **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts, cap}}): a part of the room
-  ("free", the general searches; `juvenile`, `male`, `female`, the phase searches) still open after the run whose
+  ("free", the general searches; `juvenile`, `male`, `female`, the phase searches; never the room beyond the cap) still open after the run whose
   searches were read to their end (`ends`), or which got nothing, is searched to the end that day, under the cap the
   species had then (`cap`); the species is skipped while every open part of its room is in a record less than
   `RECHECK_DAYS` (30) old made under a cap at least its cap now (`pick_short`; a record without `cap` reads as the cap
@@ -235,7 +247,8 @@ Photo records have the coral candidates' shape: `f` (`fish-<species id>-cand-<iN
 (iNaturalist's taxon name), `own`, `loc` (dauin / ph / world, world = abroad in the Indo-West Pacific), `src` (the
 original, shown straight from iNaturalist in the admin), `r: 1`, plus `st` (iNaturalist Life Stage / Sex annotations:
 juvenile, adult, female, male; FishBase's life stage, with initial and terminal for its phases; a hint for the phase,
-and the phase of the photo for the cap until a judging tag says otherwise) and `ni`. Nothing is downloaded and no photo
+and the phase of the photo for the cap until a judging tag says otherwise), `ni` and `bc` (taken beyond the cap:
+`beyond_cap`, counted apart by `species_room`). Nothing is downloaded and no photo
 is committed; the photos in play are downloaded (R2, the four sizes) when they enter the game.
 
 ## The fish curation

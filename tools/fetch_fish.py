@@ -37,6 +37,11 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   (fewer easy adult observations than easy_need: EASY_FAMILY, 12, shared over its family's species, at least EASY_NEED)
   takes iNaturalist's most-faved observations first (faves_count), the order above only between equal faves, its
   searches read on to GEN_PAGES pages; still Research Grade, the licences and the presence box, still judged on the rubric.
+  Such a species may also take faved observations (faves_count > 0, not annotated juvenile) beyond its cap (REE-243;
+  Pierre, 2026-11-23: «Dans un deuxième temps si le jugement ne rempli pas assez»): up to BEYOND_PER (3) room per easy
+  adult observation it lacks, at most BEYOND_MAX (30), counted as the cap counts (beyond_cap); never a wink entry's.
+  Only in a refill run by hand with --beyond-cap (a second stage the integrator decides, never the scheduled refill),
+  and never remembered as searched to the end: such a run searches it again.
 - Photos per species (Pierre, 2026-11-05, Q36): the cap is weighted by how variable the species looks: 30 photos for a
   stable species, +10 per extra phase (juvenile, intermediate phase, male or terminal phase, female) as the judging tags
   and the sources record them, at most 60 (cap_of; the phases: species_phases). Each extra phase holds PER_PHASE (10) of
@@ -55,7 +60,8 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   TREET.wink), so neither the refill nor FishBase searches it once it holds 5, and --topup leaves it alone.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
-  src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
+  src, r, plus st (life stage / sex annotations), ni (Pierre's own Needs ID observation, confirmed by rule S2) and bc
+  (taken beyond the cap: beyond_cap; species_room counts it apart).
   data/fish-cand.json = {"v": 1, "cand": {species id: [photo, ...]}}, one species per line (tools/datajson.py layout).
 - Curation: curation.json "fish" (written by the admin only, never here; its full shape is the admin plan's PR 4): add
   {f: 1}, seen {f: 1} (rejected), exclude {f: reason}, out {f: species id or "x"}. The top-level "exclude" (corals) is honoured too, by iNaturalist photo id.
@@ -70,7 +76,7 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   elsewhere and of what the pre-sort set aside), or fewer than EASY_NEED observations with a very easy photo (ease >=
   EASY_E) in play or sure to come (Pierre's adds, the pre-sort's sure adds, the game photos), or than easy_need for a
   family with few species (short of easy adults: the most-faved first, above). Only a species with room
-  is refilled (the cap holds: Q36); at most REFILL_MAX a run, the shortest first (short of easy photos with nothing
+  is refilled (the cap holds: Q36, but for the faved room beyond it with --beyond-cap, above: beyond_cap); at most REFILL_MAX a run, the shortest first (short of easy photos with nothing
   waiting for the judging pass, then the largest share of its cap missing), each search paged (id_below, up to
   GEN_PAGES pages) while it brings too few usable photos. Exhaustion is remembered in tools/fish_refill.json per species
   and part of its room ("free", or a phase iNaturalist can search on): a part still open after a run whose searches were
@@ -93,7 +99,7 @@ and what a run would add per source and phase from the cache (a species not cach
 nothing.
 
     python3 tools/fetch_fish.py [--circle 1] [--cap N] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
-    python3 tools/fetch_fish.py --refill [--circle 1 --circle 2 --circle 3] [--max N] [--today YYYY-MM-DD] [--plan]
+    python3 tools/fetch_fish.py --refill [--circle 1 --circle 2 --circle 3] [--only t05,s341] [--max N] [--today YYYY-MM-DD] [--plan]
     python3 tools/fetch_fish.py --topup [--circle 1 ...] [--only s091] [--offline | --plan]
 (--cap N: one fixed cap for every species instead of cap_of, for a test or a one-off; the phase rooms still apply.)
 Tests: node --test tests/fishphotos.test.js (offline fixtures).
@@ -191,6 +197,13 @@ REFILL = ROOT / "tools" / "fish_refill.json"  # what was searched to the end, pe
 # (select faves; docs/decisions/2026-11-23-easy-refill-faves.md). 12: the families with 12 easy observations or more
 # showed almost no near repeat (docs/reviews/2026-11-21-photo-diversity.md).
 EASY_FAMILY = 12
+# Faved candidates beyond the cap (REE-243; Pierre, 2026-11-23: «Dans un deuxième temps si le jugement ne rempli pas
+# assez», then «on y est au "deuxième temps"»): in a refill, a species short of easy adults may also hold BEYOND_PER room
+# (obs_cost) per easy adult observation it lacks (easy_need - easy_obs) beyond its cap, at most BEYOND_MAX, for faved
+# observations only (beyond_cap). 3: about one faved observation (a few photos) per easy adult missing, so the judging
+# pass gets one or two tries at each; BEYOND_MAX (one base cap) bounds a family that stays short. The integrator's call,
+# easy to correct.
+BEYOND_PER, BEYOND_MAX = 3, BASE_CAP
 
 
 def lic_class(lic, own):
@@ -531,7 +544,8 @@ def topup(args):
             continue  # a few very good photos, not a stock
         L = have.get(s["id"], [])
         recs = Counter(p["o"] for p in L)
-        bad = {p["o"] for p in L if p["f"] in moved}
+        # Moved photos, or taken beyond the cap (bc: fetched since the old limit, held to beyond_cap's bound).
+        bad = {p["o"] for p in L if p["f"] in moved or p.get("bc")}
         for o, k in recs.items():
             tail = o.rsplit("/", 1)[-1]
             if k == OLD_LIMIT and o not in bad and o.startswith(obs_url("")) and tail.isdigit():
@@ -585,6 +599,24 @@ def easy_need(t):
     (12 for one species, 6 for two, 4 for three, then 3). An entry that lists no species (a test's): EASY_NEED."""
     n = len((t or {}).get("species") or [])
     return max(EASY_NEED, -(-EASY_FAMILY // n)) if n else EASY_NEED
+
+
+def beyond_cap(R, t, easy, need):
+    """The room beyond the cap of a species short of easy adults (REE-243), for faved observations only: its cap raised
+    by min(BEYOND_MAX, BEYOND_PER * (need - easy)), net of what it already took beyond the cap (R["bonus"]: its bc
+    candidates) and of what it holds over the cap otherwise (R: species_room). Counted apart from the cap's room, so it
+    never takes a phase's reservation (species_room). 0 for a species not short of easy adults, or of a wink entry (a
+    few very good photos: WINK_CAP, Q372). A refill never takes it twice, and nothing is removed when it shrinks."""
+    if easy >= need or is_wink(t):
+        return 0
+    extra = min(BEYOND_MAX, BEYOND_PER * (need - easy))
+    return max(0, extra - R.get("bonus", 0) - max(0, R["have"] - R["cap"]))
+
+
+def faved(it):
+    """An observation the room beyond the cap may take (beyond_cap): faved on iNaturalist (fv) and not annotated
+    juvenile (the room is for easy adults)."""
+    return (it.get("fv") or 0) > 0 and "juvenile" not in (it.get("st") or "").split("/")
 
 
 def written_phases(s, t):
@@ -691,7 +723,8 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
     """Everything the cap of Q36 says about species s (entry t), shared by tools/fetch_fish.py and tools/fetch_fishbase.py:
     {"cap", "phases" (species_phases), "have" (photos still usable, weighted per observation: obs_cost), "held"
     ({phase: photos kept of it, counted the same way}), "obs" ({observation: photos still usable}), "room", "rooms",
-    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of, raised for
+    "free" (phase_room), "bonus" (the photos taken beyond the cap, bc: counted apart, so the cap's room and the phases'
+    reservations stay as without them; beyond_cap)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of, raised for
     a family the game covers with few species (family_cap). An
     observation's first usable photo in list order counts 1, the others EXTRA_W. A species of a wink entry (met only on
     the surprise cards) never holds more than WINK_CAP, whatever the cap (Q372)."""
@@ -701,15 +734,19 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
     c = family_cap(base, t) if cap is None else cap
     if is_wink(t):
         c, base = min(c, WINK_CAP), min(base, WINK_CAP)
-    held, obs = Counter(), Counter()
+    held, obs, bonus = Counter(), Counter(), 0
     for p in L:
         if not gone(p["f"]):
             o = p.get("o") or p["f"]
-            x = photo_phase(p, sug.get(p["f"]))
-            held[x if x in phases else ""] += obs_cost(obs[o], 1)
+            k = obs_cost(obs[o], 1)
             obs[o] += 1
+            if p.get("bc"):  # taken beyond the cap (beyond_cap): never eats the cap's room nor a phase's reservation
+                bonus += k
+                continue
+            x = photo_phase(p, sug.get(p["f"]))
+            held[x if x in phases else ""] += k
     return {"cap": c, "base": base, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, "obs": dict(obs),
-            **phase_room(phases, c, held)}
+            "bonus": bonus, **phase_room(phases, c, held)}
 
 
 def moved_of(cur):
@@ -832,15 +869,16 @@ def sure_add(j):
     return bool(FISH_TAGS.match(jt)) and jt[6] in "1so" and j.get("e") in (1, 2, 3, 4, 5)
 
 
-def state(cur, sug):
+def state(cur, sug, key="fish"):
     """(gone(f), excluded photo ids): gone = rejected, excluded, sent elsewhere by Pierre, set aside by the pre-sort, or an
     add of his held out for other species one could take for its subject (tools/fish_game.py other_out: his tag, his
-    legacy m refined by the pass's o or k; Q323, Codex review #839): such a photo is not in play, so it frees room."""
+    legacy m refined by the pass's o or k; Q323, Codex review #839): such a photo is not in play, so it frees room.
+    key: the subject's part of curation.json and data/suggest.json (the fish's; the sea slugs' tools/fetch_seaslugs.py)."""
     from fish_game import other_out  # here, not at the top: tools/fish_game.py imports this module
-    F = (cur or {}).get("fish") or {}
+    F = (cur or {}).get(key) or {}
     ex = set(F.get("exclude") or {}) | set((cur or {}).get("exclude") or {})
     excl = {pid(f) for f in ex} - {None}
-    S = (sug or {}).get("fish") or {}
+    S = (sug or {}).get(key) or {}
     add, tags = F.get("add") or {}, F.get("tags") or {}
     gone = lambda f: (f in (F.get("seen") or {}) or f in ex or f in (F.get("out") or {})
                       or (f not in add and sure_out(S.get(f)))
@@ -876,13 +914,15 @@ def record(s, o, p):
         r["st"] = o["st"]
     if own and o.get("g") != "research":
         r["ni"] = 1
+    if o.get("beyond"):
+        r["bc"] = 1  # taken beyond the cap (beyond_cap): species_room counts it apart
     return r
 
 
 def ends(c):
     """{part: its searches were read to their end} for the parts of one species' room (context c from run): "free" (the
-    general searches: Pierre's own, the Philippine tiers and, once asked, abroad) and each phase iNaturalist can search
-    on with room (its phase searches, in the Philippines and, once asked, abroad)."""
+    general searches: Pierre's own, the Philippine tiers and, once asked, abroad) and each phase iNaturalist can search on with room (its phase searches, in the
+    Philippines and, once asked, abroad)."""
     out = {"free": not c["omore"] and not any(c["more"].get(t) for t in TIERS) and not c["wm"].get("more")}
     for ph in INAT_PHASE:
         if c["R"]["rooms"].get(ph):
@@ -898,6 +938,7 @@ def fill(c, used):
     phase that iNaturalist cannot fill stays open for that phase: FishBase fills it next (tools/fetch_fishbase.py), or a
     later run; never adults in a juvenile's place. Room as obs_cost counts it (held: the photos each observation keeps)."""
     s, R, n, near, held = c["s"], c["R"], c["n"], c["near"], c["held"]
+    pool0 = {it["id"]: list(it["P"]) for L in c["pools"].values() for it in L}  # select cuts P: the beyond pass starts again
     taken, left = [], R["room"]
     free = R["free"] + sum(r for ph, r in R["rooms"].items() if ph not in INAT_PHASE)
     for ph in PHASES:
@@ -919,6 +960,17 @@ def fill(c, used):
     if free > 0:
         taken += select(c["pools"], free, c["more"], n, c["world"], anywhere=near, claimed=used, photos=True, held=held,
                         faves=c.get("faves", False))
+    if c.get("beyond", 0) > 0:
+        # Beyond the cap (REE-243): faved observations only (faved), most-faved first, from the same searches and with
+        # the same buckets (Pierre's own, presence, distance, abroad only as select allows). Each observation with its
+        # photos as found, less those taken (claimed): one cut by the room under the cap brings the rest here.
+        pools = {k: [{**{a: v for a, v in it.items() if a != "phase"}, "P": [p for p in pool0[it["id"]] if str(p[0]) not in used]}
+                     for it in L if faved(it)] for k, L in c["pools"].items()}
+        got = select(pools, c["beyond"], c["more"], n, lambda: [it for it in c["world"]() if faved(it)], anywhere=near,
+                     claimed=used, photos=True, held=held, faves=True)
+        for o in got:
+            o["beyond"] = True
+        taken += got
     return taken
 
 
@@ -956,18 +1008,29 @@ def run(args):
     ctx = []
     try:
         S = species_list(fish, set(args.circle), only)
-        # The general searches of the species with room, asked together where that saves requests (rule C7).
-        prefetch(net, [photo_taxon(s) for s, t in S if species_room(s, t, have.get(s["id"], []), gone, sugf, game.get(s["id"], ()),
-                                                              (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap)["room"] > 0],
-                 ["own", *TIERS])
-        # 1. Per species: its cap, phases and room (species_room), and the general searches.
+        # 1. Per species: its cap, phases and room (species_room). A species short of easy adults, in a refill (REE-198):
+        # the most-faved first (select faves), so its searches are read on to GEN_PAGES pages whatever they bring, the
+        # faves of older observations counted too; and faved observations beyond its cap (beyond_cap, REE-243).
+        pre = []
         for s, t in S:
             sid = s["id"]
             L = have.setdefault(sid, [])
             R = species_room(s, t, L, gone, sugf, game.get(sid, ()), (fbsrc.get(sid) or {}).get("photos") or (), moved, args.cap)
+            easy = easy_obs(sid, L, (cur or {}).get("fish") or {}, sugf, game.get(sid, ()), gone) if deep else 0
+            fav = deep and easy < easy_need(t)
+            # The room beyond the cap only in a run asked for it (--beyond-cap: by hand, never the scheduled refill).
+            bonus = fav and getattr(args, "beyond_cap", False)
+            pre.append((s, t, L, R, fav, beyond_cap(R, t, easy, easy_need(t)) if bonus else 0))
+        # The general searches of the species with room, under the cap or beyond it, asked together where that saves
+        # requests (rule C7).
+        prefetch(net, [photo_taxon(s) for s, t, L, R, fav, beyond in pre if R["room"] > 0 or beyond > 0], ["own", *TIERS])
+        # Then the general searches of each.
+        for s, t, L, R, fav, beyond in pre:
+            sid = s["id"]
             held = R.pop("obs")
             plan[sid] = {"name": s["name"], "entry": t["id"], **R}
-            if R["room"] <= 0:
+            plan[sid].update({"faves": fav, "beyond": beyond})
+            if R["room"] <= 0 and beyond <= 0:
                 plan[sid]["add"] = {}
                 continue
             # Every photo of an observation: one already among the candidates brings its other photos (usable_obs leaves
@@ -981,10 +1044,6 @@ def run(args):
             names = ["own", *TIERS]
             # A refill reads on (pages) while a search brings fewer usable photos than the room, so a species whose
             # newest observations are all known still finds the older ones, and the end of a search is known.
-            # A species short of easy adults, in a refill (REE-198): the most-faved first (select faves), so its searches
-            # are read on to GEN_PAGES pages whatever they bring, the faves of older observations counted too.
-            fav = deep and easy_obs(sid, L, (cur or {}).get("fish") or {}, sugf, game.get(sid, ()), gone) < easy_need(t)
-            plan[sid]["faves"] = fav
             enough = lambda res, known=known, need=R["room"], held=held, fav=fav: not fav and sum(
                 obs_cost(held.get(obs_url(o["id"]), 0), len(it["P"])) for o in res if obs_url(o["id"]) not in known
                 for it in [usable_obs(o, used, excl)] if it) >= need
@@ -1027,7 +1086,7 @@ def run(args):
             # anywhere, by licence.
             ctx.append({"s": s, "t": t, "R": R, "n": n, "held": held, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
                         "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {},
-                        "omore": omore, "wm": wm, "pwmore": {}, "faves": fav})
+                        "omore": omore, "wm": wm, "pwmore": {}, "faves": fav, "beyond": beyond})
 
         # 2. The phase searches, one phase at a time for every species with room in it, batched (rule C7): the
         # Philippines first, then abroad (Indo-West Pacific) for a species confirmed in the Philippines, when it is
@@ -1075,9 +1134,9 @@ def run(args):
             add = Counter(LOC[o["tier"]] for o in taken for _ in o["P"])
             spent = Counter({"free": 0})
             for o in taken:
-                spent[o.get("phase") or "free"] += o["cost"]
+                spent["faves" if o.get("beyond") else o.get("phase") or "free"] += o["cost"]
             plan[sid].update({"add": dict(add), "phase_add": dict(Counter(o["phase"] for o in taken for _ in o["P"] if o.get("phase"))),
-                              "spent": dict(spent), "end": ends(c)})
+                              "beyond_add": sum(len(o["P"]) for o in taken if o.get("beyond")), "spent": dict(spent), "end": ends(c)})
             if args.plan:
                 continue
             L = have[sid]
@@ -1127,20 +1186,22 @@ def easy_obs(sid, L, F, sug, game, gone):
     return len(out)
 
 
-def shortness(s, t, L, gone, F, sug, game=(), fb=(), moved=frozenset(), cap=None):
+def shortness(s, t, L, gone, F, sug, game=(), fb=(), moved=frozenset(), cap=None, bonus=False):
     """Whether species s (entry t) is short of candidates (Pierre, 2026-11-06, Q171), and how: {"cap", "have", "room"
     (species_room: the cap of Q36 net of what Pierre rejected, excluded or sent elsewhere and of what the pre-sort set
     aside), "parts" ({part: room} for the parts with room: "free", the general searches' room, intermediate phase
     included; each phase iNaturalist can search on), "easy" (easy_obs), "unjudged" (candidates waiting for the judging
-    pass), "need" (easy_need), "short"}. Short = room left, or fewer easy observations than need (short of easy adults:
-    a refill takes the most-faved first, REE-198). Only room can be refilled: the cap holds."""
+    pass), "need" (easy_need), "beyond" (beyond_cap; 0 unless bonus: --beyond-cap), "short"}. Short = room left, or
+    fewer easy observations than need (short of easy adults: a refill takes the most-faved first, REE-198). Only room
+    can be refilled: the cap holds, except for faved observations within "beyond" in a run asked for it (REE-243)."""
     R = species_room(s, t, L, gone, sug, game, fb, moved, cap)
     add = F.get("add") or {}
     parts = {"free": R["free"] + sum(r for ph, r in R["rooms"].items() if ph not in INAT_PHASE),
              **{ph: r for ph, r in R["rooms"].items() if ph in INAT_PHASE}}
     easy, need = easy_obs(s["id"], L, F, sug, game, gone), easy_need(t)
+    beyond = beyond_cap(R, t, easy, need) if bonus else 0
     unjudged = sum(1 for p in L if not gone(p["f"]) and p["f"] not in add and p["f"] not in sug)
-    return {"cap": R["cap"], "base": R["base"], "have": R["have"], "room": R["room"],
+    return {"cap": R["cap"], "base": R["base"], "have": R["have"], "room": R["room"], "beyond": beyond,
             "parts": {k: v for k, v in parts.items() if v > 0}, "easy": easy, "need": need, "unjudged": unjudged,
             "short": R["room"] > 0 or easy < need}
 
@@ -1154,8 +1215,10 @@ def fresh(e, today):
 
 
 def pick_short(rows, mem, today, n=REFILL_MAX):
-    """(pick, skip) from {sid: shortness} in teaching order: the species with room, less those whose every open part was
-    searched to the end less than RECHECK_DAYS ago (mem); the shortest first: short of easy photos with nothing waiting
+    """(pick, skip) from {sid: shortness} in teaching order: the species with room (under the cap, or, in a --beyond-cap
+    run, beyond it for faved observations: beyond_cap), less those whose every open part was searched to the end less
+    than RECHECK_DAYS ago (mem; the room beyond the cap is never remembered: a --beyond-cap run searches it again); the
+    shortest first: short of easy photos with nothing waiting
     for the judging pass (more candidates are their only way to easy photos), then the largest share of the cap
     missing, then teaching order; at most n. A record made under a smaller cap than the species has now (its "cap"; a
     record without one, under the species' own cap of Q36, "base") does not hold: the raised cap opened room its searches
@@ -1163,11 +1226,12 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
     order = {sid: i for i, sid in enumerate(rows)}
     want, skip = [], []
     for sid, r in rows.items():
-        if r["room"] <= 0:
+        if r["room"] <= 0 and r.get("beyond", 0) <= 0:
             continue
         e = mem.get(sid)
         same = (e or {}).get("cap", r.get("base", r["cap"])) >= r["cap"]
-        if e and fresh(e, today) and same and set(r["parts"]) <= set(e.get("parts") or []):
+        done = set((e or {}).get("parts") or [])
+        if e and fresh(e, today) and same and set(r["parts"]) <= done and r.get("beyond", 0) <= 0:
             skip.append(sid)
             continue
         want.append(sid)
@@ -1179,9 +1243,9 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
 def exhausted(P):
     """The parts of a refilled species' room (its plan entry from run) still open after the run and searched to the end:
     their searches read to the end (P["end"]), or nothing found for them. "No more candidates is no more candidates"."""
-    padd = P.get("phase_add") or {}
+    padd, badd = P.get("phase_add") or {}, P.get("beyond_add", 0)
     total = sum((P.get("add") or {}).values())
-    got = {"free": total - sum(padd.values()), **padd}
+    got = {"free": total - sum(padd.values()) - badd, **padd}
     spent = P.get("spent") or got  # the room taken (obs_cost); photos when not given
     left = {"free": P["free"] + sum(r for ph, r in P["rooms"].items() if ph not in INAT_PHASE) - spent.get("free", 0)}
     for ph in INAT_PHASE:
@@ -1220,16 +1284,21 @@ def refill(args):
     fbsrc = rd(args.fbsrc).get("species") or {}
     gone, _ = state(cur, sug)
     F, sugf, moved, game = (cur or {}).get("fish") or {}, (sug or {}).get("fish") or {}, moved_of(cur), game_photos(*game_files(args.photos))
-    S = species_list(fish, set(args.circle))
+    S = species_list(fish, set(args.circle), set(filter(None, (args.only or "").split(","))))
     rows = {s["id"]: shortness(s, t, have.get(s["id"], []), gone, F, sugf, game.get(s["id"], ()),
-                               (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap) for s, t in S}
-    mem = {k: v for k, v in load_mem(args.memory).items() if k in rows}
-    pick, skip = pick_short(rows, mem, today, args.max)
+                               (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap, getattr(args, "beyond_cap", False))
+            for s, t in S}
+    # --only: the records of the other species are kept as they are; otherwise those of species no longer listed go.
+    mem = {k: v for k, v in load_mem(args.memory).items() if k in rows or args.only}
+    pick, skip = pick_short(rows, {k: v for k, v in mem.items() if k in rows}, today, args.max)
     short = {k: r for k, r in rows.items() if r["short"]}
     if args.plan:
-        print(json.dumps({"short": short, "pick": pick, "skip": skip, "at_cap": sorted(k for k, r in short.items() if r["room"] <= 0)}))
+        print(json.dumps({"short": short, "pick": pick, "skip": skip,
+                          "at_cap": sorted(k for k, r in short.items() if r["room"] <= 0 and r["beyond"] <= 0),
+                          "beyond": {k: r["beyond"] for k, r in short.items() if r["beyond"] > 0}}))
         return {"short": short, "pick": pick, "skip": skip}
-    print(f"refill: {len(short)} short species ({sum(1 for r in short.values() if r['easy'] < r['need'])} short of easy adults, most-faved first), "
+    print(f"refill: {len(short)} short species ({sum(1 for r in short.values() if r['easy'] < r['need'])} short of easy adults, most-faved first; "
+          f"{sum(1 for r in short.values() if r['beyond'] > 0)} with faved room beyond the cap), "
           f"{len(skip)} searched to the end, {len(pick)} refilled now", flush=True)
     if not pick:
         save_mem(args.memory, mem)
@@ -1260,7 +1329,7 @@ def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fetch (default 1)")
     a.add_argument("--cap", type=int, help="one fixed cap of usable photos for every species (default: cap_of, 30-60 by phases)")
-    a.add_argument("--only", help="comma-separated species or teaching ids")
+    a.add_argument("--only", help="comma-separated species or teaching ids (--refill: only these are considered)")
     m = a.add_mutually_exclusive_group()
     m.add_argument("--refresh", action="store_true", help="ask iNaturalist again")
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")
@@ -1268,6 +1337,9 @@ def main(argv=None):
     a.add_argument("--rep", action="store_true", help="only tag the candidates that are their taxon's iNaturalist cover (rep)")
     a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171); runs --topup first")
     a.add_argument("--topup", action="store_true", help="the other photos of observations holding OLD_LIMIT (4) photos, asked by id")
+    a.add_argument("--beyond-cap", action="store_true",
+                   help="--refill: also the faved room beyond the cap of the species short of easy adults (REE-243; by hand, "
+                        "never the scheduled refill)")
     a.add_argument("--max", type=int, default=REFILL_MAX, help=f"--refill: species refilled at most (default {REFILL_MAX})")
     a.add_argument("--today", help="--refill: the day, YYYY-MM-DD (tests; default today, UTC)")
     a.add_argument("--memory", default=str(REFILL), help="--refill: what was searched to the end (tools/fish_refill.json)")

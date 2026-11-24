@@ -652,12 +652,12 @@ test('sign-out clears the first-launch answer and Coral basics with the progress
 });
 
 // A glossary popup gives the same link before and after the Tools tier is in
-// (Coral basics' step, Corallite anatomy's card, the Words list, or none), from one table in app.js.
+// (Coral basics' step, Corallite anatomy's card, the Words list, or none), from one table in gloss.js (tier 1).
 test('glossary links to Coral basics: one mapping, the same before the Tools tier loads', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+  const src = fs.readFileSync(path.join(__dirname, '..', 'gloss.js'), 'utf8'),
     a = src.indexOf('const BASICS_WORDS'),
     b = src.indexOf('function showGloss');
-  assert.ok(a > 0 && b > a, 'BASICS_WORDS and basicsHref in app.js, before showGloss');
+  assert.ok(a > 0 && b > a, 'BASICS_WORDS and basicsHref in gloss.js, before showGloss');
   const ctx = {window: {}};
   vm.createContext(ctx);
   vm.runInContext(src.slice(a, b) + '\nthis.H = basicsHref;', ctx);

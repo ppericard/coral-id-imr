@@ -529,6 +529,7 @@ function varRight(n, L) {
   const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
   s.vl = s.vl.filter(g => !got.has(g));
   if (!s.vl.length) delete s.vl;
+  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
@@ -773,12 +774,13 @@ function openRight(at = answersSoFar()) {
 // the fallback card; h: core.js startEvents, startUnion, merged as a union across devices), or a fallback card shown on
 // an imr answer (fb, keyed by the imr answer then its direction). An inferred answer (startInfer) and the ease events
 // are no answer.
+// Read for every unit: the stored record parsed once while it stays the same (sync.js keptBy).
+const imrOf = o =>
+  startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
+  Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr');
 const imrSaid = () => {
-  const o = store.get(startKey(SUBJ.id), null);
-  return (
-    startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
-    Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr')
-  );
+  const k = startKey(SUBJ.id);
+  return typeof keptBy === 'function' ? keptBy(k, null, 'imrSaid', imrOf) : imrOf(store.get(k, null));
 };
 // Families met first: while a unit of the slate in play is still to open (in fresh: those not met that may open now),
 // the units of a set that opens after the slate (app.js setLater: the fish scientific genera once accepted) wait. After
@@ -1212,16 +1214,20 @@ const introReset = at => {
 // model: the level a genus never answered starts from (ability, core.js playerStart).
 const startS = () => SUBJ || SUBJECTS[0]; // the subject on screen
 const startK = () => startKey(startS().id); // its record (core.js startKey)
-const startOf = () => {
-  const o = store.get(startK(), null);
-  return o && typeof o === 'object' && startOpt(o.c) ? o : null;
-};
+const startRec = o => (o && typeof o === 'object' && startOpt(o.c) ? o : null);
+const startOf = () => startRec(store.get(startK(), null));
 // A subject without a question of its own (no SUBJECTS start) plays as the default player.
 const startOn = () => !!startS().start;
 // The variables in force: the answer given, or the band below it once the gentle "lower" card's Coral basics was taken
 // (startEase: ease [c, answers, time], kept apart from the answer, which is never relabelled).
 const startEff = o => (o && Array.isArray(o.ease) && startOpt(o.ease[0]) ? o.ease[0] : o && o.c);
-const startV = () => startVars(startOn() ? startEff(startOf()) : null);
+// Read for every unit (ability, startP): the answer in force kept while the stored record stays the same (sync.js keptBy).
+const startEffOf = o => startEff(startRec(o));
+const startV = () => {
+  if (!startOn()) return startVars(null);
+  const k = startK();
+  return startVars(typeof keptBy === 'function' ? keptBy(k, null, 'startV', startEffOf) : startEffOf(store.get(k, null)));
+};
 // The gentle "lower" card's Coral basics (quiz.js startFbShow): the start variables move silently one band down from
 // those in force (know -> IMR course values, IMR course -> new: the prior); the answer stays.
 function startEase() {
@@ -1429,18 +1435,42 @@ const cbSave = () => store.set(COMEBACK.KEY, CB);
 // answer log's count replacing one that counted answers twice, rule D9), so a checkpoint kept on the clock counts the
 // answers given since it whatever the count does: a card's mark (introMark), the comeback's floor (CB.f), an exam's
 // last question (quiz.js ex.at), a surprise card (quiz.js winkShow), the prompts' spacing (quiz.js promptMark,
-// pulseAsk). It starts at the count, so a checkpoint kept at the count before it is a clock value too, and it is kept
+// pulseAsk), the "Not now" of a part opened by choice (app.js openNo, openOf). It starts at the count, so a checkpoint kept at the count before it is a clock value too, and it is kept
 // with the comeback's record (c the clock, n the count it last saw): it starts over with the progress (introReset)
 // and at sign-out with it. Thresholds on the count itself (OPEN.STUCK_FROM, CHOICE.ASK, WINK.AT, PULSE.FIRST) read the
 // count, which rule D9 lets move.
+// A clock that starts (a new device, a sign-in, a reset) starts at the latest synced mark if that is ahead of the count
+// (clockMarks).
 function tally() {
   const a = answersSoFar();
   if (typeof CB.c === 'number' && typeof CB.n === 'number') {
     if (a === CB.n) return CB.c;
     if (a > CB.n) CB.c += a - CB.n;
     CB.n = a;
-  } else [CB.c, CB.n] = [a, a];
+  } else [CB.c, CB.n] = [Math.max(a, clockMarks()), a];
   cbSave();
+  return CB.c;
+}
+// The latest mark another device of the account may have kept on its own clock and synced here: an exam's last question
+// (s.ex.at, in the progress), a card's (introMark), a surprise card shown (quiz.js winkSeen), the last "Not now" to a
+// part opened by choice (Q[k + 'A'], app.js openNo: synced with the choice, sync.js mergeSubject). Once a count has gone down
+// (rule D9) two devices' clocks can differ by the doubles each counted (a new device's starts at the log's count), so a
+// mark from a device ahead would hold a gap back here by the difference (Codex, #1497).
+function clockMarks() {
+  let m = 0;
+  const up = x => typeof x === 'number' && isFinite(x) && x > m && (m = x);
+  Object.keys(typeof P === 'object' && P ? P : {}).forEach(n => n !== LEVEL && P[n] && P[n].ex && up(P[n].ex.at));
+  if (typeof introMap === 'function') Object.values(introMap()).forEach(e => Array.isArray(e) && up(introMark(e)));
+  if (typeof winkSeen === 'function') Object.values(winkSeen()).forEach(up);
+  if (typeof opensNow === 'function' && typeof Q === 'object' && Q) opensNow().forEach(S => up(Q[S.k + 'A']));
+  return m;
+}
+// After a sync brought other devices' marks in (sync.js mergeSubject): the clock moves up to the latest of them when it is
+// behind (as a Lamport clock), so no synced mark is ahead of it; a mark of this device's is then due as much sooner.
+function clockSync() {
+  const c = tally(),
+    m = clockMarks();
+  if (m > c) ((CB.c = m), cbSave());
   return CB.c;
 }
 const recallOf = (days, S) => (1 + (FSRS.F * Math.max(0, days)) / S) ** FSRS.C;
@@ -1459,7 +1489,9 @@ const lastAt = () => {
   let L = [];
   try {
     L = subjEntries(
-      (typeof SYNC !== 'undefined' && SYNC && SYNC.log) || (typeof LOG0 !== 'undefined' && store.get(LOG0, [])) || [],
+      (typeof SYNC !== 'undefined' && SYNC && SYNC.log) ||
+        (typeof LOG0 !== 'undefined' && (typeof keptGet === 'function' ? keptGet(LOG0, []) : store.get(LOG0, []))) || // read only
+        [],
       SUBJ.id
     );
   } catch (e) {}
@@ -1548,6 +1580,7 @@ function answeredAt(s, good, now = Date.now()) {
     s.dl = d;
   }
   if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
+  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
 }
 function weighted(list) {
   const w = shareW(list, list.map(weight)); // the rank share (SHARE)
@@ -1672,6 +1705,7 @@ function statsJoin(base = PBASE) {
   PGD = join(gdOf(PBASE), 'gd');
   PTM = Object.assign(ptmOf(PBASE.photos, PBASE.v), ...own.map(o => ptmOf(o.photos, o.v)));
   GDIFF = {}; // genus difficulties follow the new photo stats and confusions
+  if (typeof stateBump === 'function') stateBump(); // the photo statistics: an input of the views (app.js)
 }
 statsJoin();
 // The domain-score bar for a subject the sheet does not replay (SUBJECTS replay false: fish; docs/LEARNING.md "The
@@ -1726,6 +1760,7 @@ const mxMarks = () =>
 function mxRecalc(fn, why = 'bkt') {
   const m0 = mxMarks();
   fn();
+  if (typeof stateBump === 'function') stateBump(); // the records recalculated: an input of the views (app.js)
   const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
   // Silent for now (MXL.QUIET): no mxLost, so no card and no achievement taken back.
   if (lost.length && !MXL.QUIET)
@@ -1824,10 +1859,45 @@ const answersSoFar = () => ((P[LEVEL] || {}).ok || 0) + ((P[LEVEL] || {}).ko || 
 // of its declared look-alikes the player can be asked (the slate and the bonus genera turned on), either way, or mixed
 // up with it. examLooks: those look-alikes, declared on either side as isLook reads them (Acropora lists Montipora,
 // Montipora does not list Acropora: the pair is still one to compare); lookLeft: the ones not compared yet.
+// The look-alikes come first (n's own list and lookRev's units that list n); when all are on the slate, the list is
+// the slate's in its order, and the units in play (app.js bonusList, which reads every set's units: the costly part)
+// are read only when one is off the slate. The same list, in the same order, as filtering every unit in play.
 const examLooks = n => {
-  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]),
-    own = (GX(n) || {}).look || [];
+  const own = (GX(n) || {}).look || [],
+    R = Array.isArray(own) ? lookRev() : null,
+    sl = R && slateGenera();
+  if (R && sl.every(x => R.K.has(x) || !GX(x))) {
+    const C = new Set([...own, ...(R.by.get(n) || [])].filter(x => x !== n)),
+      S = new Set(sl);
+    if ([...C].every(x => S.has(x))) return [...S].filter(x => C.has(x));
+  }
+  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]);
   return [...on].filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
+};
+// For examLooks, the units whose record lists a unit as its look-alike, over every record app.js GX reads (DATA.gen,
+// DATA.x.gen, TREEU.gen; K their ids, by: a unit to the ids whose look lists it). Made at most once per task, again
+// when one of those maps is replaced; null outside the app (no TREEU: the rated world, a test's stubs) or when a
+// record's look is not a list, and examLooks then reads every unit in play.
+let LOOKREV = null;
+const lookRev = () => {
+  if (typeof TREEU === 'undefined' || typeof DATA !== 'object' || !DATA) return null;
+  const M = [DATA.gen, (DATA.x || {}).gen, TREEU && TREEU.gen];
+  if (LOOKREV && LOOKREV.M.every((G, i) => G === M[i])) return LOOKREV.R;
+  const K = new Set(M.flatMap(G => (G && typeof G === 'object' ? Object.keys(G) : []))),
+    by = new Map();
+  let ok = true;
+  K.forEach(x => {
+    const L = (GX(x) || {}).look;
+    if (!L) return;
+    if (!Array.isArray(L)) return void (ok = false);
+    L.forEach(y => (by.has(y) ? by.get(y).push(x) : by.set(y, [x])));
+  });
+  const R = ok ? {K, by} : null;
+  if (typeof queueMicrotask === 'function') {
+    LOOKREV = {M, R};
+    queueMicrotask(() => (LOOKREV = null));
+  }
+  return R;
 };
 const lookLeft = n => looksLeft(P, n, examLooks(n));
 // And its confusion group met (docs/LEARNING.md "Confusion groups"): the exam opens once the unit's group partners that
@@ -2282,6 +2352,7 @@ domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     INTROS = null;
+    if (typeof stateBump === 'function') stateBump(); // the intro map read again: an input of the views (app.js)
     HOLDS = Number(store.get(HOLDK(), 0)) || 0;
     CB = cbLoad();
     GDIFF = {};
@@ -2291,3 +2362,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     memRecalcAll();
     domRecalcAll();
   });
+// The functions the views read (genScore, introduced, photoAny, imrSaid) are here now: a view made before this file came
+// (app.js stateView) is made again.
+if (typeof stateBump === 'function') stateBump();

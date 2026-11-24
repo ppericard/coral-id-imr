@@ -106,6 +106,80 @@ const IS_ADMIN =
       return true;
     }
   })();
+// The engine's state version (docs/ARCHITECTURE.md "The state version and its views"): one counter, STATE_V, bumped by
+// every write of an input of the views and only by those (stateBump). The inputs: the records P, the quiz settings Q, the
+// intro map and its offer, the first-launch records, the sheet's version, the photo statistics, the data in force (DATA,
+// the tree TREEU, the curation) and the subject. Their writers bump it: store.set of an input's key (STATE_KEYS), the
+// scorer's caller and its writes to the record (quiz.js recordAnswer, model.js answeredAt, varRight), every
+// recalculation (model.js mxRecalc), sync.js's refills of P, a subject switch or visit (subjectLoad, inSubject), a data
+// or tree build (build, treeBuild, treePull, rankPhotos), the statistics joined (model.js statsJoin), a record made (st),
+// a reset, and the files whose functions the views read, as they load (model.js, sync.js). The other keys an answer
+// writes (its queue, the comeback, the pending question, the achievements) are no input and bump nothing. The writers
+// outside this block call it guarded (typeof), as in model.js, quiz.js and sync.js: the unit tests run parts of these
+// files without it.
+let STATE_V = 0;
+const stateBump = () => void STATE_V++;
+// sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names).
+const STATE_KEYS = new Set([
+  ...SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k))),
+  'reefid-sheet-v',
+  'reefid-photo-stats',
+  ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)
+]);
+// Two inputs are read from storage at every use, kept parsed while their text stays the same (sync.js keptBy): the
+// sheet's version (sheetV) and a subject's first-launch record (model.js imrSaid, startV). Their stored text is compared
+// at every read of a view (stateNow), as keptBy compares it, so a write that went round store.set (another tab of the
+// app, a progress file, a test) bumps the version too.
+const STATE_LIVE = ['reefid-sheet-v', ...SUBJECTS.map(S => startKey(S.id))],
+  STATE_RAW = STATE_LIVE.map(() => null);
+function stateNow() {
+  let ch = false;
+  STATE_LIVE.forEach((k, i) => {
+    let raw = null;
+    try {
+      raw = keyGet(localStorage, k);
+    } catch (e) {}
+    if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = true));
+  });
+  if (ch) stateBump();
+  return STATE_V;
+}
+// A view (the units in play: bonusList, pool, sciUp, shareFree): f's value, computed at its first read in a version and
+// read again as it is until the next. f is a function of the inputs alone (no clock, no random number, no planner's
+// memory), so the value kept is the one f would give now; a list keeps its order, so every draw that reads it draws the
+// same. A value is shared, not a copy: its readers never change it. The version is taken before f runs, so a write
+// during f leaves the value to be computed again at the next read.
+// VIEW_CHECK.on (the smokes and tools/learnsim.js --facheck: tests/facheck.js): every read of a kept value computes f
+// again and compares, order included; a difference (an input written with no bump, a reader that changed the shared
+// value) throws, and again in a task of its own, so a reader that catches its errors cannot hide it.
+const VIEW_CHECK = {on: typeof window !== 'undefined' && window.VIEW_CHECK_ON === true};
+const viewItems = v => (v instanceof Set ? [...v] : v);
+const viewSame = (a, b) => {
+  if (a instanceof Set !== b instanceof Set) return false;
+  const x = viewItems(a),
+    y = viewItems(b);
+  return Array.isArray(x) && Array.isArray(y) ? x.length === y.length && x.every((n, i) => Object.is(n, y[i])) : Object.is(x, y);
+};
+function stateView(name, f) {
+  let at = -1,
+    v;
+  return () => {
+    const now = stateNow();
+    if (at !== now) {
+      v = f();
+      at = now;
+      return v;
+    }
+    if (VIEW_CHECK.on && !viewSame(v, f())) {
+      const e = new Error(`state view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
+      setTimeout(() => {
+        throw e;
+      });
+      throw e;
+    }
+    return v;
+  };
+}
 const store = {
   get(k, d) {
     try {
@@ -119,6 +193,7 @@ const store = {
     try {
       localStorage.setItem(k, JSON.stringify(v));
     } catch (e) {}
+    if (STATE_KEYS.has(k)) stateBump(); // an input of the views
   }
 };
 const VIEWS = [
@@ -677,6 +752,7 @@ function build() {
   // the data made (not enumerable: nothing that reads or copies DATA meets it).
   Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
   DATA = d;
+  if (typeof stateBump === 'function') stateBump(); // the data in force: an input of the views
   treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
 // The content version of subject S's answers (core.js contentVersion) from what its units were made from (cvIn: DATA's,
@@ -986,14 +1062,21 @@ function treeGenera(X, F) {
   return X;
 }
 // The next units of a parent's list O (in its order) a level brings into play: those not met with a photo, the first one,
-// or, while the level (L, every unit of it) holds fewer than INTRO.START units met, up to INTRO.START of them, so it can
-// open close units together (model.js openFresh, openGroup: a level opens in a group).
-function lvlNext(O, L, met) {
-  const k = L.filter(met).length < INTRO.START ? INTRO.START : 1,
+// or, while the level holds fewer than INTRO.START units met (m: how many of every unit of it, metCount), up to
+// INTRO.START of them, so it can open close units together (model.js openFresh, openGroup: a level opens in a group).
+function lvlNext(O, m, met) {
+  const k = m < INTRO.START ? INTRO.START : 1,
     out = [];
   for (const n of O) if (out.length < k && !met(n) && photoAny(n)) out.push(n);
   return out;
 }
+// How many units of a level's list L are met (lvlNext's m): counted at the first parent that asks, then kept for the
+// other parents of one spPlay or sciPlay call, since nothing the call reads is written during it. Counting it for every
+// parent made each call's work grow with the units times the parents.
+const metCount = (L, met) => {
+  let m = -1;
+  return () => (m < 0 ? (m = L.filter(met).length) : m);
+};
 // The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
 // met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
 // often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
@@ -1005,7 +1088,8 @@ function spPlay(L, score, met, on) {
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
-  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, L, met) : [])]);
+  const m = metCount(L, met);
+  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
 }
 // The species by their scientific names in play (the ssp set; docs/reviews/2026-11-18-species-step2-plan.md §2.3): from L
 // (TREEU.ssl), for each parent (their genus) in play now (up: the slate and the other sets' units in play) and at its
@@ -1023,12 +1107,13 @@ function sciPlay(L, score, met, up, on) {
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
+  const m = metCount(L, met);
   return [...by].flatMap(([p, U]) => {
     if (!up.has(p)) return [];
     const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1],
       ord = GX(p).species || [],
       O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp));
-    return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, L, met) : [])];
+    return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, m(), met) : [])];
   });
 }
 // A unit's kind of name (its record's kind: cn a species asked by its common name, sci by its scientific name; '' for a
@@ -1258,9 +1343,12 @@ const sciTop = (L, n) =>
     .sort(([, a], [, b]) => ((b.present || {}).dauinU || 0) - ((a.present || {}).dauinU || 0) || (b.cmi || 0) - (a.cmi || 0))
     .slice(0, n)
     .map(([u]) => u);
+// The stars among L (sciSpAll): the species whose record carries star (seaslug.json: the stars set, Q369 (c)).
+const sciStars = L => L.filter(u => !!((TREEU && TREEU.sps && TREEU.sps[GX(u).sp]) || {}).star);
 // The units in play a species by its scientific name may hang from (sciPlay up): the slate and the units the other
-// sets have in play (the fish's scientific genera; a sea slug genus is on the slate).
-const sciUp = () =>
+// sets have in play (the fish's scientific genera; a sea slug genus is on the slate). A view of the state version
+// (sciUp, with bonusList below): sciUpCalc computes it.
+const sciUpCalc = () =>
   new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
 // The species by their scientific names, for every subject that asks them (SUBJECTS names 'sci'; UNITS sets: the
 // fish's, the sea slugs'): no offer and no switch of its own (the fish's come with their scientific genera, Q404 A's
@@ -1337,6 +1425,7 @@ const treeBuild = () => {
     configurable: true
   });
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
+  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
   return TREEU;
 };
 // This player's reserve (core.js reserveOf, reserveSplit; docs/LEARNING.md "The reserve in the game"): a few
@@ -1396,6 +1485,7 @@ const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, TREEU: null, TREEP: null, TREEH: null, TREERAW: null, TREEF: null, TREEST: '', TREEON: false});
 function treePull() {
   if (TREE_AT) ({TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON} = treeOf(TREE_AT));
+  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
 }
 function treePush() {
   if (TREE_AT) Object.assign(treeOf(TREE_AT), {TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON});
@@ -1587,6 +1677,7 @@ function rankPhotos() {
     // (seenCover; licences break ties).
     if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, treeSeen, p => photoDiff(n, p), treeSpPick)).f;
   });
+  if (typeof stateBump === 'function') stateBump(); // the tree's photo lists: an input of the views
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
 // questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
@@ -1598,7 +1689,10 @@ function subjectLoad(S, keep) {
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
+  // the subject, its records and settings: inputs of the views (and again after the hooks' own state)
+  if (typeof stateBump === 'function') stateBump();
   SUBJ_HOOKS.forEach(f => f(keep));
+  if (typeof stateBump === 'function') stateBump();
 }
 // fn() run as if S were the current subject, then back (the sync's summary and merge, sign-in, sign-out). Synchronous.
 // SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
@@ -1614,10 +1708,13 @@ function inSubject(id, fn) {
   } finally {
     SUBJ_VISIT--;
     SUBJ = was.S;
+    // the subject on screen back: an input of the views, as its records and settings below
+    if (typeof stateBump === 'function') stateBump();
     if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
+    if (typeof stateBump === 'function') stateBump();
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
   }
 }
@@ -2003,246 +2100,6 @@ function zoom(list, i, opts = {}) {
   show();
 }
 
-/* ---------- IMR ID tips ---------- */
-// Two levels. ID tips (g.qt, tools/id_tips.txt): 2-3 short cues per genus condensed from the lecture, shown
-// everywhere a tip appears (quiz, cards, ID tips page, comparisons, genus sheet). Lecture notes (g.imr): the
-// lecturers' full cues (slide text, review slides, presenter's notes), only on the genus sheet.
-const slideRef = (k, L) => (L && L.length ? `${k} ${L.join(', ')}` : k);
-// Content only: the "Review slide: " / "Instructor's notes: " prefixes in data.json are not shown.
-const noteText = x => x.replace(/^(Review slide|Instructor's notes): /, '');
-// Full lecture notes for the genus sheet.
-const notesList = (g, cls = '') =>
-  g.imr.length
-    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.imr.map(noteText))
-        .map(x => `<li>${x}</li>`)
-        .join(
-          ''
-        )}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
-    : `<p class="note">Not on the lecture slides: see the Coral ID Key criteria below.</p>`;
-// Glossary terms in tips, lecture notes, genus cards, quiz feedback and the Coral ID Key: tap (or focus + Enter) to see
-// the definition and its source. Matching patterns per glossary term (Corallite and Polyp too, for players who never had
-// the IMR lecture; "septal teeth" opens Septa):
-const GLOSS_PAT = {
-  'Septo-costae': 'septo-costae',
-  'Septa': 'septa(?:l(?: teeth)?)?',
-  'Costae': 'costae',
-  'Coenosteum': 'coenosteum',
-  'Paliform lobes': 'paliform lobes?',
-  'Axial corallite': 'axial corallites?',
-  'Verrucae': 'verrucae',
-  'Hooded corallites': 'hooded(?: corallites?)?',
-  'Extra-tentacular budding': 'extra-tentacular(?: budding)?',
-  'Intra-tentacular budding': 'intra-tentacular(?: budding)?',
-  'Monticules': 'monticules?',
-  'Vesicles': 'vesicles?',
-  'Corallite': 'corallites?',
-  'Polyp': 'polyps?',
-  // The most frequent words of the genus sheets (tools/apply_plain_terms.py MORE).
-  'Free-living': 'free-living',
-  'Solitary': 'solitary',
-  'Separate walls': 'separate(?:[- ]walls?|-walled)|plocoid',
-  'Shared walls': 'shared walls?|cerioid',
-  'Phaceloid': 'phaceloid',
-  'Radial corallites': 'radial corallites?',
-  'Tentacular lobes': 'tentacular lobes?',
-  'Axial furrow': 'axial furrow',
-  'Spinules': 'spinules?',
-  // The wall around each cup ("wall" links to Coral basics); "separate walls"
-  // and "shared walls" keep their own entries (longer patterns win at the same place).
-  'Wall': 'walls?'
-};
-let glossRe = null;
-// Each term is underlined once per text block, at its first occurrence: a tip saying "corallites" three times gets one
-// underline, not three. seen (a Set) carries that over several calls that make one block (the items of one tips list).
-// btn: the text sits inside a button (a Coral ID Key box): the term is tappable but not a focus stop of its own.
-function gloss(text, seen = new Set(), btn = false) {
-  const t = esc(text);
-  if (!DATA.terms) return t;
-  if (!glossRe) {
-    // Longer patterns first, so "axial corallite" wins over "corallite" at the same place.
-    const keys = DATA.terms
-      .map(x => x[0])
-      .filter(k => GLOSS_PAT[k])
-      .sort((a, b) => GLOSS_PAT[b].length - GLOSS_PAT[a].length);
-    glossRe = keys.length
-      ? {keys, re: new RegExp('\\b(?:' + keys.map(k => '(' + GLOSS_PAT[k] + ')').join('|') + ')\\b', 'gi')}
-      : {re: null};
-  }
-  if (!glossRe.re) return t;
-  return t.replace(glossRe.re, (m, ...g) => {
-    const k = glossRe.keys[g.slice(0, glossRe.keys.length).findIndex(x => x !== undefined)];
-    if (!k || seen.has(k)) return m;
-    seen.add(k);
-    return `<span class="gt"${btn ? '' : ' tabindex="0" role="button"'} data-gt="${esc(k)}">${m}</span>`;
-  });
-}
-// The items of one list glossed as one block (each term underlined once in the list).
-const glossAll = (L, btn) => {
-  const seen = new Set();
-  return L.map(x => gloss(x, seen, btn));
-};
-const $gpop = document.createElement('div');
-$gpop.className = 'gpop';
-$gpop.hidden = true;
-$gpop.setAttribute('role', 'tooltip');
-document.body.appendChild($gpop);
-// A term's text: the plain-words sentence written for beginners (data.json terms[i][3], tools/apply_plain_terms.py), then
-// the sourced definition with its source.
-const termDef = ([, d, src, plain]) =>
-  `${plain ? `${esc(plain)} <span class="gdef">${esc(d)}</span>` : esc(d)}${src ? ` <small class="src">${esc(src)}</small>` : ''}`;
-// Coral basics' words (proto/basics.js, its Words list), each with the step that shows it ('<step>' or '<step>|<view>'), a
-// card of Corallite anatomy ('@<card>') or none (''), and the plain line used when data.json terms has none. Here, in
-// the first tier, so a glossary popup links the same way before and after the Tools tier is in.
-const BASICS_WORDS = [
-  ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
-  ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
-  ['Mouth', 'polyp', 'In the middle of the polyp. IMR asks: is it raised or embedded?'],
-  ['Corallite', 'corallite', 'The stony cup of one polyp.'],
-  ['Septa', 'septa', 'Thin blades inside the cup, from the rim to the centre.'],
-  ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
-  ['Septal teeth', 'teeth', 'Teeth on the top edge of the septa: fine or large.'],
-  ['Wall', 'walls', 'The rim around each cup: separate, shared, forming valleys, or not visible at all.'],
-  ['Separate walls', 'walls|separate', 'Each cup has its own wall, with a gap between cups.'],
-  ['Shared walls', 'walls|shared', 'Neighbouring cups share one wall, like a honeycomb.'],
-  ['Coenosteum', 'walls|separate', 'The skeleton in the gap between cups with separate walls.'],
-  ['Valleys', 'walls|valleys', 'Cups merged into long rows with several mouths (brain corals).'],
-  ['Indistinguishable walls', 'walls|nowall', 'No wall to see: the lines run from one centre to the next.'],
-  ['Septo-costae', 'walls|nowall', 'Those lines, running from one centre to the next when there is no wall.'],
-  ['Growth form', 'forms', 'The colony’s shape: branching, massive, plating…'],
-  ['Paliform lobes', '@con|pali', 'A crown of small knobs around the centre of the cup.'],
-  ['Columella', '@con|columella', 'What fills the very centre of the cup.'],
-  ['Axial corallite', '@con|axial', 'The cup at the tip of a branch, bigger than the others.'],
-  ['Monticules', '@arr|hydno', 'Small cone-shaped mounds of wall between the cups.'],
-  ['Verrucae', '', 'Bumps on the branches, bigger than one cup.'],
-  ['Hooded corallites', '', 'Cups that face downwards, like a hood.'],
-  ['Vesicles', '', 'Grape-like bubbles some corals inflate by day.']
-];
-const basicsWord = term => BASICS_WORDS.find(x => x[0].toLowerCase() === String(term).toLowerCase());
-const basicsListed = term => !!basicsWord(term);
-const basicsRoute = term => {
-  const w = basicsWord(term);
-  return !w || !w[1] ? '' : w[1][0] === '@' ? 'lab-anatomy|' + w[1].slice(1) : 'basics|' + w[1];
-};
-// Where a term is shown on a photo (the technical words of the genus sheets, first-meeting cards and quiz tips link to
-// Coral basics): its step, else Corallite anatomy's card, else the Words list when it is there. A page
-// key (app.js hr gives its link).
-const basicsHref = term => basicsRoute(term) || (basicsListed(term) ? 'basics|words' : '');
-// The term whose definition is open, and where it was when the definition was placed next to it (glossMoved).
-let glossAt = null;
-function showGloss(el) {
-  const t = DATA.terms.find(x => x[0] === el.dataset.gt);
-  if (!t) return;
-  const bh = basicsHref(t[0]),
-    to = !bh
-      ? ''
-      : bh.startsWith('lab-anatomy')
-        ? 'Corallite anatomy'
-        : bh === 'basics|words'
-          ? 'Coral basics: all the words'
-          : 'Coral basics: on a photo';
-  $gpop.innerHTML = `<b>${esc(t[0])}</b> ${termDef(t)}${bh ? `<a class="gbx" href="${esc(hr(bh))}">${to} ›</a>` : ''}`;
-  $gpop.hidden = false;
-  const r = el.getBoundingClientRect(),
-    w = Math.min(320, innerWidth - 24);
-  glossAt = {el, x: r.left, y: r.top};
-  $gpop.style.width = w + 'px';
-  $gpop.style.left = Math.max(12, Math.min(r.left, innerWidth - w - 12)) + 'px';
-  const below = r.bottom + 8,
-    h = $gpop.offsetHeight;
-  // Below the term, else above it, and always inside the screen (a term high on a tall card, whose definition does not
-  // fit above it, would go off the top).
-  $gpop.style.top = Math.max(8, Math.min(below + h > innerHeight - 8 ? r.top - h - 8 : below, innerHeight - h - 8)) + 'px';
-}
-document.addEventListener(
-  'click',
-  e => {
-    const g = e.target.closest && e.target.closest('.gt');
-    if (g) {
-      e.preventDefault();
-      e.stopPropagation();
-      showGloss(g);
-    } else if (!e.target.closest('.gpop')) $gpop.hidden = true;
-  },
-  true
-);
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') $gpop.hidden = true;
-  else if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('gt')) showGloss(e.target);
-});
-// A scroll closes the definition, which stays put (fixed), once its term has moved away. Only then: a scroll event comes
-// at the next frame, so a card scrolled to bring the term into view, then tapped, would close the definition it had just
-// opened.
-const glossMoved = () => {
-  if (!glossAt || !glossAt.el.isConnected) return true;
-  const r = glossAt.el.getBoundingClientRect();
-  return r.left !== glossAt.x || r.top !== glossAt.y;
-};
-addEventListener(
-  'scroll',
-  () => {
-    if (!$gpop.hidden && glossMoved()) $gpop.hidden = true;
-  },
-  true
-);
-// A source the content editor gave with an edit ({t, u}: core.js contentApply esrc; rule C2), as HTML: its words,
-// a link when it has an address. esrcTag: the source of his edit of slot k of record g, a few words after its text ('' when
-// he gave none).
-const esrcHtml = s => (s.u ? `<a href="${esc(safeUrl(s.u))}" target="_blank" rel="noopener">${esc(s.t)}</a>` : esc(s.t));
-const esrcTag = (g, k) => {
-  const s = ((g && g.esrc) || {})[k];
-  return s && s.t ? ` <small class="esrc">(${esrcHtml(s)})</small>` : '';
-};
-// What a genus's Coral ID Key criteria are cited by, wherever they are shown (the genus sheet, the quiz's answer, the
-// Coral ID Key): the source the content editor gave with his edit of them, else the Coral Finder pages of the book's own
-// text (rule C2). link false: its words only (inside a summary).
-const critRef = (g, link = true) => {
-  const s = ((g && g.esrc) || {}).crit;
-  return s && s.t ? (link ? esrcHtml(s) : esc(s.t)) : `Coral Finder p. ${((g && g.pages) || []).join(', ')}`;
-};
-// Short ID tips; genera the lecture skips fall back to the Coral Finder summary. Tips the content editor reworded with a
-// source (qsrc: core.js treeGen, app.js treeGenera and build; rule C2) show it under them, wherever they are
-// shown; a summary he reworded with one, after it. bare: the cues alone, their sources left to the sheet (a Learn list
-// card, listCard).
-const tipsList = (g, cls = '', bare = false) =>
-  g.qt
-    ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
-        .map(x => `<li>${x}</li>`)
-        .join('')}</ul>${!bare && g.qsrc && g.qsrc.t ? `<p class="note esrc">Source: ${esrcHtml(g.qsrc)}</p>` : ''}`
-    : `<p class="keyid">${gloss(g.sum)}${bare ? '' : esrcTag(g, 'sum')}</p>`;
-// A unit's card on a Learn list, for every subject (the corals' ID tips view, learn.js viewList; rule S1): its photo,
-// its name and the line under it, its ID cues (bare: no heading, no source; those are on the sheet, rule C2), then the
-// subject's notes. The whole card opens the unit's sheet (Pierre, 2026-11-20): one link, its name, stretched over the
-// card (.lcard .tipsheet::after), the card a tappable surface with a chevron; the photo opens the sheet, not the photo
-// viewer (its credits are on the sheet's photos, rule P5). Links inside the notes (the corals' Compare pairs) and the
-// glossary terms sit above it.
-const listCard = (n, p, sub, notes = '') => {
-  const g = GX(n);
-  return `<article class="tipg lcard"><span class="tipph">${p ? `<img ${thumb(p, '130px')} alt="" loading="lazy">` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b>${sub}</a></span><div>${tipsList(g, '', true)}${notes}</div><span class="fgo" aria-hidden="true">›</span></article>`;
-};
-const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
-// A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
-// [spelling, source]; docs/decisions/2026-11-18-decisions-from-app-comments.md). Plain text: escape it where it is shown.
-const altName = s => {
-  const a = ((DATA && DATA.spell) || {})[s];
-  return a ? `${s}, also spelled ${a[0]} (${a[1]})` : String(s);
-};
-// The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
-const tipsHead =
-  () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="${esc(hr('lab-anatomy'))}"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
-// The corals' card there: its look-alikes, each a link to their Compare page.
-const tipCard = n =>
-  listCard(
-    n,
-    cover(DATA.gen[n]),
-    '',
-    lookOf(n).length
-      ? `<p class="note">Don't confuse with ${lookOf(n)
-          .map(b => `<a href="${esc(hr('cmp-' + n + '|' + b))}"><i>${esc(b)}</i></a>`)
-          .join(', ')}</p>`
-      : ''
-  );
-
 /* ---------- key helpers (Coral Finder book boxes, used by genus sheets and the Coral ID Key) + IMR groups ---------- */
 const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
@@ -2285,7 +2142,29 @@ const save = () => {
 // The header progress pill (showProg, progress.js): that file comes in tier 4 (index.html), after the quiz on a first
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
-const st = n => P[n] || (P[n] = {ok: 0, ko: 0, streak: 0});
+// A unit's record, made empty at its first use (a record made: an input of the views, stateBump).
+const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump(), P[n]);
+// The false-alarm table (core.js faArm; docs/LEARNING.md "Long rated runs: the false-alarm table") held on P for one
+// synchronous handler that reads the bars (quiz.js answer, quizPhoto, planNext; progress.js achCheck): every bar reads
+// faOf, which otherwise scans every record of P for each unit, so the work of an answer grew with the history. The table
+// gives the scan's values to the last bit; inside a handler only scoreAnswer writes the records' conf, off, ty or the
+// level's tyk, and it empties the table when it does. The table is dropped when the handler ends, a throw included, so
+// none outlives it: a sync reply, a reset or another device's progress writes P in a task of its own, scanned as before.
+// A handler inside another (achCheck after an answer) keeps the outer one's table; a P loaded meanwhile (inSubject) is
+// held by its own handler.
+const FA_HELD = new Set();
+function faHeld(fn) {
+  const p = P;
+  if (!p || typeof p !== 'object' || FA_HELD.has(p)) return fn();
+  FA_HELD.add(p);
+  faArm(p);
+  try {
+    return fn();
+  } finally {
+    FA_HELD.delete(p);
+    faDisarm(p);
+  }
+}
 const qLoad = () => {
   const q = Object.assign({view: 'any', level: 'auto'}, store.get(sKey('quiz'), {}), {stars: true}); // starred genera are always asked
   if (q.lvv !== 3) {
@@ -3165,7 +3044,7 @@ const UNITS = {
     lede: 'The sea slug genera, by their scientific names, in their families. Photos: iNaturalist.',
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your sea slug learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), families with every genus at Advanced, the nudibranch genera and those of the other groups, the genera the quiz opens first at Advanced, and your sea slug % every 10 points. Never time spent. They are the sea slugs’ own: your coral and fish achievements are on their own sides. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your sea slug learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), families with every genus at Advanced, the nudibranch genera and those of the other groups, the genera the quiz opens first at Advanced, your sea slug % every 10 points, and the species at Advanced by their scientific names, the stars among them. Never time spent. They are the sea slugs’ own: your coral and fish achievements are on their own sides. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     listBy: 'family',
     progHelp: () =>
       `<p class="lede"><b>To learn a sea slug genus</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a genus back, for the genus you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. A <b>?</b> tile is a genus you have not met yet: it shows once it opens. The sea slugs have their own leaderboard and achievements.</p>`,
@@ -3179,6 +3058,8 @@ const UNITS = {
     // names (SCI_SP, the fish's own set), and their first one's card in its words: a sea slug player always had scientific
     // names, so the milestone is the first species, not the names.
     sets: [SCI_SP],
+    // Its top species, for the achievements (progress.js achSnap top; core.js SEASLUG_ACH ssstars): its stars.
+    top: () => sciStars(sciSpAll()),
     // The What I learn card's one names row: its species, by their scientific names (its genera are the base, always on).
     learn: [
       {
@@ -3260,8 +3141,11 @@ const namesOptsHtml = cur =>
         `<button type="button" class="startopt" data-names="${o.id}" aria-pressed="${o.id === cur}"><b>${esc(o.name)}</b><small>${esc(o.line)}</small></button>`
     )
     .join('')}</div>`;
-// The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once.
-const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
+// The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once. A view of
+// the state version (stateView), computed once per version instead of by each of its readers: bonusCalc computes it.
+const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
+const bonusList = stateView('bonusList', bonusCalc);
+const sciUp = stateView('sciUp', sciUpCalc);
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
 // waits while a slate unit in play is still to open (model.js openPick), unless its set brings it by itself (auto: an
 // IMR player's IMR genera) or the player turned the set on by hand before it was due (Q[k + 'H']). Open all is
@@ -3273,13 +3157,15 @@ const setLater = n => {
 // The units the rank share leaves alone (model.js SHARE): those of a set that opens after the slate (its after) that
 // come in the slate's phase: the ones it brings by itself (auto: an IMR player's IMR genera from their family's Open
 // Water) and all of them once the player turned it on by hand before it was due (Q[k + 'H']). Read once per answer
-// (model.js sharesNow).
-const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+// (model.js sharesNow). A view of the state version (stateView): shareFreeCalc computes it.
+const shareFreeCalc = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+const shareFree = stateView('shareFree', shareFreeCalc);
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
 // answered in a live game before the path opened it, model.js introLive) opens nothing (rule L4). A unit of a part that
 // is off never opens (model.js mayOpen); one already open stays open.
-// (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never).
+// (core.js openState: on, row, ask; the card again once, OPEN_AGAIN answers after a first "Not now", then never). The
+// answers are counted on the answer clock (model.js tally), so a count that goes down (rule D9) never delays that ask.
 const opensNow = () => UNITS[SUBJ.id].opens || [];
 const openOf = (S, full) => {
   const L = S.units(),
@@ -3288,7 +3174,7 @@ const openOf = (S, full) => {
     met: L.some(n => n in m && !closed(n)),
     due: full && S.due(),
     left: full && L.some(n => !introduced(n)),
-    at: full ? answersSoFar() : 0
+    at: full ? tally() : 0
   });
 };
 const openShut = n => opensNow().some(S => S.units().includes(n) && !openOf(S).on);
@@ -3297,10 +3183,11 @@ const opensOff = () => opensNow().filter(S => openOf(S, 1).row);
 // The card, the first due (quiz.js openOfferShow): after a "Not now", at most once more, a while later
 // (docs/decisions/2026-11-18-decisions-from-app-comments.md).
 const openOfferDue = () => opensNow().find(S => openOf(S, 1).ask) || null;
-// "Not now" on the card: off, counted, with the answer count it was said at.
+// "Not now" on the card: off, counted, with the answer clock it was said at (model.js tally; synced with the choice, a
+// mark the clock of another device moves up to: model.js clockMarks).
 function openNo(k) {
   Q[k + 'N'] = (Q[k + 'N'] || 0) + 1;
-  Q[k + 'A'] = answersSoFar();
+  Q[k + 'A'] = tally();
   bonusSet(false, k);
 }
 // ⚙ Bonus genera On / Off, the What I learn card's rows (learnSet) and the offer card (quiz.js bonusOfferShow): saved in
@@ -3334,8 +3221,10 @@ const BENTHIC_NOTE =
   "Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate and very common at Dauin, including in ReefCloud photos.";
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
-// (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.)
-const pool = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+// (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.) A view of
+// the state version (stateView): poolCalc computes it.
+const poolCalc = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+const pool = stateView('pool', poolCalc);
 // The plain sentence: one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py), clear for
 // everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before the ID
 // tips and lecture notes, in body text with no label (a muted labelled line above the photo gets skipped). It adds to the
@@ -4053,7 +3942,7 @@ function route() {
   if ((hashNow() || 'home') === (h || 'home') && typeof pagesRoute === 'function') pagesRoute(h);
   // Home drawn: the moment a subject newly open to the player may be told (progress.js subjHello, once progress.js is in).
   if ((h || 'home') === 'home' && typeof subjHello === 'function') subjHello();
-  // The same moment for the offer to install the app (installNudge, below).
+  // The same moment for the offer to install the app (installNudge, install.js).
   if ((h || 'home') === 'home' && typeof installNudge === 'function') installNudge();
   // The Identify tool opened counts for the "Did you know?" tip about it; Home and My progress may show that tip (quiz.js).
   if (typeof tipRoute === 'function') tipRoute(h);
@@ -4144,6 +4033,7 @@ document.getElementById('signb').onclick = e => {
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due, the What I learn rows back
         // to their defaults
         SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
+        if (typeof stateBump === 'function') stateBump(); // the records and settings emptied: inputs of the views
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();
@@ -4209,123 +4099,6 @@ document.addEventListener('keydown', e => {
     hdrMetrics();
   }
 });
-// Install the app (docs/ARCHITECTURE.md "Install the app"): our button calls the browser's prompt (beforeinstallprompt)
-// or, on iPhone and iPad Safari, the card shows the steps. Offered once on a touch screen (rule U4), from INSTALL.VISITS visits or
-// INSTALL.ANSWERS answers, on Home at a calm moment (a prompt: promptOk, noticeLater); ⚙ keeps a row any time.
-// reefid-install (this device): {n: visits, t: the last load, x: the card closed (time), in: installed (time)}.
-const INSTALL = {KEY: 'reefid-install', VISITS: 3, ANSWERS: 10, GAP: 30 * 60000, WAIT: 1500};
-// The record after a load at time now: a new visit when the last load was INSTALL.GAP or more before (a reload is none).
-const installVisit = (r, now) => {
-  const R = r && typeof r === 'object' ? r : {},
-    n = typeof R.n === 'number' ? R.n : 0,
-    same = typeof R.t === 'number' && now >= R.t && now - R.t < INSTALL.GAP;
-  return {...R, n: same ? n : n + 1, t: now};
-};
-// iPhone or iPad Safari (an iPad asks for the desktop site: a Mac with a touch screen), not another browser or an app's
-// own browser (Chrome, Firefox, Edge, Opera, Google, Facebook, Instagram on iOS: no "Version/… Safari", or their token).
-const installIos = (ua, touch) =>
-  (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1)) &&
-  /Version\/[\d.]+.*Safari\//.test(ua) &&
-  !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram/.test(ua);
-// Whether the card is due. way: 'prompt' (the browser's install prompt is ready), 'ios' (the steps) or '' (nothing to
-// offer). Pure on its inputs: tests call it.
-const installDue = ({standalone, rec, way, touch, answers}) => {
-  const R = rec && typeof rec === 'object' ? rec : {};
-  return !standalone && !R.x && !R.in && !!way && !!touch && ((R.n || 0) >= INSTALL.VISITS || answers >= INSTALL.ANSWERS);
-};
-let installEv = null,
-  installT = 0;
-const installStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-const installWay = () => (installEv ? 'prompt' : installIos(navigator.userAgent, navigator.maxTouchPoints || 0) ? 'ios' : '');
-const installMark = k => store.set(INSTALL.KEY, {...(store.get(INSTALL.KEY, {}) || {}), [k]: Date.now()});
-// This load: one more visit if it is one; opened as the installed app, installed.
-{
-  const r = installVisit(store.get(INSTALL.KEY, null), Date.now());
-  store.set(INSTALL.KEY, installStandalone() && !r.in ? {...r, in: Date.now()} : r);
-}
-addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); // no bar of the browser's own: the card and the ⚙ row offer it
-  installEv = e;
-  const r = document.getElementById('instrow');
-  if (r) r.hidden = installStandalone();
-  if (window.APP_READY) installNudge(); // it can come after Home was drawn
-});
-addEventListener('appinstalled', () => {
-  installEv = null;
-  installMark('in');
-  document.querySelectorAll('.unlock.install').forEach(d => d.close('installed'));
-});
-// The browser's prompt, once (an event's prompt can be used only once; the browser may send a new one later).
-function installPrompt() {
-  const e = installEv;
-  if (!e) return installCard(false);
-  installEv = null;
-  Promise.resolve()
-    .then(() => e.prompt())
-    .then(() => e.userChoice)
-    .then(c => c && c.outcome === 'accepted' && installMark('in'))
-    .catch(() => {});
-}
-// The steps' icons (the app's SVG set; 18 px, stroke 2): Safari's Share and Add to Home Screen.
-const INSTALL_ICONS = {
-  share: '<path d="M12 3v11M8 7l4-4 4 4"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/>',
-  add: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/>'
-};
-const installIcon = k =>
-  `<svg class="insti" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${INSTALL_ICONS[k]}</svg>`;
-// The card: once (the nudge: closed for good however it closes, but by leaving the page) or from ⚙ (no mark).
-function installCard(once) {
-  const way = installWay(),
-    why = `<p>Add ${esc(ORG.app)} to your home screen: one tap opens it, full screen, with no link to find again.</p>`, // rule W21: the name from ORG
-    body =
-      way === 'prompt'
-        ? why
-        : way === 'ios'
-          ? `${why}<ol class="instl"><li>Tap <b>Share</b> ${installIcon('share')} in Safari. On a recent iPhone, tap <b>•••</b> first.</li><li>Tap <b>Add to Home Screen</b> ${installIcon('add')} (scroll down the list if you don't see it).</li><li>Tap <b>Add</b>.</li></ol>`
-          : `<p>Open your browser's menu and choose <b>Install app</b> or <b>Add to Home screen</b>.</p><p class="note">Opened the link inside another app, such as a chat? Open it in Chrome or Safari first.</p>`;
-  cardShow({
-    kind: 'feature',
-    cls: 'install',
-    visual: '<img class="instapp" src="icon.svg" alt="" width="60" height="60">',
-    kick: 'Install the app',
-    title: 'Keep it on your home screen',
-    body,
-    primary: way === 'prompt' ? {text: 'Install the app', on: installPrompt} : {text: 'Got it'},
-    secondary: way === 'prompt' && once ? {text: 'No thanks'} : null,
-    note: once ? 'Later: ⚙ Settings, Install the app.' : '',
-    esc: way === 'prompt' && once ? 2 : 1,
-    onClose: how => once && how !== 'route' && how !== 'empty' && installMark('x')
-  });
-}
-// The nudge, at a calm moment on Home (route, and app.js SETUP 3 once the prompts' spacing is loaded).
-function installNudge() {
-  clearTimeout(installT);
-  const home = () => (hashNow() || 'home') === 'home',
-    due = () =>
-      installDue({
-        standalone: installStandalone(),
-        rec: store.get(INSTALL.KEY, null),
-        way: installWay(),
-        touch: matchMedia('(pointer: coarse)').matches,
-        answers: typeof answersAll === 'function' ? answersAll() : 0
-      });
-  if (!home() || !due() || (typeof noticeLater === 'function' && noticeLater('install', installNudge))) return;
-  installT = setTimeout(() => {
-    const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .unlock');
-    if (!home() || busy || !due() || typeof promptOk !== 'function' || !promptOk()) return;
-    promptMark();
-    installCard(true);
-  }, INSTALL.WAIT);
-}
-// ⚙ Settings › Install the app: the browser's prompt at once where it has one, else the card with the steps.
-{
-  const r = document.getElementById('instrow');
-  r.hidden = installStandalone();
-  document.getElementById('instb').onclick = () => {
-    setOpen(false);
-    installPrompt();
-  };
-}
 // Admin | User view switch: only in the browser holding the admin token; a switch reloads so every module follows.
 const $viewrow = document.getElementById('viewrow');
 // Link to the admin page (handy on a phone), in either view.

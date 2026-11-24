@@ -162,7 +162,8 @@ learning change" (rule L11).
 
 | Tool | What it does |
 |---|---|
-| `learnsim.js` | Simulates players in the real app; the base of every learning check. `memstorage.js` is its in-memory storage |
+| `learnsim.js` | Simulates players in the real app; the base of every learning check. `memstorage.js` is its in-memory storage; `--dump DIR` saves the page's state at chosen questions |
+| `answercost.js`, `answercost-budget.json` | The work of one answer, counted (calls of each named function, storage read and written) on a simulated player's saved state, against a budget; `tests/answercost.test.js` runs the small states in the fast tier, the heavy fish state is an opt-in command ([docs/spec/tools.md](../docs/spec/tools.md#per-answer-cost)) |
 | `learnprof.js` | The simulated players' profiles |
 | `ratedworld.js` | The rated synthetic world the app's engine also runs on |
 | `checkbudget.js` | The checks' 40-minute budget (plan, refuse over it, stop and mark a cut run; `--budget`, `--per-job`) and level 3's gate (`--pierre-go`, GitHub runner only), shared by `learnsim.js` in both worlds (rule L11) |

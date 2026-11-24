@@ -576,8 +576,8 @@
       }
     }
   ];
-  // The words, their step and their plain line: app.js BASICS_WORDS (one table, read by the glossary popups before this
-  // file is in too); the route of a term: app.js basicsRoute.
+  // The words, their step and their plain line: gloss.js BASICS_WORDS (one table, read by the glossary popups before this
+  // file is in too); the route of a term: gloss.js basicsRoute.
   const WORDS = BASICS_WORDS,
     routeOf = basicsRoute;
   const official = term => (DATA.terms || []).find(x => x[0] === term);

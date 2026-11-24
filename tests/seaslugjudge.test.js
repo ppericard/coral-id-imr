@@ -19,7 +19,7 @@ const J = code =>
     })
   );
 
-test('the sea slug rubric: the fish code shape; a dorsal view caps nothing, a ventral one 3; juveniles, f and w cap nothing', () => {
+test('the sea slug rubric: the fish code shape; a dorsal view caps nothing, strong blur 2, a ventral one 3, head-on and partial 4; juveniles, f and w cap nothing', () => {
   const out = J(`from fish_judge import cap, with_flag, RUBRICS
 S = lambda c: list(cap(c, False, subject='seaslug'))
 F = lambda c: list(cap(c, False))
@@ -38,8 +38,8 @@ print(json.dumps({
     [5, 'p1g0sl1'],
     [5, 'o1g0sl1'],
     [3, 'v1g0sl1'], // ventral (the foot)
-    [3, 'h1g0sl1'],
-    [3, 'd0g0sl1'], // partial
+    [4, 'h1g0sl1'], // head-on: one step, as the fish's (docs/decisions/2026-11-24-sea-slug-caps-as-the-fish.md)
+    [4, 'd0g0sl1'], // partial: one step, as the fish's
     [5, 'd1g0sl1j'], // a juvenile caps nothing, as the fish's (Q435; one rule for every subject, S1)
     [5, 'd1g0sl1f'], // rhinophores or gills hidden: the ease scale's, not a cap
     [5, 'd1g0sl1w'], // watermark
@@ -48,7 +48,7 @@ print(json.dumps({
     [2, 'd1g3sl1'],
     [2, 'd1g0slx'],
     [5, 'd1d0sl1'], // dim light: a mild shortfall the judge reads, no cap
-    [5, 'd1g0bl1'] // strong blur: the fish's cap only (judging/FISH.md "Strong blur"; Pierre reviewed fish)
+    [2, 'd1g0bl1'] // strong blur: at most 2, as the fish's (docs/decisions/2026-11-24-sea-slug-blur-cap-as-the-fish.md)
   ]);
   assert.deepStrictEqual(
     out.fish,
@@ -59,12 +59,12 @@ print(json.dumps({
     ],
     'the fish caps: a top view at most 4 (Q458 step 1), a juvenile nothing (Q435), strong blur at most 2'
   );
-  // The sea slugs keep partial and head-on at 3 and have no typical-look family (RUBRICS "seaslug": the fish's Q456 and
-  // Q458 came from fish answers only; judging/SEASLUG.md "Caps").
+  // The typical look is shared: in a typical-look group partial and camouflage cap nothing, a head-on view keeps its one
+  // step. No sea slug group is typical-look (judging/SEASLUG.md "Caps").
   assert.deepStrictEqual(out.typical, [
-    [3, 'd0g0sl1'],
-    [3, 'd1g0sl1c'],
-    [3, 'h1g0sl1']
+    [5, 'd0g0sl1'],
+    [5, 'd1g0sl1c'],
+    [4, 'h1g0sl1']
   ]);
   // No night livery, no legacy count m, no tool flag typed for sea slugs; the fish never take v or f.
   assert.deepStrictEqual(out.codes, [true, false, false, false, false, false, true]);
@@ -109,7 +109,7 @@ JF.ROOT = ${JSON.stringify(dir)}
 JF.use('seaslug')
 ${code}`);
 
-test('the judging files: keep optional (one photo per observation), the egg rule, no phase; the fish curation never read', () => {
+test('the judging files: keep optional (read as best: one candidate per observation), the egg rule, no phase; the fish curation never read', () => {
   const dir = world({
     'judging/seaslug/900.json': {
       photos: {

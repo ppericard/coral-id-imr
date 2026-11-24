@@ -20,7 +20,9 @@ const TOK = 'ghp_write000000000000000000';
 
 // quiz.js's winkAnswer and logAnswer on stubs: the fish subject, the device's storage, signed in (SYNC) or not.
 function page({signedIn = false} = {}) {
-  const saved = {},
+  // The device's storage: app.js's store, and sync.js keptPush that logAnswer writes the queues with (tests/kept.js).
+  const pg = require('./kept.js').keptPage({check: true}),
+    saved = new Proxy({}, {get: (_, k) => pg.ls.raw.get(k)}),
     ctx = {
       SUBJ: C.subjectOf('fish'),
       WINK_MODE: C.WINK_MODE,
@@ -37,7 +39,8 @@ function page({signedIn = false} = {}) {
       // core.js answerId (the attempt id); app.js contentVer (the content version of the units in force: quiz.js cvField)
       answerId: C.answerId,
       contentVer: S => (S.id === 'fish' ? 'cfish1' : ''),
-      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+      store: pg.store,
+      keptPush: pg.keptPush
     };
   ctx.anonSoon = () => ctx.anon++;
   vm.createContext(ctx);
@@ -241,7 +244,7 @@ test("the app's and the admin's other readers of the raw log leave it out", () =
   // The app: the "answers waiting" count, the "the N answers played on this device" note, the tips' seed counts.
   assert.match(read('app.js'), /const n = \(SYNC\.log \|\| \[\]\)\.filter\(a => !winkEntry\(a\)\)\.length;/);
   assert.match(read('sync.js'), /mine = store\.get\(LOG0, \[\]\)\.filter\(a => !winkEntry\(a\)\)\.length;/);
-  assert.match(quiz, /seed = \(\(SYNC && SYNC\.log\) \|\| store\.get\(LOG0, \[\]\)\)\.filter\(a => !winkEntry\(a\)\);/);
+  assert.match(quiz, /seed = \(\(SYNC && SYNC\.log\) \|\| keptGet\(LOG0, \[\]\)\)\.filter\(a => !winkEntry\(a\)\);/);
   // The evaluation tools read the log through core.js subjRows (tools/abilityeval.js normalise, used by the others).
   const {normalise} = require('../tools/abilityeval.js');
   const rows = [
