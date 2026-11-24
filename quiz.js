@@ -3439,7 +3439,7 @@ function viewCustom() {
     qp = cqPicks(play),
     lk = play.filter(n => cqLooks(n, play).length > 1);
   try {
-    localStorage.removeItem(CQ.OLD); // the older A-Z / IMR groups choice: IMR groups once
+    store.drop(CQ.OLD); // the older A-Z / IMR groups choice: IMR groups once
   } catch (e) {}
   let view = store.get(CQ.VIEW, 'imr'),
     q = '';

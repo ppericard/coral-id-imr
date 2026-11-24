@@ -149,7 +149,7 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
   const holds = [];
   vm.createContext(ctx);
   vm.runInContext(
-    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
+    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }, drop(k) { localStorage.removeItem(k); }, raw(k, t) { localStorage.setItem(k, t); }};
      const save = () => store.set(subjKey(SUBJ.id, 'progress'), P);\n` +
       loadData +
       progData +

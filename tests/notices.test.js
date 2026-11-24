@@ -101,7 +101,7 @@ function app({SYNC = {name: 'Ana', pin: '1234', srv: 4, base: prog, log: []}, re
   };
   vm.createContext(ctx);
   vm.runInContext(
-    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }};
+    `const store = {get(k, d) { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }, set(k, v) { localStorage.setItem(k, JSON.stringify(v)); }, drop(k) { localStorage.removeItem(k); }, raw(k, t) { localStorage.setItem(k, t); }};
      const save = () => {};\nlet syncTimer = 0;\n` +
       progData +
       loadData +

@@ -2093,8 +2093,9 @@ async function quizAndProgress(b, base, errs) {
     // No level-change card on the fish: a window that says "easier than said" shows nothing.
     store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: [], w: [], v: 'hi'});
     ok(startOf() && startOf().v === 'hi' && startDue() === null, 'fish: no level-change card');
-    if (s0 === null) localStorage.removeItem(sk);
-    else localStorage.setItem(sk, s0);
+    // put back as the app writes (app.js storeWrote told)
+    if (s0 === null) store.drop(sk);
+    else store.raw(sk, s0);
     // The scientific genera (app.js treeGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
     // species of each family in play, in every circle, never two families; offered once a family is
     // at Advanced, a family's genera in play only from its Advanced; their questions and typed answers among genera only,
@@ -2176,8 +2177,9 @@ async function quizAndProgress(b, base, errs) {
         'sci: a family question still among families'
       );
       pgAt('f:Surgeonfishes', 0.2);
-      if (s0 === null) localStorage.removeItem(sk);
-      else localStorage.setItem(sk, s0);
+      // put back as the app writes (app.js storeWrote told)
+      if (s0 === null) store.drop(sk);
+      else store.raw(sk, s0);
     }
     pgAt('f:Butterflyfishes', 0.72);
     ok(genScore('f:Butterflyfishes') >= LV_AT[1], 'sci: the family at Advanced');
@@ -3353,8 +3355,9 @@ async function uiAndAccess(b, base, errs) {
       if (q0 === undefined) delete Q.sci;
       else Q.sci = q0;
       stateBump();
-      if (s0 === null) localStorage.removeItem(sk);
-      else localStorage.setItem(sk, s0);
+      // put back as the app writes (app.js storeWrote told)
+      if (s0 === null) store.drop(sk);
+      else store.raw(sk, s0);
       Object.keys(P).forEach(k => delete P[k]);
       faDrop(P);
       stateBump();

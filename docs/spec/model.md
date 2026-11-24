@@ -56,8 +56,9 @@ Their writers bump it:
 
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
-is compared at each read of a view (`stateNow`), so a write that went round `store.set` (another tab) bumps the version
-too.
+is compared at the first read of a view in a task (`stateNow`), so another tab's write bumps the version at the next
+task. This tab's writes of them (`store.set`, `store.drop`, `store.raw`) mark the comparison to be made again
+(`storeWrote`, [storage.md](storage.md)).
 
 A view (`stateView`) is a function of the inputs alone, computed at its first read in a version and read as it is until
 the next; a list keeps its order, so every draw that reads it draws the same, and it is shared, never changed by its
@@ -72,12 +73,13 @@ refills them bumps the version. The views now are:
   entry), a unit with no record at 0. A loop over units reads one table (`lvSteps`: the achievements' `achSnap`, My
   progress), `lvStep` one unit.
 
-A read of a view compares the stored text of the sheet's version and the first-launch records (`stateNow`: four storage
-reads or more), so a value read unit by unit across the draw (`genScore`, `examOn`) is computed where it is read: a view
-there would add those reads to each. With `VIEW_CHECK` on (every smoke page and `tools/learnsim.js --facheck`,
+The first read of a view in a task compares the stored text of the sheet's version and the first-launch records
+(`stateNow`: four storage reads); the task's other reads compare nothing. A value read unit by unit across the draw
+(`genScore`, `examOn`) is still computed where it is read. With `VIEW_CHECK` on (every smoke page and `tools/learnsim.js --facheck`,
 through `tests/facheck.js`), every read of a kept view computes it again and compares, order included (a list, a Set
-or a Map item by item, a plain object key by key down to its leaves); a difference throws, and again in a task of its
-own. `tests/stateview.test.js` compares the units in play with the code before them over rated-world runs and made-up
+or a Map item by item, a plain object key by key down to its leaves), and a `stateNow` that trusts its task's
+comparison compares the stored texts again; a difference throws, and again in a task of its own.
+`tests/stateview.test.js` compares the units in play with the code before them over rated-world runs and made-up
 states, and checks that every declared writer bumps; `tests/levelview.test.js` compares the tree's score and the levels
 with the code before them over rated-world runs of the fish, the corals and the sea slugs.
 

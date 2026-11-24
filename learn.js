@@ -289,7 +289,7 @@ const LIST_BUILD = {
           (b.onclick = () => {
             azOrder = b.dataset.o;
             try {
-              localStorage.setItem('reefid-sync-order', azOrder);
+              store.raw('reefid-sync-order', azOrder);
             } catch (e) {}
             viewList();
           })
@@ -307,7 +307,7 @@ const LIST_BUILD = {
           (b.onclick = () => {
             azView = b.dataset.gv;
             try {
-              localStorage.setItem('reefid-sync-gview', azView);
+              store.raw('reefid-sync-gview', azView);
             } catch (e) {}
             viewList();
             pageHelp();
