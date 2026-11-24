@@ -1386,7 +1386,7 @@
   // A photo's prior difficulty before any answer on it, in logits (+ = harder), as model.js photoDiff starts it: its unit's
   // offset (the sheet's gd, 0 when unknown) plus (mid - its judged ease) x ce, the subject's calibration of one ease step
   // (core.js calibOf(S).ease); a photo with no judged ease (the corals') has the offset alone. mid: the mean judged ease
-  // of its family (model.js easeMid, Q457), else PRIOR_MID, model.js PDIFF.MID (tests/priordiff.test.js reads both).
+  // of its family (model.js easeMid), else PRIOR_MID, model.js PDIFF.MID (tests/priordiff.test.js reads both).
   // null when there is nothing to start from.
   const PRIOR_MID = 3;
   function photoPrior(ease, off, ce, mid) {

@@ -674,7 +674,7 @@ const easyTrust = () =>
 // (drawW, shaky, stability, openPick); adding or curating out a photo never moves it. A unit with judged photos (p.e,
 // the fish, the sea slugs) adds the mean of their judged-ease priors (photoDiff's), centred on its family's (easeMid):
 // a family 0, so families open by their offsets and commonness alone, and the units below a family easiest first
-// within it (Q457). 0 offline before the sheet's first reply. Cleared when the photo stats change.
+// within it. 0 offline before the sheet's first reply. Cleared when the photo stats change.
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
@@ -1881,10 +1881,10 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // "The photo's time term"); 0 for a photo without one or before a script that serves them.
 const PDIFF = {W: 5, MID: 3};
 const gdOff = n => (PGD[n] || [0])[0] || 0;
-// The judged ease within a family only (Q457, REE-241; docs/LEARNING.md "The judged ease, within a family"): a judged
-// photo's prior is centred on the mean judged ease of its unit's family (easeMid), not on the middle of the scale, so
-// the ease ranks the photos and the units within a family and never one family against another (between families it
-// predicts nothing: docs/reviews/2026-11-23-fish-ease-vs-answers.md). One rule for every subject whose photos carry a
+// The judged ease within a family only (docs/decisions/2026-11-23-judged-ease-within-family.md; docs/LEARNING.md "The
+// judged ease, within a family"): a judged photo's prior is centred on the mean judged ease of its unit's family
+// (easeMid), not on the middle of the scale, so the ease ranks the photos and the units within a family and never one
+// family against another (between families it predicts nothing). One rule for every subject whose photos carry a
 // judged ease (the fish, the sea slugs; the corals' carry none). A unit's family (easeTop): the top of its parents (GX
 // parent, else family: a fish genus's or species', a sea slug genus's or species'), else the unit itself (a fish
 // family). Its photos (judgedOf): every game photo of the family with a judged ease, its reserved ones too (core.js

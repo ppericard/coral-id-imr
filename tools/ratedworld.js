@@ -364,7 +364,7 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
   // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
   // judged-ease prior of its photos, the player's reserved ones included as model.js genusDiff counts them: core.js
-  // heldOf) gives the unit's mu. The prior's centre: its family's mean ease (model.js easeMid, Q457), PDIFF.MID in an app
+  // heldOf) gives the unit's mu. The prior's centre: its family's mean ease (model.js easeMid), PDIFF.MID in an app
   // without it (--root: an older version).
   if (app === 'truth') {
     ctx.photoDiff = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0);

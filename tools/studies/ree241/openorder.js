@@ -78,6 +78,14 @@ function measure({seqs}) {
     };
   });
   const trust = easyTrust();
+  // Every unit of the tree, every rank: the family its ease is centred on, by the rank of the unit and of that family
+  // record (a parent that does not resolve would leave a unit centred on itself).
+  const tops = {};
+  Object.keys((typeof TREEU === 'object' && TREEU && TREEU.gen) || {}).forEach(n => {
+    const t = top(n),
+      k = `${(GX(n) || {}).rank || SUBJ.rank} -> ${t === n ? 'itself' : (GX(t) || {}).rank || SUBJ.rank}`;
+    tops[k] = (tops[k] || 0) + 1;
+  });
   // A circle opens once the one before it is all met (the gates' order, app.js treeGate: circle 2 once circle 1 has been
   // asked, circle 3 on its card later; their timing aside).
   const circ = n => units[n].circle || 1;
@@ -99,7 +107,7 @@ function measure({seqs}) {
       i++;
     }
   }
-  return {trust, units, groups: groupMap()};
+  return {trust, tops, units, groups: groupMap()};
 }
 
 (async () => {
@@ -143,6 +151,7 @@ function measure({seqs}) {
   if (OUT) fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
   const U = Object.entries(r.units).sort((a, b) => a[1].rank - b[1].rank);
   console.log(`${SUBJECT} ${ROOT} stats ${!!STATS} trust ${r.trust} units ${U.length} errors ${errs.length}`);
+  console.log('the family each unit is centred on (unit rank -> family record rank):', JSON.stringify(r.tops));
   U.forEach(([n, u]) =>
     console.log(
       `${u.name.slice(0, 26).padEnd(26)} c${u.circle} ${u.first ? 'F' : ' '} ease ${u.ease} mid ${u.mid} off ${u.off} gd ${u.gd} rank ${u.rank.toFixed(1)} in8 ${u.in8.toFixed(2)} in16 ${u.in16.toFixed(2)}`

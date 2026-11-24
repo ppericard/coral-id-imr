@@ -554,7 +554,7 @@ test('the apology card: greeted by the first word of the sign-in name, else "Hi!
 
 // One genus difficulty (docs/LEARNING.md "One genus difficulty"): genusDiff is the sheet's genus offset (PGD, ?stats=1
 // gd), plus the mean judged-ease prior of a unit's judged photos (the fish, the sea slugs), centred on its family's mean
-// ease (model.js easeMid, Q457: a family 0, a genus below it by how far its photos sit from the family's); never the
+// ease (model.js easeMid: a family 0, a genus below it by how far its photos sit from the family's); never the
 // mean of its photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses counted twice).
 test('genusDiff: the genus offset, whatever photos the genus has; the judged-ease prior within a family for judged photos', () => {
   const src = read('model.js'),
@@ -597,7 +597,7 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
   views.B = [];
   ctx.clear();
   assert.deepStrictEqual(['A', 'B'].map(ctx.genusDiff), [-0.54, 0.9]);
-  // Judged photos (ease 5, 2 and 2, the family's mean 3): the family's own prior is 0 whatever its mean (Q457: the ease
+  // Judged photos (ease 5, 2 and 2, the family's mean 3): the family's own prior is 0 whatever its mean (the ease
   // never ranks one family against another); its genera, (3 - 5) x 0.5 for the easy one, (3 - 2) x 0.5 for the other.
   assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, -1, 0.5]);
   f3.e = 5; // the family's mean now 4: still 0 for the family, its genera centred on 4

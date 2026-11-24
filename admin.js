@@ -9474,7 +9474,7 @@ function treePrior(S, ease, own, unit, mid) {
     d = photoPrior(ease, o, calibOf(S).ease, mid);
   return d === null ? null : {d, ease: ease > 0 ? ease : null, off: Number.isFinite(o) ? o : null};
 }
-// The centre of the judged ease in each family of registry R (model.js easeMid, Q457): {family: the mean ease in force
+// The centre of the judged ease in each family of registry R (model.js easeMid): {family: the mean ease in force
 // (easeOf) of the photos it holds}, a photo's family its unit's (R.fam: a genus's or a species', a family its own).
 function treeEaseMids(R, easeOf) {
   const sum = {};

@@ -22,7 +22,7 @@ test('photoPrior: the unit offset plus (3 - ease) x the calibration of one step;
   assert.strictEqual(photoPrior(null, 0.7, 0.5), 0.7, 'no ease (the corals): the offset alone');
   assert.strictEqual(photoPrior(0, 0.7, 0.5), 0.7, 'ease 0 is none');
   assert.strictEqual(photoPrior(null, undefined, 0.5), null, 'nothing to start from');
-  // centred on its family's mean ease (Q457, model.js easeMid)
+  // centred on its family's mean ease (model.js easeMid)
   assert.strictEqual(photoPrior(4, 0.4, 0.5, 4), 0.4, 'at its family’s mean: at its unit');
   assert.strictEqual(photoPrior(3, 0, 0.5, 2), -0.5, 'easier than its family’s mean: below its unit');
   assert.strictEqual(photoPrior(3, 0, 0.5, undefined), 0, 'no mean given: the scale’s middle');
@@ -37,7 +37,7 @@ test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID, the centre 
 // The judged ease's weight (docs/decisions/2026-11-23-judged-ease-weight.md): the shared calibration's 0.3 logit a point,
 // which the subjects with a judged ease read today (none sets its own), where the app reads it: model.js photoDiff (a
 // photo nobody answered) and genusDiff (a unit's difficulty: its offset plus its judged photos' mean prior), both centred
-// on the family's mean ease (Q457: a unit with no parent is its own family, so its mean prior is 0).
+// on the family's mean ease (a unit with no parent is its own family, so its mean prior is 0).
 test('the judged ease weighs the shared 0.3 a point in the fish’s and the sea slugs’ priors, as model.js photoDiff and genusDiff read it', () => {
   assert.strictEqual(C.CALIB.ease, 0.3);
   const w = C.CALIB.ease;
