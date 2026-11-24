@@ -156,6 +156,7 @@ const server = http.createServer((req, res) => {
     const t = Object.keys(DATA.gen)[0];
     P = Object.fromEntries(genera.map(n => [n, {ok: 3, ko: 1, h: '1101', th: 0.5, pg: 0.4}]));
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85};
+    faDrop(P);
     P[LEVEL] = {ok: 200, ko: 30, th: 1};
     const at = [],
       qx = question,
@@ -199,6 +200,7 @@ const server = http.createServer((req, res) => {
     {
       const s0 = P[t];
       P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 4, v: ['wide'], at: -99}};
+      faDrop(P);
       const L = [];
       for (let i = 0; i < 3 && !P[t].mx; i++) {
         const ty = examTyped(t);
@@ -209,6 +211,7 @@ const server = http.createServer((req, res) => {
       }
       if (L.join('') !== 'tt' || !P[t].mx || P[t].ex) fails.push(`exam begun before typed questions: ${L.join('')}, mastered ${!!P[t].mx}`);
       P[t] = s0;
+      faDrop(P);
     }
     if (at.some((x, i) => i && x - at[i - 1] < EXAM.gap))
       fails.push(`${t}: exam questions closer than ${EXAM.gap} answers: ${at.join(', ')}`);
@@ -221,11 +224,13 @@ const server = http.createServer((req, res) => {
       P[a] = {ok: 0, ko: 0};
       P[b] = {ok: 40, ko: 4, h: '1111111111', th: 2.5};
       P[c] = {ok: 6, ko: 6, h: '0101010101', th: -1.4};
+      faDrop(P);
       const w = [a, b, c].map(drawW);
       if (!(w[0] === 1 && w[1] < w[2] && w[2] < 1)) fails.push(`draw weights: never asked ${w[0]}, known ${w[1]}, shaky ${w[2]}`);
       if (level(c)[0] !== 'weak' || level(b)[0] === 'weak' || shaky(b) || !shaky(c)) fails.push('Review is not shaky');
       Object.keys(P).forEach(k => delete P[k]);
       Object.assign(P, keep);
+      faDrop(P);
     }
     // Typed questions (model.js TYPED, quiz.js typeForm): a genus well on its way (here 89%) is sometimes asked typed, a
     // beginner's genus (24%) never; a typed answer is logged quiz|t (an exam's quiz|t|x, quiz|h|t|x on a photo of the
@@ -420,6 +425,7 @@ const server = http.createServer((req, res) => {
     }
     // A miss on the genus ends an exam in course.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ex: {k: 3, v: ['wide'], at: answersSoFar()}};
+    faDrop(P);
     answer('quiz', 'Porites' === t ? 'Acropora' : 'Porites', t, photoSet(t).shown, false, null);
     if (P[t].ex) fails.push(`${t}: a miss did not end the exam`);
     // Mastery holds only while the genus stays known: misses that bring it under 95% take it away.
@@ -430,12 +436,14 @@ const server = http.createServer((req, res) => {
         .sort((a, b) => photoDiff(t, a) - photoDiff(t, b));
     // One miss keeps a learned genus (mxKept), a second one before it is back up takes it away.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: PROG.M, mx: 1};
+    faDrop(P);
     answer('quiz', wrong, t, pics.slice(0, 2), false, null);
     if (!P[t].mx) fails.push(`${t}: one miss took a learned genus away (progress ${pgOf(P[t])})`);
     answer('quiz', wrong, t, pics.slice(0, 2), false, null);
     if (P[t].mx) fails.push(`${t}: still mastered after two misses (progress ${pgOf(P[t])})`);
     // A miss never raises the progress, even on its hardest photo shown alone, and takes it down visibly (core.js PROG).
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.75};
+    faDrop(P);
     const b0 = genScore(t);
     answer('quiz', wrong, t, pics.slice(-1), false, null);
     if (genScore(t) > b0 - 0.1) fails.push(`${t}: a miss at ${Math.round(100 * b0)}% only took it to ${Math.round(100 * genScore(t))}%`);
@@ -444,6 +452,7 @@ const server = http.createServer((req, res) => {
     // the genus offset it was scored with (sc m). The records above, saved with s.pg, keep the former rule.
     {
       delete P[t];
+      faDrop(P);
       answer('quiz', t, t, pics.slice(-1), false, null);
       const d1 = P[t].ds,
         lg = (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {};
@@ -466,6 +475,7 @@ const server = http.createServer((req, res) => {
         log = () => (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {},
         one = known => {
           P[t] = {ok: 10, ko: 2, h: '1101101', th: 1, pg: 0.4, pm: 1, ps: known ? {[ph[0].f]: [2, 2]} : {}};
+          faDrop(P);
           answer('quiz', t, t, ph, false, null);
           return {pg: P[t].pg, th: P[t].th, e: log().e};
         },
@@ -485,6 +495,7 @@ const server = http.createServer((req, res) => {
       const f0 = pics[0].f,
         f1 = (pics[1] || pics[0]).f;
       P[t] = {ok: 20, ko: 4, h: '1111011111', th: 1, pg: 0.7, ps: {[f0]: [4, 3], [f1]: [3, 0]}};
+      faDrop(P);
       const ch1 = memRecalcAll(),
         pg1 = P[t].pg,
         kept = (store.get('reefid-sync-coral-progress', {})[t] || {}).pg,
@@ -517,6 +528,7 @@ const server = http.createServer((req, res) => {
           let hit = 0;
           for (let i = 0; i < 1000; i++) {
             P[n] = {ok: 20, ko: 4, h: '1101101', th: 0.5, pg: 0.5, ps};
+            faDrop(P);
             if (photoSet(n).shown.some(x => key(x) === c0)) hit++;
           }
           return hit / 1000;
@@ -567,6 +579,7 @@ const server = http.createServer((req, res) => {
           let hit = 0;
           for (let i = 0; i < N; i++) {
             P[n] = {ok: 20, ko: 2, h: '1111111111', th: 1.2, pg: 0.6, ps: JSON.parse(JSON.stringify(ps))};
+            faDrop(P);
             if (photoSet(n).shown.some(x => key(x) === c)) hit++;
           }
           return hit / N;
@@ -585,6 +598,7 @@ const server = http.createServer((req, res) => {
     [SEENQ, NEXTQ] = win;
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};
+    faDrop(P);
     const v0 = examSet(t).shown[0];
     P[t].ps[v0.f] = [1, 0];
     for (let i = 0; i < 20; i++)
@@ -828,6 +842,7 @@ const server = http.createServer((req, res) => {
         {
           const P0 = JSON.stringify(P);
           allSet.forEach(n => (P[n] = {...(P[n] || {}), ok: Math.max(1, (P[n] || {}).ok || 0), ko: 3, th: -1.5}));
+          faDrop(P);
           const stuck = allSet.filter(shaky).length;
           if (stuck >= OPEN.K && !(openChance(pool()) > 0))
             fails.push(`One at a time: ${stuck} closed genera, badly known, keep the opening chance at ${openChance(pool())}`);
@@ -1009,8 +1024,10 @@ const server = http.createServer((req, res) => {
           old = S.slice(0, 12),
           m = {};
         Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
+        faDrop(P);
         old.forEach(n => {
           P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+          faDrop(P);
           m[n] = [0, 1, Date.now(), 's'];
         });
         store.set(INTRO.KEY, m);
@@ -1039,6 +1056,7 @@ const server = http.createServer((req, res) => {
         if (late.length) fails.push(`opening pace: ${late.map(x => x[0]).join(', ')} carded and not asked`);
         Object.keys(P).forEach(n => delete P[n]);
         Object.assign(P, JSON.parse(keepP));
+        faDrop(P);
         store.set(INTRO.KEY, JSON.parse(keepI));
         INTROS = null;
         rematch = [];
@@ -1064,11 +1082,13 @@ const server = http.createServer((req, res) => {
           store.set(INTRO.OFFER.KEY, null);
           const m = {};
           Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
+          faDrop(P);
           pool()
             .filter(n => !isBonus(n))
             .slice(0, 12)
             .forEach(n => {
               P[n] = {ok: 30, ko: 1, streak: 5, h: '1111111111', th: 2.8, lt: (P[LEVEL] || {}).th || 0};
+              faDrop(P);
               m[n] = [0, 1, Date.now(), 's'];
             });
           store.set(INTRO.KEY, m);
@@ -1120,6 +1140,7 @@ const server = http.createServer((req, res) => {
         }
         Object.keys(P).forEach(n => delete P[n]);
         Object.assign(P, JSON.parse(keepP));
+        faDrop(P);
         store.set(INTRO.KEY, JSON.parse(keepI));
         INTROS = null;
         reset();
@@ -1253,6 +1274,7 @@ const server = http.createServer((req, res) => {
         // scale only to a script from SCALE_SHEET (it widens the tab first), the slate's to an older one (rule D4).
         const pb = {...P};
         B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
+        faDrop(P);
         const scaleOk = () => {
           const S = slateGenera(),
             all = scaleUnits(),
@@ -1279,6 +1301,7 @@ const server = http.createServer((req, res) => {
         if (pool().some(isBonus) || !B.some(n => P[n])) fails.push('bonus genera off: still in the pool, or their progress lost');
         P = {...pb};
         B.forEach(n => (P[n] = {ok: 30, ko: 0, h: '1111111111', pg: 0.9, mx: 1}));
+        faDrop(P);
         showProg();
         scaleOk();
         P = pb;
@@ -1572,6 +1595,7 @@ const server = http.createServer((req, res) => {
     const u = await p.evaluate(() => {
       const u = slateGenera()[5];
       P[u] = {ok: 12, ko: 0, h: '1111111111', L: 0.999, mx: 1, pm: 1};
+      faDrop(P);
       memRecalcAll();
       return u;
     });

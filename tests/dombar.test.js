@@ -351,8 +351,10 @@ test('the false-alarm correction (Q174; Snodgrass & Corwin 1988, Pr = H - FA): f
   // Typed questions on B itself are no chance to give B for another genus.
   P.B.ty = 3;
   assert.strictEqual(C.faOf(P, 'B'), 2 / 9);
-  // Never below 0; no question where B could be given: no correction.
+  // Never below 0; no question where B could be given: no correction. (A count written by hand: its writer drops the
+  // false-alarm counters, as sync.js does after a refill.)
   P.A.conf.B = 50;
+  C.faDrop(P);
   assert.strictEqual(C.barOf(P.B, P, 'B'), 0);
   assert.strictEqual(C.faOf({B: P.B}, 'B'), 0);
   // The exam's entry and the learned mark read the corrected value too.
