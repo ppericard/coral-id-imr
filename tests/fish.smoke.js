@@ -1599,6 +1599,8 @@ async function quizAndProgress(b, base, errs) {
     ok(SUBJ.id === 'fish', 'subject fish at start-up');
     // The answers below read the bars from the false-alarm table (app.js faHeld), each read checked against the scan.
     ok(FA_CHECK.on === true, 'FA_CHECK on in the page (tests/facheck.js)');
+    // And every storage read kept parsed (sync.js keptGet, keptBy, keptPush) checked against a fresh store.get.
+    ok(KEPT_CHECK.on === true, 'KEPT_CHECK on in the page (tests/facheck.js)');
     ok(
       TREEU.c1.length === 28 &&
         TREEU.c2.length > 0 &&
