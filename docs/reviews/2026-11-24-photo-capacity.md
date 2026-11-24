@@ -23,7 +23,7 @@ headroom, room for about 10,500 photos. It holds almost only photos in play. Wha
 
 | Subject | What binds today | Evidence | Storage if lifted |
 | --- | --- | --- | --- |
-| Fish | **Supply under the source rules**, then judging (rule P7). Not the caps: of the 532 species with room or short of easy adults, the fetcher has searched 440 to the end within the last month (`RECHECK_DAYS`), and it finds nothing more for them however high the cap. | Section 3.1 | About +0.3 GB (faved beyond the cap) to +0.9 GB (the `dup` extras that are another zoom or angle, findable from the codes) |
+| Fish | **Supply under the source rules**, then judging (rule P7). Mostly not the caps: 421 species still have general room under their cap and their general searches found nothing more within the last month (`RECHECK_DAYS`), so a higher cap adds nothing for them. For 221 others (91 whose open room is only a phase's, 130 not short) the supply past the cap is not measured. | Section 3.1 | About +0.3 GB (faved beyond the cap) to +0.9 GB (the `dup` extras that are another zoom or angle, findable from the codes) |
 | Sea slugs | **The game cap of 12 photos a species** (Q377), then judging the 2,563 new extras (rule P7). 239 of the 271 units sit exactly at 12, and 2,074 judged photos wait behind the cap. | Section 3.2 | +0.42 GB at a cap of 20, +0.48 GB with no game cap |
 | Corals | **The sorting in the admin and judging** (rule P7): candidates enter play only through Pierre's admin and Publish, and 445 of the 1,244 waiting are not judged yet. Then supply for the thin genera (Anacropora, Astrea). | Section 3.3 | At most +0.45 GB if every waiting candidate entered |
 
@@ -129,15 +129,23 @@ By file kind, all subjects: the 1600 px files are **4.49 GB (61.6%)**, 960 px 1.
   judged `dup` (the largest single filter), 2,280 `best` and 70 `alt` that are not sure (an unsure field, other species
   in view, out of the water...).
 - The refill's own count (`--refill --plan`): 532 species are "short" (room under the cap, or short of easy adults).
-  Without the faved route, **none can be refilled now: all 512 with room were searched to the end within the last month.**
+  Without the faved route, **none can be refilled now: all 512 with room had every open part searched to the end
+  within the last month.** That is not the same thing for all of them (`pick_short` remembers exhaustion per open part,
+  and a raised cap voids the record):
+  - **421 have general room left** (1,771 room units in all) and the general searches found nothing more: their supply
+    under the source rules is exhausted below their cap. 65 of them are short of easy adults.
+  - **91 have only a phase's room open** (82 juvenile, 11 female, 10 male: some have more than one): their general
+    room is full, so how much iNaturalist holds past their cap is not known. 8 of them are short of easy adults.
   With `--beyond-cap`, 88 species short of easy adults get 627 room units for faved observations, 40 species a run.
 - The real shortage is **93 species short of easy adults** (255 easy adult observations missing; 29 have none at all).
-  73 of them still have room under the cap, and their searches found nothing more: raising the cap gives them nothing.
+  65 of them have general room left that their general searches could not fill: raising the cap gives them nothing. 8
+  have only a phase's room open; their supply past the cap is not measured.
 
 **What raising a cap would add:**
 
-- `BASE_CAP` or `MAX_CAP`: nothing for the 440-512 species searched to the end. For the others, how much iNaturalist
-  holds past the cap is not in the cache, so it is not measured here. Measuring it is one batched read of
+- `BASE_CAP` or `MAX_CAP`: nothing for the 421 species whose general searches found nothing more under their cap. For
+  the 221 others (91 with only a phase's room open, 130 not short), how much iNaturalist holds past the cap is not in
+  the cache, so it is not measured here. Measuring it is one batched read of
   `observations/species_counts` over the 662 taxa (a handful of requests at one a second, rule C7) [guess on the count].
 - The faved route (already decided, REE-243): at most 627 room units, so 627 to 1,254 photos (an extra photo weighs
   0.5) [computed bound]. Storage: at most +0.30 GB. Judging: those photos, under P7 per pass (the first 134 got his
@@ -236,11 +244,11 @@ most about 300 of his photos are not in play yet. The fish and sea slug fetchers
 | Pierre's own photos not in play (fish 103, sea slugs 96, corals 98) | ≤ 300 | ≤ +0.08 GB | 7.6 GB | the sea slug cap, the corals' judging (P7 if over 100 with the rest) |
 | Sea slugs, the 2,563 extras judged | ≤ 2,563 | ≤ +0.59 GB | 8.2 GB | P7 |
 | Fish refills: faved beyond the cap (REE-243) | ≤ 1,254 | ≤ +0.30 GB | 8.5 GB | P7 per pass |
-| Fish refills under the cap | 0 now | 0 | 8.5 GB | none: every species with room was searched to the end within the last month; re-searched a month later |
+| Fish refills under the cap | 0 now | 0 | 8.5 GB | none: every species with room had its open parts searched to the end within the last month; re-searched a month later |
 | Corals, every waiting candidate | ≤ 1,244 | ≤ +0.45 GB | 8.9 GB | his sorting, P7 for the 445 unjudged |
 | Raised cap: sea slugs, no game cap | +2,074 | +0.48 GB | 9.4 GB | Pierre (Q377 is his) |
 | Fish `dup` extras findable from the codes (REE-257) | ≤ 3,844 | ≤ +0.91 GB | **10.3 GB** | P7 request in REE-257 |
-| Raised cap: fish `BASE_CAP` +10 | ≤ 1,300 for the 130 species not short [guess: supply unmeasured] | ≤ +0.31 GB | 10.6 GB | Pierre (Q36 is his), a measure of the supply first |
+| Raised cap: fish `BASE_CAP` +10 | ≤ 2,210 for the 221 species whose supply past the cap is unmeasured [guess: the supply may be much lower] | ≤ +0.52 GB | 10.8 GB | Pierre (Q36 is his), a measure of the supply first |
 
 **When we cross 10 GB.** Not with today's pending intake alone: the decided and pending steps (his own photos, the sea
 slug extras, the fish refills, the corals) end at most at about 8.9 GB. The bucket crosses 10 GB only when the fish `dup`
@@ -302,7 +310,8 @@ professionalise study, row 1); that is a separate matter from storage.
   read-only listing workflow after each large intake. Choose option D or E before the bucket passes about 9 GB (Q-b).
 - **Fish: the limit is supply, so caps are not the lever.** Go on with the decided routes: the faved route beyond the
   cap (REE-243) and the `dup` pass (REE-257), its scripted part first (3,844 photos from the codes, no agent), both under
-  P7. Raising `BASE_CAP` brings nothing to the species searched to the end; measure the supply past the cap first if
+  P7. Raising `BASE_CAP` brings nothing to the 421 species whose general searches found nothing more; for the 221 others,
+measure the supply past the cap first if
   Pierre wants to know (Q-c). The fish `dup` pass is the largest storage user (up to +0.9 GB for the scripted part).
 - **Sea slugs: the game cap is the limit.** Q377 planned to revisit it after the first judging pass, which is done.
   Recommended: no game cap, as the fish (+2,074 photos already judged, +0.48 GB, no judging). Then the P7 request for the
