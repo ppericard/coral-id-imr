@@ -453,7 +453,8 @@ function question(cur, target, choices, prompt, set, kq) {
   };
   let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition
   const go = c => {
-    const cor = hintShown || ph.some(p => p.view === 'macro' || p.view === 'close'),
+    const hintOpen = hintShown, // read before showHint opens it for the feedback: a hint left closed was not seen
+      cor = hintOpen || ph.some(p => p.view === 'macro' || p.view === 'close'),
       tm = tm0 || {rt: qclockRead(), zm: QCLOCK.zm};
     showHint();
     reveal();
@@ -462,7 +463,7 @@ function question(cur, target, choices, prompt, set, kq) {
     pendDone(); // an answered question is no more kept: the next one is drawn
     // A Find the X: the photo tapped (its four units are distinct, so the tile of the unit given), logged with the answer.
     const tap = fx ? (fx.find(x => x.n === c) || {}).p : null;
-    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tap);
+    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintOpen || !set.hint ? null : set.hint, tm, tap);
     // Find the X: each tile now says its unit (the right one ticked, the one tapped crossed: never colour alone), its
     // source (rule P5) and opens the four photos whole.
     if (fx)
