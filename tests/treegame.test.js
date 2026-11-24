@@ -120,7 +120,7 @@ print(json.dumps({
 
 test('the sea slugs build on in_play and record: one photo once, the species first; his phase; the fields in order', () => {
   const r = py(`
-L = {'area': {}, 'centre': {}, 'photoTarget': {'start': 1, 'gameCap': 4},
+L = {'area': {}, 'centre': {}, 'photoTarget': {'start': 1},
      'species': [{'rank': 1, 'name': 'Aa bb', 'inat': 1, 'family': 'Afam', 'genus': 'Aa', 'group': 'Nudibranchia',
                   'circle': 1, 'observers': 9, 'worms': {}}]}
 c = lambda k, n, **x: {'f': f'seaslug-{k}-cand-{n}', 'o': f'o{n}', 'src': f'u{n}', 'a': 'A', 'lic': 'cc-by', 't': 'T',

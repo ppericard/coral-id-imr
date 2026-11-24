@@ -255,6 +255,6 @@ Candidate photos workflow builds them into `seaslug-game.json` after the merge (
 wait). A re-judge of a species already in play also commits `python3 tools/seaslug_game.py`'s two files.
 
 **What a judgement does**: `tools/seaslug_game.py` puts a sure `best` or `alt` in play by itself (no unsure field, never
-an egg mass, a count of `1`, `s` or `o`, never out of the water), the easiest first up to the game cap, as for the fish,
-in every circle (1 to 3); a proposed crop is applied when the photo is downloaded for R2 (`--r2`, study §9 step 6: off in
+an egg mass, a count of `1`, `s` or `o`, never out of the water), every one of them, the easiest first, with no game cap (but for the juveniles of a documented juvenile form), as for the fish
+([the decision](../docs/decisions/2026-11-24-seaslug-no-game-cap.md)), in every circle (1 to 3); a proposed crop is applied when the photo is downloaded for R2 (`--r2`, study §9 step 6: off in
 the workflow until Pierre's go, `SEASLUG_R2`). Its auto-sort comes later. Add `unsure` at the least doubt.

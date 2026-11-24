@@ -27,11 +27,13 @@ test('the committed seaslug.json and seaslug-game.json are what the tool builds 
   assert.strictEqual(r.status, 0, r.stderr);
 });
 
-// Made-up list: three species of two families, one with a documented juvenile form; the target start 2, cap 2, +1.
+// Made-up list: three species of two families, one with a documented juvenile form; the target start 2, no game cap
+// (Pierre, 2026-11-24 14:47, «oui», REE-272: every photo judged sure plays, as the fish's), the documented form's
+// juveniles still at +1.
 const LIST = {
   area: {inatPlace: 6873, name: 'Philippines'},
   centre: {name: 'Dauin'},
-  photoTarget: {start: 2, gameCap: 2, perJuvenileForm: 1, juvenile: {'Aa bb': 'documented'}},
+  photoTarget: {start: 2, perJuvenileForm: 1, juvenile: {'Aa bb': 'documented'}},
   lookalikes: [{pair: ['Aa bb', 'Aa cc']}],
   species: [
     {
@@ -135,13 +137,14 @@ test('the tree: circles 1 to 3, fish.json shape, scientific names, the area comm
     T.species.every(s => !('common' in s) && !('cn' in s)),
     'no English name in the game (Q369 d)'
   );
-  // The photos: only sure judgements, cap 2 adults + 1 juvenile for the documented form; a species under start 2: none.
-  // The juvenile carries the fish's phase word (tools/fish_game.py phase: the j flag), the adults none.
+  // The photos: only sure judgements, every adult (no game cap) + 1 juvenile for the documented form; a species under
+  // start 2: none. The juvenile carries the fish's phase word (tools/fish_game.py phase: the j flag), the adults none.
   assert.deepStrictEqual(
     G.photos['f:Afam'].map(p => [p.f.split('-').pop(), p.sp, p.e, p.r, p.auto, p.ph]),
     [
       ['1', 's1', 5, 1, 'cand', undefined],
       ['2', 's1', 4, 1, 'cand', undefined],
+      ['3', 's1', 3, 1, 'cand', undefined],
       ['4', 's1', 2, 1, 'cand', 'juvenile']
     ],
     'Aa cc has no sure photo (unsure, k, dup): out; Aa ff (circle 3) not judged yet: none'
@@ -159,13 +162,13 @@ test('the tree: circles 1 to 3, fish.json shape, scientific names, the area comm
 // photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
 // Pierre's curation reaches the sea slugs' game (curation.json seaslug, core.js SUBJECTS seaslug admin.cur: the admin's
 // Photos › Tree and a report's photo tools write it), as the fish part reaches fish-game.json (tools/fish_game.py
-// in_play, record): what he removed, excluded or moved leaves and the next sure photo takes its place; his adds enter,
+// in_play, record): what he removed, excluded or moved leaves, the other sure photos staying; his adds enter,
 // named after the species he moved them to; his ease, tags, crop and rotation are the record's and the download's.
 test("Pierre's curation of the sea slugs reaches the game file: removed, excluded, moved, added, ease, tags, crop, rotation", () => {
   const cur = {
       exclude: {'seaslug-1-cand-4': 1}, // the juvenile excluded for good: the next one (5) takes the documented +1
       seaslug: {
-        seen: {'seaslug-1-cand-1': 1}, // removed: cand 3 fills the cap
+        seen: {'seaslug-1-cand-1': 1}, // removed: the others stay
         out: {'seaslug-3-cand-11': 's1'}, // Not this, from Bb dd to Aa bb, then his add there
         add: {'seaslug-3-cand-11': 's1', 'seaslug-2-cand-7': 's2', 'seaslug-2-cand-9': 's2'},
         ease: {'seaslug-1-cand-2': 2},
@@ -181,8 +184,9 @@ print(json.dumps([t, gm, todo]))`);
     G.photos['f:Afam'].map(p => [p.f.split('-').pop(), p.sp, p.t, p.e, p.jt, p.auto || '']),
     [
       ['11', 's1', 'Aa bb', 3, 'd1g0sl1a', ''], // his add: in whatever its judgement, named after its new species
-      ['3', 's1', 'T', 3, 'p1g0sl1', 'cand'], // the cap's one place left: 3 (ease 3) before 2 (his ease 2)
-      ['5', 's1', 'T', 1, 'd1g0sl1j', 'cand'],
+      ['3', 's1', 'T', 3, 'p1g0sl1', 'cand'], // no cap: 3 (ease 3) before 2 (his ease 2), the adults first
+      ['2', 's1', 'T', 2, 'o1g0sm1', 'cand'],
+      ['5', 's1', 'T', 1, 'd1g0sl1j', 'cand'], // the juvenile after them
       ['7', 's2', 'T', 5, 'd1g0sl1', ''], // his adds: an unsure and a dup judgement, his tags over the pass's
       ['9', 's2', 'T', 3, 'd1g0sl1', '']
     ]
@@ -192,6 +196,7 @@ print(json.dumps([t, gm, todo]))`);
     [
       ['11', null, 0, 0],
       ['3', [0.1, 0.2, 0.9, 0.8], 1, 90], // on R2 without his crop and rotation: made again, its rewrite count bumped
+      ['2', null, 0, 0],
       ['5', null, 0, 0],
       ['7', null, 0, 0],
       ['9', null, 0, 0]
@@ -210,7 +215,7 @@ print(json.dumps([t, gm, todo]))`);
   );
   assert.deepStrictEqual(
     G3.photos['f:Afam'].map(p => p.f.split('-').pop()),
-    ['1', '2', '4']
+    ['1', '2', '3', '4']
   );
 });
 
@@ -293,9 +298,12 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
     (G.photos['f:Bfam'] || []).map(p => [p.f.split('-').pop(), p.sp]),
     [
       ['50', 'g:Bb'],
-      ['51', 'g:Bb']
+      ['51', 'g:Bb'],
+      ['52', 'g:Bb'],
+      ['53', 'g:Bb'],
+      ['54', 'g:Bb']
     ],
-    'Bb: its species under the start, its genus-level photos reach it (cap 2, the easiest first)'
+    'Bb: its species under the start, its genus-level photos reach it (every one, the easiest first: no game cap)'
   );
   // core.js: a gl photo goes to its genus unit, never to a species' photos, never to another genus of the family
   const X = C.treeGen(T, G.photos, undefined, 'genus');
@@ -309,7 +317,7 @@ test('Q389: a species with no name yet in the tree by its label rule; genus-leve
   assert.ok(!X.gen['g:Ab'].views.wide.some(p => p.gl), 'not for the sibling genus');
   assert.deepStrictEqual(
     X.gen['g:Bb'].views.wide.map(p => p.sp),
-    ['g:Bb', 'g:Bb']
+    ['g:Bb', 'g:Bb', 'g:Bb', 'g:Bb', 'g:Bb']
   );
   assert.strictEqual(C.treeGlOf(A.find(p => p.gl)), 'g:Aa');
   assert.strictEqual(C.treeGlOf(A.find(p => !p.gl)), '');
@@ -400,7 +408,7 @@ test(
       out = path.join(dir, 'up');
     // A failing photo stays remote (r: 1), read from iNaturalist until the next run.
     let r = r2run(dir, out, {fail: true});
-    assert.deepStrictEqual([r.done, r.failed, r.n, r.wait], [2, ['seaslug-1-cand-2'], 3, 0]);
+    assert.deepStrictEqual([r.done, r.failed, r.n, r.wait], [3, ['seaslug-1-cand-2'], 4, 0]);
     assert.ok(
       r.calls.every(u => u.startsWith('https://inaturalist-open-data.s3.amazonaws.com/photos/')),
       'only the photo host'
@@ -412,6 +420,10 @@ test(
       'seaslug-1-cand-1-s.webp',
       'seaslug-1-cand-1-t.webp',
       'seaslug-1-cand-1.webp',
+      'seaslug-1-cand-3-m.webp',
+      'seaslug-1-cand-3-s.webp',
+      'seaslug-1-cand-3-t.webp',
+      'seaslug-1-cand-3.webp',
       'seaslug-1-cand-4-m.webp',
       'seaslug-1-cand-4-s.webp',
       'seaslug-1-cand-4-t.webp',
@@ -427,7 +439,7 @@ test(
     assert.strictEqual(todo, 1, 'the failed one waits for the next run');
     // tools/photos.py lists the sea slugs' photos on R2 (tools/r2_sync.sh checks the bucket has their files), not the remote one.
     const online = py(`import photos\nprint(json.dumps(sorted(photos.online(photos.records(${JSON.stringify(dir)})))))`);
-    assert.deepStrictEqual(online, ['seaslug-1-cand-1', 'seaslug-1-cand-4']);
+    assert.deepStrictEqual(online, ['seaslug-1-cand-1', 'seaslug-1-cand-3', 'seaslug-1-cand-4']);
     // The next run downloads the failed one only.
     r = r2run(dir, path.join(dir, 'up2'));
     assert.deepStrictEqual([r.done, r.failed, r.calls.length], [1, [], 1]);
@@ -454,10 +466,10 @@ test(
 test('the R2 step takes at most --max a run, the rest remote until the next', {skip: !pil && 'Pillow missing'}, () => {
   const dir = world(),
     r = r2run(dir, path.join(dir, 'up'), {limit: 1});
-  assert.deepStrictEqual([r.done, r.wait], [1, 2]);
+  assert.deepStrictEqual([r.done, r.wait], [1, 3]);
   assert.deepStrictEqual(
     game(dir).photos['f:Afam'].map(p => !!p.r),
-    [false, true, true]
+    [false, true, true, true]
   );
 });
 
@@ -476,7 +488,7 @@ test(
       dir = world(box([0.05, 0.2, 0.95, 0.8])),
       by = () => Object.fromEntries(game(dir).photos['f:Afam'].map(p => [p.f.split('-').pop(), p]));
     let r = r2run(dir, path.join(dir, 'up'));
-    assert.deepStrictEqual([r.done, r.failed], [3, []]);
+    assert.deepStrictEqual([r.done, r.failed], [4, []]);
     let B = by();
     assert.deepStrictEqual(B[1].bb, [0, 0, 1, 1], 'a dorsal photo keeps its box');
     assert.strictEqual(B[1].xc.length, 4, 'and its tile');
@@ -583,19 +595,22 @@ test('the committed files read through the fish engine: three circles, scientifi
           .map(p => p.sp)
       ).size;
   assert.deepStrictEqual([sp(1), sp(2) > 40, sp(3) > 40], [45, true, true]);
-  // Every species with photos has at least the start, at most the cap (+ the documented juvenile form's places).
+  // Every species with photos has at least the start. No game cap (Pierre, 2026-11-24 14:47, «oui», REE-272): every
+  // photo judged sure plays, as the fish's, so the list has no game cap and a species may hold more than the 12 it once did.
   const T = json('tools/seaslugs.json').photoTarget,
     by = {};
   Object.values(GM.photos)
     .flat()
     .forEach(p => (by[p.sp] = (by[p.sp] || 0) + 1));
-  // A genus's genus-level photos (sp its genus id, gl): at most the cap, in play once they and its species'
+  assert.ok(!('gameCap' in T), 'the list no longer carries a game cap');
+  assert.ok(Math.max(...Object.values(by)) > 12, 'a unit holds more than the old cap of 12');
+  // A genus's genus-level photos (sp its genus id, gl): in play once they and its species'
   // photos reach the start (tools/seaslug_game.py), so a genus may hold fewer than the start of its own.
   const gen = new Map(F.genera.map(g => [g.id, g]));
   Object.entries(by).forEach(([sp, n]) =>
     gen.has(sp)
-      ? assert.ok(n <= T.gameCap && n + gen.get(sp).species.reduce((s, id) => s + (by[id] || 0), 0) >= T.start, `${sp}: ${n}`)
-      : assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`)
+      ? assert.ok(n + gen.get(sp).species.reduce((s, id) => s + (by[id] || 0), 0) >= T.start, `${sp}: ${n}`)
+      : assert.ok(n >= T.start, `${sp}: ${n}`)
   );
   // The commonness is the area's: the Chromodorididae, most observed in the Philippines, lead the families,
   // and one of its genera the genera.
