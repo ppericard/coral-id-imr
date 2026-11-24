@@ -403,6 +403,14 @@
   "fish-s495-cand-507707301": {
    "code": "p1g2sls2",
    "keep": "dup"
+  },
+  "fish-s495-cand-422888539": {
+   "code": "p0g1mls2",
+   "keep": "best"
+  },
+  "fish-s495-cand-653366370": {
+   "code": "p1g1ml13",
+   "keep": "alt"
   }
  }
 }
