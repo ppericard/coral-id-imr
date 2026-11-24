@@ -563,6 +563,9 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
 });
 
 test("Pierre's own agreed observations of the genus-level and no-name lists come in whatever the room; --own --informal --genus-level asks his search only (REE-252)", () => {
+  // His search filters no licence (his photo needs none: usable_gl checks each photo), the others' do.
+  const [others, his] = J(`print(json.dumps([gl_query([60]), gl_query([60], OWN_ONLY)]))`);
+  assert.ok(others.includes('photo_license=') && !his.includes('photo_license=') && his.endsWith('&user_login=ppericard'));
   const dir = mkTmp('sluggl-own-');
   const at = x => path.join(dir, x);
   const T = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'seaslugs.json'), 'utf8')).photoTarget;

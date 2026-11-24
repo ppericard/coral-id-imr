@@ -297,9 +297,10 @@ test("fetch_local: Pierre's own observations come in whatever the room (REE-252)
   // Genus A already holds 15 Dauin candidates waiting: no room in any tier. Others' observations (OBS) must add nothing.
   const code = RUN.replace(
     'URLS, SAVED = [], {}',
-    `def mine(i, grade='research', photos=None, loc='9.2,123.3', places=(6873,), taxon=SP, ids=(), ct=None, agree=None):
+    `def mine(i, grade='research', photos=None, loc='9.2,123.3', places=(6873,), taxon=SP, ids=(), ct=None, agree=None, an=()):
     return {'id': i, 'quality_grade': grade, 'taxon': {**taxon, 'name': 'A'}, 'user': {'login': 'ppericard'}, 'identifications': list(ids),
-            'community_taxon_id': ct, 'identifications_most_agree': agree, 'photos': photos or [ph(i * 100)], 'location': loc, 'place_ids': list(places)}
+            'community_taxon_id': ct, 'identifications_most_agree': agree, 'photos': photos or [ph(i * 100)], 'location': loc, 'place_ids': list(places),
+            'annotations': [{'controlled_attribute_id': a, 'controlled_value_id': v, 'vote_score': s} for a, v, s in an]}
 MINE = [
   mine(501, photos=[ph(5000 + k) for k in range(13)] + [ph(5013, 'cc-by-sa')]),                  # 13 usable photos: never cut to PER_OBS (12)
   mine(502, 'needs_id', loc='14.6,121.0', ids=[ident('thamnasteroid', SP)]),                      # the trusted identifier's, far from Dauin
@@ -308,6 +309,8 @@ MINE = [
   mine(505, loc='-8.5,115.2', places=(), taxon=SP2),                                               # abroad, species confirmed in the Philippines
   mine(506, photos=[ph(6000, None), ph(6001, 'cc-by-nd'), ph(6002, 'cc-by-nc-sa')]),               # his photo without a licence: taken (lic own); ND and share-alike never
   mine(507, 'needs_id', loc='-8.5,115.2', places=(), taxon=SP2),                                   # abroad, Needs ID: refused (abroad stays Research Grade)
+  mine(508, an=[(17, 19, 1)]),                                                                     # annotated Alive or Dead: Dead: refused, as the fish's
+  mine(509, an=[(17, 19, -1)]),                                                                    # the same annotation voted down: does not count, taken
 ]
 FULL = [{'f': f'a-cand-{i}', 'o': f'https://www.inaturalist.org/observations/{9000 + i}', 'loc': 'dauin', 'lic': 'cc-by', 'a': 'x', 't': 'A b'} for i in range(15)]
 URLS, SAVED = [], {}`
@@ -325,11 +328,11 @@ print(json.dumps({'lics': {p['f']: p['lic'] for p in C if p.get('own') and p['o'
   'locs': {str(p['o'].rsplit('/', 1)[1]): p['loc'] for p in C if p.get('own')}, 'gid': sorted({p['o'].rsplit('/', 1)[1] for p in C if p.get('gid')}),
   'again': len(fl.own_take(MINE, 10, usedp, lambda: [12])),
   'asked': [u for u in URLS if 'user_login=ppericard' in u]}))`);
-  assert.deepStrictEqual(R.obs, [501, 502, 503, 505, 506]);
+  assert.deepStrictEqual(R.obs, [501, 502, 503, 505, 506, 509], 'never 508, annotated Dead');
   assert.strictEqual(
     R.new.length,
-    13 + 1 + 1 + 1 + 1,
-    'every usable photo of 501 (13, the share-alike one left out), one each for 502, 503, 505 and 506'
+    13 + 1 + 1 + 1 + 1 + 1,
+    'every usable photo of 501 (13, the share-alike one left out), one each for 502, 503, 505, 506 and 509'
   );
   assert.strictEqual(R.others, 0, 'the genus is full: no other observer’s observation');
   assert.deepStrictEqual(R.locs['501'], 'dauin');

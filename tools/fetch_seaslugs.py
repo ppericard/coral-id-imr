@@ -344,9 +344,11 @@ def usable_gl(o, pairs, used=frozenset()):
 
 def gl_query(taxa, extra=""):
     """The genus-level search of the iNaturalist genera taxa (ids): their observations in the Philippines identified at
-    the genus, Research Grade or Needs ID, with a photo under one of LICENCES (filtered again by usable_gl), by id."""
+    the genus, Research Grade or Needs ID, with a photo under one of LICENCES (filtered again by usable_gl), by id. His own
+    search (OWN_ONLY) filters no licence: his photo needs none (usable_gl checks each photo)."""
+    lic = "" if OWN_ONLY in extra else f"&photo_license={LICENCES}"
     return (f"taxon_id={','.join(map(str, taxa))}&rank=genus&place_id={PH}&quality_grade=research,needs_id&captive=false"
-            f"&photos=true&photo_license={LICENCES}&order_by=id&per_page=200{extra}")
+            f"&photos=true{lic}&order_by=id&per_page=200{extra}")
 
 
 def gl_obs(net, q, n=GL_PAGES):

@@ -76,6 +76,7 @@ def get(u):
 
 OWN = 'ppericard'  # Pierre's iNaturalist login: his observations come in whatever the room (rule P1)
 DAUIN_LL, DAUIN_KM = (9.19, 123.26), 40  # DAUIN, as the fish's tier_of reads it
+DEAD = (17, 19)  # iNaturalist's annotation Alive or Dead: Dead (the fish's DEAD)
 
 
 def own_pool(get, tids):
@@ -119,6 +120,8 @@ def own_take(pool, tid, usedp, confirmed=lambda: (), skip=lambda pid: False):
     for o in pool:
         if (o.get('user') or {}).get('login') != OWN or not in_genus(o.get('taxon'), tid):
             continue
+        if any((a.get('controlled_attribute_id'), a.get('controlled_value_id')) == DEAD and (a.get('vote_score') or 0) >= 0 for a in o.get('annotations') or []):
+            continue  # annotated Dead (Alive or Dead: Dead), as the fish's usable_obs; a down-voted annotation does not count
         loc = own_place(o)
         if loc == 'world' and not (accepted(o, tid, loc) and {(o.get('taxon') or {}).get('id'), *((o.get('taxon') or {}).get('ancestor_ids') or [])} & set(confirmed())):
             continue
