@@ -157,8 +157,15 @@ subject is a test case, not the definition of the target.
   `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
   fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
   the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
-  costs less; `--clock 14400` is the study's condition), which makes a run nearly repeatable, not exactly: the same
-  state and seed differ by up to 15% from run to run. The run fails, naming the state, when the page loaded another
+  costs less; `--clock 14400` is the study's condition). **A count is repeatable** (REE-281): the clock is virtual
+  (`Date` and `performance.now` stand still between the tool's ticks: 4 s of thinking and 6 s of pause an answer), the random
+  numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, and the data (every
+  `.json` file the page asks for) is the pinned tree's, as the players are, while the code is the tree under test's. So
+  neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the photos
+  (a Candidate photos commit changes `seaslug-game.json` and `data/cand.json` on main with no change of code) moves a
+  count; the seed alone changes the questions drawn. Before this, the same `fish:50` and seed counted 133,183 calls an
+  answer twice and 183,144 the third time (on one commit), which failed a merge train. A change that needs newer data (a
+  field the code now reads) moves the pin. The run fails, naming the state, when the page loaded another
   subject than the state's, holds a history far from the state's, played under three quarters of its answers or raised a
   page error. Options: `--states fish:50,coral:500,seaslug:3000` (subject `fish`, `coral` or `seaslug`, then the answers; the
   default is the nine states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed 1,2,3` (each state
@@ -174,7 +181,8 @@ subject is a test case, not the definition of the target.
   the answering are the current ones), not on the version being counted: a change of the draw changes the player the app
   makes of the same simulated person (the sea slugs at 500 answers: 82 units met on one commit and 68 on the next, after
   the ease weight changed, and twice the `scoreOf` calls), which would move the counts of a change that did not touch the
-  code counted. A player is what an older save is; the version counted must read it. Moving the pin means making the
+  code counted. The same pin serves the page its data (every `.json` file, above), so the players' units are the data's they
+  were made on. A player is what an older save is; the version counted must read it. Moving the pin means making the
   players again and setting every ceiling again, in a PR of its own. The sea slugs are played through the same fish engine
   (`learnsim.js --subject seaslug`: each profile's fish part, `tools/learnprof.js` `ENGINE`, rule S1). It takes the machine
   slot (rule W24).
