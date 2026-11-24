@@ -169,13 +169,20 @@ each Publish (and on manual dispatch), after the coral `photos` job, commits `da
   rejected, excluded or marked Not this); each general search is asked afresh (no stale cache) and read on (`pages`,
   `id_below`, up to `GEN_PAGES` = 5 pages of 200) while it brings fewer usable photos than the room; then FishBase
   (`fetch_fishbase.py`, offline) fills what iNaturalist left and `--rep` tags the covers, for the refilled species only.
-- **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, parts, cap}}): a part of the room
-  ("free", the general searches; `juvenile`, `male`, `female`, the phase searches; never the room beyond the cap) still open after the run whose
-  searches were read to their end (`ends`), or which got nothing, is searched to the end that day, under the cap the
-  species had then (`cap`); the species is skipped while every open part of its room is in a record less than
-  `RECHECK_DAYS` (30) old made under a cap at least its cap now (`pick_short`; a record without `cap` reads as the cap
-  of Q36 alone, so a family floor raised since opens it). A part opened since, a juvenile room for instance, is
-  searched; a species filled loses its record.
+- **Exhaustion** (`exhausted`, `tools/fish_refill.json` `end` {species: {at: day, room: {part: room left}, cap}}): a
+  part of the room ("free", the general searches; `juvenile`, `male`, `female`, the phase searches; never the room
+  beyond the cap) is searched to the end that day when its searches were read to their end (`ends`) and the room it
+  has left still fits a new observation (`fits`: 1, the first photo's weight), so the run took every usable
+  observation they held. The record keeps that room and the cap the species had then (`cap`). A part that got nothing
+  from searches cut short (`GEN_PAGES`, `PHASE_PAGES`), or that has less room than a new observation, is not searched
+  to the end: what lies past the pages read, or what did not fit, may still be usable. Only a part a new observation
+  fits is open: half a photo of room is left as it is. The species is skipped while every open part of its room is in
+  a record less than `RECHECK_DAYS` (30) old, with at least the room the part has now, made under a cap at least its
+  cap now (`pick_short`; a record without `cap` reads as the cap of Q36 alone, so a family floor raised since opens
+  it). So a part opened since (a juvenile room), room grown since (the judging pass or Pierre setting photos aside),
+  or a cap raised since makes the species eligible again, and new supply on iNaturalist after `RECHECK_DAYS`. A record
+  without `room` holds nothing (`load_mem`; the rule before REE-278 took a part that got nothing for one searched to the
+  end). A species filled loses its record.
 - **Judging**: nothing is judged in the workflow (the pass is visual): the new candidates wait in `data/fish-cand.json` for
   the judging pass (`python3 tools/judging_fish.py todo`; the full `tools/brief.py` prints how many wait), whose sure
   decisions the admin's fish auto-sort applies at the next load, then Pierre's Publish (rule A1).

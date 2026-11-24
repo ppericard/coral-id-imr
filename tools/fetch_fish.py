@@ -79,9 +79,10 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   is refilled (the cap holds: Q36, but for the faved room beyond it with --beyond-cap, above: beyond_cap); at most REFILL_MAX a run, the shortest first (short of easy photos with nothing
   waiting for the judging pass, then the largest share of its cap missing), each search paged (id_below, up to
   GEN_PAGES pages) while it brings too few usable photos. Exhaustion is remembered in tools/fish_refill.json per species
-  and part of its room ("free", or a phase iNaturalist can search on): a part still open after a run whose searches were
-  read to their end, or which got nothing, is "searched to the end" on that day; the species is skipped while every
-  open part of its room was searched to the end less than RECHECK_DAYS ago. Then FishBase fills what iNaturalist left
+  and part of its room ("free", or a phase iNaturalist can search on): a part whose searches were read to their end
+  with room left that a new observation fits (so none usable is left) is "searched to the end" on that day, with that
+  room; the species is skipped while every open part of its room (one a new observation fits: fits) was searched to the
+  end less than RECHECK_DAYS ago with at least the room it has now (REE-278). Then FishBase fills what iNaturalist left
   (tools/fetch_fishbase.py, offline) and --rep tags the covers, for the refilled species only. The new candidates wait
   for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's auto-sort applies.
   --refill --plan prints, offline, the short species, the pick and the skipped ones; it writes nothing. A refill first
@@ -1207,31 +1208,40 @@ def shortness(s, t, L, gone, F, sug, game=(), fb=(), moved=frozenset(), cap=None
 
 
 def fresh(e, today):
-    """An exhaustion record ({"at": day, "parts": [...], "cap"}) less than RECHECK_DAYS old."""
+    """An exhaustion record ({"at": day, "room": {part: room left}, "cap"}) less than RECHECK_DAYS old."""
     try:
         return (today - datetime.date.fromisoformat(e["at"])).days < RECHECK_DAYS
     except (KeyError, TypeError, ValueError):
         return False
 
 
+def fits(room):
+    """A new observation fits in this room (obs_fit: its first photo takes 1). Half a photo of room only takes another
+    photo of an observation already held, so a part with less is not open to the refill (pick_short, exhausted)."""
+    return obs_fit(0, room) >= 1
+
+
 def pick_short(rows, mem, today, n=REFILL_MAX):
-    """(pick, skip) from {sid: shortness} in teaching order: the species with room (under the cap, or, in a --beyond-cap
-    run, beyond it for faved observations: beyond_cap), less those whose every open part was searched to the end less
-    than RECHECK_DAYS ago (mem; the room beyond the cap is never remembered: a --beyond-cap run searches it again); the
-    shortest first: short of easy photos with nothing waiting
-    for the judging pass (more candidates are their only way to easy photos), then the largest share of the cap
-    missing, then teaching order; at most n. A record made under a smaller cap than the species has now (its "cap"; a
-    record without one, under the species' own cap of Q36, "base") does not hold: the raised cap opened room its searches
-    never looked for (family_cap)."""
+    """(pick, skip) from {sid: shortness} in teaching order: the species with an open part of their room (one a new
+    observation fits: fits) or, in a --beyond-cap run, room beyond the cap for faved observations (beyond_cap), less
+    those whose every open part was searched to the end less than RECHECK_DAYS ago with at least the room it has now
+    (mem, exhausted: room grown since, as a judging pass or Pierre setting photos aside frees it, opens the part again;
+    the room beyond the cap is never remembered: a --beyond-cap run searches it again); the shortest first: short of
+    easy photos with nothing waiting for the judging pass (more candidates are their only way to easy photos), then the
+    largest share of the cap missing, then teaching order; at most n. A record made under a smaller cap than the
+    species has now (its "cap"; a record without one, under the species' own cap of Q36, "base") does not hold: the
+    raised cap opened room its searches never looked for (family_cap)."""
     order = {sid: i for i, sid in enumerate(rows)}
     want, skip = [], []
     for sid, r in rows.items():
-        if r["room"] <= 0 and r.get("beyond", 0) <= 0:
+        opened = {k: v for k, v in r["parts"].items() if fits(v)}
+        if not opened and r.get("beyond", 0) <= 0:
             continue
         e = mem.get(sid)
         same = (e or {}).get("cap", r.get("base", r["cap"])) >= r["cap"]
-        done = set((e or {}).get("parts") or [])
-        if e and fresh(e, today) and same and set(r["parts"]) <= done and r.get("beyond", 0) <= 0:
+        done = (e or {}).get("room") or {}
+        if (opened and e and fresh(e, today) and same and all(v <= done.get(k, 0) for k, v in opened.items())
+                and r.get("beyond", 0) <= 0):
             skip.append(sid)
             continue
         want.append(sid)
@@ -1241,8 +1251,11 @@ def pick_short(rows, mem, today, n=REFILL_MAX):
 
 
 def exhausted(P):
-    """The parts of a refilled species' room (its plan entry from run) still open after the run and searched to the end:
-    their searches read to the end (P["end"]), or nothing found for them. "No more candidates is no more candidates"."""
+    """{part: room left} for the parts of a refilled species' room (its plan entry from run) searched to the end: their
+    searches read to their end (P["end"]) with room left that a new observation fits (fits), so select took every usable
+    observation they held and none is left. "No more candidates is no more candidates". A part whose searches were cut
+    short (GEN_PAGES, PHASE_PAGES) or with less room left than a new observation is not: what lies past the pages read,
+    or what did not fit, may still be usable (REE-278)."""
     padd, badd = P.get("phase_add") or {}, P.get("beyond_add", 0)
     total = sum((P.get("add") or {}).values())
     got = {"free": total - sum(padd.values()) - badd, **padd}
@@ -1250,23 +1263,29 @@ def exhausted(P):
     left = {"free": P["free"] + sum(r for ph, r in P["rooms"].items() if ph not in INAT_PHASE) - spent.get("free", 0)}
     for ph in INAT_PHASE:
         if P["rooms"].get(ph):
-            left[ph], got[ph] = P["rooms"][ph] - spent.get(ph, 0), padd.get(ph, 0)
+            left[ph] = P["rooms"][ph] - spent.get(ph, 0)
     end = P.get("end") or {}
-    return sorted(k for k, v in left.items() if v > 0 and (end.get(k) or not got[k]))
+    return {k: left[k] for k in sorted(left) if fits(left[k]) and end.get(k)}
 
 
 def load_mem(path):
+    """The exhaustion records of tools/fish_refill.json. A record without the room its parts had left ("room") holds
+    nothing: it cannot say whether the room grew since, and the rule that wrote it took a part that got nothing for
+    one searched to the end (REE-278)."""
     try:
-        return json.loads(Path(path).read_text(encoding="utf-8")).get("end") or {}
+        end = json.loads(Path(path).read_text(encoding="utf-8")).get("end") or {}
     except (OSError, ValueError):
         return {}
+    return {k: v for k, v in end.items() if isinstance(v, dict) and isinstance(v.get("room"), dict)}
 
 
 def save_mem(path, mem):
     doc = ("tools/fetch_fish.py --refill (Pierre, 2026-11-06, Q171): per fish.json species id, the parts of its candidate "
-           "room searched to the end on iNaturalist (at: the day; parts: free = the general searches, juvenile / male / "
-           "female = the phase searches; cap: the species' cap then); skipped while every open part was searched to the end "
-           f"less than {RECHECK_DAYS} days ago under a cap at least the one it has now. Written by the Candidate photos workflow.")
+           "room searched to the end on iNaturalist (at: the day; room: per part, free = the general searches, juvenile / "
+           "male / female = the phase searches, the room it had left, which a new observation fits; cap: the species' cap "
+           "then). A part is searched to the end when its searches were read to their end with that room left. The species "
+           f"is skipped while every open part was searched to the end less than {RECHECK_DAYS} days ago with at least the "
+           "room it has now, under a cap at least the one it has now. Written by the Candidate photos workflow.")
     body = ",\n".join(f" {json.dumps(k)}: {json.dumps(mem[k], sort_keys=True)}" for k in sorted(mem))
     Path(path).write_text("{\"_doc\": " + json.dumps(doc) + ",\n\"end\": {" + ("\n" + body + "\n" if body else "") + "}}\n", encoding="utf-8")
 
@@ -1307,9 +1326,9 @@ def refill(args):
                               "refresh": not args.offline})
     plan = run(a)
     for sid in pick:
-        ended = exhausted(plan[sid]) if sid in plan else []
+        ended = exhausted(plan[sid]) if sid in plan else {}
         if ended:
-            mem[sid] = {"at": today.isoformat(), "parts": ended, "cap": rows[sid]["cap"]}
+            mem[sid] = {"at": today.isoformat(), "room": ended, "cap": rows[sid]["cap"]}
         else:
             mem.pop(sid, None)
     save_mem(args.memory, mem)

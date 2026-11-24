@@ -260,7 +260,8 @@ stop.** After each Publish the "Candidate photos" workflow refills the lists: co
 (`tools/fetch_local.py`), and the short fish species (`tools/fetch_fish.py --refill`: under the cap of Q36 net of what
 Pierre rejected, excluded or sent elsewhere, or short of easy photos; a few dozen a run, the shortest first). "No more
 candidates is no more candidates": a fish species whose search found nothing more is noted with the day
-(`tools/fish_refill.json`) and searched again only a month later; for corals, `python3 tools/cand_gaps.py` lists the
+(`tools/fish_refill.json`) and searched again a month later, or sooner when its room grows ([fish photos
+spec](fish-photos.md#automatic-refill)); for corals, `python3 tools/cand_gaps.py` lists the
 game genera with fewer than 5 candidate photos waiting only when iNaturalist still has something the search would take,
 never one with nothing better. Each search keeps its subject's area and rules (ARCHITECTURE "Photos", "Fish
 candidates"): abroad only for species confirmed in the Philippines (rule C8), never what Pierre rejected or excluded.
