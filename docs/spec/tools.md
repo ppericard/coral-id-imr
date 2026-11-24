@@ -306,7 +306,8 @@ The work one answer makes on the device, counted so that a change can be judged 
 
 - **`fetch_approved.py`, `fetch_local.py`**: the candidates' download and refill, run by the Candidate photos workflow
   ([photos.md › The Candidate photos workflow](photos.md#the-candidate-photos-workflow)). `fetch_local.py <Genus…>`
-  limits a run, `--plan` shows offline what it would refill, `--tidy` runs the tidy step alone; it searches the
+  limits a run, `--plan` shows offline what it would refill, `--tidy` runs the tidy step alone, `--own` takes only
+  Pierre's own observations (below: every genus, whatever its room); it searches the
   iNaturalist taxon `taxonomy.json` gives each genus (`taxonomy.py` `inat_taxon`). `fetch_approved.py --games` (the
   workflow passes it) also downloads any photo of Millepora and the bonus genera still remote (`r: 1`, as
   `build_extra.py` imports them), so every game photo is hosted like the others; the other extra Dauin genera (Coral ID
@@ -468,9 +469,11 @@ The subject in the app: [seaslugs.md](seaslugs.md).
     The new candidates wait unjudged and out of play for the judging pass (rule P7);
   - **Pierre's own observations: the fish's rule** (rule P1's fish exception, rule S2): identified to the species
     they are usable even when Needs ID (`ni`), his photos whatever their licence, read by `fetch_fish.usable_obs`
-    itself; asked on his own search (`--own`: that search only, every species together) and taken first, so none is left
-    out: in the target on a new list, on top of a list already full up to `max` (30); never boosted, judged on the
-    rubric like any candidate;
+    itself; asked on his own search (`--own`: that search only, every species together, full or not) and taken first,
+    so none is left out, every one with every usable photo, whatever the list's room, target and `max` (30): on top of a
+    list already full too, and in the genus-level and no-name lists his agreed observations are taken the same way; they
+    count in the room, so a full list takes no other observer's photo; never boosted, judged on the rubric like any
+    candidate ([record](../decisions/2026-11-24-own-observations-everywhere.md));
   - it reuses `fetch_fish.py`'s searches, cache and pacing (~1 request/s, cached in
     `tools/.cache/seaslug_photos.json`). The file has `data/fish-cand.json`'s shape and record fields, keyed by the species'
     iNaturalist taxon id, `f` = `seaslug-<taxon id>-cand-<photo id>` (the docstring lists the differences);
