@@ -157,7 +157,8 @@ About 20 photos a week, drawn from **decisions already applied**, so nothing wai
 
 - **Which week**: the ISO week in Manila time. The set id is `week-2026-48`. The draw is seeded by the week, so every
   device draws the same set (FNV-1a, as `autoCheck` today).
-- **From where**: the decisions of the last week, or of the last four weeks when a week holds too few. Corals: the auto log's
+- **From where** (while a coral field is off, its share comes from the unapplied sure proposals instead, §4.3): the
+  decisions of the last week, or of the last four weeks when a week holds too few. Corals: the auto log's
   plain `a`, `r`, `x` codes. Fish: the build's `cand` route (`fish-game.json` `auto: 'cand'`) and the log's `r`. Sea
   slugs: `seaslug-game.json`'s `cand` route and the pass's sure rejects (`data/suggest.json` `seaslug`). Never a photo
   he decided himself, never one already sampled.
@@ -282,6 +283,12 @@ Auto line are unchanged. Their inputs change:
 - **What "off" does**: for the corals, what it does today (nothing applied, or the field left as the dashed guess). For
   the fish and sea slugs, "off" stops nothing players see (§1). It shows in red in Auto and in the integrator's brief,
   and the integrator proposes a re-judge of the field (rule P7 for its size). A gate in the build is question R5.
+- **The way back on**: while a coral field is off, no new decision of that field is applied, so a sample of applied
+  decisions alone would run dry and the field could never recover. So while a field is off, the week's coral share is
+  drawn from the **sure proposals the run did not apply** (candidates whose judgement is sure today, not decided by him,
+  not logged): the card shows the proposal ("Proposed: add to Colony, Fair"), his answer counts in the window as a
+  Check's did, and nothing more is held back than "off" already holds. Once the field is on again, the draw returns to
+  applied decisions. The same holds for each coral field (keep, view, quality, form).
 
 ## 5. The corals' path
 
