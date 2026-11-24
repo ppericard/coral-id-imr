@@ -338,18 +338,21 @@ test('the gate floor: no gate at or below SHEET_FLOOR, SHEET_FLOOR at or below V
 // first launch: nothing stored), and a newer reply's version is kept as it is. Every gate left stays off until a reply
 // says its version.
 test('sheetV: SHEET_FLOOR before any reply or over an older stored one, the stored version above it', () => {
-  const mem = {},
+  // Read through sync.js keptBy (the storage read once, tests/kept.test.js), on app.js's store.
+  const pg = require('./kept.js').keptPage({check: true}),
     sheetV = fn('sync.js', 'const sheetV = ', '\n', 'sheetV', {
       SHEET_FLOOR: C.SHEET_FLOOR,
       SHEETV: 'reefid-sheet-v',
-      store: {get: (k, d) => (k in mem ? mem[k] : d)}
+      keptBy: pg.keptBy
     });
   assert.strictEqual(sheetV(), C.SHEET_FLOOR, 'no reply yet');
   for (const k of Object.keys(FOUND)) assert.ok(FOUND[k].N > sheetV(), `${k} on before any reply`);
-  mem['reefid-sheet-v'] = 0;
+  pg.store.set('reefid-sheet-v', 0);
   assert.strictEqual(sheetV(), C.SHEET_FLOOR, 'a stored 0');
-  mem['reefid-sheet-v'] = C.SHEET_FLOOR - 40;
+  pg.store.set('reefid-sheet-v', C.SHEET_FLOOR - 40);
   assert.strictEqual(sheetV(), C.SHEET_FLOOR, 'a stored version below the floor');
-  mem['reefid-sheet-v'] = C.SHEET_FLOOR + 7;
+  pg.store.set('reefid-sheet-v', C.SHEET_FLOOR + 7);
   assert.strictEqual(sheetV(), C.SHEET_FLOOR + 7, 'a newer one as it is');
+  pg.ls.raw.set('reefid-sheet-v', String(C.SHEET_FLOOR + 9)); // another tab's reply
+  assert.strictEqual(sheetV(), C.SHEET_FLOOR + 9, "another tab's newer one at once");
 });

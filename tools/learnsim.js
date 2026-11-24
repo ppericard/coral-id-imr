@@ -25,7 +25,8 @@
 // open nothing); --liveoff records them nowhere (the live mode's version 1), the learner taught the same: the two arms of
 // a paired comparison (tools/learncmp.js).
 // --facheck: core.js FA_CHECK on in the page (tests/facheck.js): every false-alarm rate read from the table is checked
-// against the scan, and a difference stops the run; the same --out as without it, slower.
+// against the scan, and a difference stops the run; the same --out as without it, slower. Every storage value kept
+// parsed (sync.js KEPT_CHECK) is checked against a fresh read too.
 // --dump DIR [--dump-at 50,500,3000]: the page's saved state (localStorage) at those questions (every checkpoint without
 // --dump-at, which adds its questions to the checkpoints), one file DIR/<subject>-<profile>-<seed>-<question>.json each,
 // the states tools/answercost.js plays on. Written by a run of the full length only (never a budget's calibration run).
