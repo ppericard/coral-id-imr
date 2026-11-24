@@ -581,6 +581,7 @@ function play(cfg) {
   // A fresh player (the context's storage is empty): no hold, no gentle restart, no Open all unless --openall.
   P = {};
   INTROS = {};
+  if (typeof stateBump === 'function') stateBump(); // the records and cards written here: the views made again (app.js)
   HOLDS = 0;
   const old = typeof CB === 'undefined'; // an app with the gentle restart (warmLeft) instead of the comeback
   if (old) warmLeft = 0;
@@ -1147,6 +1148,7 @@ function play(cfg) {
       Object.keys(Q).forEach(k => delete Q[k]);
       Object.assign(Q, JSON.parse(snap.Q));
       INTROS = null;
+      if (typeof stateBump === 'function') stateBump(); // the records, settings and cards restored (app.js)
       HOLDS = snap.HOLDS;
       Object.assign(know, snap.know);
       Object.keys(LS).forEach(k => delete LS[k]);
