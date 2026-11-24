@@ -275,8 +275,7 @@ draw in big pools" keeps `calib.u` and loses `calib.pool`.
 
 ## 5. Against the four guiding aims
 
-The aims are read from PR #1500, still open at the time of writing (branch `players-goals`, LEARNING.md "The players
-we design for"; the digest «ok», Pierre, 2026-11-24 13:50).
+The aims are LEARNING.md's "The players we design for" (#1500; the digest «ok», Pierre, 2026-11-24 13:50).
 
 1. **A complete beginner is never faced with what is too hard.** This is where the one draw costs something against
    today, and the simulation must weigh it.
