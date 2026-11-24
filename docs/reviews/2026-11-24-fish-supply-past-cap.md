@@ -1,7 +1,7 @@
 # Fish supply past the candidate cap (2026-11-24)
 
-Status: measure, read-only, docs only (Linear REE-272, question Q-c of the photo capacity study,
-`docs/reviews/2026-11-24-photo-capacity.md`, PR #1535). Nothing was written to a data file, a curation file, the sheet or
+Status: measure, read-only, docs only (Linear REE-272, question Q-c of the
+[photo capacity study](2026-11-24-photo-capacity.md), PR #1535). Nothing was written to a data file, a curation file, the sheet or
 R2, no photo was judged (rule P7), and no code was changed. iNaturalist was read only through `tools/inat.py` (rule C7:
 paced at one request a second, batched, the project's User-Agent). Written on `origin/main` at dd98f6fc, the counts
 read on 2026-11-24 about 14:50 to 15:00 Manila.
@@ -184,4 +184,4 @@ other pending intake they matter for Q-b (capacity study, section 4), not before
   check of 9 more; Linear REE-272.
 - Code: `tools/fetch_fish.py` (`queries`, `usable_obs`, `cap_of`, `family_cap`, `species_room`, `shortness`, `pick_short`,
   `exhausted`), `tools/inat.py`, `tools/fish_refill.json`; data: `data/fish-cand.json`, `fish-game.json`, `fish.json`.
-- Rules and decisions: C7, P7, W11; Q36; REE-243, REE-257; the capacity study (`docs/reviews/2026-11-24-photo-capacity.md`).
+- Rules and decisions: C7, P7, W11; Q36; REE-243, REE-257; the capacity study ([2026-11-24-photo-capacity.md](2026-11-24-photo-capacity.md)).

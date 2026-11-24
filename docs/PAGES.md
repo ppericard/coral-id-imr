@@ -142,7 +142,7 @@ it outgrows its free tiers. Code: `.github/workflows/health.yml`, `tools/health.
 - **R2 is measured by hand**: no read-only token exists in CI (the R2 keys the workflows hold upload photos, and their scope is
   still unchecked: docs/STATUS.md "Pierre's hands"), and a key that can write is not given to an hourly job. To measure: the
   Cloudflare dashboard, R2, the photo bucket, Metrics (storage); then change `tools/infra.json` (`bytes` and `at` together).
-  First figure: about 6.3 GB on 2026-11-15 ([AVIF study](reviews/2026-11-15-avif-study.md) §4), already 63%.
+  Last figure: 7.5 GB on 2026-11-24 (Pierre's dashboard reading; the photo capacity study, `docs/reviews/2026-11-24-photo-capacity.md` §2), 75%.
 - **In `python3 tools/brief.py`** one `Infra:` line, read from the latest Health run's `infra` annotation (three REST calls,
   inside the brief's 5 s); in the short brief only when a number warns or the check failed.
 - **In the admin** the card above To do › Alerts' list (`readInfra_`, the `players` right, never public; from sheet v180, rule D4),
