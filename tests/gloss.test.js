@@ -13,7 +13,7 @@ function app() {
   const appSrc = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
     src = fs.readFileSync(path.join(__dirname, '..', 'gloss.js'), 'utf8'),
     pick = (a, b) => block(src, a, b, {file: 'gloss.js'}),
-    ctx = {DATA};
+    ctx = {DATA, ORG: require('../core.js').ORG};
   vm.createContext(ctx);
   vm.runInContext(
     block(appSrc, 'const esc = ', '\n', {file: 'app.js'}) +

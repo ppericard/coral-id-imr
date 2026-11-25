@@ -117,7 +117,8 @@ test('every family of the game has ID cues to show: IMR’s, or its own ID marks
       treeScoreTree: C.treeScoreTree,
       treeSpUnits: C.treeSpUnits,
       treeGenSets: C.treeGenSets,
-      rankWeights: C.rankWeights
+      rankWeights: C.rankWeights,
+      ORG: C.ORG
     };
   vm.createContext(ctx);
   vm.runInContext(

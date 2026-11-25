@@ -18,7 +18,8 @@ const ROOT = path.join(__dirname, '..'),
 // A subject's `about` entry as app.js writes it: the object literal after "about:", evaluated.
 const aboutOf = who =>
   vm.runInNewContext(
-    '(' + block(app, `    about: {\n      who: '${who}',`, '\n    },\n', {file: 'app.js'}).replace(/^ {4}about: /, '') + '\n    })'
+    '(' + block(app, `    about: {\n      who: '${who}',`, '\n    },\n', {file: 'app.js'}).replace(/^ {4}about: /, '') + '\n    })',
+    {ORG: require('../core.js').ORG}
   );
 const SEA = aboutOf('sea slug genera'),
   FISHES = aboutOf('reef fish families');

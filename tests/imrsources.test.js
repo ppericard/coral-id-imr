@@ -209,7 +209,7 @@ test('app.js credits a traced lecture photo after the answer with its link, befo
   const vm = require('vm'),
     block = require('./block'),
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
-    ctx = {esc: s => String(s), safeUrl: u => u};
+    ctx = {esc: s => String(s), safeUrl: u => u, ORG: require('../core.js').ORG};
   vm.runInNewContext(
     [
       block(src, 'const author = p =>', '\nconst photoSrc', {file: 'app.js'}),

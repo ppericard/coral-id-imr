@@ -13,7 +13,7 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   app = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
   quiz = fs.readFileSync(path.join(ROOT, 'quiz.js'), 'utf8'),
-  ctx = {};
+  ctx = {ORG: require('../core.js').ORG};
 vm.createContext(ctx);
 vm.runInContext(
   block(app, 'const fishNextOf = ', "// The tree subjects' shared units", {file: 'app.js'}) +
@@ -109,7 +109,7 @@ test('slugNextOf: before circle 3, what comes next; then the genera on their way
 // The subject's cards (the all-met card, its genus cards: kind SUBJECTS card) draw their medallion from app.js
 // CARD_KINDS: every subject's kind has one, else the card shows an empty circle (the sea slugs' did).
 test("every subject's card kind has its medallion (app.js CARD_KINDS)", () => {
-  const c = {};
+  const c = {ORG: require('../core.js').ORG};
   vm.createContext(c);
   vm.runInContext(block(app, 'const CARD_KINDS = ', 'let cardN', {file: 'app.js'}) + '\nthis.K = CARD_KINDS;', c);
   for (const S of require('../core.js').SUBJECTS) assert.ok(S.card && c.K[S.card], `${S.id}: card kind ${S.card}`);

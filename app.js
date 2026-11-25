@@ -745,9 +745,9 @@ const photoSrc = p =>
   !p
     ? ''
     : p.imr && p.pg
-      ? `<a class="psrc" href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}. ${esc(author(p))}: open the page that credits it"><span class="pa">IMR lecture · </span>${esc(author(p))} ↗</a>`
+      ? `<a class="psrc" href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener" title="${ORG.lectureRef}${p.slide ? ', slide ' + esc(p.slide) : ''}. ${esc(author(p))}: open the page that credits it"><span class="pa">${ORG.lecture} · </span>${esc(author(p))} ↗</a>`
       : p.imr
-        ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
+        ? `<span class="psrc" title="${ORG.lectureRef}${p.slide ? ', slide ' + esc(p.slide) : ''}">${ORG.lecture}</span>`
         : /^https?:\/\/(www\.)?inaturalist\.org\//.test(p.o || '')
           ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
           : // A FishBase photo Pierre put in play: its author and FishBase's photo page.
@@ -759,7 +759,7 @@ const groupHue = n => (n * 137) % 360;
 // An IMR lecture photo's credit: the lecture and slide, then, once traced (pg), its photographer and the page that credits
 // it (Corals of the World's terms ask for that citation).
 const lectCredit = p =>
-  `IMR Lecture 6, slide ${esc(p.slide)}${p.pg && p.a ? ` · <a href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener">${esc(p.a)}</a>` : ''}`;
+  `${ORG.lectureRef}, slide ${esc(p.slide)}${p.pg && p.a ? ` · <a href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener">${esc(p.a)}</a>` : ''}`;
 const credit = p =>
   p.imr
     ? lectCredit(p)
@@ -769,7 +769,7 @@ const credit = p =>
 // lecture, then its photographer and site (its page's address names the species: no link).
 const blindCredit = p => {
   const n = author(p);
-  return p.imr ? ' · IMR lecture' + (p.pg && n ? ` · © ${esc(n)}` : '') : n ? ` · © ${esc(n)}` : '';
+  return p.imr ? ' · ' + ORG.lecture + (p.pg && n ? ` · © ${esc(n)}` : '') : n ? ` · © ${esc(n)}` : '';
 };
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick (tools/covers.txt),
@@ -1007,10 +1007,10 @@ function treeGenera(X, F) {
         // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
         ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
         tl: cues
-          ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
+          ? `ID tips (${ORG.short}, ` + (G.imr || g) + sl + ')'
           : marks
             ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
-            : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+            : 'Its species here' + (sl ? ` (${ORG.short}, ` + G.imr + sl + ')' : ''),
         // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
         ...(G.plain ? {plain: G.plain} : {}),
         // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
@@ -2074,7 +2074,7 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="${esc(hr('g-' + name))}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="${esc(hr('g-' + name))}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="${ORG.short} confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? `<b class="ikxtag">Not on ${ORG.list}</b> · ` : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
@@ -2366,15 +2366,15 @@ const fishNextOf = o => {
   if (o.c3 && !o.c3due) {
     k = 'c3';
     L.push(
-      `Next: ${pl(o.c3, 'family', 'families')} beyond the IMR course. They come once you know the course’s families well, about Open Water on average: keep practising them!`
+      `Next: ${pl(o.c3, 'family', 'families')} beyond the ${ORG.course}. They come once you know the course’s families well, about Open Water on average: keep practising them!`
     );
   } else if (o.c3 && o.c3row) {
     if (o.c3back) return null;
     k = 'beyond';
     L.push(
       o.c3 > 1
-        ? `The ${o.c3} families beyond the IMR course wait for you: open them in My progress, any time.`
-        : 'The family beyond the IMR course waits for you: open it in My progress, any time.'
+        ? `The ${o.c3} families beyond the ${ORG.course} wait for you: open them in My progress, any time.`
+        : `The family beyond the ${ORG.course} waits for you: open it in My progress, any time.`
     );
   } else {
     if (o.wait)
@@ -2555,9 +2555,9 @@ const UNITS = {
     // view's name; about, what it shows; src, where the look-alikes of the My mix-ups view's first look come from; groups,
     // the groups of the units in play, [{k, t: title (HTML), sub, mark (HTML), L}] (quiz.js cqByIMR, cqByKey, cqByFamily).
     cq: {
-      by: 'IMR groups',
-      about: 'the IMR lecture’s groups (the genera to tell apart)',
-      src: 'the IMR lecture and the Coral Finder book',
+      by: `${ORG.short} groups`,
+      about: `the ${ORG.lecture}’s groups (the genera to tell apart)`,
+      src: `the ${ORG.lecture} and the Coral Finder book`,
       groups: play => cqByIMR(play)
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
@@ -2600,12 +2600,12 @@ const UNITS = {
     // Home's doors drawn before data.json, the band's photos once it is in (beforeData).
     doorsFirst: true,
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
-    pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
+    pick: `The coral genera of the ${ORG.slate}, as on ReefCloud photos.`,
     slate: () => slateOf(DATA),
     // The one 45-genus scale of the global progress (rule L6; docs/decisions/2026-11-21-coral-one-scale.md): the slate
     // and the bonus genera, for every player, opted in or not; the slate's own % is the IMR slate score.
     scale: () => gameOf(DATA),
-    slateName: 'IMR slate',
+    slateName: ORG.slate,
     // The IMR lecture's group k (data.json imrg: {n, t}), undefined for the genera outside the lecture's groups.
     group: k => DATA.imrg.find(x => x.n === k),
     // The structure stamp of its units (core.js structStamp: '' while the look-alike pairs in force are data.json's), sent
@@ -2653,10 +2653,10 @@ const UNITS = {
     deck: () => pairs().filter(([a, b]) => isClassic(a, b)),
     inGame: n => gameGenus(n),
     cmp: {
-      src: 'the IMR lecture or the Coral Finder book',
+      src: `the ${ORG.lecture} or the Coral Finder book`,
       clues: () => true,
       tag: (n, g) => (isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'),
-      line: g => `${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}`,
+      line: g => `${esc(altName(g.fam))}${g.ig ? ` · ${ORG.short} group ` + g.ig : ''}`,
       more: g =>
         (g.crit || []).length
           ? `<details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">${critRef(g)}</p></details>`
@@ -2667,7 +2667,7 @@ const UNITS = {
     webBy: () => [
       {chip: 'Colour by family', of: n => GX(n).fam, name: altName},
       {
-        chip: 'Colour by IMR group',
+        chip: `Colour by ${ORG.short} group`,
         of: n => GX(n).ig || 0,
         name: k => (k ? k + '. ' + DATA.imrg[k - 1].t : '★ not in the lecture'),
         color: k => `hsl(${groupHue(k)} 55% 52%)`
@@ -2692,11 +2692,11 @@ const UNITS = {
         due: () => slateGenera().every(n => askedOpen(n) && introduced(n)), // a genus closed (model.js introBack, introLive) waits for its card and its question
         kick: 'Every genus of the slate met',
         title: n => `${n} more genera?`,
-        body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
-        note: '⚙ Settings, Bonus genera, any time. They count in your progress, not in your IMR slate score.',
+        body: `Not on the ${ORG.short} coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.`,
+        note: `⚙ Settings, Bonus genera, any time. They count in your progress, not in your ${ORG.slate} score.`,
         tag: 'Bonus genus',
         name: 'Bonus genera',
-        card: 'Not on the IMR list, but common at Dauin.'
+        card: `Not on the ${ORG.list}, but common at Dauin.`
       }
     ]
   },
@@ -2728,10 +2728,10 @@ const UNITS = {
       before: 'EventMeasure or your next dive',
       when: 'In EventMeasure<span class="wide"> · or a photo from your dive</span>',
       title: 'Identify a fish',
-      desc: 'The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.',
+      desc: `The Fish ID Key is on its way: it will help you name the fish on the ${ORG.short} survey videos, or in your own photos.`,
       btn: 'Fish ID Key',
       soon: 'Coming soon',
-      key: 'A key to name the fish on the IMR survey videos and in your own photos, as the Coral ID Key does for corals.'
+      key: `A key to name the fish on the ${ORG.short} survey videos and in your own photos, as the Coral ID Key does for corals.`
     },
     // Home's Learn band in landscape tiles (home.js, home.css .hdtiles.land: most fish are horizontal, square tiles cut
     // them); the corals keep their square-ish close-ups.
@@ -2743,7 +2743,7 @@ const UNITS = {
     home: S => treeHome(S.id).then(() => fishCached().then(c => c && treeLoad(S.id))),
     // Between the two: the units on their first photos only (dataPartial).
     partial: () => !!TREERAW && !TREERAW.full,
-    pick: 'The reef fish families, as on the IMR survey videos.',
+    pick: `The reef fish families, as on the ${ORG.short} survey videos.`,
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
     // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.
     tour: {
@@ -2783,8 +2783,7 @@ const UNITS = {
     about: {
       who: 'reef fish families',
       photos: 'Fish photos also come from <a href="https://www.fishbase.se" target="_blank" rel="noopener">FishBase</a>, under CC BY-NC.',
-      course:
-        'The fish families follow the reef fish ID book (References); the cues, the look-alikes and IMR’s names come from the IMR fish presentation.',
+      course: `The fish families follow the reef fish ID book (References); the cues, the look-alikes and ${ORG.short}’s names come from the ${ORG.fishPres}.`,
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
     },
     // No level-change card (model.js startDue, the fallback cards at 40 and 60 answers) until the fish level is better
@@ -2808,12 +2807,12 @@ const UNITS = {
         k: 'beyond',
         units: () => (TREEU ? TREEU.c3 : []),
         due: () => !!TREEU && treeC3(),
-        kick: 'Beyond the IMR course',
-        title: () => 'More fish families, beyond the IMR course?',
+        kick: `Beyond the ${ORG.course}`,
+        title: () => `More fish families, beyond the ${ORG.course}?`,
         body: 'The families divers look for around Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
         yes: 'Open them',
         note: 'Also in My progress, any time.',
-        row: n => `Open the families beyond IMR (${n} ${n > 1 ? 'families' : 'family'})`
+        row: n => `Open the families beyond ${ORG.short} (${n} ${n > 1 ? 'families' : 'family'})`
       }
     ],
     // Every family in play met and none may open now (quiz.js allMetDue): the card's reason and words
@@ -2862,7 +2861,7 @@ const UNITS = {
     cq: {
       by: 'ID groups',
       about: 'the identification groups of the regional fish ID key (the families to tell apart)',
-      src: 'the IMR fish presentation',
+      src: `the ${ORG.fishPres}`,
       groups: play => cqByKey(play)
     },
     // The look-alikes the IMR presentation names, each pair once.
@@ -2873,7 +2872,7 @@ const UNITS = {
     // The Look-alikes deck and Compare (treeDeck, treeInGame, treeCmp).
     deck: treeDeck,
     inGame: treeInGame,
-    cmp: {...treeCmp, src: 'the IMR fish presentation'},
+    cmp: {...treeCmp, src: `the ${ORG.fishPres}`},
     // Tools › Look-alike web's colouring (as the corals'): by the key's identification group (SUBJECTS sheets, TREEU groups).
     webBy: () => [
       {
@@ -2901,18 +2900,18 @@ const UNITS = {
         })),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the ${ORG.course}, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the ${ORG.course}’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the ${ORG.short} survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
     // cur: the game on screen (the Duel tab opens with its own paragraph, quiz.js duelLede).
     help: cur => `${
       String(cur || '').startsWith('quiz-duel')
-        ? duelLede('the look-alikes the IMR fish presentation names')
-        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>${customPlayLede(cur)}`
+        ? duelLede(`the look-alikes the ${ORG.fishPres} names`)
+        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, ${ORG.short}’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first ${ORG.short} cue, or its first ID mark from another source, named). <b>More</b> opens the other ${ORG.short} cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>${customPlayLede(cur)}`
     }
-  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
+  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, ${ORG.short}’s name, its scientific name and the names ${ORG.short} uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the ${ORG.short} survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       // The scientific genera (treeGenera, sciOpen): offered once a family is at Advanced, each family's joining from its
       // Advanced; auto: an IMR player's IMR genera; all: every genus in the game now (sciNow), for setOf. They count in
@@ -2933,7 +2932,7 @@ const UNITS = {
         back: {
           title: 'Keep the scientific genus names?',
           body: 'Scientific genus names now come later, once a family is at Advanced. You can close them for now: your progress on them is kept.',
-          imr: 'The genera of the IMR course stay in the game.',
+          imr: `The genera of the ${ORG.course} stay in the game.`,
           no: 'Close them for now',
           yes: 'Keep them'
         },
@@ -3025,9 +3024,9 @@ const UNITS = {
         name: 'Scientific names',
         self: () => imrNow(),
         line: () =>
-          `${sciSpOn() ? 'Genera, then their species' : 'Genera'}, by their scientific names. A family’s genera come as you reach Advanced on it${imrNow() ? ', the IMR course’s from Open Water' : ''}.`,
+          `${sciSpOn() ? 'Genera, then their species' : 'Genera'}, by their scientific names. A family’s genera come as you reach Advanced on it${imrNow() ? `, the ${ORG.course}’s from Open Water` : ''}.`,
         // An IMR player who has not turned the set on: the IMR genera alone come (sciOpen auto).
-        part: () => 'The IMR course’s genera only, from Open Water. On: every family’s genera, as you reach Advanced on it.',
+        part: () => `The ${ORG.course}’s genera only, from Open Water. On: every family’s genera, as you reach Advanced on it.`,
         k: 'sci'
       }
     ],
@@ -3369,8 +3368,7 @@ document
   .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin, true)));
 showBon();
 // The warning on Millepora's first-meeting card and genus sheet.
-const BENTHIC_NOTE =
-  "Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate and very common at Dauin, including in ReefCloud photos.";
+const BENTHIC_NOTE = `Not a hard coral and not on the ${ORG.short} coral list, but it's on the ${ORG.benthic} and very common at Dauin, including in ReefCloud photos.`;
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 // (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.) A view of
@@ -3407,7 +3405,7 @@ const unitCname = n => {
 // Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
 const tipsLabel = g =>
-  g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');
+  g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : `ID tips (${ORG.short})`);
 // A genus whose tips the content editor replaced, with a source of his own: it shows under them (qsrc), and the heading
 // made for the genera the lecture skips (tl) stops naming the Coral Finder as their source.
 const tipsEdited = g => g && g.esrc && g.esrc.qt && ((g.qsrc = g.esrc.qt), g.tl && (g.tl = 'ID tips'));
@@ -3682,7 +3680,7 @@ function ctxBar(h) {
       i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length],
       next = L[(i + 1) % L.length];
-    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? ORG.benthic : g.x ? `Not on ${ORG.list}` : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
       <span class="pn"><a href="${esc(hr('g-' + prev))}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="${esc(hr('g-' + next))}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
