@@ -2341,11 +2341,14 @@ const treeC3 = () => {
   const h = headScore();
   return h ? ((h.by[1] || {}).entries || 0) >= c3.entries : progPct(TREEU.c1) >= 100 * c3.mean;
 };
+// Circle 2's condition (every circle-1 family asked since its card, and met): a view of the state version (the records,
+// the intro map and the tree are its inputs), read for each circle-2 unit the opening checks.
+const c1MetCalc = () => (TREEU ? TREEU.c1 : []).every(x => askedOpen(x) && introduced(x));
+const c1Met = typeof stateView === 'function' ? stateView('c1Met', c1MetCalc) : c1MetCalc;
 const treeGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
-  const c1 = TREEU ? TREEU.c1 : [];
-  return c < 3 ? c1.every(x => askedOpen(x) && introduced(x)) : !!TREEU && treeC3();
+  return c < 3 ? c1Met() : !!TREEU && treeC3();
 };
 // Every family in play met and none may open now (quiz.js allMetDue; UNITS fish done): the card's reason k, from o:
 // c3, circle 3 not reached ("about Open Water on average", the Entries component shown nowhere); beyond, circle 3

@@ -2857,11 +2857,12 @@ function introCard(n, o = {}) {
 // first: drawn unit by unit, the confusion groups taking over from the next card).
 function introStart(list) {
   const slate = list.filter(n => !isBonus(n)),
-    want = INTRO.START - slate.filter(introduced).length,
+    met0 = typeof introducedFn === 'function' ? introducedFn() : introduced, // read once for the two lists below (model.js)
+    want = INTRO.START - slate.filter(met0).length,
     L = [],
     met = n => introduced(n) || L.includes(n);
   for (
-    let fresh = slate.filter(n => !introduced(n) && mayOpen(n));
+    let fresh = slate.filter(n => !met0(n) && mayOpen(n));
     L.length < want && fresh.length;
     fresh = fresh.filter(n => n !== L[L.length - 1])
   )
@@ -2991,7 +2992,11 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   let cards = sel || noOpen() ? [] : introStart(list);
   let start = cards.length > 0,
     lvl = false;
-  const ready = n => cards.includes(n) || introReady(n),
+  // ready: read for the units in play at once, with nothing written in between (model.js introReadyFn).
+  const ready = (
+      f => n =>
+        cards.includes(n) || f(n)
+    )(typeof introReadyFn === 'function' ? introReadyFn() : introReady),
     known = n => cards.includes(n) || introduced(n),
     // known for a loop with nothing written during it: the units met read once (model.js introducedFn).
     knownNow = () => {
@@ -3007,7 +3012,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     fresh =
       !sel && !start && !warm && met.length && !noOpen() && !introHold() && openPace(at, soon) && openRight(at)
         ? openFresh(
-            list.filter(n => !introduced(n) && mayOpen(n)),
+            list.filter(
+              (
+                met => n =>
+                  !met(n) && mayOpen(n)
+              )(typeof introducedFn === 'function' ? introducedFn() : introduced)
+            ),
             list
           )
         : [];
