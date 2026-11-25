@@ -25,14 +25,17 @@ const ROOT = path.join(__dirname, '..'),
   src = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
   MODEL = src('model.js'),
   APP = src('app.js');
-const MODEL_CODE = [
-  cut(MODEL, 'const PICKD = {', '// The next exam question of genus n', {file: 'model.js'}),
-  cut(MODEL, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}),
-  cut(MODEL, 'const PMEM0 = memOf();', '\n// Per-format offsets', {file: 'model.js'}),
-  cut(MODEL, 'const PFMT0 = ', '\n// Progress saved before the photo memory', {file: 'model.js'}),
-  cut(MODEL, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'}),
-  cut(MODEL, 'const RECENT = ', '\n', {file: 'model.js'})
-].join('\n');
+// The page's model.js code, from its source (a mutant's, below).
+const modelCode = model =>
+  [
+    cut(model, 'const PICKD = {', '// The next exam question of genus n', {file: 'model.js'}),
+    cut(model, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}),
+    cut(model, 'const PMEM0 = memOf();', '\n// Per-format offsets', {file: 'model.js'}),
+    cut(model, 'const PFMT0 = ', '\n// Progress saved before the photo memory', {file: 'model.js'}),
+    cut(model, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'}),
+    cut(model, 'const RECENT = ', '\n', {file: 'model.js'})
+  ].join('\n');
+const MODEL_CODE = modelCode(MODEL);
 const BUMP = "const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);";
 const APP_CODE = cut(APP, 'let STATE_V = 0;', 'const store = {', {file: 'app.js'});
 
@@ -184,6 +187,17 @@ function varOf0(n, L) {
     };
   const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
   return {on, kind, f: on ? f0 : () => 1};
+}
+const calBonus0 = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
+const calSd0 = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
+const setBonus0 = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
+function photoDiff0(n, p) {
+  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+    o = PSTAT[p.f],
+    tm = ptimeOff(PTM[p.f], PDIFF.W);
+  if (!o) return prior + tm;
+  const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
+  return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W) + tm;
 }`;
 
 const rng = seed => () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647);
@@ -243,8 +257,9 @@ function unitsOf(r) {
 }
 
 // The page: app.js's versions (STATE_V, DATA_V, stateBump, the views), model.js's draw, the reference. check: VIEW_CHECK
-// on. mutate: a change to app.js's block. The stubs are the parameters of a function around the code (tests/rareease.js).
-function page(subject, seed, check, mutate = s => s) {
+// on. mutate: a change to app.js's block; model: model.js's code (a mutant's). The stubs are the parameters of a function
+// around the code (tests/rareease.js).
+function page(subject, seed, check, mutate = s => s, model = MODEL_CODE) {
   const r = rng(seed),
     U = unitsOf(r);
   let s = 1;
@@ -309,10 +324,10 @@ function page(subject, seed, check, mutate = s => s) {
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${app}\n${MODEL_CODE}\n${REF}\n` +
+      `(function (${names.join(', ')}) {\n${app}\n${model}\n${REF}\n` +
         `const set = (k, v) => k === 'PSTAT' ? (PSTAT = v) : k === 'PGD' ? (PGD = v) : k === 'PTM' ? (PTM = v) : k === 'CALSET' ? (CALSET = v) : null;\n` +
         `return {photoSet, photoSet0, varOf, varOf0, drawPhotos, stateBump, seenAdd, set, P, ver: () => STATE_V, dver: () => DATA_V,\n` +
-        `  photoDiff, calSd, calBonus, setBonus, varHome, mimIn};\n})`,
+        `  photoDiff, calSd, calBonus, setBonus, photoDiff0, calSd0, calBonus0, setBonus0, varHome, mimIn};\n})`,
       ctx
     );
   const T = make(...names.map(k => stubs[k]));
@@ -466,6 +481,11 @@ function values(pg, n, label) {
     assert.strictEqual(e.sd, T.calSd(p), `${at} calSd`);
     assert.strictEqual(e.cb, T.calBonus(p), `${at} calBonus`);
     assert.strictEqual(e.sb, T.setBonus(p), `${at} setBonus`);
+    // and against the code before the unit's reads were made once (photoDiffOf, setFiles, nAnswers once a photo)
+    assert.strictEqual(e.d, T.photoDiff0(n, p), `${at} photoDiff before`);
+    assert.strictEqual(e.sd, T.calSd0(p), `${at} calSd before`);
+    assert.strictEqual(e.cb, T.calBonus0(p), `${at} calBonus before`);
+    assert.strictEqual(e.sb, T.setBonus0(p), `${at} setBonus before`);
     assert.strictEqual(e.ref, C.refLevel(p), `${at} refLevel`);
     assert.strictEqual(e.k, C.varKindOf(p, home.juv), `${at} kind`);
     assert.strictEqual(e.m, home.mim ? T.mimIn(home.mim, p) : null, `${at} mimicry entry`);
@@ -555,6 +575,44 @@ test('mutation: the photo statistics written with the player’s bump alone are 
     pg.later.length = 0;
     assert.ok(caught, `caught${check ? ', VIEW_CHECK' : ''}`);
     if (check) assert.match(caught, /data view drawPhotos/, 'VIEW_CHECK throws');
+  }
+});
+
+// Mutants of the unit's reads made once (drawPhotosCalc: photoDiffOf, setFiles, nAnswers once a photo), each made from
+// model.js's source: each gives a kept value other than the code before's on the writers above.
+test('mutation: the unit’s reads made once, each read wrong, are caught entry by entry', () => {
+  const MUT = [
+    ['the time term of a photo with one read as none', 'tm = du && PTM[p.f] === undefined ? du.tm0 :', 'tm = du ? du.tm0 :'],
+    ['the unit’s offset read as 0', 'd: photoDiff(n, p, dc),', 'd: photoDiff(n, p, {...dc, gd: 0}),'],
+    ['the subject’s ease read once wrong', 'ease: calibOf(SUBJ).ease, tm0', 'ease: calibOf(SUBJ).ease * 2, tm0'],
+    ['the answers read as none for the width', 'sd: calSd(p, calu, a),', 'sd: calSd(p, calu, 0),'],
+    ['the answers read as none for the bonus', 'cb: calBonus(p, a),', 'cb: calBonus(p, 0),'],
+    ['the answers read as none for the set', 'sb: setBonus(p, sf, a),', 'sb: setBonus(p, sf, 0),'],
+    ['the set read as empty', 'sf = setFiles(),', 'sf = new Set(),']
+  ];
+  for (const [what, from, to] of MUT) {
+    assert.strictEqual(MODEL.split(from).length, 2, `${what}: the mutated text occurs once`);
+    const model = modelCode(MODEL.replace(from, to));
+    let caught = '';
+    for (const [subject, seed] of [
+      ['fish', 1],
+      ['coral', 2]
+    ]) {
+      if (caught) break;
+      const pg = page(subject, seed, false, s => s, model),
+        r = rng(seed * 31);
+      pg.subject = subject; // the calibration set's writer reads it
+      for (let i = 0; i < 60 && !caught; i++) {
+        write(pg, r);
+        try {
+          for (const u of Object.keys(pg.U)) values(pg, u, what);
+        } catch (e) {
+          if (!(e instanceof assert.AssertionError)) throw e;
+          caught = `${subject} step ${i}: ${e.message.split('\n')[0]}`;
+        }
+      }
+    }
+    assert.ok(caught, `${what}: caught`);
   }
 });
 

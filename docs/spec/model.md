@@ -114,7 +114,10 @@ The data views:
   `setBonus`), whether it is a reference-level photo (`refLevel`), its variant kind and its mimicry entry. `photoSet`
   reads it once per draw and `varOf` takes its kinds; the player's part of a weight (the target, the memory, the
   variants' ramps, the window of recent photos) is computed at each draw. The inputs include the subject's calibration
-  and the calibration set (`app.js` `build` bumps after it is read);
+  and the calibration set (`app.js` `build` bumps after it is read). It is filled for a unit at its first draw in a
+  visit, so the reads that are the same for every photo of the unit are made once for it (`calU`, `photoDiffOf`: its
+  offset, the subject's ease, the time term of a photo with none; `setFiles`), and each photo's answers (`nAnswers`)
+  once for its three factors, passed to `photoDiff`, `calSd`, `calBonus` and `setBonus`;
 - the units of a level's list by parent (`app.js` `kidsOf`, `kidsCalc`) and, for `sciPlay`, each parent's units in
   its species order (`sciKids`, `sciKidsCalc`): `spPlay` and `sciPlay` read them;
 - the sets' units with a kind of name and a species (`progress.js` `achNamed`, `achNamedCalc`), which `achBoth`
@@ -125,7 +128,11 @@ The data views:
 - each unit's part of a pair's group score (`model.js` `groupUnit`, `groupUnitCalc`: its declared look-alikes as
   `declaredOf` gives them, its data look-alikes and its family) and its growth forms (`formsOf`): `groupsOfRank` reads
   them once for its loop (`groupPairFn`), where every pair of a rank read both records and computed both units' forms,
-  tens of thousands of pairs whenever the units in play or the pooled stats change;
+  tens of thousands of pairs whenever the units in play or the pooled stats change. Only the pairs that may be an edge of
+  the groups are scored up front (`groupPairFn` `pairs`): the declared and data look-alikes and the pairs the pooled
+  stats count, since without a pooled count a pair scores its prior and only a look-alike's reaches `CONF.TRAP`; any
+  other pair is scored when the average linkage reads it. Every pair is scored when that does not hold (a unit with no
+  record, a name twice, a lower prior at `CONF.TRAP`);
 - whether a unit has a game photo to show (`model.js` `photoAnyBy`, `photoAny`): the units in play (`app.js`
   `poolCalc`) read it once for their loop (`photoAnyFn`), where they asked `photoAny` of every unit at every answer;
 - the choice labels (`model.js` `choiceKeyFn`), per unit and per IMR answer: a species named by its common name is

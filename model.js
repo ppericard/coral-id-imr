@@ -98,12 +98,13 @@ const nAnswers = p => {
   const o = PSTAT[p.f];
   return o ? (o[3] ?? o[1]) : 0;
 };
-const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
+// a: nAnswers(p), passed in by a caller that reads it once for the photo's several factors (drawPhotosCalc), as calSd's.
+const calBonus = (p, a = nAnswers(p)) => 1 + CAL.B / (1 + a / CAL.N);
 // The prior's variance: the subject's (SUBJECTS calib u, core.js calibOf), else CAL.U (the corals). Fish photos carry a
 // judged ease, so a narrower targeting lets it lead while answers are few (docs/LEARNING.md "The fish draw in big pools").
 const calU = () => calibOf(SUBJ).u ?? CAL.U;
-// u: calU(), passed in by a caller that reads it once for many photos (photoSet).
-const calSd = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
+// u: calU(), passed in by a caller that reads it once for many photos (drawPhotosCalc); a: nAnswers(p), as calBonus's.
+const calSd = (p, u = calU(), a = nAnswers(p)) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + a / CAL.N));
 // The calibration set (calibration-set.json, written by tools/calibset.js, read by app.js into CALSET: {subject id:
 // {unit: [photo files]}}; docs/LEARNING.md "The calibration set"): a fixed set of game photos, each weighing CSET.B
 // times as much while the sheet's plain count of its answers is under CSET.N, so each gathers the answers that measure
@@ -120,7 +121,9 @@ const setFiles = () => {
     SETF = {s: SUBJ.id, c: CALSET, f: new Set(Object.values((CALSET && CALSET[SUBJ.id]) || {}).flat())};
   return SETF.f;
 };
-const setBonus = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
+// F: setFiles() and a: nAnswers(p), passed in by a caller that reads them once (drawPhotosCalc); each is read only where
+// it was (the answers only for a member of the set).
+const setBonus = (p, F = null, a) => ((F || setFiles()).has(p.f) && (a === undefined ? nAnswers(p) : a) < CSET.N ? CSET.B : 1);
 // The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals), so in a big pool the floor's
 // mass does not drown the prior's lean.
@@ -183,12 +186,16 @@ function leastRecent(L, photosOf, ages = seenAges()) {
 // its variant kind (k: varKindOf on its home's juvenile classes) and its mimicry entry (m: mimIn, varOf). A view of the
 // data version per unit (drawPhotos; computed where a part of this file runs alone): every draw on the unit weighed each
 // photo again, several times a draw. The player's part (the target, the memory, the ramps) stays in photoSet.
+// What reads the same for every photo of the unit is read once (calU, photoDiffOf, setFiles), and each photo's answers
+// (nAnswers) once for its three factors: a fish family's first draw in a visit weighed its thousand photos or more.
 const drawPhotosCalc = n => {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
     oneForm = imrFormsOf(n).length === 1,
     calu = calU(),
+    dc = photoDiffOf(n),
+    sf = setFiles(),
     home = GX(varHome(n)) || {},
     pics = {},
     d = new Map();
@@ -197,16 +204,18 @@ const drawPhotosCalc = n => {
       p => (v !== 'wide' || p.form !== 'x' || oneForm) && gamePhotoOk(n, p)
     );
     for (const p of pics[v])
-      if (!d.has(p))
+      if (!d.has(p)) {
+        const a = nAnswers(p);
         d.set(p, {
-          d: photoDiff(n, p),
-          sd: calSd(p, calu),
-          cb: calBonus(p),
-          sb: setBonus(p),
+          d: photoDiff(n, p, dc),
+          sd: calSd(p, calu, a),
+          cb: calBonus(p, a),
+          sb: setBonus(p, sf, a),
           ref: refLevel(p),
           k: varKindOf(p, home.juv),
           m: home.mim ? mimIn(home.mim, p) : null
         });
+      }
   }
   return {pics, d};
 };
@@ -687,8 +696,10 @@ const genusDiff = n => {
   if (typeof DATA_V === 'number' && GDV !== DATA_V) ((GDIFF = {}), (GDV = DATA_V));
   if (n in GDIFF) return GDIFF[n];
   // its reserved photos too (g.held: core.js heldOf), so a player's reserve does not move it
+  // the subject's ease read once for the unit's judged photos (a comeback's rust reads every unit's at its first answer)
   const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e),
-    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
+    k = je.length ? calibOf(SUBJ).ease : 0,
+    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * k, 0) / je.length : 0;
   return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
 // Shaky: met, not mastered, and the expected success on an average photo of the genus (4 choices, at its genusDiff)
@@ -874,11 +885,48 @@ const groupUnitCalc = n => {
 const groupUnit = typeof dataViewBy === 'function' ? dataViewBy('groupUnit', groupUnitCalc) : groupUnitCalc;
 // declared and groupConf for a loop with nothing written during it (groupsOfRank): the views read once, then each pair from
 // its two units' parts, the same tests in the same order; a pair with a unit that has no record as declared and
-// groupConf compute it.
+// groupConf compute it. pairs(L): the pairs of L (sorted) that may be an edge of the groups, below.
 function groupPairFn() {
   const U = groupUnit.fn ? groupUnit.fn() : groupUnit,
     F = typeof formsOf === 'function' ? (formsOf.fn ? formsOf.fn() : formsOf) : imrFormsOf;
   return {
+    // The pairs [a, b] of L (sorted) that may be declared or score CONF.TRAP or more, in the order of the loop over every
+    // pair (a's place in L, then b's). Without a pooled count a pair's score is its prior (confScore), and of the priors
+    // only a look-alike's (CONF.LOOK) reaches CONF.TRAP: so the pairs that may be an edge are the declared and data
+    // look-alikes (each unit's decl and dl) and the pairs the pooled stats count (PCONF's keys, each read at every '|').
+    // Any other pair is never declared and scores its family's, form's or base prior, under CONF.TRAP. Every pair when that
+    // does not hold: a unit with no record or lists of another shape, a name twice in L, a lower prior that would reach
+    // CONF.TRAP. A long fish history holds about 25,000 pairs, a few hundred of them look-alikes or counted.
+    pairs: L => {
+      const N = L.length,
+        at = new Map(L.map((n, i) => [n, i])),
+        every = () => L.flatMap((a, i) => L.slice(i + 1).map(b => [a, b]));
+      if (
+        at.size !== N ||
+        !PCONF ||
+        typeof PCONF !== 'object' ||
+        [CONF.FAM, CONF.FORM, CONF.BASE].some(p => confScore(undefined, p) >= CONF.TRAP) ||
+        L.some(n => {
+          const u = U(n);
+          return !u || !Array.isArray(u.decl) || !Array.isArray(u.dl);
+        })
+      )
+        return every();
+      const S = new Set(),
+        add = (x, y) => {
+          const i = at.get(x),
+            j = at.get(y);
+          if (i !== undefined && j !== undefined && i !== j) S.add(i < j ? i * N + j : j * N + i);
+        };
+      L.forEach(n => {
+        const u = U(n);
+        u.decl.forEach(m => add(n, m));
+        u.dl.forEach(m => add(n, m));
+      });
+      for (const k of Object.keys(PCONF))
+        for (let x = k.indexOf('|'); x >= 0; x = k.indexOf('|', x + 1)) add(k.slice(0, x), k.slice(x + 1));
+      return [...S].sort((x, y) => x - y).map(c => [L[Math.floor(c / N)], L[c % N]]);
+    },
     decl: (t, n) => {
       const a = U(t),
         b = U(n);
@@ -904,22 +952,27 @@ function groupPairFn() {
 // The groups of the units L (one rank): {unit: its group, members in alphabetical order}; a lone unit has none.
 function groupsOfRank(L) {
   // declared and groupConf below: the loop's own (groupPairFn), the same values
-  const {decl: declared, conf: groupConf} = groupPairFn();
+  const {decl: declared, conf: groupConf, pairs} = groupPairFn();
   L = [...L].sort();
+  // sc: each pair's score (a < b), computed when first read: the edges' below, the others' only when the average linkage
+  // reads a pair inside two groups an edge joins.
   const cl = new Map(L.map(n => [n, [n]])),
-    sc = {},
-    s = (a, b) => sc[a < b ? a + '|' + b : b + '|' + a],
+    sc = new Map(),
+    s = (a, b) => {
+      const k = a < b ? a + '|' + b : b + '|' + a;
+      if (!sc.has(k)) sc.set(k, a < b ? groupConf(a, b) : groupConf(b, a));
+      return sc.get(k);
+    },
     merge = (A, B) => {
       const C = [...A, ...B].sort();
       C.forEach(n => cl.set(n, C));
     },
     edges = [];
-  L.forEach((a, i) =>
-    L.slice(i + 1).forEach(b => {
-      const v = (sc[a + '|' + b] = groupConf(a, b));
-      if (declared(a, b) || v >= CONF.TRAP) edges.push([a, b, v]);
-    })
-  );
+  // Only the pairs that may be an edge are scored here (groupPairFn pairs), in the order of the loop over every pair.
+  pairs(L).forEach(([a, b]) => {
+    const v = s(a, b);
+    if (declared(a, b) || v >= CONF.TRAP) edges.push([a, b, v]);
+  });
   // 1. Declared pairs, the most confused first.
   edges
     .filter(([a, b]) => declared(a, b))
@@ -2006,10 +2059,13 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // "The photo's time term"); 0 for a photo without one or before a script that serves them.
 const PDIFF = {W: 5, MID: 3};
 const gdOff = n => (PGD[n] || [0])[0] || 0;
-function photoDiff(n, p) {
-  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+// du: what photoDiff reads the same for every photo of unit n (photoDiffOf: the unit's offset, the subject's ease, the
+// time term of a photo without one), passed in by a caller that reads it once for the unit's photos (drawPhotosCalc).
+const photoDiffOf = n => ({gd: gdOff(n), ease: calibOf(SUBJ).ease, tm0: ptimeOff(undefined, PDIFF.W)});
+function photoDiff(n, p, du = null) {
+  const prior = (du ? du.gd : gdOff(n)) + (p.e ? (PDIFF.MID - p.e) * (du ? du.ease : calibOf(SUBJ).ease) : 0),
     o = PSTAT[p.f],
-    tm = ptimeOff(PTM[p.f], PDIFF.W);
+    tm = du && PTM[p.f] === undefined ? du.tm0 : ptimeOff(PTM[p.f], PDIFF.W);
   if (!o) return prior + tm;
   const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
   return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W) + tm;
