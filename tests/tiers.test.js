@@ -128,15 +128,15 @@ test('app.js pageTier: each page’s tier holds the script that draws it', () =>
   for (const h of ['lab', 'lab-idkey', 'idkey', 'pairs', 'basics']) assert.strictEqual(pageTier(h), scripts['proto/lab.js'], h);
 });
 
-// The viewer's one load-time listener (zoom.js moved out of app.js, byte for byte): Back closes the open viewer. It is the
-// only popstate listener of the pages' scripts and zoom.js loads right after app.js, so no listener of that type has a
-// neighbour whose order could change; the viewer's keydown listener is added when a viewer opens, after every listener
-// added at load, as before the move.
+// The viewer (zoom.js) adds one listener at load: popstate, so Back closes the open viewer. It is the only popstate
+// listener of the app's scripts and zoom.js loads right after app.js, so no other listener of that type has an order to
+// keep; the viewer's keydown listener is added when a viewer opens, after every listener added at load.
 test('zoom.js: tier 1 right after app.js, one popstate listener (the only one) and no other listener added at load', () => {
   const order = [...HTML.matchAll(/<link\b[^>]*\bhref="([^"?]+)[^"]*"[^>]*data-tier="1"/g)].map(m => m[1]);
   assert.strictEqual(order[order.indexOf('app.js') + 1], 'zoom.js', 'zoom.js is the script after app.js: ' + order.join(', '));
   const {scripts} = tiers();
-  const files = [...new Set(['index.html', 'core.js', 'app.js', ...Object.keys(scripts)])];
+  const own = d => fs.readdirSync(path.join(ROOT, d)).filter(f => /\.js$/.test(f) && !/^admin/.test(f));
+  const files = [...new Set(['index.html', ...own('.'), ...own('proto').map(f => 'proto/' + f), ...Object.keys(scripts)])];
   const listeners = [];
   for (const f of files)
     for (const m of read(f).matchAll(/\baddEventListener\(\s*['"]popstate['"]|\bonpopstate\b/g)) listeners.push(f + ':' + m[0]);
