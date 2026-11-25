@@ -161,7 +161,7 @@ records, Identify, the switch, the sync per subject, who sees a subject, the sub
 
 <!-- rename-app: keep-begin -->
 **What it is.** The app's name (**The app's name**: IMR Reef ID, from `core.js` `ORG`, applied to the static files by
-**`tools/rename_app.py`**), the names of what it keeps on a device (**Storage keys**: `reefid-sync-*` travel with the
+**`tools/rename_app.py`**, with the organisation's bare words in the static pages), the names of what it keeps on a device (**Storage keys**: `reefid-sync-*` travel with the
 player, `reefid-*` stay on the device, `core.js` `KEYS`) and of its caches (**Caches**: `reefid-shell-vN`,
 `reefid-admin-files`, `imr-photos-v1`), and the moves of data written under older names (**Migration on a device**,
 **The Coral ID Key rename**, **The URL refonte's data move**, **Migration in the sheet**).
