@@ -6350,6 +6350,10 @@ ul.adm-csv {
   background: var(--surface);
   color: var(--ink);
 }
+.adm-csed input[aria-invalid='true'] {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn);
+}
 .adm-cssrcs {
   display: grid;
   gap: 6px;

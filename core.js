@@ -2309,6 +2309,63 @@
     );
     return out;
   }
+  // A species' own list of common names, as the admin curates it (curation.json <subject's part> cn {species id: [1 to
+  // CN_MAX names, the main name first]}, written only by the admin's draft and Publish): the same list for every tree
+  // subject whose species carry a list of names (cn). treeCnClean: the list as a clean list of names (trimmed, each
+  // with letters, none twice in the reading of typeNormAll), or null when it is not one (not 1 to CN_MAX names).
+  const CN_MAX = 3;
+  function treeCnClean(v) {
+    if (!Array.isArray(v) || v.length < 1 || v.length > CN_MAX) return null;
+    const L = v.map(x => (typeof x === 'string' ? x.trim().replace(/\s+/g, ' ') : '')),
+      k = L.map(x => typeNormAll(x));
+    return k.every(Boolean) && new Set(k).size === k.length ? L : null;
+  }
+  // Species record s (fish.json shape) with its list of names laid over its own: each name of list L (treeCnClean) that
+  // the base lists in some spelling keeps its other spellings (the base's entry [name shown, other spellings]), a new name
+  // has none; cni, the place of the IMR name, follows the IMR name's entry to its place in the list (whichever of its
+  // spellings the list names) and goes when the list drops it; cnr, the regional names typed only, stay.
+  function treeCnLay(s, L) {
+    const was = Array.isArray(s.cn) ? s.cn : [],
+      forms = n => (Array.isArray(n) ? n : [n]).filter(x => typeof x === 'string' && x),
+      taken = new Set(),
+      out = {...s};
+    let at = -1;
+    out.cn = L.map((x, i) => {
+      const k = typeNormAll(x),
+        j = was.findIndex((n, h) => !taken.has(h) && forms(n).some(y => typeNormAll(y) === k));
+      if (j >= 0 && j === s.cni) at = i;
+      if (j < 0) return [x];
+      taken.add(j);
+      return [x, ...forms(was[j]).filter(y => typeNormAll(y) !== k)];
+    });
+    if (at >= 0) out.cni = at;
+    else delete out.cni;
+    return out;
+  }
+  // The names of subject S's species in built file R (fish.json, seaslug.json) with the lists of curation cur laid over
+  // them: a new file sharing every record it does not change, R itself when nothing applies. The base stands for a
+  // species with no entry, an entry that is not a clean list (treeCnClean) and a species the file does not know. A
+  // species with no list in the base is left alone, whatever the entry says: its list would give it a progress unit (the
+  // species level, treeSpUnits, treeScore), a change of structure the admin does not make. Called by contentApply, so the
+  // app, the admin and the sheet's replay read the same names.
+  function treeCnApply(S, R, cur) {
+    const k = S && S.admin && S.admin.cur,
+      P = k && isObj(cur) ? cur[k] : null;
+    return treeCnLists(R, isObj(P) ? P.cn : null);
+  }
+  // The same over the lists themselves, a subject's part's cn map M ({species id: [names]}), for a reader that holds the part.
+  function treeCnLists(R, M) {
+    if (!isObj(M) || !isObj(R) || !Array.isArray(R.species)) return R;
+    let out = null;
+    R.species.forEach((s, i) => {
+      if (!isObj(s) || !Array.isArray(s.cn) || !s.cn.length || !Object.prototype.hasOwnProperty.call(M, s.id)) return;
+      const L = treeCnClean(M[s.id]);
+      if (!L) return;
+      const r = treeCnLay(s, L);
+      if (!eq(r, s)) (out = out || R.species.slice())[i] = r;
+    });
+    return out ? {...R, species: out} : R;
+  }
 
   // A unit id the subject renamed (SUBJECTS renamed: a fish entry t01 → its family f:Damselfishes), else the id as it is.
   // sp: the species shown (a name, or names joined by ', '): the genus of the first one picks the family of an entry
@@ -2528,8 +2585,13 @@
   // The structure first (structApply: the circles and pairs, so the words of a pair added land on its line), unless o says
   // structure: false (the app before the sheet script that replays under it: rule D4, STRUCT_SHEET); the text slots are
   // then read against it (a pair withdrawn: its words' slot is orphaned, kept and not applied).
+  // The species' own lists of common names (treeCnApply) go over the rest, on every path this function takes.
   function contentApply(S, R, cur, o) {
     if (!(o && o.structure === false)) R = structApply(S, R, cur);
+    return treeCnApply(S, contentText(S, R, cur), cur);
+  }
+  // The text slots' edits over built file R (contentApply, the structure already in R).
+  function contentText(S, R, cur) {
     const Cm = contentOf(cur, S);
     if (!isObj(Cm.nodes) || !Object.keys(Cm.nodes).length) return R; // nothing edited: no node index to build
     const L = contentEntries(S, R, Cm).filter(x => x.state !== 'orphan');
@@ -7821,6 +7883,11 @@
     treeNames,
     treeTypeNames,
     treeNameIndex,
+    CN_MAX,
+    treeCnClean,
+    treeCnLay,
+    treeCnApply,
+    treeCnLists,
     typeFits,
     typeForms,
     treeGameRow,

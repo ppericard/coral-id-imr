@@ -9663,6 +9663,118 @@ async function lazyPart(b, base, fails) {
         if (se.length) fails.push(`Shared names: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
+      // Photos › Tree, a species' own common names (admin-content.js cnBox, cnBind; Pierre, 2026-11-21, Q444: "C'est un détail
+      // d'implémentation. Si tu penses que c'est le mieux, oui."), in a context of its own, on a species that lists two names or
+      // more. The box lists them (the IMR name marked); ✎ opens one box per name (3), Save is one draft step (curation.json fish cn:
+      // {species id: [names]}), a refused Save (a name twice) changes nothing and marks the boxes, Undo and Redo, ↺ brings the built
+      // list back; the game reads the draft's list (contentApply); a family has no box; Publish counts the list and the published
+      // fish part carries it; dark theme; no overflow at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => d.accept());
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const F = FISHC.raw,
+            s = F.species.find(
+              x =>
+                (x.cn || []).length >= 2 && Number.isInteger(x.cni) && x.circle && x.family && !F.families.find(f => f.id === x.family).wink
+            );
+          return {id: s.id, fam: s.family, names: s.cn.map(n => n[0]), imr: s.cni};
+        });
+        const cn = () => sq.evaluate(() => (DRAFT.fish || {}).cn || null),
+          box = '#view .adm-ccn',
+          shown = () =>
+            sq.evaluate(s => [...document.querySelectorAll(s + ' .adm-cslot > ul li')].map(x => x.firstChild.textContent.trim()), box);
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.id));
+        await swait(() => document.querySelector('#view .adm-ccn'));
+        if (JSON.stringify(await shown()) !== JSON.stringify(ids.names)) se.push(`the names shown ${JSON.stringify(await shown())}`);
+        const imr = await sq.evaluate(
+          s => [...document.querySelectorAll(s + ' .adm-cslot > ul li')].findIndex(x => x.querySelector('.adm-imrt')),
+          box
+        );
+        if (imr !== ids.imr) se.push(`the IMR mark on ${imr}, not ${ids.imr}`);
+        // ✎: three boxes, the names in them; a name added, the main one changed: one draft step.
+        await sq.click(`${box} [data-cna="edit"]`);
+        await swait(() => document.querySelectorAll('#view .adm-ccn [data-cnin]').length === 3);
+        const vals = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-ccn [data-cnin]')].map(x => x.value));
+        if (JSON.stringify(vals) !== JSON.stringify([...ids.names, ''].slice(0, 3))) se.push(`the boxes ${JSON.stringify(vals)}`);
+        // a name twice: refused, the boxes marked, nothing in the draft
+        await sq.fill(`${box} [data-cnin="2"]`, ids.names[0].toUpperCase());
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn [aria-invalid="true"]'));
+        if (await cn()) se.push(`a refused Save wrote ${JSON.stringify(await cn())}`);
+        // the main name emptied: refused too
+        await sq.fill(`${box} [data-cnin="2"]`, '');
+        await sq.fill(`${box} [data-cnin="0"]`, '');
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn [data-cnin="0"][aria-invalid="true"]'));
+        if (await cn()) se.push(`an empty main name wrote ${JSON.stringify(await cn())}`);
+        await sq.fill(`${box} [data-cnin="0"]`, 'A made-up main name');
+        await sq.fill(`${box} [data-cnin="2"]`, ' A third name ');
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn .is-fresh'));
+        const want = ['A made-up main name', ...ids.names.slice(1), 'A third name'].slice(0, 3);
+        if (JSON.stringify(await cn()) !== JSON.stringify({[ids.id]: want})) se.push(`Save ${JSON.stringify(await cn())}`);
+        if (JSON.stringify(await shown()) !== JSON.stringify(want)) se.push(`the names in force ${JSON.stringify(await shown())}`);
+        // the game reads it (contentApply, as the app's treeBuild), and the first name an IMR player sees follows the IMR name
+        const game = await sq.evaluate(id => {
+          const s = contentApply(FISHS, FISHC.raw, DRAFT).species.find(x => x.id === id);
+          return {names: s.cn.map(n => n[0]), cni: s.cni === undefined ? -1 : s.cni};
+        }, ids.id);
+        if (JSON.stringify(game.names) !== JSON.stringify(want)) se.push(`the game's names ${JSON.stringify(game)}`);
+        if (!(await sq.evaluate(() => /common name list/.test(pubSummary())))) se.push('Publish does not count it');
+        // Undo, Redo, then ↺ Restore: the built list again, the entry gone
+        await sq.click('#undo');
+        await swait(() => !document.querySelector('#view .adm-ccn .is-fresh'));
+        if (await cn()) se.push(`Undo left ${JSON.stringify(await cn())}`);
+        await sq.click('#redo');
+        await swait(() => document.querySelector('#view .adm-ccn .is-fresh'));
+        await sq.click(`${box} [data-cna="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-ccn .is-fresh'));
+        if (await cn()) se.push(`Restore left ${JSON.stringify(await cn())}`);
+        if (JSON.stringify(await shown()) !== JSON.stringify(ids.names)) se.push(`Restore shows ${JSON.stringify(await shown())}`);
+        // a family has no such box
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.fam));
+        await swait(() => document.querySelector('#view .adm-sname'));
+        if (await sq.evaluate(() => !!document.querySelector('#view .adm-ccn'))) se.push('a Common names box on a family');
+        // dark theme and no overflow at 1280 and 390, the editor open
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.id));
+        await swait(() => document.querySelector('#view .adm-ccn'));
+        await sq.click(`${box} [data-cna="edit"]`);
+        await swait(() => document.querySelector('#view .adm-ccn [data-cnin]'));
+        const dk = await darkCards(sq, '#view .adm-ccn .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        for (const w of [1280, 390]) {
+          await sq.setViewportSize({width: w, height: 900});
+          const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+          if (wide > 0) se.push(`${w}px: ${wide}px too wide`);
+        }
+        await sq.setViewportSize({width: 1280, height: 900});
+        // Publish: counted, and the published fish part carries the list and no empty map
+        await sq.fill(`${box} [data-cnin="0"]`, 'A published main name');
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn .is-fresh'));
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 fish common name list$/m.test(sum)) se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).cn);
+        if (JSON.stringify(pub) !== JSON.stringify({[ids.id]: ['A published main name', ...ids.names.slice(1)]}))
+          se.push(`published ${JSON.stringify(pub)}`);
+        if (se.length) fails.push(`Species common names: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
       // Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, structBar; the structure editor,
       // step 4 of docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A, Q366): in a
       // context of its own, on a family with a look-alike line. The circle segments set the circle slot (one draft step,

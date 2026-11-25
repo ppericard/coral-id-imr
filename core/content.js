@@ -194,8 +194,13 @@
   // The structure first (structApply: the circles and pairs, so the words of a pair added land on its line), unless o says
   // structure: false (the app before the sheet script that replays under it: rule D4, STRUCT_SHEET); the text slots are
   // then read against it (a pair withdrawn: its words' slot is orphaned, kept and not applied).
+  // The species' own lists of common names (treeCnApply) go over the rest, on every path this function takes.
   function contentApply(S, R, cur, o) {
     if (!(o && o.structure === false)) R = structApply(S, R, cur);
+    return treeCnApply(S, contentText(S, R, cur), cur);
+  }
+  // The text slots' edits over built file R (contentApply, the structure already in R).
+  function contentText(S, R, cur) {
     const Cm = contentOf(cur, S);
     if (!isObj(Cm.nodes) || !Object.keys(Cm.nodes).length) return R; // nothing edited: no node index to build
     const L = contentEntries(S, R, Cm).filter(x => x.state !== 'orphan');

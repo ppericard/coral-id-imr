@@ -194,9 +194,20 @@ each (`namesPut`, `namesBind`), Undo and Publish as every curation (rule A1); th
 spelling, an emptied name goes, and Publish counts "N fish name exceptions" (`treeSummary`). **Accepted** gives the name to
 the whole family whatever part of it the name designates, **Often** the same with the feedback naming the family gently,
 **Off** takes it away from that family; a name he adds is shown as his. The **Shared names** filter (Tag…, group Names,
-`fuFilters`) shows the families with at least one such name. What the editor does not do: a species' own list of names
-(`fish.json` `cn`: remove, reorder, add) is read by the game from the build alone, so correcting it waits for a stored
-format ([ROADMAP "Fish common names"](../ROADMAP.md)).
+`fuFilters`) shows the families with at least one such name. A species' own list of names is the next box.
+
+## Common names: a species' own list
+
+On a species' page, under the Sheet, where the built file lists names for it (`fish.json` `cn`; a species with none, a
+family, a genus and a subject whose species list none have no box; `admin-content.js` `cnBox`, `cnBind`): the names in
+force, one a line, the IMR name marked, the first the main name every player but a player at IMR sees first. ✎ opens one
+box per name (3), pre-filled; Save is one draft step (`cnPut`, `curation.json` `fish` `cn` `{species id: [names]}`, Undo
+and Publish as every curation, rule A1, counted "N fish common name lists" by `treeSummary`); an empty main name or a name
+twice (as typed names read it) is refused, the boxes marked, nothing written; a list equal to the built one removes his
+entry. ↺ Restore brings the built list back (Original shows it). Publish merges the lists species by species
+(`merge3`, a list is one choice). What the game does with the list: [fish.md › Curated common
+names](fish.md#curated-common-names). A species with no built name cannot be given one here: it would add a species
+unit to every player's path, which is a structure change.
 
 ## The node pages' photo curation, shared by every subject
 
