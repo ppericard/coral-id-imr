@@ -19,7 +19,7 @@ const argv = process.argv.slice(2),
     const i = argv.indexOf(k);
     return i >= 0 ? argv[i + 1] : null;
   };
-const [IN, OUT] = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--until', '--mem', '--subjects'].includes(argv[i - 1])));
+const [IN, OUT] = argv.filter((a, i) => !a.startsWith('--') && !(i > 0 && ['--until', '--mem', '--subjects', '--seed', '--draws'].includes(argv[i - 1])));
 if (!IN || !OUT) {
   console.error('usage: node lag.js <answers.json> <out.json> [--secondary] [--until T] [--mem subj=a,b,c,d] [--subjects a,b]');
   process.exit(2);
@@ -27,7 +27,9 @@ if (!IN || !OUT) {
 const SECONDARY = argv.includes('--secondary'),
   UNTIL = opt('--until'),
   MEMARG = {},
-  SUBJ = (opt('--subjects') || 'coral,fish,seaslug').split(',');
+  SUBJ = (opt('--subjects') || 'coral,fish,seaslug').split(','),
+  SEED = Number(opt('--seed') || 1),
+  NDRAWS = Number(opt('--draws') || 2000);
 (opt('--mem') || '')
   .split(';')
   .filter(Boolean)
@@ -160,9 +162,9 @@ function runSubject(sid) {
   });
   const pl = [...new Set(cells.map(c => c.p))];
   // One cell of the table over the photo-cells matching sel, with its player-cluster bootstrap.
-  const R = rng(1),
+  const R = rng(SEED),
     DRAWS = [];
-  for (let i = 0; i < 2000; i++) DRAWS.push(pl.map(() => pl[Math.floor(R() * pl.length)]));
+  for (let i = 0; i < NDRAWS; i++) DRAWS.push(pl.map(() => pl[Math.floor(R() * pl.length)]));
   function cell(sel) {
     const cs = cells.filter(sel),
       by = {};
@@ -212,9 +214,9 @@ function runSubject(sid) {
       const cs = seen.filter(c => c.b === b),
         n = cs.reduce((a, c) => a + c.w, 0),
         np = new Set(cs.map(c => c.p)).size;
-      return {band: bn, n: +n.toFixed(1), share: seenN ? +((100 * n) / seenN).toFixed(0) : 0, players: np, ok: n >= 30 && np >= 3};
+      return {band: bn, n: +n.toFixed(1), share: seenN ? +((100 * n) / seenN).toFixed(0) : 0, top: seenN > 0 && n / seenN >= 0.8, players: np, ok: n >= 30 && np >= 3};
     }),
-    stop = bands.some(b => b.share >= 80) || bands.filter(b => b.ok).length < 2;
+    stop = bands.some(b => b.top) || bands.filter(b => b.ok).length < 2;
   // Per-player contrast short (< 1 h) minus long (>= 1 day), stratified by stratum; points and logits (mean slope).
   function contrast(cs, strat, bandK) {
     const by = {};
@@ -245,7 +247,8 @@ function runSubject(sid) {
       .filter(x => x[0] >= 3)
       .map(x => ({d: (100 * x[1]) / x[0], slope: x[2] / x[0], w: x[0]}));
     const n = D.length,
-      out = {players: n, perPlayer: D.map(x => +x.d.toFixed(1)).sort((a, b) => a - b), weights: D.map(x => +x.w.toFixed(1)).sort((a, b) => a - b)};
+      // [D in points, weighted answers] per player, no label, sorted by D.
+      out = {players: n, perPlayer: D.map(x => [+x.d.toFixed(1), +x.w.toFixed(1)]).sort((a, b) => a[0] - b[0])};
     if (n < 6) return Object.assign(out, {verdict: 'cannot test'});
     const mean = D.reduce((a, x) => a + x.d, 0) / n,
       sd = Math.sqrt(D.reduce((a, x) => a + (x.d - mean) ** 2, 0) / (n - 1)),

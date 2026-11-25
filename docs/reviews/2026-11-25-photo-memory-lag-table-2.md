@@ -56,8 +56,9 @@ and what the table can conclude. They are not repeated here; that note is the pl
 ## Results
 
 The plan above was pushed as `34c24a5f` (07:06 UTC, 15:06 Manila) before the tab was read (the connector's replies
-came at about 15:07 Manila). The results below were computed after that, with the plan unchanged. One analysis was
-added after the results and is labelled post hoc.
+came at about 15:07 Manila). The results below were computed after that, with the plan unchanged in substance. Two
+`effort-ok` markers were added to its plan paragraph afterwards, so that the effort-figure check reads "< 1 h" and
+"≥ 1 day" as lag bands; the words are unchanged. One analysis was added after the results and is labelled post hoc.
 
 ### Verdict
 
@@ -106,9 +107,20 @@ resolution. Every coral and fish player is trusted by `trustOf`.
   - the control (−0.8 points, −12.5 to +10.9, p 0.85);
   - the bucket / logged-offset disagreements (0 on the corals; 5 + 3 on the fish).
 
-  The bootstrap intervals differ by a few tenths, for example new coral photos at +2.0 to +9.6 here against +1.6 to
-  +9.8 then. The resampling draws in a different order from the same seed. No row has been added to that period since.
-  Output: `tools/studies/ree101/out_repro.txt`.
+  The point estimates match exactly; the bootstrap interval ends do not always. On well-filled cells they agree within
+  about half a point (new coral photos +2.0 to +9.6 here, +1.6 to +9.8 then). On cells with few players and skewed
+  per-player values they differ by up to 9 points:
+  - corals "shown never right, all lags": +0.2 to +35.0 here, +0.1 to +31.2 then;
+  - corals "all seen, all lags": +0.8 to +21.3 here, +0.7 to +19.6 then;
+  - fish "right once, 10 min-1 h": −42.8 to +7.6 here, −34.0 to +6.9 then. <!-- effort-ok: a lag band -->
+
+  The seed alone moves those ends by up to 4 points here (seeds 1, 2 and 3, and 20,000 draws), so they are good only to
+  a few points. The rest of the gap means the old script resampled somewhat differently. Its code is lost, so how it
+  differed cannot be checked. No row has been added to that period since. Output:
+  `tools/studies/ree101/out_repro.txt`.
+- **Today's offsets, checked.** On the same cut without `--mem`, `photoMemOf` on the script's rows gives back
+  0 / +0.35 / −0.68 / −1.17, the offsets of 2026-11-15. So the offsets of this read come from a path that has been
+  checked.
 - **Expectation rebuild.** The rebuild from the logged ability and the scoring record matches the logged Expected
   within 0.01 on every primary row: corals 1,968 of 1,968, fish 3,527 of 3,527, sea slugs 165 of 165. No row was
   skipped in the swap. 1,592 coral and 1,251 fish records carry a format offset `o`, and the rebuild matches without
@@ -134,11 +146,12 @@ resolution. Every coral and fish player is trusted by `trustOf`.
 | Total | 205.8 of 1,968 answers (10%) | 101.0 of 3,527 (3%) |
 | Bands with ≥ 30 answers from ≥ 3 players | 2: the stop rule does not hold | 1: **stop** |
 
-- Coral repeats have a median lag of 75 hours (25% under 24 hours, 10% under 6 minutes). Fish repeats have a median of
+- Coral repeats have a median lag of 75 hours (25% under about a day, 10% under 6 minutes). Fish repeats have a median of
   9 minutes (75% under 19 minutes). <!-- effort-ok: lags -->
 - Since 2026-11-15 the corals added 66 repeats, almost all at long lag. The over-7-days band grew from 1 player to 5.
-  The short bands barely grew (under 1 hour: from 33.0 to 46.8). <!-- effort-ok: lag bands --> The draw keeps a seen coral photo away for a day or more
-(`photoSet`'s repeat spreading and the exposure rules of #685), so the short-lag side of the test fills slowly. On the
+  The short bands barely grew (under 1 hour: from 33.0 to 46.8). <!-- effort-ok: lag bands --> The draw mostly keeps a seen coral photo away for a day or more
+(`photoSet`'s repeat spreading and the exposure rules of #685): 28% of coral repeats come within a day. So the
+short-lag side of the test fills slowly. On the
 fish, almost every repeat comes within a session.
 
 ### The table, corals
@@ -195,7 +208,7 @@ Exploratory, as declared. Cells with no answers are left out; the full output is
 
 **Primary test.**
 
-- Corals: 2 players have both sides, with per-player D of +5.9 and +9.6 points (10.3 and 12.0 weighted answers).
+- Corals: 2 players have both sides, with per-player D of +5.9 points (12.0 weighted answers) and +9.6 points (10.3).
   **Cannot test**, since 6 are needed. Both values are positive, in the literature's direction.
 - Fish: 1 player (+25.7 points on 3.0 answers). Cannot test.
 - Sea slugs: 0 players.
@@ -217,8 +230,9 @@ test can see (about ±5 points on the corals).
 ### Secondary (robustness: every row, the logged Expected as it is)
 
 On the corals, 593.5 answers fall on a seen photo, and all five bands qualify. Here the primary contrast has **6
-players**: D mean **−10.6 points** (−34.1 to +12.9), sign-flip p 0.31. The individual values are −38.2, −33.1, −19.0,
-+4.8, +9.5 and +12.5. This is neither shown nor absent at the literature's size, so it is Unclear too. Its sign is
+players**: D mean **−10.6 points** (−34.1 to +12.9), sign-flip p 0.31. The individual values, with weighted answers,
+are −38.2 (3.5), −33.1 (9.8), −19.0 (10.5), +4.8 (12.0), +9.5 (47.0) and +12.5 (44.0). The two players with the most
+answers are both positive. This is neither shown nor absent at the literature's size, so it is Unclear too. Its sign is
 the opposite of the literature's, but well inside its uncertainty.
 
 The coral short-lag repeats of these rows are mostly from the first days (2026-11-01 to 11-05). The logged
@@ -235,11 +249,14 @@ scored), apart from the expectation used.
 - **New photos beat their expectation by about 6 points** on both subjects (corals +6.5, fish +6.1), the known
   calibration gap. A seen photo's residual is better read against that than against 0. Against it, coral "all seen,
   all lags" (+7.2) and fish (+3.8) leave little on average.
-- **The coral "shown never right" bucket is underestimated again.**
+- **The coral "shown never right" bucket may be expected too hard.**
   - Today's offset of +0.38 makes such a photo harder than a new one. Answers on it beat the expectation by +13.1
-    points (+6.1 to +25.6, 9 players), against +11.8 (+0.1 to +31.2, 8 players) on 2026-11-15.
-  - Net of the new-photo gap that is about 6.6 points. It shows at long lags too (1-7 days +9.8, over 7 days +12.8,
-    with 4 players in the latter, too few to read), so it is not a lag effect. <!-- effort-ok: lag bands -->
+    points (+6.1 to +25.6, 9 players). On 2026-11-15 it was +11.8 (+0.1 to +31.2, 8 players), but that is not a
+    second sample: about 47 of today's 65.7 answers were already in it.
+  - Net of the new-photo gap (+6.5) the excess is about 6.6 points. The interval's lower end (+6.1) is below that gap,
+    so the excess is not shown (a rough reading: the two intervals are not a proper interval of the difference).
+    It appears at long lags too (1-7 days +9.8, over 7 days +12.8, with 4 players in the latter, too few to read), so
+    if it is real it is not a lag effect. <!-- effort-ok: lag bands -->
   - The offset is fitted by the sheet's replay against the sheet's own expectation (one level per player). The app's
     logged expectation, which this table swaps, uses the per-genus ability. A misfit between the two would look like
     this. That is a guess, not checked.
@@ -249,8 +266,9 @@ scored), apart from the expectation used.
 1. **Keep the time-free buckets; add no lag term now**, on any subject. Every subject's verdict is Stop or Unclear,
    and no engine value changes.
 2. **The limit is the draw, not only the volume.** The coral test needs players with repeats of the same photo both
-   under an hour and a day or more later. The draw keeps a seen coral photo away for a day or more, so in twelve days
-   and 700 more answers that went from 1 player to 2. The fish rarely see a photo again after the session.
+   under an hour and a day or more later. The draw mostly keeps a seen coral photo away for a day or more (28% of
+   repeats come within a day), so in twelve days and 700 more answers that went from 1 player to
+   2. The fish rarely see a photo again after the session.
    - At this pace the coral test is unlikely to reach 6 players by the next milestone (corals 5,000, fish 4,000).
    - A lag term would change mostly the short-lag coral rows and the long-lag fish rows, which are the rarest. Its
      effect on what the app expects would therefore be small today.
@@ -265,8 +283,9 @@ scored), apart from the expectation used.
    **My recommendation is (b) with (a) as its cheap check.** Close the lag question for now, keep the scripts, and
    re-run them at the next milestone or after a draw change that brings short repeats back. Whichever comes first
    decides whether the question is reopened.
-4. **Separate from lag:** the coral "shown never right" offset looks too hard against the app's own expectation, on
-   two reads in a row. That could be its own small study (rule L12 replay: the offset fitted against the app's
+4. **Separate from lag, weak:** the coral "shown never right" offset may be too hard against the app's own
+   expectation (about +6.6 points beyond the new-photo gap, not shown, and largely the same answers as on
+   2026-11-15). If it persists at the next milestone, it could be its own small study (rule L12 replay: the offset fitted against the app's
    expectation). It is an input, not a proposal to change `MEM` or the served offsets.
 
 ## How it was run

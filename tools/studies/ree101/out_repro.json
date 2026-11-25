@@ -44,6 +44,7 @@
      "band": "< 10 min",
      "n": 22.5,
      "share": 16,
+     "top": false,
      "players": 8,
      "ok": false
     },
@@ -51,6 +52,7 @@
      "band": "10 min-1 h",
      "n": 10.5,
      "share": 8,
+     "top": false,
      "players": 3,
      "ok": false
     },
@@ -58,6 +60,7 @@
      "band": "1 h-1 day",
      "n": 7,
      "share": 5,
+     "top": false,
      "players": 2,
      "ok": false
     },
@@ -65,6 +68,7 @@
      "band": "1-7 days",
      "n": 69.8,
      "share": 50,
+     "top": false,
      "players": 6,
      "ok": true
     },
@@ -72,6 +76,7 @@
      "band": "> 7 days",
      "n": 29.8,
      "share": 21,
+     "top": false,
      "players": 1,
      "ok": false
     }
@@ -357,10 +362,10 @@
    "primary": {
     "players": 1,
     "perPlayer": [
-     9.7
-    ],
-    "weights": [
-     10.3
+     [
+      9.7,
+      10.3
+     ]
     ],
     "verdict": "cannot test"
    },
@@ -372,24 +377,38 @@
    "control": {
     "players": 8,
     "perPlayer": [
-     -27.6,
-     -8,
-     -5.4,
-     -0.5,
-     -0.1,
-     4.8,
-     11.2,
-     19.2
-    ],
-    "weights": [
-     5,
-     5,
-     6,
-     7,
-     23,
-     23.3,
-     23.5,
-     42
+     [
+      -27.6,
+      5
+     ],
+     [
+      -8,
+      5
+     ],
+     [
+      -5.4,
+      42
+     ],
+     [
+      -0.5,
+      23.3
+     ],
+     [
+      -0.1,
+      6
+     ],
+     [
+      4.8,
+      23
+     ],
+     [
+      11.2,
+      23.5
+     ],
+     [
+      19.2,
+      7
+     ]
     ],
     "mean": -0.8,
     "lo": -12.5,
@@ -480,6 +499,7 @@
      "band": "< 10 min",
      "n": 46,
      "share": 58,
+     "top": false,
      "players": 7,
      "ok": true
     },
@@ -487,6 +507,7 @@
      "band": "10 min-1 h",
      "n": 21,
      "share": 27,
+     "top": false,
      "players": 6,
      "ok": false
     },
@@ -494,6 +515,7 @@
      "band": "1 h-1 day",
      "n": 7,
      "share": 9,
+     "top": false,
      "players": 2,
      "ok": false
     },
@@ -501,6 +523,7 @@
      "band": "1-7 days",
      "n": 5,
      "share": 6,
+     "top": false,
      "players": 2,
      "ok": false
     },
@@ -508,6 +531,7 @@
      "band": "> 7 days",
      "n": 0,
      "share": 0,
+     "top": false,
      "players": 0,
      "ok": false
     }
@@ -776,10 +800,10 @@
    "primary": {
     "players": 1,
     "perPlayer": [
-     25.7
-    ],
-    "weights": [
-     3
+     [
+      25.7,
+      3
+     ]
     ],
     "verdict": "cannot test"
    },
@@ -791,16 +815,22 @@
    "control": {
     "players": 4,
     "perPlayer": [
-     -1.6,
-     -1.5,
-     0.3,
-     21.2
-    ],
-    "weights": [
-     4,
-     6,
-     34,
-     57
+     [
+      -1.6,
+      34
+     ],
+     [
+      -1.5,
+      4
+     ],
+     [
+      0.3,
+      57
+     ],
+     [
+      21.2,
+      6
+     ]
     ],
     "verdict": "cannot test"
    },

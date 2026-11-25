@@ -44,6 +44,7 @@
      "band": "< 10 min",
      "n": 29.3,
      "share": 14,
+     "top": false,
      "players": 9,
      "ok": false
     },
@@ -51,6 +52,7 @@
      "band": "10 min-1 h",
      "n": 17.5,
      "share": 9,
+     "top": false,
      "players": 4,
      "ok": false
     },
@@ -58,6 +60,7 @@
      "band": "1 h-1 day",
      "n": 10,
      "share": 5,
+     "top": false,
      "players": 3,
      "ok": false
     },
@@ -65,6 +68,7 @@
      "band": "1-7 days",
      "n": 84.7,
      "share": 41,
+     "top": false,
      "players": 7,
      "ok": true
     },
@@ -72,6 +76,7 @@
      "band": "> 7 days",
      "n": 64.3,
      "share": 31,
+     "top": false,
      "players": 5,
      "ok": true
     }
@@ -359,12 +364,14 @@
    "primary": {
     "players": 2,
     "perPlayer": [
-     5.9,
-     9.6
-    ],
-    "weights": [
-     10.3,
-     12
+     [
+      5.9,
+      12
+     ],
+     [
+      9.6,
+      10.3
+     ]
     ],
     "verdict": "cannot test"
    },
@@ -376,26 +383,42 @@
    "control": {
     "players": 9,
     "perPlayer": [
-     -8,
-     -5.4,
-     -1.6,
-     -1.2,
-     -0.5,
-     -0.3,
-     4.8,
-     5.8,
-     11.2
-    ],
-    "weights": [
-     5,
-     22,
-     22,
-     23,
-     23.3,
-     23.5,
-     42,
-     46,
-     67.5
+     [
+      -8,
+      5
+     ],
+     [
+      -5.4,
+      42
+     ],
+     [
+      -1.6,
+      22
+     ],
+     [
+      -1.2,
+      67.5
+     ],
+     [
+      -0.5,
+      23.3
+     ],
+     [
+      -0.3,
+      22
+     ],
+     [
+      4.8,
+      23
+     ],
+     [
+      5.8,
+      46
+     ],
+     [
+      11.2,
+      23.5
+     ]
     ],
     "mean": 0.5,
     "lo": -4,
@@ -487,6 +510,7 @@
      "band": "< 10 min",
      "n": 54,
      "share": 53,
+     "top": false,
      "players": 8,
      "ok": true
     },
@@ -494,6 +518,7 @@
      "band": "10 min-1 h",
      "n": 27,
      "share": 27,
+     "top": false,
      "players": 8,
      "ok": false
     },
@@ -501,6 +526,7 @@
      "band": "1 h-1 day",
      "n": 9,
      "share": 9,
+     "top": false,
      "players": 3,
      "ok": false
     },
@@ -508,6 +534,7 @@
      "band": "1-7 days",
      "n": 9,
      "share": 9,
+     "top": false,
      "players": 3,
      "ok": false
     },
@@ -515,6 +542,7 @@
      "band": "> 7 days",
      "n": 2,
      "share": 2,
+     "top": false,
      "players": 2,
      "ok": false
     }
@@ -795,10 +823,10 @@
    "primary": {
     "players": 1,
     "perPlayer": [
-     25.7
-    ],
-    "weights": [
-     3
+     [
+      25.7,
+      3
+     ]
     ],
     "verdict": "cannot test"
    },
@@ -810,20 +838,30 @@
    "control": {
     "players": 6,
     "perPlayer": [
-     -24.3,
-     -1.6,
-     -1.3,
-     1.4,
-     3.6,
-     21.2
-    ],
-    "weights": [
-     5,
-     6,
-     6,
-     33,
-     34,
-     82
+     [
+      -24.3,
+      5
+     ],
+     [
+      -1.6,
+      34
+     ],
+     [
+      -1.3,
+      6
+     ],
+     [
+      1.4,
+      82
+     ],
+     [
+      3.6,
+      33
+     ],
+     [
+      21.2,
+      6
+     ]
     ],
     "mean": -0.2,
     "lo": -15.4,
@@ -913,6 +951,7 @@
      "band": "< 10 min",
      "n": 4,
      "share": 80,
+     "top": true,
      "players": 1,
      "ok": false
     },
@@ -920,6 +959,7 @@
      "band": "10 min-1 h",
      "n": 1,
      "share": 20,
+     "top": false,
      "players": 1,
      "ok": false
     },
@@ -927,6 +967,7 @@
      "band": "1 h-1 day",
      "n": 0,
      "share": 0,
+     "top": false,
      "players": 0,
      "ok": false
     },
@@ -934,6 +975,7 @@
      "band": "1-7 days",
      "n": 0,
      "share": 0,
+     "top": false,
      "players": 0,
      "ok": false
     },
@@ -941,6 +983,7 @@
      "band": "> 7 days",
      "n": 0,
      "share": 0,
+     "top": false,
      "players": 0,
      "ok": false
     }
@@ -1154,14 +1197,12 @@
    "primary": {
     "players": 0,
     "perPlayer": [],
-    "weights": [],
     "verdict": "cannot test"
    },
    "pooledShortLong": null,
    "control": {
     "players": 0,
     "perPlayer": [],
-    "weights": [],
     "verdict": "cannot test"
    },
    "directions": [

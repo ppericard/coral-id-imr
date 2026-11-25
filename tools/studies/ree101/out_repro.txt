@@ -33,9 +33,9 @@ seen answers 139.7 stop true
   | all seen, 1-7 days | 69.8 | 6 | 80.7 | 77 | 3.7 | -2.9 to 30.5 |
   | all seen, > 7 days | 29.8 | 1 | 79.9 | 78 | (1.9) | too few |
   | all seen, all lags | 139.7 | 9 | 82.5 | 76.5 | 6 | 0.8 to 21.3 |
-  primary {"players":1,"perPlayer":[9.7],"weights":[10.3],"verdict":"cannot test"}
+  primary {"players":1,"perPlayer":[[9.7,10.3]],"verdict":"cannot test"}
   pooled short-long (post hoc) {"est":8.7,"lo":-17.6,"hi":20.4}
-  control {"players":8,"perPlayer":[-27.6,-8,-5.4,-0.5,-0.1,4.8,11.2,19.2],"weights":[5,5,6,7,23,23.3,23.5,42],"mean":-0.8,"lo":-12.5,"hi":10.9,"p":0.852,"meanSlope":0.123,"logits":-0.06,"logitsLo":-1.02,"logitsHi":0.89}
+  control {"players":8,"perPlayer":[[-27.6,5],[-8,5],[-5.4,42],[-0.5,23.3],[-0.1,6],[4.8,23],[11.2,23.5],[19.2,7]],"mean":-0.8,"lo":-12.5,"hi":10.9,"p":0.852,"meanSlope":0.123,"logits":-0.06,"logitsLo":-1.02,"logitsHi":0.89}
   dir | shown never right, 1 miss, < 1 h | 15.5 | 6 | 87.1 | 63.1 | 24 |
   dir | shown never right, 1 miss, >= 1 day | 21.7 | 6 | 79.2 | 67.7 | 11.5 |
   dir | shown never right, 2+ misses, < 1 h | 0 | 0 |  |  |  |
@@ -74,9 +74,9 @@ seen answers 79 stop true
   | all seen, 1-7 days | 5 | 2 | 80 | 84.3 | (-4.3) | too few |
   | all seen, > 7 days | 0 | 0 |  |  |  |  |
   | all seen, all lags | 79 | 7 | 92.4 | 87.5 | 4.9 | -2.8 to 8.7 |
-  primary {"players":1,"perPlayer":[25.7],"weights":[3],"verdict":"cannot test"}
+  primary {"players":1,"perPlayer":[[25.7,3]],"verdict":"cannot test"}
   pooled short-long (post hoc) {"est":12.2,"lo":-24.3,"hi":25.1}
-  control {"players":4,"perPlayer":[-1.6,-1.5,0.3,21.2],"weights":[4,6,34,57],"verdict":"cannot test"}
+  control {"players":4,"perPlayer":[[-1.6,34],[-1.5,4],[0.3,57],[21.2,6]],"verdict":"cannot test"}
   dir | shown never right, 1 miss, < 1 h | 11 | 4 | 90.9 | 84.1 | 6.8 |
   dir | shown never right, 1 miss, >= 1 day | 1 | 1 | 100 | 91.1 | 8.9 |
   dir | shown never right, 2+ misses, < 1 h | 1 | 1 | 100 | 88.3 | 11.7 |
