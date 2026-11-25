@@ -79,7 +79,17 @@ version: it reads only the data inputs, so the player's answers do not make it a
   `setAuto`, per set: `sciOpen`, `spPlay`, `sciPlay` once a version for the three views that read them);
 - the units met (`model.js` `introduced`, `metCalc`): one Set a version, made from the only units that can be met (a
   record's key or an intro map entry), so a read is one lookup; a loop with nothing written during it reads the view
-  once (`introducedFn`: the sets' units in play, a level's need, the wrong choices);
+  once (`introducedFn`: the sets' units in play, a level's need, the wrong choices, the openings' candidates in
+  `planPhoto` and `introStart`, the rank share, the achievements' bonus count, `progress.js` `unlockN`);
+- the units ready to be asked (`model.js` `introReady`, `readyCalc`): one Map a version over the same units, each
+  one's part (`readyPart`): ready, or the mark on the answer clock from which it is (its card's gap), a unit absent
+  being neither met nor ready. The clock itself (`tally`) is read at each read for a unit that waits, never kept: it
+  follows the answer count, no input, and its first read after an answer may write the comeback's record. A loop reads
+  the view once (`introReadyFn`: `unlocked`, the rank share's weights, `planPhoto`'s units met);
+- the genera opened on a card, each with its mark (`model.js` `cardsNow`, `cardsCalc`), in the intro map's order:
+  `openRecent` (the opening's pace) keeps those inside its window on the clock;
+- circle 2's condition (`app.js` `c1Met`, `c1MetCalc`: every circle-1 unit asked since its card, and met), which
+  `treeGate` reads for each circle-2 unit;
 - each unit's bar and exam entry (`model.js` `genScore`, `genScoreCalc`; `examOn`, `examOnCalc`), per unit;
 - the comeback's units (`model.js` `cbPlay`, `cbGenera`), the start's level (`startP`, read once per unit by
   `ability`) and whether the player said they are at IMR (`imrSaid`, read once per name shown);
@@ -134,8 +144,9 @@ rated world, a unit test: no `stateView`), each value is computed where it is re
 through `tests/facheck.js`), every read of a kept view computes it again and compares, order included (a list, a Set
 or a Map item by item, a plain object key by key down to its leaves), and a `stateNow` that trusts its task's
 comparison compares the stored texts again; a difference throws, and again in a task of its own. The units met are
-checked value by value: each `introduced` read against `introducedCalc` (`model.js` `metCheck`), so a record a smoke
-writes by hand for a key no read asks about is no difference. A smoke that writes `P` or the intro map by hand
+checked value by value: each `introduced` read against `introducedCalc` (`model.js` `metCheck`), and each
+`introReady` read's part against `readyPart` (`readyCheck`), so a record a smoke writes by hand for a key no read asks
+about is no difference. A smoke that writes `P` or the intro map by hand
 bumps after it (`stateBump('rec')`), as the app's writers do.
 `tests/stateview.test.js` compares the units in play, the rank classes, each unit's set and class with the code before
 them over rated-world runs and made-up states, and checks that every declared writer bumps the right versions;
@@ -153,6 +164,9 @@ data under the player's bump alone; `tests/lvlnext.test.js` compares `spPlay` an
 `tests/choiceview.test.js` compares the pooled confusion, the labels, the classes and the wrong choices with the code
 before them on made-up units, with the records, the IMR answer, the pooled answers and the units' records written
 between reads, and fails a record, a unit's forms, a name or a class changed under the player's bump alone.
+`tests/openview.test.js` compares the units ready, the cards' window, circle 2's gate, the units met in the openings'
+loops and the comeback's rust (`rustNow`) with the code before them on made-up records and intro maps, the clock and
+the time moving between reads, and fails the intro map or a record changed with no bump.
 
 ## Which unit next
 
@@ -373,7 +387,9 @@ ability step ([sync.md › Answer time and enlargement](sync.md#answer-time-and-
 LEARNING.md "Comeback after a break". `model.js` `rustNow` (run when a question is planned or answered) starts a new
 visit after `SESSION.GAP` = 30 minutes without an answer: the next `COMEBACK.FLOOR` = 10 answers open no unit (`noOpen()`
 blocks the cards in `planPhoto`, the open-all and bonus genera offers in `quizPhoto`; bonus genera, once on, open by
-cards like slate genera). From the FSRS recall per unit (`recallAt`, `stability`) it adds the gap's rust (`rustOf`); a
+cards like slate genera). From the FSRS recall per unit (`recallAt`, `stability`) it adds the gap's rust (`rustOf`,
+summed by `rustAdd`, each unit's stability read once for its two times) at a new visit and during a comeback, the only
+times the sum is read; between them it sums nothing (`rustSkip` keeps `genusDiff`'s first values as the sum would). A
 comeback runs while that is above 0 (`comebackOf`: units answered right, the surest half first, then the most rusted;
 the usual choices, `trapsFor`; photos aimed at ability + ln R through `photoSet(n, skip, shift)`; no card, duel or exam;
 `q.warm`, and `q.cb`, the unit's recall) and ends by a CUSUM on its answers (`comebackStep`, with the opening hold's
