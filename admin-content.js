@@ -247,7 +247,7 @@
   // genus records with the pairs in force (sheetFile): the base's less those withdrawn (a withdrawal the ★ rule holds
   // stays), plus every pair he added, whatever its source (its row says when the public page does not show it). The same
   // order and the same test as the page players see (learn.js classics).
-  const CLASSIC = /^(IMR|Coral Finder p)/;
+  const isClassicSrc = s => String(s).startsWith(C.ORG.short) || String(s).startsWith('Coral Finder p');
   // The pairs the sources compare in so many words, in the genus records G (a map by name: gen and x.gen merged), each
   // {k, A, B, src}: the IMR lecture's (lsrc "IMR Lecture 6...") and the Coral Finder text's ("Coral Finder p. ..."), the
   // IMR ones first, then by the slate's order. B, when given, is the base's records: a pair G holds that B does not is
@@ -266,14 +266,14 @@
           k = b ? C.contentPairKey(a, b) : '';
         if (!k || !G[b] || b === a || seen.has(k)) return;
         const s = src(a, b),
-          ok = CLASSIC.test(s),
+          ok = isClassicSrc(s),
           add = !!B && !has(B, a, b);
         if (!ok && !add) return;
         seen.add(k);
         out.push({k, A: k.split('|')[0], B: k.split('|')[1], src: s, ...(add ? {added: true, deck: ok} : {})});
       })
     );
-    const tier = p => (/^IMR/.test(p.src) ? 0 : 1);
+    const tier = p => (String(p.src).startsWith(C.ORG.short) ? 0 : 1);
     return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
   }
   // montPairs: the pairs in force of subject S's built file R under content map Cm, by the data shape S declares (flat: the

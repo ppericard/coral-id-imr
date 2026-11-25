@@ -232,7 +232,8 @@ test('the juvenile card says nothing of its own: its title names the two photos,
       credit: () => 'c',
       cardShow: x => ((o = x), {querySelectorAll: () => []}),
       setTimeout: () => {},
-      TIP: {WAIT: 0}
+      TIP: {WAIT: 0},
+      ORG: C.ORG
     };
     new Function(...Object.keys(stubs), fn + '\nreturn phaseShow;')(...Object.values(stubs))(c, 'u');
     return o;

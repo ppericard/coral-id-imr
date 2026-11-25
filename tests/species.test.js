@@ -27,6 +27,7 @@ const ctx = {
   treeSpUnits: C.treeSpUnits,
   treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights,
+  ORG: C.ORG,
   LV_AT: [0.5, 0.8, 0.85],
   INTRO: {START: 4},
   photoAny: n => !!(ctx.GXS[n] && ctx.GXS[n].views.wide.length),

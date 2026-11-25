@@ -153,7 +153,7 @@
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${named ? W.learn || 'The IMR fish families by identification group, with the IMR cues' : 'One sheet per genus: photos<span class="wide"> at 3 scales</span>, IMR ID tips, look-alikes'}</small></a>
+              <a class="hdbtn" href="${esc(hr('genera'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13"/></svg><b><em>1</em> Learn</b><small>${named ? W.learn || `The ${ORG.short} fish families by identification group, with the ${ORG.short} cues` : `One sheet per genus: photos<span class="wide"> at 3 scales</span>, ${ORG.short} ID tips, look-alikes`}</small></a>
               <a class="hdbtn main" href="${esc(hr('quiz'))}"><svg class="hdi" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><b><em>2</em> Practice</b><small>${named ? W.practice || 'Name the family from photos' : 'Name the genus from photos<span class="wide"> (all genera or the ones you pick)</span>, look-alike duels, memory'}</small></a>
             </div>${newb ? '<p class="hdnew"><a href="' + esc(hr('basics')) + '">' + esc(basicsWords().ask) + ' Start with the basics (5 min) ›</a></p>' : ''}
           </div>
@@ -198,12 +198,12 @@ ${idoor}
       </section>
       <section>
         <h3>Course content</h3>
-        <p>The list of genera, the ID tips, the lecture notes and the lecture photos come from <b>IMR Lecture 6</b>, the IMR coral identification lecture. Any other source is named where it is used, for example under “Other sources” on a genus sheet.${ab.map(a => ' ' + a.course).join('')}</p>
+        <p>The list of genera, the ID tips, the lecture notes and the lecture photos come from <b>${ORG.lectureRef}</b>, the ${ORG.short} coral identification lecture. Any other source is named where it is used, for example under “Other sources” on a genus sheet.${ab.map(a => ' ' + a.course).join('')}</p>
       </section>
       <section>
         <h3>Photos</h3>
         <p>Most photos come from <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, Pierre Pericard among them, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a> (CC0, CC BY or CC BY-NC). Some are cropped. Thank you to them all.${ab.map(a => (a.photos ? ' ' + a.photos : '')).join('')}</p>
-        <p>The coral photos from IMR Lecture 6 serve IMR’s internal training. Many were not taken by IMR: most of those come from <a href="https://www.coralsoftheworld.org/" target="_blank" rel="noopener">Corals of the World</a> and its photographers, under its <a href="https://www.coralsoftheworld.org/page/terms-of-use/" target="_blank" rel="noopener">terms of use</a>. The others have no known source yet.</p>
+        <p>The coral photos from ${ORG.lectureRef} serve ${ORG.short}’s internal training. Many were not taken by ${ORG.short}: most of those come from <a href="https://www.coralsoftheworld.org/" target="_blank" rel="noopener">Corals of the World</a> and its photographers, under its <a href="https://www.coralsoftheworld.org/page/terms-of-use/" target="_blank" rel="noopener">terms of use</a>. The others have no known source yet.</p>
         <p>Every photo carries its own credit: enlarge it to see the author, the licence and a link to the original page.</p>
       </section>
       <section>
