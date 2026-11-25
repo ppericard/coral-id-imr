@@ -15,7 +15,7 @@ const test = require('node:test'),
 
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
-  {SUBJECTS} = require('../core.js'),
+  {SUBJECTS, ORG} = require('../core.js'),
   {treeUnitsOf} = require('../autosort.js'),
   {ttBuild, ttFromRef, ttSection} = require('../taxtree.js'),
   PY = path.join(ROOT, 'tools/tree_section.py'),
@@ -174,7 +174,7 @@ const ADMIN = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
     '\nthis.fuTreeOf = fuTreeOf; this.fuWormsOf = fuWormsOf; this.TSEC = TSEC; this.glId = glId;';
 const plain = x => JSON.parse(JSON.stringify(x)); // what a vm context built, in this realm's words
 const reader = (sec, FISHC, S = {id: 'x'}) => {
-  const c = vm.createContext({FISHC, FISHS: S, ASUBJ: S, ttBuild, ttSection, esc: s => String(s)});
+  const c = vm.createContext({FISHC, FISHS: S, ASUBJ: S, ORG, ttBuild, ttSection, esc: s => String(s)});
   vm.runInContext(CHUNK, c);
   c.TSEC.x = sec;
   return c;

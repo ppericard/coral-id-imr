@@ -951,6 +951,101 @@ async function lazyPart(b, base, fails) {
       );
       if (titles.length) fails.push(`${w}px #${h}: a page title ${JSON.stringify(titles)}`);
     }
+    // The course's words (REE-34 PR 4, rule W21): the admin writes them from core.js ORG, so this edition reads as it always
+    // did. Each sentence of the help that holds one, the unit tags and the lists of origins and rights, the lock screen's
+    // two token links (named for the app, from ORG.app), written out here as the admin shows them.
+    if (w === 1280) {
+      const SAID = [
+        ['journey', 'genus in italics, one the IMR course names otherwise with its IMR name), each opening its'],
+        ['journey', "opens by itself after the IMR course's families, circle"],
+        ['journey', 'question (new to corals, IMR coral course, know corals'],
+        ['fishtodo', 'To do (under its All | IMR filter; a click opens'],
+        ['points', 'settle: questions for an IMR trainer (<b>Trainer</b>),'],
+        ['kcov', "whoever took them): the IMR genera and the book's"],
+        ['kcov', 'genera seen at Dauin (Not IMR). Every photo of the view'],
+        ['kcov', 'view counts (field and IMR lecture photos), except'],
+        ['rights', 'or no licence read), <b>IMR</b> IMR lecture photos, <b>book'],
+        ['rights', 'page lists now (field and IMR lecture photos, not hidden),'],
+        ['rights', 'named to the genus, the IMR lecture ones among them).'],
+        ['cov', 'genus a game can ask (the IMR slate, Millepora and the'],
+        ['cov', 'can draw from. Field and IMR lecture photos (no multi-coral,'],
+        ['cov', 'the photos come from (IMR, Pierre, iNat Dauin, Philippines,'],
+        ['statslog', 'and genera (a genus the IMR course names otherwise shows its IMR name), the questions on'],
+        ['statsconf', 'starting from Look-alike (IMR lecture or Coral Finder'],
+        ['statsheat', 'a declared look-alike (IMR lecture or Coral Finder'],
+        ['pstats', 'counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the'],
+        ['pstats', 'every game genus (the IMR slate, Millepora, the'],
+        ['form', '<p>The 7 IMR growth forms (Lecture'],
+        ['fishcov', 'it),<b>Phases</b> shown (an IMR phase not shown yet ends'],
+        ['fishcov', "✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree)."],
+        ['fishcov', "waiting to fill the gap (the IMR course's first, then the"],
+        ['fishrev', 'differ: a family with IMR phase lines, or the photos'],
+        ['fishmont', 'row each: the pairs the IMR course compares (its lines,'],
+        [
+          'units',
+          "scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only."
+        ],
+        ['units', 'tag, combined with All / IMR, in both views: a <b>Circle'],
+        ['units', '(every family in a pair the IMR course compares, or one'],
+        ['units', '4-5), every phase the IMR course names. <b>Other'],
+        ['units', 'its Candidates card; its IMR name is kept. Each species'],
+        ['units', "the text players see. <b>IMR</b> marks the IMR course's words: editable,"],
+        ['units', "tag: the fish's are the IMR course, After the course"],
+        ['units', '3 names in force, the IMR name marked; the first'],
+        ['units', 'player but a player at IMR sees first. <b>✎</b> opens'],
+        ['ctree', 'keeps it. <b>Key</b>: the IMR lecture groups (1 to 11),'],
+        ['ctree', 'app shows them; <b>No IMR group</b> holds Millepora,'],
+        ['ctree', "the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only;"],
+        ['mont', 'look-alikes in force (pairs the IMR lecture or the Coral Finder'],
+        ['mont', 'view, same growth form, IMR then your photos first).'],
+        ['cand', 'genera of the games (the IMR slate, Millepora, the']
+      ];
+      const org = await p.evaluate(() => ({
+        ORG,
+        help: Object.fromEntries(Object.keys(HELP).map(k => [k, typeof HELP[k] === 'function' ? HELP[k]() : HELP[k]])),
+        origin: ORIGIN_T.imr,
+        rights: RIGHTS_L.imr,
+        tag: [fuImr({imr: 'Boxfish'}), fuImr({imrWith: 'Soapfishes'})]
+      }));
+      const want = {
+        short: 'IMR',
+        app: 'IMR Reef ID',
+        course: 'IMR course',
+        lecture: 'IMR lecture',
+        lectureRef: 'IMR Lecture 6',
+        list: 'IMR list',
+        slate: 'IMR slate',
+        trainer: 'IMR trainer'
+      };
+      for (const [k, v] of Object.entries(want))
+        if (org.ORG[k] !== v) fails.push(`ORG.${k} is "${org.ORG[k]}", this edition's word is "${v}"`);
+      for (const [k, s] of SAID) if (!String(org.help[k]).includes(s)) fails.push(`help "${k}" no longer says: ${s}`);
+      if (org.origin !== 'IMR' || org.rights !== 'IMR') fails.push(`origin and rights labels: ${org.origin}, ${org.rights}`);
+      if (
+        org.tag[0] !== '<span class="adm-src adm-imrt" title="IMR course: Boxfish">IMR</span>' ||
+        org.tag[1] !== '<span class="adm-src adm-imrt" title="IMR course: taught with the Soapfishes">IMR</span>'
+      )
+        fails.push(`the unit tag: ${org.tag.join(' ')}`);
+      // The lock screen (no token): the fine-grained and the classic token links carry the app's name, not an older one.
+      const cl = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+      await cl.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      const lp = await cl.newPage();
+      await lp.goto(base + 'admin.html');
+      await lp.waitForSelector('.adm-lock a[href*="github.com/settings"]', {timeout: 15000});
+      const links = await lp.$$eval('.adm-lock a[href*="github.com/settings"]', L => L.map(a => a.getAttribute('href')));
+      if (
+        links.length !== 2 ||
+        !links[0].startsWith(
+          'https://github.com/settings/personal-access-tokens/new?name=IMR%20Reef%20ID%20curation&description=Photo%20curation%20back-office'
+        ) ||
+        links[1] !== 'https://github.com/settings/tokens/new?scopes=repo&description=IMR%20Reef%20ID%20curation'
+      )
+        fails.push(`the lock screen's token links: ${links.join(' ')}`);
+      await cl.close();
+    }
     // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view with no
     // page wider than the window, and Coverage's two grids with a view column sorted (its ▲ widens the header), in a
     // context of its own so the sort it leaves behind touches nothing else (Coverage's table.cov-t was 26 px too wide).
