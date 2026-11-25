@@ -221,7 +221,7 @@ test('fish: the PDF’s species fields (common name, section, pages, cheatsheet 
 test('fish: a changed PDF field or species mark of the layer no longer gives fish.json, a changed list stops the offline modes; a base or layer out of place stops the build', () => {
   const t = "is not as key .* gives it, with the instance's layer";
   const list =
-    /the IMR list changed in the instance's layer \(pdf, cs\): run the full build \(python3 tools\/build_fish\.py\)\n\s+s\d+ [^\n]*: (pdf|cs) /;
+    /the IMR list changed in the instance's layer \(pdf, cs, src\): run the full build \(python3 tools\/build_fish\.py\)\n\s+s\d+ [^\n]*: (pdf|cs|src) /;
   // The common name, the section and the slides' mark are laid again offline: a change shows as a difference.
   const common = clone(FL);
   common.species.s001.common = 'Another butterflyfish';
@@ -258,8 +258,21 @@ test('fish: a changed PDF field or species mark of the layer no longer gives fis
   }
   const twice = clone(BASE);
   twice.species[0].common = 'a second name';
-  assert.match(regroup(null, twice).out, /layer species s001 common: tools\/fish_source\.json s001 gives one too/);
+  assert.match(
+    regroup(null, twice).out,
+    /layer species s001 pdf: the common name of a species of the PDF is the layer's, tools\/fish_source\.json s001 gives one too/
+  );
   const own = BASE.species.find(s => s.src === 'dauin');
+  // The base's own src (dauin, wink) is not laid again offline, as before; the layer's slides is, and a change of it that
+  // moves who needs near (a species fish.json has as dauin) stops the modes.
+  const wink = clone(BASE);
+  wink.species.find(s => s.id === own.id).src = 'wink';
+  assert.strictEqual(regroup(null, wink).status, 0, 'the base’s dauin or wink is the base’s: fish.json keeps its own');
+  const was = clone(BASE),
+    now = clone(FL);
+  delete was.species.find(s => s.id === own.id).src;
+  now.species[own.id] = {src: 'slides'};
+  assert.match(regroup(now, was).out, list);
   const layerCommon = clone(FL);
   layerCommon.species[own.id] = {common: 'x'};
   assert.match(regroup(layerCommon).out, new RegExp(`layer species ${own.id} common: only on a species of the PDF`));

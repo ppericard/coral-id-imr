@@ -163,23 +163,25 @@ def fish_compose(base, lay, key=None):
                 bad.append(f"layer node {n} src: only the tag {FISH_TAG!r}, on a node whose source the base does not name")
             else:
                 rec[k] = copy.deepcopy(v)
+    held = {n: set(s) for n, s in sp.items()}
     for n, x in (lay.get("species") or {}).items():
         if n not in sp:
             bad.append(f"layer species {n}: no species of tools/fish_source.json")
             continue
-        rec = sp[n]
+        rec, own = sp[n], held[n]  # own: the fields the base itself holds
         for k, v in x.items():
             if k not in FISH_SPECIES:
                 bad.append(f"layer species {n} {k}: not a field of the layer ({', '.join(FISH_SPECIES)})")
-            elif k == "src" and (v != FISH_SPECIES_SRC or "src" in rec or "pdf" in x):
+            elif k == "src" and (v != FISH_SPECIES_SRC or "src" in own or "pdf" in x):
                 bad.append(f"layer species {n} src: only {FISH_SPECIES_SRC!r}, on a species with no pdf whose source the "
                            "base does not name")
-            elif k == "pdf" and "src" in rec:
+            elif k == "pdf" and "src" in own:
                 bad.append(f"layer species {n} pdf: a species of the PDF has no src in the base (it has {rec['src']!r})")
+            elif k == "pdf" and "common" in own:
+                bad.append(f"layer species {n} pdf: the common name of a species of the PDF is the layer's, "
+                           f"tools/fish_source.json {n} gives one too")
             elif k in FISH_PDF and "pdf" not in x:
                 bad.append(f"layer species {n} {k}: only on a species of the PDF (the layer gives it a pdf)")
-            elif k == "common" and "common" in rec:
-                bad.append(f"layer species {n} common: tools/fish_source.json {n} gives one too")
             else:
                 rec[k] = copy.deepcopy(v)
     if bad:

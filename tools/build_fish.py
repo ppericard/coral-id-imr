@@ -155,8 +155,9 @@ LAYER_TEXT = ("sl", "cues", "look", "phase")
 # A species' keys of the instance's layer that sit after present, in fish.json's order; its common name sits after name.
 SPECIES_AFTER_PRESENT = ("src", "sec", "pdf", "cs", "sl")
 # Those of them whose change stops the offline modes: the species' presence (the IMR list confirms it near Dauin) and its
-# rank follow them.
+# rank follow them; and its src, when a change of the layer's slides mark moves needs_near.
 SPECIES_FULL_BUILD = ("pdf", "cs")
+SPECIES_SRC = "slides"  # the one src the layer holds (instance.py FISH_SPECIES_SRC)
 
 
 class Net:
@@ -1363,13 +1364,15 @@ def relay_head(rec, s):
 
 def relay_species(rec, s):
     """A species of fish.json (rec) with its common name, src, sec, pdf, cs and sl taken off and put back from the source
-    species s, where the build writes them: the common name after name (and now), the others after present."""
-    items = [(k, v) for k, v in rec.items() if k != "common" and k not in SPECIES_AFTER_PRESENT]
+    species s, where the build writes them: the common name after name (and now), the others after present. Of the src,
+    only the layer's slides is taken off and put back: dauin and wink are the base's and stay as fish.json has them."""
+    mine = lambda k, v: k != "src" or v == SPECIES_SRC  # noqa: E731
+    items = [(k, v) for k, v in rec.items() if k != "common" and not (k in SPECIES_AFTER_PRESENT and mine(k, v))]
     keys = [k for k, _ in items]
     items.insert(max(keys.index(k) for k in ("name", "now") if k in keys) + 1, ("common", s.get("common", "")))
     at = [k for k, _ in items].index("present") + 1
     for k in SPECIES_AFTER_PRESENT:
-        if s.get(k):
+        if s.get(k) and mine(k, s[k]):
             items.insert(at, (k, s[k]))
             at += 1
     rec.clear()
@@ -1421,10 +1424,15 @@ def relay(o, src):
             sys.exit(f"fish.json species {s['id']}: no such species in the source: run the full build")
     # The IMR list (pdf) confirms a species near Dauin (rule C8) and the cheatsheet (cs) ranks it: the full build moves
     # them, so a change in the layer stops the offline modes as a circle does.
+    # The same for its slides mark, only where it would change who needs near (a species the base gives dauin).
     moved = [f"{s['id']} {s['name']}: {k} {s.get(k)!r} in fish.json, {sp[s['id']].get(k)!r} in the layer"
              for s in o["species"] for k in SPECIES_FULL_BUILD if s.get(k) != sp[s["id"]].get(k)]
+    moved += [f"{s['id']} {s['name']}: src {s.get('src')!r} in fish.json, {sp[s['id']].get('src')!r} in the layer"
+              for s in o["species"]
+              if SPECIES_SRC in (s.get("src"), sp[s["id"]].get("src"))
+              and needs_near(s.get("src"), 1) != needs_near(sp[s["id"]].get("src"), 1)]
     if moved:
-        sys.exit("the IMR list changed in the instance's layer (pdf, cs): run the full build (python3 tools/build_fish.py)\n  "
+        sys.exit("the IMR list changed in the instance's layer (pdf, cs, src): run the full build (python3 tools/build_fish.py)\n  "
                  + "\n  ".join(moved))
     for s in o["species"]:
         relay_species(s, sp[s["id"]])

@@ -25,10 +25,13 @@ the same, nothing players see).
   as it holds `imr` for the nodes. A species with a `pdf` cannot also be `slides`, and a species the base gives a
   `src` (`dauin`, `wink`) cannot be the PDF's. A missing `src` in the base keeps its old reading (`needs_near` asks
   near-Dauin confirmation only of `dauin` and `wink` species and of circle 3), so no build decision moves.
-- **`relay_species`** takes `common`, `src`, `sec`, `pdf`, `cs` and `sl` off `fish.json` and lays them back from the
-  composed source where the build writes them (`common` after the name, the rest after `present`), so `--regroup
-  --check` covers them. A change of a species' `pdf` or `cs` in the layer stops the offline modes, as a circle does: the
-  IMR list confirms the species near Dauin (rule C8) and the cheatsheet ranks it, and only the full build moves them.
+- **`relay_species`** takes `common`, `sec`, `pdf`, `cs`, `sl` and the layer's `src: slides` off `fish.json` and lays
+  them back from the composed source where the build writes them (`common` after the name, the rest after `present`), so
+  `--regroup --check` covers them. The base's own `src` (`dauin`, `wink`) is left as `fish.json` has it, as before. A
+  change of a species' `pdf` or `cs` in the layer stops the offline modes, as a circle does: the IMR list confirms the
+  species near Dauin (rule C8) and the cheatsheet ranks it, and only the full build moves them. So does a `slides` mark
+  that would change who needs near (a species `fish.json` has as `dauin`). This stop goes a little beyond the design
+  note, which only asks `relay_species` to lay the fields back.
 - **`deploy.key` into `tools/instance.json`** as `key`: the key in force is the deployment's choice, like its `centre`,
   not IMR's content. `tools/instance.py` `fish_source` lays it on the composed source as `deploy.key`, where
   `key_in_force` has always read it; the base refuses a `deploy`. `deploy.region` is dropped: nothing read it, and it
