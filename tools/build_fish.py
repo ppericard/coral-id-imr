@@ -4,7 +4,8 @@
 The source it reads is two layers (design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5;
 tools/instance.py fish_source): tools/fish_source.json, the sources' part, with the instance's layer laid on (the file
 tools/instance.json names, today tools/instances/imr/fish.json): each teaching node's circle, IMR tag (src imr), sign,
-slides (sl), cues, look and phase, each sub-entry's slides, cues, look and phase, each species' slide (sl), the PDF's
+slides (sl), cues, look and phase, its PDF section tokens (pdf) and, on a node it tags, its name and fam (IMR's), each
+sub-entry's slides, cues, look and phase (and its name, under a tagged node), each species' slide (sl), the PDF's
 species fields (common name, sec, pdf, cs) and src slides, the starter core (start) and the declared look-alike groups
 (look); and the key in force (tools/instance.json key, as deploy.key). Below, "the source" is that composed source.
 
@@ -91,8 +92,9 @@ Usage: python3 tools/build_fish.py [--offline | --refresh] [--dry]   (--dry: pri
        python3 tools/build_fish.py --commonness   (offline: re-applies the commonness index and order to fish.json as it is,
        after an edit of tools/fish_commonness.json or a fish_commonness.py --fetch; --check: fail when fish.json differs)
 Every offline mode (--regroup, --commonness, --near) also lays the instance's layer again on fish.json as it is (relay):
-the teaching nodes' and sub-entries' slides, cues, look and phase, the nodes' src and sign and the species' common
-name, src, sec and slide are taken off and put back from the layer in the build's layout, start is taken from it, and
+the teaching nodes' and sub-entries' slides, cues, look and phase, the nodes' and sub-entries' name, the nodes' fam (and
+wfam, from fish.json's own reference tree), src and sign and the species' common name, src, sec and slide are taken off
+and put back from the layer in the build's layout (a node with no name in the source takes node_names's fallback), start is taken from it, and
 the families follow (add_families); so an edit of those in the layer file needs no
 WoRMS call, and --regroup --check proves fish.json is what the layer gives, byte for byte. A circle the layer changes,
 or a species' pdf or cs (the IMR list), stops these modes (the species' circles, their presence test and their rank
@@ -467,6 +469,50 @@ def key_in_force(src):
     return key
 
 
+def worms_fams(refs, tree):
+    """The WoRMS families holding a node's reference nodes (or the reference node itself when it is a family); tree:
+    AphiaID -> {name, rank, parent}."""
+    f = set()
+    for aid in refs:
+        a = aid
+        while a is not None and tree[a]["rank"] != "Family":
+            a = tree[a]["parent"]
+        if a is not None:
+            f.add(tree[a]["name"])
+    return sorted(f)
+
+
+def key_label(key, refs, tree):
+    """The label of the key in force (as the key prints it) that a node's first reference falls under, walking up the
+    WoRMS tree as key_groups does; None without a key, a reference or a label."""
+    if key is None or not refs:
+        return None
+    taxa = {name: lab[0] for g in key["groups"] for lab in g["labels"] for name in lab[1]}
+    a = refs[0]
+    while a is not None:
+        if tree[a]["name"] in taxa:
+            return taxa[tree[a]["name"]]
+        a = tree[a]["parent"]
+    return None
+
+
+def node_names(u, refs, key, tree, top):
+    """What fish.json writes for a teaching node (top) or a sub-entry u of the source: (name, fam, wfam), wfam the WoRMS
+    families when they are not the fam alone (None otherwise; a sub-entry has no fam). The source's own name and fam are
+    the entry's as IMR writes it (the instance's layer, on an entry it tags). Without a name, an entry takes its family's
+    label in the key in force (its first reference's), else its WoRMS family, else its first reference's name; a
+    sub-entry its first reference's name. Without a fam, an entry takes the WoRMS family when its references have one only."""
+    wf = worms_fams(refs, tree) if top else []
+    name = u.get("name")
+    if not name:
+        name = (key_label(key, refs, tree) or (wf[0] if len(wf) == 1 else None)) if top else None
+        name = name or tree[refs[0]]["name"]
+    if not top:
+        return name, None, None
+    fam = u.get("fam") or (wf[0] if len(wf) == 1 else None)
+    return name, fam, (wf if fam and wf != [fam] else None)
+
+
 def key_out(key):
     """The key as fish.json carries it: the app shows group numbers and titles and credits the key (no labels)."""
     if key is None:
@@ -626,7 +672,7 @@ def add_families(o, key, declared=()):
     node = {t["id"]: t for t in o["teach"]}
     subs = {}
     for t in o["teach"]:
-        for u in t.get("sub", []):
+        for u in t.get("sub", []) if t.get("src") == "imr" else []:  # IMR's sub-entries: the tag of the genera they name
             for sid in u["species"]:
                 subs.setdefault(sp[sid]["name"].split()[0], u)
     gens = {}
@@ -1362,6 +1408,17 @@ def relay_head(rec, s):
     rec.update(items)
 
 
+def relay_names(rec, names):
+    """A teaching node or sub-entry of fish.json (rec) with its name (and, on a node, fam and wfam) put back from names
+    (node_names: name, fam, wfam), where teach_out writes them: right after id, in that order."""
+    name, fam, wfam = names
+    items = [(k, v) for k, v in rec.items() if k not in ("name", "fam", "wfam")]
+    at = [k for k, _ in items].index("id") + 1
+    new = [("name", name)] + ([("fam", fam)] + ([("wfam", wfam)] if wfam else []) if "fam" in rec else [])
+    rec.clear()
+    rec.update(items[:at] + new + items[at:])
+
+
 def relay_species(rec, s):
     """A species of fish.json (rec) with its common name, src, sec, pdf, cs and sl taken off and put back from the source
     species s, where the build writes them: the common name after name (and now), the others after present. Of the src,
@@ -1406,18 +1463,21 @@ def relay(o, src):
     # circle 3: in circle 1 the build would keep it, in circle 2 its species do not all need near (needs_near), and
     # fish.json does not say which circle it was built in.
     kept = {t["id"] for t in o["teach"]}
-    moved += [f"{t['id']} {t['name']}: not in fish.json (every species out), circle {t.get('circle', 1)} in the layer"
+    moved += [f"{t['id']} {t.get('name', '')}: not in fish.json (every species out), circle {t.get('circle', 1)} in the layer"
               for t in src["teach"] if t["id"] not in kept and t.get("circle", 1) != 3]
     if moved:
         sys.exit("circles changed in the instance's layer: run the full build (python3 tools/build_fish.py)\n  "
                  + "\n  ".join(moved))
+    key, tree = key_in_force(src), {int(a): n for a, n in o["ref"].items()}
     for t in o["teach"]:
         if t["id"] not in by:
             sys.exit(f"fish.json teach {t['id']}: no such teaching node in the source: run the full build")
         relay_head(t, by[t["id"]])
         relay_node(t, by[t["id"]])
+        relay_names(t, node_names(by[t["id"]], t["ref"], key, tree, True))
         for u in t.get("sub", []):
             relay_node(u, by[u["id"]])
+            relay_names(u, node_names(by[u["id"]], u["ref"], key, tree, False))
     sp = {s["id"]: s for s in src["species"]}
     for s in o["species"]:
         if s["id"] not in sp:
@@ -1450,7 +1510,7 @@ def regroup(src_path, check, lay_path=None, inst_path=None):
     tree = {int(a): {"name": n["name"], "parent": n["parent"]} for a, n in o["ref"].items()}
     by = {t["id"]: t for t in src["teach"]}
     kid = key["id"] if key else None
-    units = [unit(t["ref"], [(u["id"], u["name"], u["ref"]) for u in t.get("sub", [])], by[t["id"]], not t.get("wink"), kid)
+    units = [unit(t["ref"], [(u["id"], u["name"], u["ref"]) for u in t.get("sub", [])], by[t["id"]], not t.get("wink"), kid, t["name"])
              for t in o["teach"]]
     groups, waiting = key_groups(key, units, tree)
     teach = []
@@ -1500,10 +1560,10 @@ def show_missing(missing):
             print("  " + x)
 
 
-def unit(refs, subs, s, game, kid):
+def unit(refs, subs, s, game, kid, name=None):
     """A teaching node as key_groups reads it (refs: AphiaIDs; s: its source node, whose keyGroup for key kid is the
-    explicit choice)."""
-    u = {"id": s["id"], "name": s["name"], "refs": refs, "game": game,
+    explicit choice; name: the node's name as fish.json has it, when the source node has none, node_names)."""
+    u = {"id": s["id"], "name": name or s["name"], "refs": refs, "game": game,
          "subs": [{"id": i, "name": n, "refs": r} for i, n, r in subs]}
     kg = s.get("keyGroup") or {}
     if kid in kg:
@@ -1643,6 +1703,13 @@ def build(src, report):
                 rec, how = worms_name(name)
                 if not rec or how != "exact" or accepted(rec)["scientificname"] != name:
                     sys.exit(f"key {key['id']} group {g['n']} {lab[0]}: {name} is not a WoRMS accepted name ({how})")
+    # Each node's name, fam and wfam as fish.json writes them (node_names): the source's own, IMR's on an entry the layer
+    # tags, else the fallback. Every later use of a node's name (the units' messages, teach_out) reads them from here.
+    for t in nodes:
+        for u in [t, *t.get("sub", [])]:
+            u["name"], fam, u["_wfam"] = node_names(u, u["_ref"], key, tree, u is t)
+            if u is t:
+                u["fam"] = fam
 
     def place(anc, cands):
         best = None
@@ -1789,24 +1856,12 @@ def build(src, report):
         out_sp.append(o)
         x["r"] = r
 
-    def fams(u):
-        """WoRMS families holding the node's reference nodes (or the reference node itself when it is a family)."""
-        f = set()
-        for aid in u["_ref"]:
-            a = aid
-            while a is not None and tree[a]["rank"] != "Family":
-                a = tree[a]["parent"]
-            if a is not None:
-                f.add(tree[a]["name"])
-        return sorted(f)
-
     def teach_out(u, members, top):
         o = {"id": u["id"], "name": u["name"]}
         if top:
             o["fam"] = u.get("fam")
-            wf = fams(u)
-            if u.get("fam") and wf != [u["fam"]]:
-                o["wfam"] = wf
+            if u["_wfam"]:
+                o["wfam"] = u["_wfam"]
             o["level"] = 1
             o["circle"] = u.get("circle", 1)
             if u.get("src"):  # the instance's tag (imr) or the sources' (pdf, diver, wink); none without the layer

@@ -308,6 +308,166 @@ print(json.dumps(fish_compose(json.load(open('tools/fish_source.json', encoding=
   assert.ok(!('deploy' in bare), 'the key in force is the instance’s, not the layer’s');
 });
 
+// The IMR names and family spellings of the entries the layer tags, their sub-entries' names, and every entry's PDF
+// sections are the layer's; the WoRMS mapping (ref, not) and the tree stay in the base.
+test('fish: the IMR names, family spellings and PDF sections are the layer’s; the base keeps the tree and the WoRMS mapping', () => {
+  const tagged = BASE.teach.filter(t => (FL.nodes[t.id] || {}).src === 'imr'),
+    others = BASE.teach.filter(t => !tagged.includes(t));
+  assert.strictEqual(tagged.length, 27, 'the 27 entries of the IMR presentation');
+  tagged.forEach(t => {
+    assert.ok(!('name' in t) && !('fam' in t), `${t.id}: name and fam in the base`);
+    (t.sub || []).forEach(u => assert.ok(!('name' in u), `${u.id} name in the base`));
+  });
+  others.forEach(t => assert.ok(t.name && t.fam, `${t.id}: the base keeps the name and family of an entry that is not IMR's`));
+  BASE.teach.forEach(t => assert.ok(!('pdf' in t) && t.ref && t.ref.length, `${t.id}: no pdf in the base, its ref there`));
+  // The layer holds them: name and fam on the 27 only, their sub-entries' names, a pdf on every entry that has a section.
+  Object.entries(FL.nodes).forEach(([id, x]) => {
+    if ('name' in x || 'fam' in x)
+      assert.ok(
+        tagged.some(t => t.id === id || (t.sub || []).some(u => u.id === id)),
+        `${id}: name of an entry that is not IMR's`
+      );
+    if ('fam' in x || 'pdf' in x)
+      assert.ok(
+        BASE.teach.some(t => t.id === id),
+        `${id}: fam or pdf on a sub-entry`
+      );
+  });
+  tagged.forEach(t => {
+    const x = FL.nodes[t.id];
+    assert.ok(x.name && x.fam && x.pdf && x.pdf.length, `${t.id}: name, fam and pdf in the layer`);
+    (t.sub || []).forEach(u => assert.ok(FL.nodes[u.id].name, `${u.id}: its name in the layer`));
+    assert.deepStrictEqual(
+      Object.keys(x).filter(k => ['circle', 'src', 'sign', 'name', 'fam', 'pdf', 'sl'].includes(k)),
+      ['circle', 'src', ...(x.sign === false ? ['sign'] : []), 'name', 'fam', 'pdf', 'sl'],
+      `${t.id}: the layer's order`
+    );
+  });
+  assert.strictEqual(Object.values(FL.nodes).filter(x => 'pdf' in x).length, 43, 'the entries with a section in the PDF');
+  assert.strictEqual(Object.values(FL.nodes).filter(x => 'name' in x).length, 27 + 7, 'the 27 entries and their 7 sub-entries');
+  // fish.json writes them as the composed source gives them (name, fam, and wfam when WoRMS holds other families).
+  const src = JSON.parse(run(['tools/instance.py', '--fish-source']).out),
+    by = new Map(src.teach.flatMap(t => [t, ...(t.sub || [])]).map(t => [t.id, t]));
+  F.teach.forEach(t => {
+    assert.strictEqual(t.name, by.get(t.id).name, `${t.id} name`);
+    assert.strictEqual(t.fam, by.get(t.id).fam, `${t.id} fam`);
+    (t.sub || []).forEach(u => assert.strictEqual(u.name, by.get(u.id).name, `${u.id} name`));
+  });
+  assert.ok(
+    F.teach.some(t => t.wfam),
+    'a family IMR spells otherwise than WoRMS keeps its WoRMS families (wfam)'
+  );
+  assert.deepStrictEqual(by.get('t42').pdf, ['MURAENIDAE'], 'an entry of another source with a section: its pdf from the layer');
+});
+
+test('fish: a changed name, family spelling or PDF section of the layer no longer gives fish.json; a base or layer out of place stops the build', () => {
+  const t = "is not as key .* gives it, with the instance's layer";
+  // A name or family is laid again offline, with the WoRMS families it differs from (wfam): a change shows as a difference.
+  const name = clone(FL);
+  name.nodes.t01.name = 'Damsel';
+  assert.match(regroup(name).out, new RegExp(t));
+  const sub = clone(FL);
+  sub.nodes.t01a.name = 'Chromis damsels';
+  assert.match(regroup(sub).out, new RegExp(t));
+  // A genus name taken from a sub-entry's name (tools/fish_genus_names.json, from imr) needs that name: the build stops.
+  const genus = clone(FL);
+  genus.nodes.t01d.name = 'Clownfish';
+  assert.match(regroup(genus).out, /g:Amphiprion: no IMR sub-entry Anemonefishes for it/);
+  const fam = clone(FL);
+  fam.nodes.t13.fam = 'Epinephelidae';
+  assert.match(regroup(fam).out, new RegExp(t));
+  const same = clone(FL);
+  same.nodes.t02.fam = 'Pomacanthidae';
+  assert.match(regroup(same).out, new RegExp(t));
+  // The tag says "IMR's entry": a tagged entry the layer gives no name, no fam, or a sub-entry no name stops the build,
+  // so the fallback (the family's label in the key) is never written as IMR's name.
+  const bare = clone(FL);
+  delete bare.nodes.t01.name;
+  delete bare.nodes.t01.fam;
+  delete bare.nodes.t01a.name;
+  const r = regroup(bare);
+  assert.match(r.out, /layer node t01 name: an entry the layer tags \('imr'\) has IMR's name/);
+  assert.match(r.out, /layer node t01 fam: an entry the layer tags/);
+  assert.match(r.out, /layer node t01a name: a sub-entry of an entry the layer tags/);
+  assert.doesNotMatch(r.out, /Traceback/);
+  // An entry no layer tags (t05 above, with its tag, name and fam taken off) falls back, as node_names does below.
+  // The base holds none of them: an edit made in the old place (a merge), even where the layer gives no name.
+  for (const [id, k, v] of [
+    ['t01', 'name', 'Damselfish'],
+    ['t01', 'fam', 'Pomacentridae'],
+    ['t42', 'pdf', ['MURAENIDAE']],
+    ['t28', 'pdf', ['SPHYRAENIDAE']]
+  ]) {
+    const stale = clone(BASE);
+    stale.teach.find(x => x.id === id)[k] = v;
+    assert.match(regroup(null, stale).out, new RegExp(`tools/fish_source\\.json ${id} ${k}: the instance's`), `${id} ${k}`);
+  }
+  const stalesub = clone(BASE);
+  stalesub.teach[0].sub[0].name = 'Chromis';
+  assert.match(regroup(null, stalesub).out, /tools\/fish_source\.json t01a name: the instance's/);
+  const omitted = clone(FL);
+  delete omitted.nodes.t05.name;
+  const given = clone(BASE);
+  given.teach.find(x => x.id === 't05').name = 'Moorish Idol';
+  assert.match(regroup(omitted, given).out, /tools\/fish_source\.json t05 name: the instance's/);
+  // The names of an entry that is not IMR's are the base's: the layer cannot give them.
+  const other = clone(FL);
+  other.nodes.t28.name = 'Barracudas';
+  other.nodes.t28.fam = 'Sphyraenidae';
+  assert.match(
+    regroup(other).out,
+    /layer node t28 name: only on an entry the layer tags[^]*layer node t28 fam: only on an entry the layer tags/
+  );
+  const orphan = clone(BASE),
+    lone = clone(FL);
+  orphan.teach.find(x => x.id === 't28').sub = [{id: 't28a', name: 'Sphyraena', ref: ['Sphyraena']}];
+  lone.nodes.t28a = {name: 'Sphyraena'};
+  assert.match(regroup(lone, orphan).out, /layer node t28a name: only on an entry the layer tags/);
+  const subFam = clone(FL);
+  subFam.nodes.t01a.fam = 'Pomacentridae';
+  assert.match(regroup(subFam).out, /layer node t01a fam: not a field of the layer/);
+  // An edition without the layer: no IMR name on the entries the tag marks, the others keep theirs, no section list.
+  const barec = JSON.parse(
+    py(`from instance import fish_compose
+print(json.dumps(fish_compose(json.load(open('tools/fish_source.json', encoding='utf-8')), {})))`)
+  );
+  const imr = new Set(Object.keys(FL.nodes).filter(id => FL.nodes[id].src === 'imr'));
+  barec.teach.forEach(u => {
+    assert.strictEqual('name' in u, !imr.has(u.id), `${u.id}: a name unless IMR's`);
+    assert.strictEqual('fam' in u, !imr.has(u.id), `${u.id}: a fam unless IMR's`);
+    assert.ok(!('pdf' in u), `${u.id} pdf`);
+    (u.sub || []).forEach(s => assert.strictEqual('name' in s, !imr.has(u.id), `${s.id}: a name unless its entry is IMR's`));
+  });
+});
+
+test('fish: an entry with no IMR name takes its family’s label in the key in force, a sub-entry its first reference’s name', () => {
+  // node_names (tools/build_fish.py) on fish.json's own reference tree: what the full build and the offline modes write.
+  const got = JSON.parse(
+    py(`import build_fish as b
+o = json.load(open('fish.json', encoding='utf-8'))
+base = json.load(open('tools/fish_source.json', encoding='utf-8'))
+key = b.key_in_force({'deploy': {'key': json.load(open('tools/instance.json'))['key']}, 'keys': base['keys']})
+tree = {int(a): n for a, n in o['ref'].items()}
+out = {}
+for t in o['teach']:
+    out[t['id']] = b.node_names({}, t['ref'], key, tree, True)
+    for u in t.get('sub', []):
+        out[u['id']] = b.node_names({}, u['ref'], key, tree, False)
+nokey = {t['id']: b.node_names({}, t['ref'], None, tree, True) for t in o['teach'] if t['id'] in ('t01', 't13')}
+own = b.node_names({'name': 'X', 'fam': 'Y'}, o['teach'][0]['ref'], key, tree, True)
+print(json.dumps([out, nokey, own]))`)
+  );
+  const [out, nokey, own] = got;
+  assert.deepStrictEqual(out.t01, ['Damselfishes', 'Pomacentridae', null], 'the label of the key, the WoRMS family');
+  assert.deepStrictEqual(out.t08[0], 'Parrotfishes', 'a subfamily label wins over its family’s');
+  assert.deepStrictEqual(out.t13, ['Groupers', null, null], 'three WoRMS families: no fam of its own');
+  assert.deepStrictEqual(out.t01d, ['Amphiprion', null, null], 'a sub-entry: its first reference’s name');
+  assert.deepStrictEqual(nokey.t01, ['Pomacentridae', 'Pomacentridae', null], 'a region with no key: the WoRMS family');
+  assert.strictEqual(nokey.t13[0], 'Epinephelidae', 'several families: the first reference’s name');
+  assert.deepStrictEqual(own, ['X', 'Y', ['Pomacentridae']], 'the source’s own name and fam, and the WoRMS families when they differ');
+  F.teach.forEach(t => assert.ok(out[t.id][0], `${t.id} has a name`));
+});
+
 test('fish: the key in force is the instance’s: composed as deploy.key, none without it', () => {
   const key = JSON.parse(
     py(`from instance import fish_compose
@@ -332,8 +492,11 @@ test('fish: a changed slide, tag or mark of the layer no longer gives fish.json;
   delete nospecies.species.s057.sl;
   assert.match(regroup(nospecies).out, new RegExp(t));
   const tag = clone(FL);
-  delete tag.nodes.t05.src;
+  ['src', 'name', 'fam'].forEach(k => delete tag.nodes.t05[k]);
   assert.match(regroup(tag).out, new RegExp(t));
+  const names = clone(FL);
+  delete names.nodes.t05.src;
+  assert.match(regroup(names).out, /layer node t05 name: only on an entry the layer tags/);
   const mark = clone(FL);
   delete mark.nodes.t04.sign;
   assert.match(regroup(mark).out, new RegExp(t));
