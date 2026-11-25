@@ -29,7 +29,7 @@ Being behind main is fine if the pinned head composes cleanly. A conflict leaves
 conflict resolution or VERSION assignment creates a new head, it needs its own checks and reviews.
 
 For a head with absent or stale security review, `nightq.sh` uses the existing draft/ready fallback after checks,
-once per head. A running, failed, unreadable or flagged review cannot pass, and an author's draft is never picked up.
+once per head, a failed call logged and retried a minute later, 3 attempts per head (REE-299). A running, failed, unreadable or flagged review cannot pass, and an author's draft is never picked up.
 
 ## Trusted tools
 
