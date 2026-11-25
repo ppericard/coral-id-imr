@@ -1011,8 +1011,9 @@ const lvlViews =
 const lvlAll = (k, list) => (lvlViews ? lvlViews.all(k) : lvlAllCalc(k, list));
 const lvlNeed = (k, list) => (lvlViews ? lvlViews.need(k) : lvlNeedCalc(k, list));
 const openFresh = (fresh, list) => {
-  const by = new Map();
-  fresh.forEach(n => by.set(rankKind(n), [...(by.get(rankKind(n)) || []), n]));
+  const by = new Map(),
+    kr = rankKindFn();
+  fresh.forEach(n => by.set(kr(n), [...(by.get(kr(n)) || []), n]));
   return [...by].flatMap(([k, U]) => {
     const w = lvlNeed(k, list),
       ok = U.filter(n => shareRoom(n));
@@ -1045,13 +1046,14 @@ const openGroup = (u, fresh, list) => {
     : [u];
 };
 const levelTop = list => {
-  const ks = [...new Set(list.filter(introducedFn()).map(rankKind))].filter(Boolean);
+  const kr = rankKindFn(),
+    ks = [...new Set(list.filter(introducedFn()).map(kr))].filter(Boolean);
   for (const k of ks) {
     const w = lvlNeed(k, list),
-      U = w ? list.filter(n => rankKind(n) === k && !introduced(n) && mayOpen(n)) : [];
+      U = w ? list.filter(n => kr(n) === k && !introduced(n) && mayOpen(n)) : [];
     if (!U.length) continue;
     // Nearest to a unit of the class already met (its group's), the first drawn as the first cards are.
-    const m = list.find(n => rankKind(n) === k && introduced(n)),
+    const m = list.find(n => kr(n) === k && introduced(n)),
       T = lvlNear(m, U),
       u = openPick(T, T, introduced, {first: true});
     return lvlFill([u], U, Math.min(w, U.length));
@@ -2137,14 +2139,45 @@ const confPrior = (t, n, look) =>
       : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
         ? CONF.FORM
         : CONF.BASE;
-function pooledConf(t, n) {
-  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, isLook(t, n)));
+// A pair's prior reads each unit's part of it: its declared look-alikes, its data look-alikes (dataSeed) and its family
+// (confUnit), and its growth forms (formsOf), views of the data version per unit (computed where a part of this file
+// runs alone): every pair read its two records and computed their forms again, many pairs a question. null for a name
+// with no record (its pair is computed as confPrior is).
+const confUnitCalc = n => {
+  const g = GX(n);
+  return g ? {look: g.look, dl: g.dl || [], fam: g.fam} : null;
+};
+const confUnit = typeof dataViewBy === 'function' ? dataViewBy('confUnit', confUnitCalc) : confUnitCalc;
+const formsOf = typeof dataViewBy === 'function' ? dataViewBy('imrForms', n => imrFormsOf(n)) : n => imrFormsOf(n);
+// U, F: confUnit and formsOf, or one read of each for a loop (pooledConfFn). The prior is confPrior(t, n, isLook(t, n)).
+function pooledConf(t, n, U = confUnit, F = formsOf) {
+  const k = PCONF[t < n ? t + '|' + n : n + '|' + t],
+    a = U(t),
+    b = U(n);
+  if (!a || !b) return confScore(k, confPrior(t, n, isLook(t, n)));
+  return confScore(
+    k,
+    a.look.includes(n) || b.look.includes(t) || a.dl.includes(n) || b.dl.includes(t)
+      ? CONF.LOOK
+      : b.fam === a.fam
+        ? CONF.FAM
+        : F(n).some(f => F(t).includes(f))
+          ? CONF.FORM
+          : CONF.BASE
+  );
 }
-function confOf(t, n) {
-  return confScore(pairConf(P, t, n), pooledConf(t, n));
+// pooledConf for a loop with nothing written during it: the units' parts read through one read of each view.
+const pooledConfFn = () => {
+  const U = confUnit.fn ? confUnit.fn() : confUnit,
+    F = formsOf.fn ? formsOf.fn() : formsOf;
+  return (t, n) => pooledConf(t, n, U, F);
+};
+// pc: pooledConf, or pooledConfFn's for a loop.
+function confOf(t, n, pc = pooledConf) {
+  return confScore(pairConf(P, t, n), pc(t, n));
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
-const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
+const confusable = (t, n, pc) => confOf(t, n, pc) >= CONF.TRAP;
 // Known mix-ups (docs/LEARNING.md "Known mix-ups"): a question on t among choices that hold a
 // genus this player mixes up with t more than everyone does is that much harder for them (core.js confGap, in logits:
 // the player's own score of the pair against the pooled one; the most over the choices). The expected success, the Elo
@@ -2197,14 +2230,30 @@ const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map
 // about t, an "Again" included (quiz.js planPhoto).
 const choiceNames = (o, t) => o !== t && choiceKeys(t).has(choiceKey(o));
 // The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
-const choiceApart = (L, taken = []) => {
-  const seen = new Set(taken.map(choiceKey));
-  return L.filter(n => !seen.has(choiceKey(n)) && seen.add(choiceKey(n)));
+// key: choiceKey, or choiceKeyFn's for a loop.
+const choiceApart = (L, taken = [], key = choiceKey) => {
+  const seen = new Set(taken.map(key));
+  return L.filter(n => !seen.has(key(n)) && seen.add(key(n)));
+};
+// The labels for a loop with nothing written during it (distractors): a view of the data version per unit and per IMR
+// answer, the answer in the key (imrNow, read once): a species named by its common name is labelled with the player's
+// first common name (app.js treeGenera name, cnFirst), the IMR name for a player at IMR, so each key's label is computed
+// under its answer. Only a subject that names its species by their common names (SUBJECTS names cn: its tree's species
+// units) has such labels; another reads no answer (0). Where a part of this file runs alone, choiceKey itself.
+const choiceKeyView = typeof dataViewBy === 'function' ? dataViewBy('choiceKey', k => choiceKey(k.slice(2))) : null;
+const choiceKeyFn = () => {
+  if (!choiceKeyView) return choiceKey;
+  const imr = (SUBJ.names || []).includes('cn') && typeof imrNow === 'function' && imrNow() ? 1 : 0,
+    f = choiceKeyView.fn();
+  return n => f(imr + ':' + n);
 };
 // The class of unit n a question's choices, groups and traps stay in (app.js kindRank: its rank and its kind of name, a
 // species by its scientific name apart from one by its common name); its rank alone (rankOf) where app.js is not loaded.
 // mimUnit, mimMix and groupsNow, above, read it too (once the file is in).
 const rankKind = n => (typeof kindRank === 'function' ? kindRank(n) : typeof rankOf === 'function' ? rankOf(n) : '');
+// rankKindFn(): rankKind for a loop with nothing written during it (app.js keyView fn: the data version read once, then
+// each unit's class a lookup).
+const rankKindFn = () => (typeof kindRank === 'function' ? (kindRank.fn ? kindRank.fn() : kindRank) : rankKind);
 // wide: false keeps a ranked target's choices to list (the custom quiz's selection: it names no unit of its rank outside).
 function distractors(t, list, traps = trapsFor(t), known = introducedFn(), wide = true) {
   // Choices of the target's class only (rankKind: its rank and kind of name): a fish scientific genus among genera, an
@@ -2213,37 +2262,40 @@ function distractors(t, list, traps = trapsFor(t), known = introducedFn(), wide 
   // genera met, the others make up the three (a family with one genus in play still gets three choices).
   // Never a choice of the target's label or of another name it lists (choiceKeys), nor two of one label (choiceApart):
   // of two units of one label, the one the rules below rank first is kept and the next one takes the other's place.
+  // The loops below write nothing: each view they read is read once for all of them (rankKindFn, choiceKeyFn,
+  // pooledConfFn, formsOf.fn), as known is (introducedFn); where a part of this file runs alone, the functions themselves.
   const rk = rankKind(t),
-    tk = choiceKeys(t);
-  list = list.filter(n => rankKind(n) === rk);
+    tk = choiceKeys(t),
+    kr = rankKindFn(),
+    ck = choiceKeyFn(),
+    pc = typeof pooledConfFn === 'function' ? pooledConfFn() : pooledConf,
+    fm = typeof formsOf === 'function' ? (formsOf.fn ? formsOf.fn() : formsOf) : imrFormsOf;
+  list = list.filter(n => kr(n) === rk);
   if (rk && wide) list = [...new Set([...list, ...rankUnits(rk)])];
-  list = list.filter(n => n === t || !tk.has(choiceKey(n)));
+  list = list.filter(n => n === t || !tk.has(ck(n)));
   const ranked = list
     .filter(n => n !== t)
-    .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
+    .map(n => [n, confOf(t, n, pc) * (0.8 + 0.4 * Math.random())])
     .sort((a, b) => b[1] - a[1])
     .map(x => x[0]);
   // A player who tells every look-alike apart (an expert) still gets the hardest choices the level asks for: the traps
   // left over come from the pairs other players confuse most, then the declared look-alikes, instead of easy genera.
   // Traps only among the genera met (`known`): a look-alike never seen is no trap for a beginner, only a name to guess.
-  const mine = ranked.filter(n => known(n) && confusable(t, n)),
-    pooled = list
-      .filter(n => n !== t && known(n) && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
-      .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
-    look = choiceApart([...mine, ...pooled]),
+  const mine = ranked.filter(n => known(n) && confusable(t, n, pc)),
+    pooled = list.filter(n => n !== t && known(n) && !mine.includes(n) && pc(t, n) >= CONF.TRAP).sort((a, b) => pc(t, b) - pc(t, a)),
+    look = choiceApart([...mine, ...pooled], [], ck),
     out = look.slice(0, traps),
     left = list.filter(n => n !== t && !look.includes(n));
   // Exactly `traps` traps when other genera met exist; genera never met only to make up the three.
   if (traps >= 2)
-    return choiceApart([
-      ...out,
-      ...ranked.filter(n => known(n) && !look.includes(n)),
-      ...look.slice(traps),
-      ...ranked.filter(n => !known(n))
-    ]).slice(0, 3);
+    return choiceApart(
+      [...out, ...ranked.filter(n => known(n) && !look.includes(n)), ...look.slice(traps), ...ranked.filter(n => !known(n))],
+      [],
+      ck
+    ).slice(0, 3);
   const T = GX(t);
-  const tf = imrFormsOf(t),
-    apart = n => !imrFormsOf(n).some(f => tf.includes(f));
+  const tf = fm(t),
+    apart = n => !fm(n).some(f => tf.includes(f));
   const easy = left.filter(apart),
     far = easy.filter(n => GX(n).ig !== T.ig);
   // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
@@ -2258,13 +2310,13 @@ function distractors(t, list, traps = trapsFor(t), known = introducedFn(), wide 
   ];
   const met = rank(left.filter(known)),
     other = rank(left.filter(n => !known(n))),
-    used = new Set(out.flatMap(imrFormsOf)),
+    used = new Set(out.flatMap(n => fm(n))),
     res = [...out];
   const add = (L, spread) =>
     L.forEach(n => {
-      if (res.length >= 3 || !choiceApart([n], res).length || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
+      if (res.length >= 3 || !choiceApart([n], res, ck).length || (spread && fm(n).some(f => used.has(f)))) return;
       res.push(n);
-      imrFormsOf(n).forEach(f => used.add(f));
+      fm(n).forEach(f => used.add(f));
     });
   add(met, true);
   add(met, false);
