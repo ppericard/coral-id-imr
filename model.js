@@ -725,15 +725,17 @@ const sharesNow = () => {
     free = new Set(typeof shareFree === 'function' ? shareFree() : []),
     lv = new Map(L.map(n => [n, free.has(n) ? null : shareLv(n, inPool)])),
     cap = {},
-    w = {};
+    w = {},
+    // nothing is written in this pass: the units met and their readiness read once (introducedFn, introReadyFn)
+    met = typeof introducedFn === 'function' ? introducedFn() : introduced;
   new Set([...lv.values()].filter(x => x !== null)).forEach(k => {
-    const up = L.filter(u => (typeof rankOf === 'function' ? rankOf(u) : '') === k && (introduced(u) || mayOpen(u))),
+    const up = L.filter(u => (typeof rankOf === 'function' ? rankOf(u) : '') === k && (met(u) || mayOpen(u))),
       at = u => (typeof (GX(u) || {}).shareAt === 'number' ? GX(u).shareAt : LV_AT[SHARE.AT]),
       m = up.length ? up.filter(u => genScore(u) >= at(u)).length / up.length : 0;
     cap[k] = Math.pow(m, SHARE.POW);
   });
   // The draw's weights of the units met (drawW), by level hung from ('' key for those hanging from none: '~').
-  L.filter(introReady).forEach(n => {
+  L.filter(typeof introReadyFn === 'function' ? introReadyFn() : introReady).forEach(n => {
     const k = lv.get(n) === null ? '~' : lv.get(n);
     w[k] = (w[k] || 0) + drawW(n);
   });
@@ -775,10 +777,17 @@ const shareRoom = n => {
 // (the first cards, or one of their own) in the last OPEN.WIN answers, as at `at` (the answers count at which the
 // question will show). The window counts the answers since each card on the answer clock (tally, introMark), so a count
 // gone down (rule D9) does not bring an old card back into it.
+// The genera opened on a card, each with its mark on the answer clock, in the intro map's order (cardsCalc): a view of the
+// state version in the app (the intro map is its input); the window, on the clock, is read at each call.
+const cardsCalc = () =>
+  Object.entries(introMap())
+    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n))
+    .map(([n, e]) => [n, introMark(e)]);
+const cardsNow = typeof stateView === 'function' ? stateView('cards', cardsCalc) : cardsCalc;
 const openRecent = (at = answersSoFar()) => {
   const c = tally() + at - answersSoFar();
-  return Object.entries(introMap())
-    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n) && c - introMark(e) < OPEN.WIN)
+  return cardsNow()
+    .filter(([, m]) => c - m < OPEN.WIN)
     .map(([n]) => n);
 };
 // No new genus while one opened in the last OPEN.WIN answers has not been asked yet (its card read, its question still
@@ -1160,12 +1169,56 @@ const introducedFn = () => {
 const introduced = metNow
   ? n => (typeof n !== 'string' || n in Object.prototype ? introducedCalc(n) : VIEW_CHECK.on ? metCheck(metNow(), n) : metNow().has(n))
   : introducedCalc;
-const introReady = n => {
-  if (closed(n)) return false;
+// Whether unit n is ready to be asked, as far as its record and its intro map entry say (readyPart): true (asked since its
+// card, or ready at once), the mark on the answer clock from which it is (its card's gap, INTRO.GAP), or undefined
+// (closed, or never met). The clock itself (tally) is read at each read for a unit that waits, as before: it moves with
+// the answer count, which no version follows, and its first read in an answer may write the comeback's record.
+const readyPart = n => {
+  if (closed(n)) return undefined;
   if (askedOpen(n)) return true;
   const e = introMap()[n];
-  return !!e && (!!e[1] || tally() >= introMark(e) + INTRO.GAP);
+  return !e ? undefined : e[1] ? true : introMark(e) + INTRO.GAP;
 };
+const introReadyCalc = n => {
+  const v = readyPart(n);
+  return v === true || (typeof v === 'number' && tally() >= v);
+};
+// In the app, the units' parts are a view of the state version (app.js stateView), as the units met (metCalc): readyCalc
+// keeps them for the only units that can be ready (a record's key or an intro map entry), and a read is one lookup and,
+// for a unit that waits, the clock. The same answer as introReadyCalc by construction; a name only the prototype of an
+// object holds is computed when read. With VIEW_CHECK on, each read compares its part with readyPart (readyCheck).
+const readyCalc = () => {
+  const M = new Map();
+  for (const n of new Set([...Object.keys(P), ...Object.keys(introMap())])) {
+    const v = readyPart(n);
+    if (v !== undefined) M.set(n, v);
+  }
+  return M;
+};
+const readyNow = typeof stateView === 'function' ? stateView('ready', readyCalc, true) : null;
+const readyCheck = (M, n) => {
+  const v = M.get(n);
+  if (!viewSame(v, readyPart(n))) viewDiff('state', 'ready');
+  return v;
+};
+// introReadyFn: introReady for a loop over many units with nothing written during it (unlocked, the rank share's weights,
+// the photo quiz's units met): one read of the view for the whole loop, as introducedFn.
+const introReadyFn = () => {
+  if (!readyNow) return introReadyCalc;
+  const M = readyNow();
+  return n => {
+    if (typeof n !== 'string' || n in Object.prototype) return introReadyCalc(n);
+    const v = VIEW_CHECK.on ? readyCheck(M, n) : M.get(n);
+    return v === true || (typeof v === 'number' && tally() >= v);
+  };
+};
+const introReady = readyNow
+  ? n => {
+      if (typeof n !== 'string' || n in Object.prototype) return introReadyCalc(n);
+      const v = VIEW_CHECK.on ? readyCheck(readyNow(), n) : readyNow().get(n);
+      return v === true || (typeof v === 'number' && tally() >= v);
+    }
+  : introReadyCalc;
 // "I've had the IMR lecture": an RA has seen every genus in the lecture, so one card at a time would hold them back. On
 // the first cards and in My progress, one tap opens at once, without cards, every unit the lecture teaches (app.js
 // UNITS core: the fish circle 1; the corals' whole slate). The bonus genera (opt-in, app.js BONUS) and the later fish
@@ -1176,12 +1229,12 @@ const introLeft = () => slateCore().filter(n => !introduced(n));
 // Whether a unit may open now (app.js UNITS gate: the fish circles 2 and 3 wait for their thresholds) and, for a part of
 // the slate opened by choice, once the player said yes (app.js UNITS opens, openShut: fish circle 3); always for a
 // subject with neither. The opening's candidates only (quiz.js introStart, planPhoto): a unit already open stays open.
-const mayOpen = n => !(typeof openShut === 'function' && openShut(n)) && (!unitsNow().gate || unitsNow().gate(n));
+const mayOpen = n => !(typeof openShut === 'function' && openShut(n)) && (U => !U.gate || U.gate(n))(unitsNow());
 // One progression path for every game (docs/LEARNING.md "One progression path for every game"): the genera this player
 // has unlocked, met on the path (a card, an answer, Open all) and ready (introReady), among those in play. The photo
 // quiz opens genera one at a time (its cards, the ★ rule: core.js afterWaits); every other game draws from these only and
 // opens none, so the ★ rule holds there by construction.
-const unlocked = (list = pool()) => list.filter(introReady);
+const unlocked = (list = pool()) => list.filter(introReadyFn());
 // via: where the player opened them ('card' the first cards, 'progress' My progress; 'offer' in an older record, the
 // offer card), kept for the admin's player journey.
 // n: how many opened at once; h: the drop since then (holdStep, below); a choice already made on the back card (bk, bat,
@@ -1570,12 +1623,34 @@ const lastAt = () => {
   } catch (e) {}
   return (L.length && Date.parse(L[L.length - 1].t)) || 0;
 };
-// Recall of genus n at time t (a genus with no time of its own: the player's last answer).
-const recallAt = (n, t = Date.now(), last = lastAt()) => {
+// Recall of genus n at time t (a genus with no time of its own: the player's last answer). stab: its stability (rustAdd
+// reads it once for two times).
+const recallAt = (n, t = Date.now(), last = lastAt(), stab = stability) => {
   const a = (P[n] || {}).at || last;
-  return a && t > a ? recallOf((t - a) / DAY, stability(n)) : 1;
+  return a && t > a ? recallOf((t - a) / DAY, stab(n)) : 1;
 };
-const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(aimOff(4) - Math.log(R));
+// o: the aim's offset for 4 choices (aimOff(4)), read once by a loop with nothing written during it.
+const rustOf = (R, o = aimOff(4)) => (1 - 1 / 4) * (1 - R) * sig(o - Math.log(R));
+// The rust the genera A gathered from time `from` to `now` (rustNow): each one's stability and the aim read once, the sum
+// as it always was (in A's order, each genus's two terms in turn). Reads the clock, so never a view.
+const rustAdd = (A, from, now, last) => {
+  const o = aimOff(4);
+  return A.reduce((t, n) => {
+    let S;
+    const st = () => (S === undefined ? (S = stability(n)) : S);
+    return t + rustOf(recallAt(n, now, last, st), o) - rustOf(recallAt(n, from, last, st), o);
+  }, 0);
+};
+// Outside a visit and a comeback the rust is not counted (rustNow). The genus difficulties its sum would read are kept as
+// it would keep them: genusDiff keeps a unit's first value (GDIFF) until the photo statistics, the data or the subject
+// change, and a tree's new photos do not clear it, so which value it keeps must not move with this skip. The units: those
+// asked whose recall a stability reads (a time of their own or the player's last answer, before now), not learned.
+const rustSkip = (now, last) =>
+  cbPlay().forEach(n => {
+    const s = P[n] || {},
+      a = s.at || last;
+    if ((s.ok || s.ko) && a && now > a && !s.mx && !(typeof GDIFF === 'object' && n in GDIFF)) genusDiff(n);
+  });
 // The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
 // A unit closed (a live game's answers before its card, model.js introLive; One at a time) is neither: its answers do not
 // start a comeback, whose floor would hold back the first cards while no unit is open (rule L4).
@@ -1600,16 +1675,16 @@ function rustNow(now = Date.now()) {
     floor = () => (CB.f = Math.max(CB.f, tally() + COMEBACK.FLOOR));
   const visit = now - last >= SESSION.GAP;
   if (visit) floor();
-  if (now > from) {
-    const A = cbPlay().filter(asked),
-      add = A.reduce((t, n) => t + rustOf(recallAt(n, now, last)) - rustOf(recallAt(n, from, last)), 0);
+  // The rust counts only in a comeback or at a new visit; any other answer reads none of it (rustSkip).
+  if (now > from && (on || visit)) {
+    const add = rustAdd(cbPlay().filter(asked), from, now, last);
     if (on) CB.r += add;
-    else if (visit && add > 0) {
+    else if (add > 0) {
       CB.r = add;
       CB.ok = 0;
       floor();
     }
-  }
+  } else if (now > from) rustSkip(now, last);
   CB.t = now;
   cbSave();
   return visit;

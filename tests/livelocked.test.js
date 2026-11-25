@@ -20,7 +20,7 @@ let CLOCK = 1.8e12;
 function app({P = {}, c1 = ['A', 'B'], c2 = ['M'], c3 = ['X', 'Y']} = {}) {
   const model = cut(read('model.js'), '// First meeting with a genus (Pierre', '// Comeback after a break (Pierre', {file: 'model.js'}),
     src = read('app.js'),
-    gate = cut(src, 'const treeGate = n => {', '\n};\n', {through: 1, file: 'app.js'}),
+    gate = cut(src, "// Circle 2's condition", '\n};\n', {through: 1, file: 'app.js'}),
     open = cut(src, 'const openOf = (S, full) => {', '// ⚙ Bonus genera On / Off', {file: 'app.js'});
   const saved = {},
     circle = Object.fromEntries([...c1.map(n => [n, 1]), ...c2.map(n => [n, 2]), ...c3.map(n => [n, 3])]),

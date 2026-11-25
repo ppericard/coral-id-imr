@@ -385,7 +385,10 @@ function lvSummary(list = slateGenera(), icons = true) {
 // units opened on the path (a card, an answer, Open all: model.js introduced) out of every unit the progress counts
 // (slateGenera); introLeft is the rest. A unit counts from its card, a couple of answers before the draw asks it (model.js
 // INTRO.GAP). [unlocked, all].
-const unlockN = (list = slateGenera()) => [list.filter(introduced).length, list.length];
+const unlockN = (list = slateGenera()) => [
+  list.filter(typeof introducedFn === 'function' ? introducedFn() : introduced).length,
+  list.length
+];
 const unlockText = (list = slateGenera(), html = false) => {
   const [k, n] = unlockN(list);
   return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
@@ -824,7 +827,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lv(n) >= 5)),
-    bonus: bonusList().filter(introduced).length,
+    bonus: bonusList().filter(typeof introducedFn === 'function' ? introducedFn() : introduced).length, // read once (model.js)
     core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
     circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
     // Its units grouped by the unit above them (GX parent: a sea slug genus's family), those with every unit at Advanced

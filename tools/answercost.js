@@ -77,6 +77,9 @@ const WATCH = [
   // the wrong choices' reads: each unit's part of a pair's prior (confUnitCalc; its forms counted as imrFormsOf), the labels
   // (choiceKey, labelKey), the classes (rankKind)
   'confUnitCalc', 'pooledConf', 'confScore', 'choiceKey', 'labelKey', 'rankKind', 'imrFormsOf',
+  // the opening's checks: the units ready (readyCalc, once a version; readyPart, per unit), the cards (cardsCalc), circle
+  // 2's condition (c1MetCalc); the rust, summed at a visit or in a comeback (rustAdd), else skipped (rustSkip)
+  'readyCalc', 'readyPart', 'cardsCalc', 'c1MetCalc', 'rustAdd', 'rustSkip',
   'introduced', 'closed', 'asked', 'askedOpen', 'introReady', 'introMap', 'mayOpen', 'treeGate', 'treeC3', 'photoAny', 'GX',
   'headScore', 'headPct', 'progPct', 'treeScore', 'pctOf', 'rustNow', 'recallAt', 'stability', 'genusDiff', 'photoDiff', 'photoSet',
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',

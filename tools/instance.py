@@ -12,17 +12,22 @@ identification key in force there (key: the deployment's choice, laid by fish_so
 layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance's, in tools/instances/imr/:
 
 - fish: start (the starter core), look (the declared look-alike groups of families), nodes {teaching node id:
-  {circle, src, sign, sl, cues, look, phase}} (a sub-entry: sl, cues, look, phase) and species {species id: {common,
-  sec, pdf, cs, src, sl}}. src is the IMR tag ("imr": the entries of the IMR fish presentation), sign: false marks an
-  entry off the presentation's dive-sign list, sl the presentation's slides. A species' pdf (the PDF's pages) marks it
+  {circle, src, sign, name, fam, pdf, sl, cues, look, phase}} (a sub-entry: name, sl, cues, look, phase) and species
+  {species id: {common, sec, pdf, cs, src, sl}}. src is the IMR tag ("imr": the entries of the IMR fish presentation),
+  sign: false marks an entry off the presentation's dive-sign list, name and fam the entry's name as IMR writes it and
+  the family as IMR spells it (only on an entry the layer tags, and the name of its sub-entries), pdf the section
+  tokens of the IMR reference PDF whose species the entry should hold (on any entry: the PDF is IMR's list), sl the
+  presentation's slides. A species' pdf (the PDF's pages) marks it
   as the PDF's, the IMR reference list (the EventMeasure PDF); only then it has the PDF's common name (never
   corrected), sec (its section) and cs (its rank on the cheatsheet); src: "slides" marks a species only the
   presentation names. fish_source() lays them on tools/fish_source.json, and tools/build_fish.py reads the result. The
   base never carries them (its src is the other sources': pdf, diver, wink; a species' common name is the base's unless
-  the layer marks it as the PDF's): a node or species of the base with one of them, or a layer node or species the
-  base does not hold, stops the build. A teaching node's names (name, fam), pdf, ref and species stay in the base: the
-  IMR names are the entries the tag marks, and an edition without the layer has no IMR tag, slide or cue on its
-  entries, and no PDF name, section or rank on its species.
+  the layer marks it as the PDF's; a node's name and fam are the base's unless the layer tags the node): a node or
+  species of the base with one of them, or a layer node or species the base does not hold, stops the build. A teaching
+  node's ref, not, species, ids and order stay in the base, which identifies the entries and places every species (the
+  WoRMS mapping is ours). A tagged entry must have its name and fam in the layer (and its sub-entries their name). An
+  edition without the layer has no IMR tag, slide or cue on its entries, no IMR name (its entries take their family's
+  label in the key in force, build_fish.py node_names), no section list, and no PDF name, section or rank on its species.
 - coral: imrg (the IMR lecture's groups), gen {genus: {n, ig, imr, mn, sl, rsl, qt}} (its slate number, its lecture
   group, its lecture notes verbatim, its mnemonic, its lecture slides and review slides, its ID tips: the tips of a
   genus with a Coral Finder heading, tl, stay in data.json, condensed from the book) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
@@ -54,9 +59,12 @@ DATA = ROOT / "data.json"
 
 # A teaching node's fields that are the instance's. src is the IMR tag only ("imr", the presentation's entries): the
 # other sources (pdf, diver, wink) are the sources' and stay in tools/fish_source.json. sign: false marks an entry the
-# presentation's dive-sign list lacks.
-FISH_NODE = ("circle", "src", "sign", "sl", "cues", "look", "phase")
-FISH_SUB = ("sl", "cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle)
+# presentation's dive-sign list lacks. name and fam are IMR's names (the entry's name and the family as IMR writes it):
+# the layer's only on an entry it tags (FISH_NAMES), the base's otherwise; pdf, the PDF's section tokens, is the layer's
+# on every entry.
+FISH_NODE = ("circle", "src", "sign", "name", "fam", "pdf", "sl", "cues", "look", "phase")
+FISH_SUB = ("name", "sl", "cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle); name as FISH_NAMES
+FISH_NAMES = ("name", "fam")  # the fields that are the layer's only on an entry it tags (and a sub-entry of one)
 # A species' fields that are the instance's: the slide of the presentation that names it (sl); the PDF's own fields, only
 # on a species the layer marks as the PDF's by giving its pdf (the PDF's pages): common (the PDF's name for it, never
 # corrected), sec (its section) and cs (its rank on the cheatsheet); and the presentation's mark src: "slides" (a
@@ -128,8 +136,9 @@ def write_layer(subject, lay, path=None):
 def fish_compose(base, lay, key=None):
     """tools/fish_source.json (base) with the instance's layer laid on: the source tools/build_fish.py reads. Stops when
     the base still carries a field of the layer (an edit made in the old place, say by a merge; a src other than the
-    layer's tags is the base's; a species' common name is the base's unless the layer marks the species as the PDF's) or
-    the layer names a node or species the base does not hold. key: the identification key in force (tools/instance.json
+    layer's tags is the base's; a species' common name is the base's unless the layer marks the species as the PDF's; an
+    entry's name and fam, and its sub-entries' names, are the base's unless the layer tags the entry) or the layer names
+    a node or species the base does not hold. key: the identification key in force (tools/instance.json
     key), laid as deploy.key, where tools/build_fish.py key_in_force reads it; the base holds no deploy."""
     src, bad = copy.deepcopy(base), []
     for k in FISH_TOP:
@@ -137,15 +146,18 @@ def fish_compose(base, lay, key=None):
             bad.append(f"tools/fish_source.json {k}: the instance's (its layer file)")
     if "deploy" in src:
         bad.append("tools/fish_source.json deploy: the deployment's (tools/instance.json key)")
-    by = {}
+    by, top = {}, {}  # top: a node's or sub-entry's entry (its own id for an entry)
     for t in src.get("teach", []):
-        by[t["id"]] = (t, FISH_NODE)
+        by[t["id"]], top[t["id"]] = (t, FISH_NODE), t["id"]
         for u in t.get("sub", []):
-            by[u["id"]] = (u, FISH_SUB)
+            by[u["id"]], top[u["id"]] = (u, FISH_SUB), t["id"]
+    # The entries whose IMR tag is the layer's: only there are the names (name, fam) the layer's; an entry of the base's
+    # own source (pdf, diver, wink) keeps its name in the base, a tagged entry the base gives a name to stops the build.
+    tagged = {n for n, x in (lay.get("nodes") or {}).items() if top.get(n) == n and x.get("src") == FISH_TAG and "src" not in by[n][0]}
     sp = {s["id"]: s for s in src.get("species", [])}
     for n, (rec, keys) in by.items():
         for k in keys:
-            if k in rec and not (k == "src" and rec[k] != FISH_TAG):
+            if k in rec and not (k == "src" and rec[k] != FISH_TAG) and not (k in FISH_NAMES and top[n] not in tagged):
                 bad.append(f"tools/fish_source.json {n} {k}: the instance's (its layer file)")
     for n, s in sp.items():
         for k in FISH_SPECIES:
@@ -161,8 +173,21 @@ def fish_compose(base, lay, key=None):
                 bad.append(f"layer node {n} {k}: not a field of the layer ({', '.join(keys)})")
             elif k == "src" and (v != FISH_TAG or "src" in rec):
                 bad.append(f"layer node {n} src: only the tag {FISH_TAG!r}, on a node whose source the base does not name")
+            elif k in FISH_NAMES and top[n] not in tagged:
+                bad.append(f"layer node {n} {k}: only on an entry the layer tags ({FISH_TAG!r}), or one of its sub-entries "
+                           "(the other entries' names are the base's)")
             else:
                 rec[k] = copy.deepcopy(v)
+    # The tag says "IMR's entry": its name and fam, and its sub-entries' names, are IMR's, so the layer gives them all (the
+    # fallback of node_names is for an entry no layer tags, and would otherwise be written as IMR's name).
+    lnodes = lay.get("nodes") or {}
+    for n in sorted(tagged):
+        for k in FISH_NAMES:
+            if k not in lnodes[n]:
+                bad.append(f"layer node {n} {k}: an entry the layer tags ({FISH_TAG!r}) has IMR's {k}")
+        for u in by[n][0].get("sub", []):
+            if "name" not in lnodes.get(u["id"], {}):
+                bad.append(f"layer node {u['id']} name: a sub-entry of an entry the layer tags ({FISH_TAG!r}) has IMR's name")
     held = {n: set(s) for n, s in sp.items()}
     for n, x in (lay.get("species") or {}).items():
         if n not in sp:
