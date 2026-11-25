@@ -1562,7 +1562,7 @@ test('board (v95): each subject its own board, by its % over the units its apps 
     'the coral board reads the coral progress, not the fish level'
   );
   // Each board cached apart, 5 minutes; an admin's hide holds for every board and drops every board's cache at once.
-  assert.ok(s.cache.board14 && s.cache['board14:fish']);
+  assert.ok(s.cache['board15:coral'] && s.cache['board15:fish']);
   s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1}, answers: []});
   assert.deepStrictEqual(
     s.get({board: '1', s: 'fish'}).rows.map(r => r[0]),
@@ -1570,7 +1570,7 @@ test('board (v95): each subject its own board, by its % over the units its apps 
     'cached 5 minutes'
   );
   s.post({userBoard: 'Ben', hide: true, token: TOK});
-  assert.ok(!s.cache.board14 && !s.cache['board14:fish'], 'every board cache dropped');
+  assert.ok(!s.cache['board15:coral'] && !s.cache['board15:fish'], 'every board cache dropped');
   s.post({name: 'Ana', pin: '1234', data: fish({'f:Labridae': {ok: 1, ko: 0, pg: 0.1}}), summary: {board: 1}, answers: []});
   assert.deepStrictEqual(
     s.get({board: '1', s: 'fish'}).rows.map(r => r[0]),
@@ -1580,7 +1580,7 @@ test('board (v95): each subject its own board, by its % over the units its apps 
   // An archive leaves both boards at once (rosterChanged_ drops every board's cache).
   s.get({board: '1'});
   s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK});
-  assert.ok(!s.cache['board14:fish'] && !s.cache.board14, 'every board cache dropped');
+  assert.ok(!s.cache['board15:fish'] && !s.cache['board15:coral'], 'every board cache dropped');
   assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, []);
 });
 
@@ -2807,7 +2807,7 @@ const v55 = () => {
     "oldApp_('load', 'Ben'); sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ben (3000 per 6 h)'])",
     s.ctx
   );
-  s.cache.board14 = s.cache.achs15 = s.cache.stats17 = '{}';
+  s.cache['board15:coral'] = s.cache.achs15 = s.cache.stats17 = '{}';
   return s;
 };
 const rplAdd = (s, ...names) =>
@@ -2828,7 +2828,7 @@ test('v55 delete everything: answers, reports, page summaries, name mentions and
   assert.match(tabText(s, 'Events'), /\(~deleted [^)]+\)/);
   assert.match(tabText(s, 'Alerts'), /n:~deleted \S+ \(3000/);
   assert.ok(/Ben/.test(tabText(s, 'Removed')), 'the tombstone stays');
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined], 'caches cleared');
+  assert.deepStrictEqual([s.cache['board15:coral'], s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined], 'caches cleared');
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
 });
 
@@ -2856,7 +2856,7 @@ test('v55 merge clears the caches and moves name mentions to the name it joined'
   const s = v55();
   const m = s.post({userMerge: {from: 'Ben', into: 'Ana', data: prog(4)}, token: TOK});
   assert.strictEqual(m.ok, true);
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined]);
+  assert.deepStrictEqual([s.cache['board15:coral'], s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined]);
   assert.match(tabText(s, 'Events'), /\(Ana\)/);
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')));
 });

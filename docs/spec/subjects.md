@@ -62,9 +62,10 @@ true for one subject only, with what it switches on and its ROADMAP row). Each r
   scientific name; `app.js` `treeGenera`): a kind not listed has no units (the sea slugs: no common-name branch); unset,
   none;
 - `renamed` (the fish: `FISH_RENAMED`, old unit ids to new), `typeDrop` (the fish: a word a typed name may leave out);
-- `replay` (the corals: the subject of the first replay, asked as `rv`, the full replay of its progress under `RVS`
-  that the sheet's first replay path computes from its rows alone, `Code.gs` `answerRows_`, sent as the reply's
-  unprefixed `replay`, `sync.js` `replayAdopt`; an answer row with no subject is theirs, `core.js` `replaySubject`) and
+- `replay` (the corals: the subject of the sync's unprefixed fields, the full replay of its progress under `RVS` asked
+  as `rv` and sent as the reply's unprefixed `replay`, `sync.js` `replayAdopt`, and of the save summary, `Code.gs`
+  `sumSubj_`; the sheet replays it on the one path every subject takes, `Code.gs` `replay_`, into the tab its
+  `replayed` `tab` names; an answer row with no subject is theirs, `core.js` `replaySubject`) and
   `replayed` (the fish and the sea slugs: replayed by the sheet from their own answers: `gen(F)` its units from its
   file, `file`, else its pool's first; `rvs()` its rules versions; `tree(F)` its board's tree, for a subject with a
   score; `sheet` the script version that replays it, `sync.js` `rpOn`;

@@ -43,22 +43,26 @@ const ONE_ENGINE = 'One engine for every subject, what is left';
 // The hidden tests on a subject still in the code: [file, the line's text, the docs/ROADMAP.md row that removes it]. An
 // entry whose line is gone fails (the exception went: drop it), and so does one whose ROADMAP row is gone (the row was
 // done or dropped without the code): an exception never outlives its reason.
-const ALLOWED = [
-  // The first board subject (the corals) keeps its cache key and reads the "By genus" tab; the others their units.
-  [GS, "const boardCache_ = S => S === CORE_.SUBJECTS.find(x => x.board) ? 'board14'", ONE_ENGINE],
-  [GS, 'first = S === CORE_.SUBJECTS.find(x => x.board)', ONE_ENGINE]
-];
+// None left: one-engine step 9 made the sync script's replay and leaderboard one path for every subject (Code.gs
+// replay_, rplMake_, boardRpl_, board_; tests/board.test.js).
+const ALLOWED = [];
 // The SUBJECTS fields true for exactly one subject: [field, what it switches on, the docs/ROADMAP.md row that tracks it].
 const FLAGS = [
   ['flat', "a flat subject: the corals' data.json, a flat list keyed by name, not a tree with ids (app.js build, GX)", ONE_ENGINE],
+  // The sheet's replay and leaderboard are one path for every subject (one-engine step 9); replay names the subject of
+  // the request's and reply's unprefixed fields an older app sends and reads (rule D4), the app's and the admin's reads.
   [
     'replay',
-    "the sheet's first replay path (Code.gs answerRows_, the reply's unprefixed replay, RVS) and the subject of an unlabelled row",
+    "the subject of the sync's unprefixed fields (a request's rv, reset, start; the reply's replay, hold; the save summary: Code.gs replaySubject, sumSubj_; sync.js rpOf, rvKey), its rules versions RVS (core.js rvsOf), the admin's own replay (Code.gs replayedAll_, admin.js) and the subject of an unlabelled row",
     ONE_ENGINE
   ],
   // One-engine step 2 split these out of replay, at its values (the audit's step 2; core.js SUBJECTS says each). hold went
   // with step 5: the app adopts each subject's own opening hold (sync.js holdAdopt, holdOf).
-  ['offsets', "the sheet's photo memory and format offsets, fitted on its answers alone (Code.gs stats_; model.js pmem, pfmt)", ONE_ENGINE],
+  [
+    'offsets',
+    "the sheet's photo memory and format offsets, fitted on its answers alone, and the pooled statistics its replay reads (Code.gs stats_, rplMake_; model.js pmem, pfmt)",
+    ONE_ENGINE
+  ],
   [
     'anonBase',
     'signing in adds only what was played since its first answer signed out (ANONB: quiz.js answer, sync.js signIn)',
@@ -191,7 +195,9 @@ test('rule S1: the checks catch what they are for (planted cases)', () => {
   assert.deepStrictEqual(scan(GS, 'const subj = a => word_(a.s, W, 20) || CORE_.SUBJECTS[0].id;'), []);
   assert.deepStrictEqual(scan(GS, 'const S = CORE_.SUBJECTS.find(S => S.id === sid) || {};'), []);
   // a listed line only in its own file
-  assert.strictEqual(scan('x.js', ALLOWED[1][1]).length, 1);
+  const listed = [[GS, 'first = S === CORE_.SUBJECTS.find(x => x.board)', ONE_ENGINE]];
+  assert.deepStrictEqual(scan(GS, 'const first = S === CORE_.SUBJECTS.find(x => x.board);', listed), []);
+  assert.strictEqual(scan('x.js', listed[0][1], listed).length, 1);
   // the flags: one undeclared, one stale, one with no ROADMAP row
   const subj = [{id: 'a', zz: true, flat: true}, {id: 'b'}, {id: 'c', zz: false}];
   assert.match(flags(subj, [['flat', 'why', ONE_ENGINE]], ROADMAP).join('\n'), /SUBJECTS zz is true for one subject only/);
@@ -252,5 +258,6 @@ test('rule S1: the checks catch what they are for (planted cases)', () => {
   );
   // an exception: its line gone, its row gone or absent
   assert.match(exceptions([['progress.js', 'no such line', ONE_ENGINE]], read, ROADMAP).join(), /stale exception/);
-  assert.match(exceptions([[ALLOWED[0][0], ALLOWED[0][1]]], read, ROADMAP).join(), /names no ROADMAP row/);
+  assert.match(exceptions([[GS, 'function board_(sid){']], read, ROADMAP).join(), /names no ROADMAP row/);
+  assert.doesNotMatch(exceptions([[GS, 'function board_(sid){']], read, ROADMAP).join(), /stale exception/);
 });

@@ -520,7 +520,10 @@ as `CORE_`. `tools/sync_core.py --fix` writes it, `--check` runs in CI, and the 
 
 **Replaying.** When `rv` < `CORE_.RV` (`core.js` `RVS`), `replay_` replays the player's rows of the Answers tab since
 their last reset (`core.js` `replayProgress`, with `stats_` `mem` and `conf`, and the units' `look` and `fam` from
-`data.json` on GitHub, `gen_`, cached 6 hours as `gen1`; none when it cannot be read). The reply carries
+`data.json` on GitHub through `subjGen_`, below; none when they cannot be read). One path for every subject (rule S1;
+one-engine audit step 9): `replay_`, `rplMake_`, `boardRpl_` and `board_` take the subject's id and read its own rows,
+units, variant table, rules versions and Replayed tab; the request's unprefixed `rv` is the corals' (`core.js`
+`replaySubject`), and the pooled statistics are read only for a subject with `SUBJECTS` `offsets`. The reply carries
 `replay: {rv, n, rec, ids}`: `rec` the replayed record per unit and `~level`, replayed with today's rules, the known mix-ups term
 included (`core.js` `CF_LOGGED`: the app's own term taken out of the logged `e`), with per unit `lm`, the time of the
 last miss that left its progress below the learned mark's keep rule (`core.js` `mxKeeps`), so `replayedOf` drops a mark
@@ -530,7 +533,8 @@ counted twice. The anonymous request also carries `reset` (the device's `reefid-
 only the answers since. The first-launch answer's prior enters the replay at each answer (`core.js` `replayProgress`
 option `starts`, `startPriorAt`; [cards.md](cards.md#replayed-with-the-progress)).
 
-**Kept.** Replays are stored in the **Replayed** tab: Name (or `~anon <id>`), Rules (rv), Rows (n), Since (the cache
+**Kept.** Replays are stored in the **Replayed** tab (the tab `SUBJECTS` coral `replayed` `tab` names; `Code.gs`
+`rplTab_`): Name (or `~anon <id>`), Rules (rv), Rows (n), Since (the cache
 identity, `rplSince_`: the reset in ms, then `#` and the first-launch history's fingerprint `core.js` `startFp` when
 there is one, then `~` and the structure stamp when it is not `''`, below), Updated, Record
 (JSON in 45,000-character chunks from column F); a row is reused while the rules version, the row count, the reset, the
@@ -564,12 +568,14 @@ Progress).
 ### Other subjects' replays
 
 A subject with `SUBJECTS` `replayed` (the fish and the sea slugs; `core.js` `replayedSubjects`) is replayed by the same
-`replay_` from its own rows (`subjRows_`, from the same read of the Answers tab as `answerRows_`), with its own units:
+`replay_` from its own rows (`subjRows_`, from the same read of the Answers tab as `answerRows_`), into its own tab
+(`Replayed <name>`, `rplTab_`), asked by `rvs` and sent in `replays` (`replays_`), with its own units:
 `replayed.gen` over its `replayed.file`, else its first pool file, read from GitHub (`Code.gs` `subjFile_`). The fish's
 are `core.js` `treeReplayGen` over `fish.json`: the families' and the scientific genera's `look` and family line as the
 app's `treeGen` and `treeGenera` build them (`tests/fishreplay.test.js`), cached 6 hours as `sgen1:fish`; the sea slugs'
-`seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (the
-corals' only); every fish answer is logged with its scoring record and replays as the game scored it.
+`seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (a
+subject with `SUBJECTS` `offsets` only: the corals); every fish answer is logged with its scoring record and replays as
+the game scored it.
 
 **The species by their scientific names** (v198; the app opens them from `SCI_SHEET`, rule D4;
 docs/reviews/2026-11-18-species-step2-plan.md): both subjects' units also hold one unit per species under a genus
@@ -650,7 +656,7 @@ still on the old units cannot send the old tree back into force. When it is not 
 apps sent (`boardUnits_`). The apps keep sending theirs (no gate).
 
 **The corals too.** The subject the sheet replays (`SUBJECTS` `replay`) declares a structure (its look-alike pairs), so
-its units come the same way: `gen_` through `subjRpl_` (`data.json` with the curation's pairs laid over it, `SUBJECTS`
+its units come the same way: `subjGen_` through `subjRpl_` (`data.json` with the curation's pairs laid over it, `SUBJECTS`
 coral `replayed` `gen`: `core.js` `genLooks`, cached as `sgen2:coral:<fingerprint>`, the curation's entries as
 `scur1:coral`), refreshed by the same trigger (`subjStRefresh_`), and none while the curation cannot be read. The app
 says its coral stamp on a load (`st_coral`, `sn_coral`), a save and an anonymous send (`sts.coral`, `stn.coral`;
@@ -672,7 +678,10 @@ of the record the subject's Replayed tab keeps for today's rules, row count and 
 `replay_`'s reuse). The level is the replayed one too (`replayedOf`: the replay's ability and answer count), from
 `ELO_MIN` answers. With no record kept yet, or a player up to date: the saved copy's. The board reads only (one read of
 the Answers tab and of each Replayed tab, only once a player behind is met; nothing fetched, no lock) and stays cached 5
-minutes.
+minutes. One path for every subject (rule S1; one-engine audit step 9): a subject's % is over the units its apps last
+sent (`boardUnits_`), else the tree the sheet makes (`subjTreeKept_`), else, for the save summary's subject (`sumSubj_`:
+the subject of the unprefixed fields, the corals), the "By genus" columns (`sumUnits_`); that subject alone falls back on
+the RAs Progress column when its % cannot be read.
 
 The records are made ahead by the 15-minute trigger (`autoUpdate`, once it finds the script up to date, after the
 one-shot migrations: `boardWarm_`): every listed player (opt-out, admin hide and archive left out) behind the rules
@@ -775,7 +784,8 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
 admin part the same run writes (`Part` `admin`; both rows carry the run's start in Note, so a reader never mixes two
 runs): each player's ability by admin id (`ras`, rounded as `stats_` does, less the answers of a deleted account, the
 fold's `D`, and less the players archived at the time of the read, `archivedSet_`) and `skip`, with `chk: 1`; never
-cached. The replays (`rplMake_` for the corals, `replayedAll_`) read the pooled statistics through `statsServed_`. Each
+cached. The replays (`rplMake_` for a subject with `SUBJECTS` `offsets`, the corals; `replayedAll_`) read the pooled
+statistics through `statsServed_`. Each
 makes `stats_` itself when the snapshot is not served (missing, older than an hour, another version, older than the last
 delete, merge or archive, or rows 2 and 4 from two runs). The other subjects' replays take no pooled statistics. In
 `tests/gas.js` the snapshot is off unless a test asks for it (`opts.stats`).
@@ -961,7 +971,7 @@ betas and rights.
 - **Boards.** `board_` makes its one ranking (the global %, then Elo; rule D8's replays included) and splits it
   (`groupBoards_`): `rows`, the general board, everyone; `groups`, `[{id, n, rows}]`, every group with a board, the
   newest first (by Added), its members. Each keeps the ranking's order and its first 200, and the opt-out, an admin hide
-  and an archive hold on all (`boardRows_`). One cache entry per subject (`board14`, `board14:<subject>`) holds every
+  and an archive hold on all (`boardRows_`). One cache entry per subject (`board15:<subject>`) holds every
   scope; every change to a group or a membership drops every subject's (`boardsDrop_`); with the groups unreadable,
   `rows` is not split.
 - **The app** learns its groups from the load and save replies: `groups` (the subjects in beta the player's groups open)
