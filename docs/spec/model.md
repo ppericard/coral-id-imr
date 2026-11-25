@@ -133,6 +133,11 @@ The data views:
   read once) is in the key and each key's label is computed under it. Only a subject that names its species by their
   common names (`SUBJECTS` names `cn`) reads the answer.
 
+Each unit's difficulty (`model.js` `genusDiff`, memo `GDIFF`) is kept for the data version too, read from `DATA_V`
+directly (`GDV`, no storage check: its inputs, the statistics joined and the units built, are written in this tab). So a
+tree's new photos (`app.js` `treeBuild`, `treePull`) make it again, as the statistics, a new curation and a subject
+switch do. Where `model.js` runs without `app.js` (the tools, the unit tests), the memo is cleared by hand.
+
 A keyed view has a read for a loop with nothing written during it (`app.js` `keyView` `fn`, as `introducedFn`): the
 version is read once, then a value kept in it is a lookup; any other read goes through the view (with `VIEW_CHECK` on,
 every read). `distractors` reads each unit's class (`rankKindFn`), label (`choiceKeyFn`), pooled confusion
@@ -400,7 +405,8 @@ visit after `SESSION.GAP` = 30 minutes without an answer: the next `COMEBACK.FLO
 blocks the cards in `planPhoto`, the open-all and bonus genera offers in `quizPhoto`; bonus genera, once on, open by
 cards like slate genera). From the FSRS recall per unit (`recallAt`, `stability`) it adds the gap's rust (`rustOf`,
 summed by `rustAdd`, each unit's stability read once for its two times) at a new visit and during a comeback, the only
-times the sum is read; between them it sums nothing (`rustSkip` keeps `genusDiff`'s first values as the sum would). A
+times the sum is read; between them it sums nothing (`rustSkip` still makes the `genusDiff` values the sum would read,
+so the memo holds what the sum would leave in it; the values follow the data version either way). A
 comeback runs while that is above 0 (`comebackOf`: units answered right, the surest half first, then the most rusted;
 the usual choices, `trapsFor`; photos aimed at ability + ln R through `photoSet(n, skip, shift)`; no card, duel or exam;
 `q.warm`, and `q.cb`, the unit's recall) and ends by a CUSUM on its answers (`comebackStep`, with the opening hold's

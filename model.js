@@ -678,9 +678,13 @@ const easyTrust = () =>
 // hierarchical photo Elo's estimate of the part of a photo's difficulty its genus shares), the one estimate everywhere
 // (drawW, shaky, stability, openPick); adding or curating out a photo never moves it. A unit with judged photos (p.e,
 // the fish) adds the mean of their judged-ease priors (photoDiff's), so it opens easiest first. 0 offline before the
-// sheet's first reply. Cleared when the photo stats change.
+// sheet's first reply. Kept per unit (GDIFF) for the data version it was made in (app.js DATA_V, GDV): the photo
+// statistics, the data and the tree in force and the subject each move that version, so a tree's new photos make it
+// again as the statistics do. Where model.js runs without app.js (the tools, the unit tests), it is cleared by hand.
 let GDIFF = {};
+let GDV = null;
 const genusDiff = n => {
+  if (typeof DATA_V === 'number' && GDV !== DATA_V) ((GDIFF = {}), (GDV = DATA_V));
   if (n in GDIFF) return GDIFF[n];
   // its reserved photos too (g.held: core.js heldOf), so a player's reserve does not move it
   const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e),
@@ -1687,10 +1691,10 @@ const rustAdd = (A, from, now, last) => {
     return t + rustOf(recallAt(n, now, last, st), o) - rustOf(recallAt(n, from, last, st), o);
   }, 0);
 };
-// Outside a visit and a comeback the rust is not counted (rustNow). The genus difficulties its sum would read are kept as
-// it would keep them: genusDiff keeps a unit's first value (GDIFF) until the photo statistics, the data or the subject
-// change, and a tree's new photos do not clear it, so which value it keeps must not move with this skip. The units: those
-// asked whose recall a stability reads (a time of their own or the player's last answer, before now), not learned.
+// Outside a visit and a comeback the rust is not counted (rustNow). The genus difficulties its sum would read are still
+// made (genusDiff), so the memo (GDIFF) holds what the sum would leave in it. Its values do not depend on it: the memo
+// follows the data version (genusDiff). The units: those asked whose recall a stability reads (a time of their own or the
+// player's last answer, before now), not learned.
 const rustSkip = (now, last) =>
   cbPlay().forEach(n => {
     const s = P[n] || {},
