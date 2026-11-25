@@ -153,9 +153,9 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
   resolution, one species) before looking, and judge the species under target first. A photo in doubt is looked at
   in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
-- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
-  runs out, take the next decided Linear issues (Todo), or ROADMAP rows not transferred yet, the agents can move alone;
-  never invent a study to fill the time.
+- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; the work is every open
+  issue without one of the five reasons ([Linear](#linear), 2026-11-25), whatever its column; never invent a study to
+  fill the time.
 - **A large judging or boxing pass is measured first, without asking him** (Pierre, 2026-11-20 06:42-06:44: «Il faut
   faire des tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; «Je ne devrais pas
   devoir te le suggérer»): a bench of 50-100 items, lighter configurations beside the strongest model, the threshold

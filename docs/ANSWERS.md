@@ -2146,3 +2146,12 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **06:43-06:46, a PR that waits for Pierre yields the lane.** On whether a PR blocks the rest by function or by
   method: «c'est pas la même chose en termes de blocage». To «une PR qui attend ta réponse cède la voie»: «oui !!!!!!»;
   to launching REE-38 at once: «ok»; to the W27 wording shown: «ok». Applied: docs/rules/ship.md W27.
+
+## 2026-11-26
+
+- **06:24-06:27, the sweep checks the condition behind a label (REE-244).** On no agent running at 06:20: «Tu n'avais
+  aucun agent qui tournait quand je me suis connecté. Ca veut dire que t'as tout fini. Ya plus rien dans le
+  backlog?» To the diagnosis (a label taken as a reason without checking it still held): «Il faut que le balayage
+  tienne compte de ça». To the three proposals (the sweep checks the written condition, not only the label; when a PR
+  frees a sensitive file, look at once for what waited on it; the brief's other signals — W6 branches, docs past their
+  size mark, outdated stack — count as work): «oui. Ok». Applied: tools/checkin.md steps 3-4.

@@ -14,13 +14,17 @@ live signals.
    five reasons of [INTEGRATOR "Linear"](../docs/INTEGRATOR.md#linear). List every open issue, whatever its column,
    and give an agent to each one that has no valid reason and is not already in progress, High first, as far as the
    machine slots allow (rule W24). Sensitive files go one PR at a time (rule W27); a held lane is no reason to idle:
-   launch the other lanes in parallel. A list of your own that is exhausted is not an empty queue. A judging or
-   re-judging pass over more than 100 photos waits for Pierre's explicit OK ([rule P7](../docs/rules/photos.md#p7)).
+   launch the other lanes in parallel. When a PR on a sensitive file merges, look at once for the issues that waited
+   on that lane. A list of your own that is exhausted is not an empty queue. The brief's other signals are work too:
+   branches with work and no PR (rule W6), docs past their size mark, outdated stack items. A judging or re-judging
+   pass over more than 100 photos waits for Pierre's explicit OK ([rule P7](../docs/rules/photos.md#p7)).
 4. **Sweep, about every 90 minutes,** from its own `send_later` ("Sweep: follow step 4 of tools/checkin.md"), day
    and night. One Sonnet agent re-checks every open issue that carries a reason, against what merged, what closed and
-   what Pierre answered since the last sweep. It moves to Todo each issue whose reason no longer holds, with one line
-   naming what unblocked it. It turns any free-text condition into a blocked-by relation, and reports the newly ready
-   issues. It launches nothing, merges nothing and settles no open question. The integrator then launches the ready
+   what Pierre answered since the last sweep. A label is a claim, not a reason: the sweep checks that the condition
+   behind it still holds today. A Waiting or Blocked label holds only with a blocked-by relation to an open issue or
+   PR, a Scheduled date, or a stated data gate with today's measure; a free-text condition is turned into one of
+   these, or the issue moves to Todo. It moves to Todo each issue whose reason no longer holds, with one line naming
+   what unblocked it, and reports the newly ready issues. It launches nothing, merges nothing and settles no open question. The integrator then launches the ready
    issues.
 5. **Upkeep.** Linear states for what moved; STATUS about every 90 minutes of work
    ([Habits](../docs/INTEGRATOR.md#habits)).
