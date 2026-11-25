@@ -356,7 +356,8 @@ function question(cur, target, choices, prompt, set, kq) {
   PENDSCI = null;
   const sub = c => (SCIQ ? (SCIQ.v === 'sc' ? (GX(c) || {}).cn || '' : '') : (GX(c) || {}).sci || '');
   let answered = false,
-    hintShown = false;
+    hintShown = false,
+    by = ''; // 'key' while a number key clicks its answer (the keys tip's counter)
   // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
@@ -425,7 +426,12 @@ function question(cur, target, choices, prompt, set, kq) {
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1];
     if (b) {
       e.preventDefault();
-      b.click();
+      by = 'key'; // the keys tip's counter (tipNote): this click is the key's own
+      try {
+        b.click();
+      } finally {
+        by = '';
+      }
     }
   };
   document.addEventListener('keydown', keys, {signal: viewKeys()});
@@ -460,10 +466,11 @@ function question(cur, target, choices, prompt, set, kq) {
     fitStage();
   };
   let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition
-  const go = c => {
+  // how: how the answer was picked, for the keys tip (tipNote): 'key', 'click' or '' (typed, touched, a script).
+  const go = (c, how = '') => {
     const hintOpen = hintShown, // read before showHint opens it for the feedback: a hint left closed was not seen
       cor = hintOpen || ph.some(p => p.view === 'macro' || p.view === 'close'),
-      tm = tm0 || {rt: qclockRead(), zm: QCLOCK.zm};
+      tm = {...(tm0 || {rt: qclockRead(), zm: QCLOCK.zm}), by: how};
     showHint();
     reveal();
     answered = true;
@@ -487,7 +494,11 @@ function question(cur, target, choices, prompt, set, kq) {
     const tr = $v.querySelector('.trail');
     if (tr) tr.outerHTML = trail();
   };
-  $v.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => go(b.dataset.c)));
+  // A real pointer click (detail 1 or more: a key or a script gives 0) on a device that shows the key marks (not a touch
+  // screen: the media query that hides the <kbd> marks) counts as a click; the number key's own click is a key.
+  $v.querySelectorAll('[data-c]').forEach(
+    b => (b.onclick = e => go(b.dataset.c, by || (e && e.detail > 0 && !matchMedia(MQ.touch).matches ? 'click' : '')))
+  );
   // A typed question: the genus read is the answer ('' for "I don't know"), what was typed goes with it (TYPEDQ).
   const tf = $v.querySelector('.tyform'),
     // the photo's own species (app.js photoTaxon): a name of part of the unit counts only when it designates them
@@ -1129,8 +1140,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
   // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run. The
-  // last argument: a miss on a question that offered the hint and left it closed (unseen), the hint tip's count.
-  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '', !good && !!unseen);
+  // next to last: a miss on a question that offered the hint and left it closed (unseen), the hint tip's count; the last,
+  // how the answer was picked (tm.by: 'key', 'click' or ''), the keys tip's counters.
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '', !good && !!unseen, tm.by);
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
@@ -1857,12 +1869,12 @@ const tipBasics = () => {
   const r = store.get(basicsKey(), {}) || {};
   return !r.last && !Object.keys(r.seen || {}).length;
 };
-function tipAfter(nb, cur, miss, zm, hold, ty = '', hm = false) {
+function tipAfter(nb, cur, miss, zm, hold, ty = '', hm = false, by = '') {
   const raw = store.get(TIPR.KEY, null);
   let st = tipsLoad(raw, false);
   const q0 = st.u.q,
     k0 = st.u.k;
-  st = tipNote(st, Date.now(), ty, hm);
+  st = tipNote(st, Date.now(), ty, hm, by);
   // Just seeded from the log, this answer included: its own count of the run (the seed ends with this answer already).
   if (!raw && q0 && ty) st = {...st, u: {...st.u, k: ty === 'idk' ? k0 : 0}};
   st = tipRun(st); // after the note: the log holds this answer, so the run it shows now is compared with the counter's
@@ -1877,7 +1889,8 @@ function tipAfter(nb, cur, miss, zm, hold, ty = '', hm = false) {
     mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0,
     bx: tipBasics() ? 1 : 0,
     hm,
-    hx: hintWords() ? 1 : 0
+    hx: hintWords() ? 1 : 0,
+    kb: matchMedia(MQ.touch).matches ? 0 : 1 // the key marks show (CSS kbd): a keyboard and a mouse, not a touch screen
   };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
@@ -1971,7 +1984,7 @@ function tipOut() {
   clearTimeout(tipOutT);
   tipOutT = 0;
   const ctx = () => (hashNow() || 'home').split('|')[0],
-    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0, hm: false, hx: 0});
+    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0, hm: false, hx: 0, kb: 0});
   if (!tipDue(tipsLoad(), b(), TIPS, Date.now())) return;
   const at = ctx();
   tipOutT = setTimeout(() => {

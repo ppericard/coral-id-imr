@@ -324,14 +324,14 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with eight tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with nine tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
   tip's `id`, `ctx` (the games whose break may show it; for the one tip with `out: true`, the pages outside the games,
   `home` and `progress`), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
   break's `b.mix`, for the basics tip `b.bx`, for the Identify tip `b.ix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
-  break: b = {ctx, miss, zm, mix, bx, ix, hm, hx}),
+  break: b = {ctx, miss, zm, mix, bx, ix, hm, hx, kb}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
   between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics, key, hint}, subj the `core.js` `SUBJECTS` record on
   screen, basics the `app.js` `UNITS` `basics` words of the subject, key its `UNITS` `idtip` words, hint its `UNITS` `hint` words: the text follows the
@@ -354,9 +354,12 @@ once a player uses it, how often is their choice. A small generic system with ei
   questions answered "I don't know" here since the last typed answer that was not one, `tipNote` through `tipAfter`, the
   log's trailing run folding in, `tipIdkRun`; `h` times the player tapped the corallites hint's link before answering,
   `quiz.js` `question()` through `tipOpened`, never the reveal after an answer; `w` misses on a question that offered the
-  hint and left it closed, `answer()` through `tipAfter` and `tipNote`), seeded once from the answers the device still
+  hint and left it closed, `answer()` through `tipAfter` and `tipNote`; `y` answers picked with a number key, `quiz.js`
+  `question()`'s key handler; `p` answers picked with a real mouse click on a device that shows the key marks, never a
+  tap on a touch screen, a key or a script), seeded once from the answers the device still
   holds (`LOG0` / `SYNC.log`: their count, `zm` flags and trailing run; a signed-in device holds only its unsent
-  answers), except `h` and `w`, which count from the device on (the log cannot say who opened the hint); `s` per tip the
+  answers), except `h`, `w`, `y` and `p`, which count from the device on (the log cannot say who opened the hint nor how
+  an answer was picked); `s` per tip the
   `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
@@ -456,12 +459,27 @@ once a player uses it, how often is their choice. A small generic system with ei
   no tip (`b.hx`; the counters are per device, so this is the gate). In the Quiz and the Custom quiz (a Duel tab question
   can offer the hint and its misses count, but the card shows in the two games only); **only** at the Next right after
   another such miss (`b.hm`; `wait: Infinity`: no other break will do, since the card names a link the question just
-  answered had); twice at most, the second 150 questions after the first; last of the seven when several are due. Card:
+  answered had); twice at most, the second 150 questions after the first; the seventh of the eight in-game tips when
+  several are due. Card:
   "Did you know?", "Stuck? Show the corallites", "Tap “Show the corallites (hint)” under the photos before you answer: it
   adds a close-up of the corallites, the detail that often tells look-alikes apart." ("Click" with a mouse) and **Got it**
   only (no `act`). Built with no measured audience (31 coral rows since the logging fix, 2 with the hint left closed, all
   from one player) for the players Pierre trains next, as tip (f)
   ([record](../decisions/2026-11-25-tip-g-corallites-hint.md)).
+- **The keyboard keys tip** (`id` `keys`, tip (h) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  with **30 or more** (`TIPR.CLICK`) answers picked with a real mouse click (counter `u.p`: `question()`'s answer button
+  with a click of detail 1 or more, which a key or a script gives 0, on a device that shows the key marks, that is not
+  `(hover: none), (pointer: coarse)`, the CSS rule that hides `<kbd>`) who never picked an answer with a number key
+  (counter `u.y`: the key handler of `question()`, which marks its own click so it is not counted as a mouse's). Only on
+  a device with a keyboard and a mouse (`b.kb`, `tipAfter`; a touch screen, where the marks are hidden, never gets it,
+  however many answers). Every subject's questions have the keys, so no subject gate and no subject word (rule S1). In
+  the Quiz and the Custom quiz (the Duel tab's questions count, the card shows in the two games only), at any break;
+  twice at most, the second 150 questions after the first; last of the eight in-game tips when several are due. Card:
+  "Did you know?", "Answer faster with the keyboard", "Press the number shown on an answer to pick it, then Enter for the
+  next question: no need to click." and **Got it** only (no `act`). Enter is not counted: a player who picks with
+  the number keys knows the marks, and Next shows its own. Built with no measured audience (the answer log has no
+  column for how an answer was picked) for the players Pierre trains next, as tips (f) and (g)
+  ([record](../decisions/2026-11-25-tip-h-keyboard-keys.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,
