@@ -81,6 +81,7 @@ const fresh = () => path.join(TMP, `w${++n}`);
   git(TMP, 'init', '-q', '-b', 'main', seed);
   for (const f of [
     'data.json',
+    'tools/instances/imr/course.json',
     'data/cand.json',
     'data/excluded.json',
     'fish-game.json',
@@ -159,6 +160,7 @@ const refused = (change, jobName, why, reason) => {
 test("photos-push commits the photos job's change on top of a main that moved, same message and files", () => {
   const change = build(d => {
     write(d, 'data.json', '{"a": 2}\n');
+    write(d, 'tools/instances/imr/course.json', '{"a": 2}\n'); // an excluded lecture photo leaves the course layer too
     // The licence refresh's sources of the fish photos in play (tools/licences.py).
     write(d, 'data/fish-cand.json', '{"a": 2}\n');
     write(d, 'tools/fish_refs.json', '{"a": 2}\n');
@@ -187,7 +189,8 @@ test("photos-push commits the photos job's change on top of a main that moved, s
     'M\tdata.json',
     'M\tdata/fish-cand.json',
     'M\tdata/seaslug-cand.json',
-    'M\ttools/fish_refs.json'
+    'M\ttools/fish_refs.json',
+    'M\ttools/instances/imr/course.json'
   ]);
   assert.deepStrictEqual(
     execFileSync('git', ['show', 'main:img/b.webp'], {cwd: ORIGIN, env: ENV}),

@@ -1365,7 +1365,7 @@ const nameTag = (p, S = ADM0) => {
 // badge on every photo tile, corals and fish: own, open (CC0, CC BY), NC, IMR (lecture), book; its licence in the title.
 // Information only: Inbox › Coverage › Rights counts them.
 const RIGHTS_L = {own: 'own', open: 'open', nc: 'NC', imr: 'IMR', book: 'book'};
-// The terms of the sites an IMR lecture photo was traced to (tools/imr_sources.json terms), by the host of its pg.
+// The terms of the sites an IMR lecture photo was traced to (tools/instances/imr/imr_sources.json terms), by the host of its pg.
 const LECT_TERMS = {
   'www.coralsoftheworld.org': 'Corals of the World terms: personal, non-commercial or academic use with citation; all other rights reserved'
 };
