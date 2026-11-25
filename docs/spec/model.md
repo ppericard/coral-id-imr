@@ -102,8 +102,9 @@ nothing read on the way is kept under the version a visit puts back.
 
 The on-screen subject's own sync still moves the state version: `mergeSaved` merges the subject on screen in place, and
 its merge stores its first-launch record (`model.js` `startMerge`), its progress (`sync.js` `mergeSubject`) and
-recalculates (`mxRecalc`) at each sync, whatever changed: the state views are made again once a sync, after it, where
-each visit made them again before (`tools/answercost.js --syncs`).
+recalculates (`mxRecalc`) at each sync, whatever changed: the state views read in a sync are still made again after
+those writes (once a sync for the corals on screen, three times for the fish and the sea slugs, where each visit made
+them again before: `tools/answercost.js --syncs`).
 
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
