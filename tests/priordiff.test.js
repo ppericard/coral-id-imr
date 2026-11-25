@@ -91,7 +91,7 @@ const run = code => {
   vm.runInNewContext(
     [
       block(src, 'function treePrior(S, ease, own, unit, mid) {', '\n}\n', {file: 'admin.js', through: true}),
-      block(src, 'function treeEaseMids(R, easeOf) {', '\n}\n', {file: 'admin.js', through: true}),
+      block(src, 'function treeEaseMids(R, easeOf, inPlay = () => true) {', '\n}\n', {file: 'admin.js', through: true}),
       block(src, 'function priorHnum(P) {', '\n}\n', {file: 'admin.js', through: true}),
       code
     ].join('\n'),
@@ -129,10 +129,12 @@ test('treeEaseMids and treePrior: a photo’s prior centred on its family’s me
     ease = {a: 5, b: 4, c: 3, d: 2},
     own = {gd: {'g:A1': [0.4, 12]}, photos: {}, v: 189},
     r = run(`const M = treeEaseMids(${JSON.stringify(R)}, f => (${JSON.stringify(ease)})[f] || null);
-      this.r = [M, treePrior(${JSON.stringify(S)}, 5, ${JSON.stringify(own)}, 'g:A1', M['f:A'])];`),
+      this.r = [M, treePrior(${JSON.stringify(S)}, 5, ${JSON.stringify(own)}, 'g:A1', M['f:A']),
+        treeEaseMids(${JSON.stringify(R)}, f => (${JSON.stringify(ease)})[f] || null, f => f !== 'a')];`),
     ce = C.calibOf(S).ease;
   assert.deepStrictEqual(r[0], {'f:A': 4, 'f:B': 2}, 'the family’s photos, its genera’s included; a photo with no ease left out');
   assert.ok(Math.abs(r[1].d - (0.4 - ce)) < 1e-9, 'ease 5 in a family whose mean is 4: one point below its unit');
+  assert.deepStrictEqual(r[2], {'f:A': 3.5, 'f:B': 2}, 'a photo out of play (removed, Not this) left out of the mean');
 });
 
 test('priorHnum: the caption line names the ease and says in its title what it lacked', () => {

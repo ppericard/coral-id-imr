@@ -5388,7 +5388,14 @@ const REVIEW_BUILD = {
             }
             const V = FISHC ? readView(fuData().F) : null,
               easeOf = f => (V ? ((V.ease || {})[f] != null ? V.ease[f] : (fuJ(f) || {}).e) : null),
-              mids = rows.length && V ? treeEaseMids(FISHA, easeOf) : {},
+              playing = V
+                ? new Set(
+                    Object.values(fuDataM().D.play)
+                      .flat()
+                      .map(p => p.f)
+                  )
+                : null,
+              mids = rows.length && V ? treeEaseMids(FISHA, easeOf, f => playing.has(f)) : {},
               midOf = f => mids[(FISHA.fam || {})[FISHA.ph[f].entry] || FISHA.ph[f].entry],
               plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
               num = o => {
@@ -9475,13 +9482,15 @@ function treePrior(S, ease, own, unit, mid) {
   return d === null ? null : {d, ease: ease > 0 ? ease : null, off: Number.isFinite(o) ? o : null};
 }
 // The centre of the judged ease in each family of registry R (model.js easeMid): {family: the mean ease in force
-// (easeOf) of the photos it holds}, a photo's family its unit's (R.fam: a genus's or a species', a family its own).
-function treeEaseMids(R, easeOf) {
+// (easeOf) of the photos it holds in play}, a photo's family its unit's (R.fam: a genus's or a species', a family its
+// own). The registry keeps every photo a report may name, removed or sent elsewhere too, so inPlay(f) keeps the game's
+// pool only, as the app's mean is taken (fuData play: the photos in play, the reserve among them).
+function treeEaseMids(R, easeOf, inPlay = () => true) {
   const sum = {};
   Object.entries((R && R.ph) || {}).forEach(([f, p]) => {
     const e = easeOf(f),
       fam = (R.fam || {})[p.entry] || p.entry;
-    if (!(e > 0) || !fam) return;
+    if (!(e > 0) || !fam || !inPlay(f)) return;
     const s = (sum[fam] = sum[fam] || [0, 0]);
     s[0] += e;
     s[1]++;

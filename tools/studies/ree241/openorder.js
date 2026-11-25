@@ -9,8 +9,9 @@
 // it every offset is 0 (as in CI) and the judged ease is the only order the app has. Inside the app's own page (model.js,
 // app.js as they are), for the subject's base units (slateGenera: the fish families, the sea slug genera):
 //   - each unit's difficulty (genusDiff) and its family (model.js easeTop where the arm has it, else its parent);
-//   - the opening sequence of a fresh player ("I'm new": no IMR filter): openPick drawn again and again on the units not
-//     met yet, each drawn unit then met (introAdd is not called: the draw alone, the pace and the timing aside), --seqs
+//   - the opening sequence of a fresh player ("I'm new": no IMR filter): the first INTRO.START cards as quiz.js
+//     introStart draws them (openPick first), then openPick drawn again and again on the units not met yet, each drawn
+//     unit then met (introAdd is not called: the draw alone, the pace and the timing aside), --seqs
 //     sequences from a fixed seed; per unit its mean rank and its chance to be in the first 8 and 16 openings, the
 //     starter core first as the app has it.
 // The measures the PR reads are in docs/LEARNING.md "The judged ease, within a family".
@@ -97,7 +98,9 @@ function measure({seqs}) {
     while (left.length) {
       const c = Math.min(...left.map(circ)),
         fresh = left.filter(x => circ(x) === c),
-        n = openPick(fresh, L, isMet);
+        // the first INTRO.START cards as quiz.js introStart draws them (first: unit by unit, no group partner first, the
+        // cards drawn before counted as met); then the path's ordinary draw
+        n = i < INTRO.START ? openPick(fresh, fresh, isMet, {first: true}) : openPick(fresh, L, isMet);
       met.add(n);
       left = left.filter(x => x !== n);
       const u = units[n];

@@ -2,7 +2,8 @@
 
 The files beside this one (aggregates only, no player): `cmp_<subject>_<truth>.txt` the 5-seed app-world comparisons,
 `cmp10_<subject>.txt` the 10-seed second look on cen (`tools/learncmp.js` output); `replay.txt` the real-log replay
-(`replay.py`, raw, adapt and center). The commit in a comparison's first line is the tools' (learnsim's own checkout);
+(`replay.py`, raw, adapt and center); `order_<subject>_offsets-<yes|no>.txt` the exact opening orders, main against the
+change, with and without the sheet's offsets (`openorder.js`, 500 sequences each, then `ordercmp.py`). The commit in a comparison's first line is the tools' (learnsim's own checkout);
 the main arm was origin/main a2bdfb22 served with `--root`, the change the branch. The rated world's reports are in the
 learncheck workflow runs 45506062968-45506079884 (10 seeds) and 45509664525-45509676258 (20 seeds).
 

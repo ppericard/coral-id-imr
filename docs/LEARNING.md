@@ -891,22 +891,23 @@ its parents (a fish family itself; a fish genus or species, a sea slug genus or 
 on every record of both trees (1,625 fish and 317 sea slug families, genera and species, each centred on its family
 record).
 
-**What players see** (the exact opening order of a fresh player, `openPick` drawn on the units not met, a circle after
-the one before it, 500 to 2,000 sequences; `tools/studies/ree241/openorder.js`, `ordercmp.py`). The starter core opens
-first either way. With the sheet's offsets as served:
+**What players see** (the exact opening order of a fresh player: the first `INTRO.START` cards as `quiz.js`
+`introStart` draws them, then `openPick` on the units not met, a circle after the one before it, 500 sequences;
+`tools/studies/ree241/openorder.js`, `ordercmp.py`). The starter core opens first either way. With the sheet's offsets as
+served (rank correlations, Spearman):
 
 | Subject | Units | Moving 2 places or more | Largest move | Rank against mean ease, circle 1: main → change | Circle 3 |
 | --- | --- | --- | --- | --- | --- |
-| Fish | 65 families | 15 | 6.9 | +0.01 → +0.07 | −0.40 → +0.12 |
-| Sea slugs | 78 genera | 12 | 5.6 | −0.30 → −0.13 | −0.63 → −0.18 |
+| Fish | 65 families | 11 | 5.8 | +0.01 → +0.09 | −0.36 → +0.13 |
+| Sea slugs | 78 genera | 14 | 5.4 | −0.37 → −0.18 | −0.63 → −0.18 |
 
-- Fish, circle 1: little moves, since the offsets dominate (Fusiliers among the first 16 openings 0.48 → 0.63;
-  Anthias 0.92 → 0.81, Cardinalfishes and Soldierfishes about 0.17 → 0.12). Circle 3 moves most: Needlefishes,
-  Convict Blennies, Tunas, Stingrays, Jawfishes, Cornetfishes and Garden Eels 2 to 4 places earlier; Bigeyes,
-  Stargazers, Triplefins and Hawkfishes 3 to 7 later. Without offsets (a unit nobody has answered) the ease was the
-  only order: circle 1's rank against ease −0.40 → +0.07.
-- Sea slugs, circle 1: Melibe and Costasiella among the first 16 openings 0.48 → 0.74 and 0.53 → 0.76; Reticulidia
-  0.96 → 0.89.
+- Fish, circle 1: little moves, since the offsets dominate (Fusiliers among the first 16 openings 0.55 → 0.68;
+  Anthias 0.92 → 0.84, Cardinalfishes and Soldierfishes 0.17 → 0.11). Circle 3 moves most: Needlefishes, Convict
+  Blennies, Jawfishes, Jacks, Sea Moths, Tunas and Stingrays 2 to 5 places earlier; Bigeyes, Triplefins, Stargazers
+  and Hawkfishes 3 to 6 later. Without offsets (a unit nobody has answered) the ease was the only order: circle 1's
+  rank against ease −0.34 → +0.09.
+- Sea slugs, circle 1: Melibe and Costasiella among the first 16 openings 0.50 → 0.79 and 0.57 → 0.77; Hypselodoris
+  0.80 → 0.62, Hexabranchus 0.82 → 0.67, Reticulidia 0.96 → 0.88.
 - **The level moves too.** A unit's mean prior was (3 − its mean ease) × 0.3; centred it is 0, its offset alone. The
   sea slugs' photos average ease 3.58, so their units are rated about 0.17 logit harder on average than before
   (the fish: 2.89, 0.03 easier). For a unit the sheet has rated, the offset is what the answers say, and the old prior
