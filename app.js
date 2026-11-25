@@ -864,6 +864,9 @@ function build() {
     applyForms(x, CUR);
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
+  // The units each ★ genus opens after, on its record (core.js starAfter: the opening reads GX(n).after for every subject),
+  // last: its look-alikes and lecture groups are final.
+  starAfter(d);
   // What the corals' units were made from, for the content version of their answers (contentVer), kept out of sight on
   // the data made (not enumerable: nothing that reads or copies DATA meets it).
   Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
