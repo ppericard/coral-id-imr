@@ -10353,6 +10353,24 @@ function sheetEarly(h) {
   };
   need.forEach(k => Promise.resolve(go[k]()).catch(() => {}));
 }
+// The answer log in its lean form (rule D4; Code.gs answers_ with lean, core.js rowsPack): about half the bytes of its
+// rows, the largest wait of the admin's opening on a phone. The read always asks for it (an older script ignores the
+// field and sends rows as before); a reply is read as lean only from the script version that serves it, and comes back
+// as exactly the rows it stands for (rowsUnpack), so no page reads anything else.
+const LEAN_SHEET = 232;
+const leanOn = j => !!j && !!j.lean && Number(j.v) >= LEAN_SHEET;
+// The rows of a readAnswers reply j, in place: its lean form read back into j.rows (dropped once read); one it cannot read
+// leaves no rows, so the page says the log could not be read rather than showing part of it.
+function leanIn(j) {
+  if (!leanOn(j)) return;
+  try {
+    j.rows = rowsUnpack(j.lean);
+  } catch (e) {
+    j.rows = null;
+    j.error = 'lean';
+  }
+  delete j.lean;
+}
 // ratingsOnly (Photo stats › Overview): the photo ratings alone (?stats=1), not the whole answer log.
 function loadStats(ratingsOnly) {
   // The sheet keeps the anonymous-id salt secret and returns the caller's own id (me) for its name and code; the local
@@ -10404,7 +10422,7 @@ function loadStats(ratingsOnly) {
     : sheetRead('ans', fresh =>
         Promise.all([
           TOKEN
-            ? post({readAnswers: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
+            ? post({readAnswers: 1, lean: 1, ...(me && sy.pin ? {aname: me, apin: sy.pin} : {})}).then(j => old(j, '?answers=1' + who))
             : {ok: false, error: 'token'},
           digest,
           // The answer log is published with the photo ratings, never before them: the pages that
@@ -10413,6 +10431,7 @@ function loadStats(ratingsOnly) {
         ]).then(([a]) => {
           if (!fresh()) return;
           if (a && a.me) MEID = a.me;
+          leanIn(a);
           ANS = a && a.ok && a.rows ? a : {old: true, v: a && a.v, err: a && a.error, rows: [], players: {}};
           // Every page reads the replayed subject's answers (the corals'; core.js subjRows; the sheet logs every
           // subject's): a fish answer counts in no coral page, Health, journey or analysis. ANS.all keeps every subject's

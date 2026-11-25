@@ -1782,7 +1782,17 @@
               }
             : {ok: false, error: 'input'}
         );
-      if (p.readAnswers) return ok(answers());
+      // The admin asks for the log lean (admin.js leanOn): served so from LEAN_SHEET, as Code.gs answers_ does (core.js
+      // rowsPack); its rows otherwise.
+      if (p.readAnswers) {
+        const a = answers(),
+          lean = p.lean && V >= LEAN_SHEET ? rowsPack(a.rows) : null;
+        if (lean) {
+          a.lean = lean;
+          delete a.rows;
+        }
+        return ok(a);
+      }
       if (p.readStats) return ok(stats());
       // The light read (liveReply).
       if (p.readLive) return ok(liveReply());

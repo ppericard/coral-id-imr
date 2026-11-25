@@ -416,7 +416,9 @@
     dataSum,
     sameText,
     dataDelta,
-    dataPatch
+    dataPatch,
+    rowsPack,
+    rowsUnpack
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);

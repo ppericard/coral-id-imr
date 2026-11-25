@@ -218,14 +218,17 @@ test('typedText: the refused texts (Rejected tries, row 23), trusted typed answe
     Object.assign(ty('a', ['removed']), {11: 2}),
     Object.assign(row('a', 'Pavona', 'Porites', 0, 'quiz', 'p1', 'Pavona Porites Favites Montipora'), {23: ['not typed']})
   );
-  const T = typedText(R);
-  assert.strictEqual(T.n, 7);
-  assert.deepStrictEqual(T.rej, [3, 6]);
-  assert.deepStrictEqual(T.refused, [
-    ['xyz', 3],
-    ['brain coral', 2],
-    ['acro', 1]
-  ]);
+  // the rows as the plain reply gives them and as the admin reads a lean one back (core.js rowsPack, rowsUnpack): the same
+  const wire = L => C.rowsUnpack(JSON.parse(JSON.stringify(C.rowsPack(L))));
+  for (const T of [typedText(R), typedText(wire(R))]) {
+    assert.strictEqual(T.n, 7);
+    assert.deepStrictEqual(T.rej, [3, 6]);
+    assert.deepStrictEqual(T.refused, [
+      ['xyz', 3],
+      ['brain coral', 2],
+      ['acro', 1]
+    ]);
+  }
   // a text that is a name of Object.prototype counts as any other (what players type is a key)
   const P = typedText([...R.slice(0, 12), ty('a', ['constructor', '__proto__']), ty('a', ['Constructor', 'toString'])]);
   assert.deepStrictEqual(P.refused, [
@@ -233,6 +236,6 @@ test('typedText: the refused texts (Rejected tries, row 23), trusted typed answe
     ['__proto__', 1],
     ['tostring', 1]
   ]);
-  const old = typedText(R.map(r => r.slice(0, 23)));
-  assert.deepStrictEqual([old.rej, old.refused], [[0, 0], []], 'an older script serves none: nothing shows');
+  for (const old of [typedText(R.map(r => r.slice(0, 23))), typedText(wire(R.map(r => r.slice(0, 23))))])
+    assert.deepStrictEqual([old.rej, old.refused], [[0, 0], []], 'an older script serves none: nothing shows');
 });
