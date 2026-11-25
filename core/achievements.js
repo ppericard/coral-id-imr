@@ -37,8 +37,8 @@
     ['elo1200', 'Elo 1200', 'Reached an Elo of 1200', 2, '⭐', s => s.elo >= 1200],
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
-    ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    ['group', 'Group complete', `You know a whole ${ORG.lecture} group`, 3, '🧩', s => s.group],
+    ['bonus', 'Off the list', `You met a bonus genus, off the ${ORG.list}`, 2, '🔓', s => s.bonus >= 1],
     // Coral basics done: every step of the module seen (proto/basics.js), a
     // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
     ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics],
@@ -71,7 +71,7 @@
       s => s.basics
     ],
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetcore', 'Roll call', `Met every family of the ${ORG.course}`, 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
     ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
     ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
@@ -85,7 +85,7 @@
     [
       'fcoreadv',
       'House reef',
-      'Every family of the IMR course at Advanced level or above (80%+)',
+      `Every family of the ${ORG.course} at Advanced level or above (80%+)`,
       2,
       '🗺️',
       s => s.core.total && s.core.adv >= s.core.total
@@ -93,7 +93,7 @@
     [
       'fc2',
       'Supporting cast',
-      'Every family that opens right after the IMR course’s at Advanced level or above',
+      `Every family that opens right after the ${ORG.course}’s at Advanced level or above`,
       2,
       '🗺️',
       s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
@@ -101,7 +101,7 @@
     [
       'fc3adv',
       'Muck diver',
-      '20 families beyond the IMR course at Advanced level or above',
+      `20 families beyond the ${ORG.course} at Advanced level or above`,
       3,
       '🗺️',
       s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
@@ -109,7 +109,7 @@
     [
       'flearncore',
       'Transect master',
-      'You know every family of the IMR course for sure',
+      `You know every family of the ${ORG.course} for sure`,
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
@@ -160,7 +160,7 @@
     [
       'fdauin20',
       'Local legend',
-      "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names",
+      `Dauin's top 20 (the 20 species of the ${ORG.course}'s families most seen around Dauin) at Advanced level or above by their scientific names`,
       3,
       '🗺️',
       s => !!(s.top && s.top.total && s.top.adv >= s.top.total)

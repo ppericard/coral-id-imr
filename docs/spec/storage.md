@@ -20,8 +20,16 @@ organisation words** of `index.html`, `privacy.html`, `admin.html` and `tools/og
 whole word "IMR" becomes `ORG.short` and "Institute for Marine Research" becomes `ORG.name` (HTML-escaped), so the
 survey lists line of `index.html`'s description, the "Non-IMR genera" labels and `privacy.html`'s prose follow a fork's
 `ORG` and read as before in the IMR edition; CI's `--check` covers them. Not covered: the organisation's words in pages
-built by JS, which read `ORG` themselves, and the course's vocabulary ("IMR list", "IMR lecture"), which has no `ORG`
-field yet. Things outside the repository kept their
+built by JS, which read `ORG` themselves. **The course's words** are `ORG` fields too, each a whole name without its
+article, at today's values: `course` (IMR course), `lecture` (IMR lecture: its notes, groups and photos), `lectureRef`
+(IMR Lecture 6, as a reference names it), `fishPres` (IMR fish presentation), `list`, `slate` and `benthic` (the
+survey's coral list, slate and benthic slate), `trainer` (IMR trainer); a phrase not listed builds on `ORG.short`
+("At IMR or elsewhere"). The core (`core/subjects.js`, `core/achievements.js`, `core/tree.js`) writes its texts from
+them; the players' and the admin's pages follow (REE-34). The data's own values (the source lines "IMR Lecture 6, slide …"
+and "IMR fish presentation, …" in `data.json` and `fish.json`) and the identifiers (`imr` fields, `cqByIMR`) keep their words: code derives what it matches from `ORG`.
+`tests/orgwords.test.js` counts the word "IMR" still written in the code outside comments, per file, against the lines
+left to move and the few that stay (the sheet backups' pCloud folder, the rules versions' records)
+([decision](../decisions/2026-11-25-org-course-words.md)). Things outside the repository kept their
 old name: the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync".
 
 **`tools/rename_app.py`** applies every mechanical part of the rename (the visible name, the storage keys, the shell

@@ -1705,3 +1705,107 @@ test('mergeUsers merges the first-launch histories (Codex review #428)', () => {
     assert.strictEqual(C.startPriorAt(o, 300), C.startVars('imr').p);
   }
 });
+
+// The organisation's course words (core.js ORG; docs/decisions/2026-11-25-org-course-words.md): the core writes its
+// texts from them, and the IMR edition's texts are the ones it had before, byte for byte.
+const FAM_FIXTURE = {
+  families: [
+    {id: 'f:A', name: 'As', sci: ['Aidae'], imr: 'Aa', species: ['s1'], look: [['f:B']], sl: [3, 4]},
+    {id: 'f:B', name: 'Bs', sci: ['Bidae'], imrWith: 'As', species: ['s2']}
+  ],
+  species: [
+    {id: 's1', name: 'X one'},
+    {id: 's2', name: 'Y two'}
+  ],
+  genera: []
+};
+// core.js with another ORG, evaluated on its own (a fork's edition).
+const coreWith = org => {
+  const src = require('fs')
+      .readFileSync(require('path').join(__dirname, '..', 'core.js'), 'utf8')
+      .replace(/const ORG = \{[^}]*\}/, 'const ORG = ' + JSON.stringify(org)),
+    m = {exports: {}};
+  require('vm').runInNewContext(src, {module: m});
+  return m.exports;
+};
+
+test('ORG: the course words of the IMR edition', () => {
+  const {ORG} = require('../core.js');
+  assert.deepStrictEqual(ORG, {
+    short: 'IMR',
+    name: 'Institute for Marine Research',
+    app: 'IMR Reef ID',
+    appShort: 'Reef ID',
+    course: 'IMR course',
+    lecture: 'IMR lecture',
+    lectureRef: 'IMR Lecture 6',
+    fishPres: 'IMR fish presentation',
+    list: 'IMR list',
+    slate: 'IMR slate',
+    benthic: 'IMR benthic slate',
+    trainer: 'IMR trainer'
+  });
+});
+
+test('ORG: the texts the core writes from it are the IMR edition’s, byte for byte', () => {
+  const C = require('../core.js'),
+    S = id => C.SUBJECTS.find(x => x.id === id),
+    coral = S('coral'),
+    fish = S('fish'),
+    desc = (L, id) => L.find(a => a.id === id).desc;
+  assert.strictEqual(coral.lecture, 'the IMR coral lecture');
+  assert.deepStrictEqual(
+    coral.content.genus.slots.filter(x => ['imr', 'check'].includes(x.k)).map(x => x.n),
+    ['IMR lecture notes', 'To check with an IMR trainer']
+  );
+  assert.deepStrictEqual(coral.start.opts.imr, ['I had the IMR coral course', 'You have met the genera in the IMR lecture.']);
+  assert.deepStrictEqual(coral.start.opts.know, ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']);
+  assert.deepStrictEqual(coral.admin.origins[0], ['imr', 'IMR lecture', 'IMR']);
+  assert.strictEqual(fish.lecture, 'the IMR fish presentation');
+  assert.deepStrictEqual(fish.start.opts.imr, ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.']);
+  assert.deepStrictEqual(fish.admin.circles, {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'});
+  assert.strictEqual(desc(C.ACH, 'group'), 'You know a whole IMR lecture group');
+  assert.strictEqual(desc(C.ACH, 'bonus'), 'You met a bonus genus, off the IMR list');
+  assert.strictEqual(desc(C.FISH_ACH, 'fmetcore'), 'Met every family of the IMR course');
+  assert.strictEqual(desc(C.FISH_ACH, 'fcoreadv'), 'Every family of the IMR course at Advanced level or above (80%+)');
+  assert.strictEqual(desc(C.FISH_ACH, 'fc2'), 'Every family that opens right after the IMR course’s at Advanced level or above');
+  assert.strictEqual(desc(C.FISH_ACH, 'fc3adv'), '20 families beyond the IMR course at Advanced level or above');
+  assert.strictEqual(desc(C.FISH_ACH, 'flearncore'), 'You know every family of the IMR course for sure');
+  assert.strictEqual(
+    desc(C.FISH_ACH, 'fdauin20'),
+    "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names"
+  );
+  const g = C.treeGen(FAM_FIXTURE, {}).gen;
+  assert.strictEqual(g['f:A'].fam, 'Aidae · IMR: Aa');
+  assert.strictEqual(g['f:B'].fam, 'Bidae · IMR course: with the As');
+  assert.deepStrictEqual(g['f:A'].lsrc, {'f:B': 'IMR fish presentation, slide 3, 4'});
+});
+
+test('ORG: a fork’s edition writes its own words, never IMR’s, in every text the core builds from ORG', () => {
+  const org = {
+      short: 'RRC',
+      name: 'Reef Research Centre',
+      app: 'RRC Reef ID',
+      appShort: 'Reef ID',
+      course: 'RRC training',
+      lecture: 'RRC talk',
+      lectureRef: 'RRC Talk 2',
+      fishPres: 'RRC fish talk',
+      list: 'RRC list',
+      slate: 'RRC slate',
+      benthic: 'RRC benthic slate',
+      trainer: 'RRC guide'
+    },
+    C = coreWith(org),
+    texts = JSON.stringify([C.SUBJECTS, C.ACH, C.FISH_ACH, C.SEASLUG_ACH, C.treeGen(FAM_FIXTURE, {}).gen]);
+  assert.deepStrictEqual({...C.ORG}, org);
+  assert.ok(!/\bIMR\b/.test(texts), (texts.match(/.{0,60}\bIMR\b.{0,60}/) || [''])[0]);
+  const g = C.treeGen(FAM_FIXTURE, {}).gen,
+    coral = C.SUBJECTS.find(x => x.id === 'coral');
+  assert.strictEqual(g['f:A'].fam, 'Aidae · RRC: Aa');
+  assert.strictEqual(g['f:B'].fam, 'Bidae · RRC training: with the As');
+  assert.deepStrictEqual({...g['f:A'].lsrc}, {'f:B': 'RRC fish talk, slide 3, 4'});
+  assert.strictEqual(C.SUBJECTS.find(x => x.id === 'fish').admin.circles[1], 'RRC training');
+  assert.strictEqual(coral.content.genus.slots.find(x => x.k === 'check').n, 'To check with an RRC guide');
+  assert.strictEqual(C.ACH.find(a => a.id === 'bonus').desc, 'You met a bonus genus, off the RRC list');
+});
