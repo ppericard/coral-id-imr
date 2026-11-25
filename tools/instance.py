@@ -9,7 +9,8 @@ here (rule A1).
 
 tools/instance.json names the instance (id, name), its centre (presence near it: tools/presence.py, rule C8), the
 identification key in force there (key: the deployment's choice, laid by fish_source as deploy.key, rule S3) and its
-layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance's, in tools/instances/imr/:
+layer files, one per subject (SUBJECTS key: fish, coral) and one for the lecture's photo records (course). Today the IMR
+instance's, in tools/instances/imr/:
 
 - fish: start (the starter core), look (the declared look-alike groups of families), nodes {teaching node id:
   {circle, src, sign, name, fam, pdf, sl, cues, look, phase}} (a sub-entry: name, sl, cues, look, phase) and species
@@ -37,7 +38,17 @@ layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance
   then python3 tools/datajson.py; dump() refuses a data.json whose fields, or a pair's line or direction, differ from the
   layer, so an edit made in data.json is never lost silently. A pair taken out of the layer stays in data.json until it
   is taken out there too (data.json alone cannot tell it from a Coral Finder pair; tests/instance.test.js fails on a
-  lecture line left in the sources).
+  lecture line left in the sources). slate {order, benthic} declares the IMR slate: the genera of data.json gen in the
+  order the games teach them (the numbered ones, then the starred) and the genera of data.json x that the core adds
+  (core/photos.js BENTHIC). Nothing reads it at run time; python3 tools/datajson.py --check compares it with data.json
+  and the core (slate_problems).
+- course: course {genus: [photo record]} and cmp [record], the references of the IMR lecture's photos (data.json
+  course, 118 records, and the lecture's cmp record, the one with imr: true; the photos themselves stay in img/ and on
+  R2). data.json carries a copy where it always had them. The layer file is where they are edited: datajson.dump()
+  writes the course and the lecture's cmp records it changes from the data.json on disk to the layer file and data.json
+  gets the same (so the tools that write data.json do not change; one that reads data.json itself and leaves them alone
+  does not undo an edit of the layer file), datajson.load() lays the layer on what it reads, and the rewrite and --check
+  give data.json as the layer says. A cmp record without imr: true is the sources', and stays in data.json.
 
 Another instance gets its own instance.json and layer files; a subject with no layer file builds with no layer (fish:
 every node in circle 1 by the build's default, no declared pair, no starter core).
@@ -81,7 +92,9 @@ FISH_TOP = ("start", "look")
 CORAL_AFTER = {"n": "tr", "ig": "n", "imr": "ig", "mn": "imr", "sl": "lsrc", "qt": "sl", "rsl": "sl"}
 CORAL_TOP_AFTER = {"imrg": "key"}
 CORAL_PAIR_AFTER = {"look": "crit", "lsrc": "levels"}  # where a genus's look and lsrc sit, should a record lack them
-SPLIT = ("nodes", "species", "gen", "pairs")  # a layer file's maps written one entry per line
+COURSE_AFTER = {"course": "traits", "cmp": "cand"}  # where data.json has always had the lecture's photo records
+COURSE_KEYS = ("_doc", "course", "cmp")  # the course layer file's keys
+SPLIT = ("nodes", "species", "gen", "pairs", "course")  # a layer file's maps written one entry per line
 
 
 def instance(path=INSTANCE_PATH):
@@ -357,6 +370,108 @@ def coral_layered(d, lay=None):
     return coral_compose(d, lay)
 
 
+def slate_problems(d, lay, benthic):
+    """How data.json (d) and the core's BENTHIC list (benthic) differ from the slate the coral layer declares (lay slate
+    {order, benthic}); [] when they agree or the layer declares none. The slate is the genera of d gen in their order, the
+    numbered genera (n 1, 2, …) then the starred (n 0), and the genera of benthic that d x gen holds (core/photos.js
+    slateOf). Nothing reads the declaration at run time: this is its check."""
+    s = lay.get("slate")
+    if s is None:
+        return []
+    out = []
+    if set(s) != {"order", "benthic"}:
+        return [f"the layer's slate has {sorted(s)}, not order and benthic"]
+    order = list(d.get("gen") or {})
+    if s["order"] != order:
+        at = next((i for i, (a, b) in enumerate(zip(s["order"], order)) if a != b), min(len(s["order"]), len(order)))
+        out.append(f"slate order: the layer's differs from data.json gen at {at + 1} "
+                   f"({(s['order'] + [None])[at]!r} against {(order + [None])[at]!r}; {len(s['order'])} and {len(order)} genera)")
+    if s["benthic"] != list(benthic):
+        out.append(f"slate benthic: the layer's {s['benthic']} differs from the core's BENTHIC {list(benthic)}")
+    xgen = (d.get("x") or {}).get("gen") or {}
+    out += [f"slate benthic {g}: not a genus of data.json x gen" for g in s["benthic"] if g not in xgen]
+    ns = [((lay.get("gen") or {}).get(g) or {}).get("n") for g in s["order"]]
+    numbered = [n for n in ns if n != 0]
+    if numbered != list(range(1, len(numbered) + 1)) or ns[:len(numbered)] != numbered:
+        out.append("slate order: the numbered genera are not 1, 2, … in order, then the starred (n 0)")
+    return out
+
+
+# --- the lecture's photo records -------------------------------------------------------------------------------------
+
+def course_lecture(rec):
+    """Whether a cmp record (data.json) is the lecture's: its photo is the lecture's slide (imr: true)."""
+    return rec.get("imr") is True
+
+
+def course_problems(lay):
+    """What is wrong with a course layer file (lay): a key it should not have, a record that is not the lecture's."""
+    return ([f"{k}: not a key of the course layer ({', '.join(COURSE_KEYS)})" for k in lay if k not in COURSE_KEYS]
+            + [f"course {g} {r.get('f')}: not a lecture photo (imr: true)"
+               for g, L in (lay.get("course") or {}).items() for r in L if not course_lecture(r)]
+            + [f"cmp {r.get('f')}: not a lecture photo (imr: true)" for r in lay.get("cmp") or [] if not course_lecture(r)])
+
+
+def course_strip(d):
+    """data.json without the lecture's photo records (the sources alone): a copy without course and without the cmp
+    records of the lecture."""
+    d = copy.deepcopy(d)
+    d.pop("course", None)
+    if "cmp" in d:
+        d["cmp"] = [r for r in d["cmp"] if not course_lecture(r)]
+    return d
+
+
+def course_compose(d, lay):
+    """d with the course layer (lay course, cmp) laid on, its records where data.json has always had them (COURSE_AFTER):
+    the layer's course replaces d's, the layer's cmp records come before the sources' own. A new copy."""
+    d = course_strip(d)
+    _put(d, "course", copy.deepcopy(lay.get("course") or {}), COURSE_AFTER["course"])
+    cmp = copy.deepcopy(lay.get("cmp") or []) + d.get("cmp", [])
+    if cmp or "cmp" in d:
+        _put(d, "cmp", cmp, COURSE_AFTER["cmp"])
+    return d
+
+
+def course_differs(d, lay):
+    """What of d (data.json) is not what the course layer gives: ["course"], ["cmp"], both or none."""
+    mine = (("course", d.get("course")), ("cmp", [r for r in d.get("cmp", []) if course_lecture(r)]))
+    # By their text: the order of the genera and of a record's fields is the file's bytes.
+    return [k for k, v in mine if json.dumps(v) != json.dumps(lay.get(k) or ({} if k == "course" else []))]
+
+
+def course_part(d, k):
+    """The course layer's field k ("course" or "cmp") as data.json (d) holds it, as text (the order of the genera and of a
+    record's fields is the file's bytes); None when d does not hold it."""
+    if k not in d:
+        return None
+    return json.dumps(d[k] if k == "course" else [r for r in d[k] if course_lecture(r)])
+
+
+def course_layer(d, lay, prev=None):
+    """The course layer file as d gives it: d's course and its lecture cmp records, where d holds them (a d with no
+    course, or no cmp, is a d that does not say: the layer's stay) and, when prev (data.json as it is on disk) is given,
+    where d changes them: a tool that read data.json itself, with the layer edited by hand since, did not touch them, and
+    the layer's stay."""
+    out = copy.deepcopy(lay)
+    for k in ("course", "cmp"):
+        if course_part(d, k) is None or (prev is not None and course_part(d, k) == course_part(prev, k)):
+            continue
+        out[k] = copy.deepcopy(d[k]) if k == "course" else [copy.deepcopy(r) for r in d[k] if course_lecture(r)]
+    return out
+
+
+def course_written(d, prev=None):
+    """d as dump() writes it to data.json, the one writer of both files: the course and the lecture's cmp records that d
+    changes from prev (data.json as it is on disk; all it holds when prev is None) go to the course layer file, and d comes
+    back with the layer's laid on."""
+    lay = load_layer("course")
+    new = course_layer(d, lay, prev)
+    if layer_dumps(new) != layer_dumps(lay):  # by the text: the order of the genera and of a record's fields is bytes
+        write_layer("course", new)
+    return course_compose(d, new)
+
+
 def check():
     bad = []
     inst = instance()
@@ -371,6 +486,8 @@ def check():
         s = p.read_text(encoding="utf-8")
         if s != layer_dumps(json.loads(s)):
             bad.append(f"{p.relative_to(ROOT)}: not in its layout (instance.py layer_dumps)")
+        if subject == "course":
+            bad += [f"{p.relative_to(ROOT)} {m}" for m in course_problems(json.loads(s))]
     src = fish_source()  # stops on a stale base or an unknown node
     key = inst.get("key")
     if key is not None and key not in [k["id"] for k in src.get("keys", [])]:

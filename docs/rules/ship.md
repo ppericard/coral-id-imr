@@ -220,7 +220,9 @@ scratchpad that no longer exists), but write it with `from datajson import dump`
 within a line, so two edits to different genera merge cleanly. Candidates waiting live in `data/cand.json`, admin only: read
 both with `load_all()`, write with `dump_all()`, which keeps in `data.json` only the candidates `curation.json` names.
 After a hand edit, `python3 tools/datajson.py` puts the file back in that layout; the PR check (`--check`) fails
-otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
+otherwise. The IMR instance's fields are its layer's: edit them in `tools/instances/imr/` (the lecture's photo records
+`course` and `cmp` through any tool that writes `data.json`, which `dump()` writes to `course.json` too), never by hand
+in `data.json`, where the layer wins ([data.md](../spec/data.md#the-instances-layer)). Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
 *Source:* repository practice, by 2026-11-01; subject-neutral wording, 2026-11-06.
 
 ### W17
