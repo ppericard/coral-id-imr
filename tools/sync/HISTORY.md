@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v236 (2026-11-25)
+
+The copy of core.js builds the typed names with less work (REE-265; Pierre, 2026-11-24: «On doit trouver un autre moyen de faire ces calculs sans devoir ré-interroger l'historique entier à chaque réponse»): `treeTypeNames` measures a short form ("Trigger" for Triggerfishes) against another unit's name only when the letters each holds and the other lacks are within the spelling tolerance (a distance is never less than that count), and finds a unit's entry for a name through a map instead of reading every name; `typeKnown` likewise; `treeNameIndex` reads each name once for Pierre's word on it. The same names come out in the same order, and the same index (`tests/typefast.test.js`). The script never calls `treeTypeNames` nor `treeNameIndex`: its behaviour is unchanged (its embedded copy follows the app's, rule D3)
+
 ## v235 (2026-11-25)
 
 The copy of core.js reads the typed names' short forms through an index by length (REE-265; Pierre, 2026-11-24: «On doit trouver un autre moyen de faire ces calculs sans devoir ré-interroger l'historique entier à chaque réponse»): `treeTypeNames` checks whether a short form ("Trigger" for Triggerfishes) is within the spelling tolerance of another unit's name only against the names whose length is within that tolerance, each name once with the units it names, instead of against every name. The same names come out in the same order (`tests/typefast.test.js`). The script never calls `treeTypeNames`: its behaviour is unchanged (its embedded copy follows the app's, rule D3)
