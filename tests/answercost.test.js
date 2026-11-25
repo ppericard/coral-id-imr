@@ -274,6 +274,9 @@ test('repeatable(): the runs of one seed ask the same units in the same order an
   const more2 = A.repeatable([run(['f:A'], 5), run(['f:A'], 5, {store: {...store, getChars: 83000 * 1.2}})]);
   assert.strictEqual(more2.ok, false);
   assert.match(more2.why, /for getChars where run 1 counted 83000/, 'the storage counts are compared too');
+  const peak = A.repeatable([run(['f:A'], 100000, {peakCalls: 400000}), run(['f:A'], 100000, {peakCalls: 400000 * (1 + 2 * A.TOL)})]);
+  assert.strictEqual(peak.ok, false, 'the same average, the work moved to one answer');
+  assert.match(peak.why, /counted .* calls in its heaviest answer where run 1 counted 400000/);
   assert.strictEqual(A.repeatable([run(['f:A'], 5)]).ok, true, 'one run repeats itself');
   assert.strictEqual(A.repeatable([run([], 5), run([], 5)]).ok, true, 'no unit asked, twice');
 });

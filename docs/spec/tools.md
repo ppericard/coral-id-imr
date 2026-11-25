@@ -166,8 +166,9 @@ subject is a test case, not the definition of the target.
   warm-up is played (the visit's first answer is the comeback's first; a session state's two warm-up answers are left
   out), and only the answers given in the comeback (rust left, `CB.r`) are counted. **Every answer is taken alone**, in
   a session as in a comeback (the coverage and the storage counters read and started over after each answer, which
-  leaves the totals as they were): the row's `each` keeps each answer's calls, `peakCalls` the heaviest, `peakAt` which
-  answer it was and `peakTop` its functions, and the table shows it ("Heaviest answer"), so a build that lands on one
+  leaves the totals as they were): the row's `each` keeps each answer's calls, `eachTop` each answer's 12 heaviest
+  functions, `peakCalls` the heaviest answer, `peakAt` which answer it was and `peakTop` its 30 heaviest functions, and
+  the table shows it ("Heaviest answer"); `--repeat` compares the heaviest answer too, so a build that lands on one
   answer (once a page load, or once the units in play change) is seen and budgeted, not only its share of the average. After a short
   history the comeback ends within a few answers (corals and sea slugs at 50 answers: 3), and fewer than `BACK_MIN` (2)
   fails the run. **A count is repeatable** (REE-281): the clock is virtual

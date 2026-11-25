@@ -28,7 +28,8 @@
 // machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting the
 // eighteen states of STATES (each player in a session and back) about 1 minute 30 s at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
 // formats), each through the tap, the feedback, the deferred planning, Next and its top-up, each taken alone (the row's
-// `each`; peakCalls, the heaviest, is budgeted beside the average, peakTop says where its calls went). V8's precise coverage counts
+// `each`; peakCalls, the heaviest, is budgeted beside the average and compared by --repeat; peakTop and eachTop say where
+// the calls went). V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
 // Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
@@ -187,8 +188,9 @@ function over(row, budget) {
 const historyOff = (H, answers, warm) => !(Math.abs(H - warm - answers) <= Math.max(10, 0.05 * answers));
 
 // Whether the runs of one state at one seed (rows of the same state and seed, --repeat) agree: the same units asked, in the
-// same order, the same calls an answer (within TOL: the coverage of an idle callback that ran or not moves a count by a few
-// calls of a hundred thousand) and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
+// same order, the same calls an answer and in the heaviest answer (within TOL: the coverage of an idle callback that ran or
+// not moves a count by a few calls of a hundred thousand; work moved from one answer to another moves the heaviest only)
+// and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
 // loaded machine the device's log was read twice more, 3% of the characters read, with the same questions asked; the cause is
 // not known, a timer of the page on the wall clock is a guess).
 // {ok, why}: why names the first run that parts from the first, and how.
@@ -200,6 +202,9 @@ function repeatable(rows, tol = TOL, storeTol = STORE_TOL) {
     const at = `run ${k + 2} of ${r.state}${r.seed === null || r.seed === undefined ? '' : ` seed ${r.seed}`}`;
     if (a.asked.join() !== r.asked.join()) return {ok: false, why: `${at} asked ${r.asked.join(', ')} where run 1 asked ${a.asked.join(', ')}`};
     if (Math.abs(r.namedCalls - a.namedCalls) > tol * a.namedCalls) return {ok: false, why: `${at} counted ${r.namedCalls} calls an answer where run 1 counted ${a.namedCalls}`};
+    const pa = metrics(a).peakCalls,
+      pr = metrics(r).peakCalls;
+    if (Math.abs(pr - pa) > tol * pa) return {ok: false, why: `${at} counted ${pr} calls in its heaviest answer where run 1 counted ${pa}`};
     for (const f of ['getCalls', 'getChars', 'setChars'])
       if (Math.abs(r.store[f] - a.store[f]) > storeTol * a.store[f]) return {ok: false, why: `${at} counted ${r.store[f]} for ${f} where run 1 counted ${a.store[f]}`};
   }
@@ -661,6 +666,7 @@ async function count(browser, base, file, name, o, expect) {
     st = {get: {calls: 0, chars: 0}, set: {calls: 0, chars: 0}, keys: {}};
   let total = 0,
     peakTop = []; // the heaviest answer's functions, by their calls in it
+  const eachTop = []; // each answer's 12 heaviest functions (every answer over a mark, not only the heaviest)
   const each = []; // the calls of each answer counted, each taken alone (peakCalls: the heaviest)
   // The calls and the storage traffic since the last take, added to the count (keep) or left out; both counters start over
   // (V8's takePreciseCoverage resets its call counts).
@@ -688,8 +694,8 @@ async function count(browser, base, file, name, o, expect) {
         one.set(fn.functionName + '@' + f, (one.get(fn.functionName + '@' + f) || 0) + c);
       }
     }
-    if (total - t0 > Math.max(-1, ...each))
-      peakTop = [...one].sort((a, b) => b[1] - a[1]).slice(0, 30);
+    if (total - t0 > Math.max(-1, ...each)) peakTop = [...one].sort((a, b) => b[1] - a[1]).slice(0, 30);
+    eachTop.push([...one].sort((a, b) => b[1] - a[1]).slice(0, 12));
     each.push(total - t0);
     for (const op of ['get', 'set']) for (const k of ['calls', 'chars']) st[op][k] += s[op][k];
     for (const [k, v] of Object.entries(s.keys)) {
@@ -738,6 +744,7 @@ async function count(browser, base, file, name, o, expect) {
     peakCalls: each.length ? Math.max(...each) : 0, // the heaviest answer's named calls
     peakAt: each.length ? each.indexOf(Math.max(...each)) : -1, // which answer counted it was (0: the first)
     peakTop, // where its calls went
+    eachTop, // where each answer's calls went
     store: {
       getCalls: per(st.get.calls),
       getChars: per(st.get.chars),
