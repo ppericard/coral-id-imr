@@ -1,6 +1,6 @@
 # "Did you know?" tip (h): the keyboard keys, for the desktop player who always clicks
 
-Date: 2026-11-25. PR: #1588. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/spec/quiz.md; docs/DESIGN.md "Cards"; REE-13.
+Date: 2026-11-25. PR: #1590. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/spec/quiz.md; docs/DESIGN.md "Cards"; REE-13.
 
 ## Context
 
