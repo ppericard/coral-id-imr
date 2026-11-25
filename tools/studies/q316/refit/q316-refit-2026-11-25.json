@@ -1,0 +1,2598 @@
+{
+ "coral": {
+  "reference_fit": {
+   "sd": {
+    "player": [
+     0.984,
+     {
+      "0.9": [
+       0.663,
+       1.461
+      ],
+      "0.95": [
+       0.615,
+       1.576
+      ]
+     }
+    ],
+    "pu": [
+     0.632,
+     {
+      "0.9": [
+       0.484,
+       0.826
+      ],
+      "0.95": [
+       0.459,
+       0.87
+      ]
+     }
+    ],
+    "gen": [
+     0.827,
+     {
+      "0.9": [
+       0.643,
+       1.064
+      ],
+      "0.95": [
+       0.613,
+       1.116
+      ]
+     }
+    ],
+    "photo": [
+     0.527,
+     {
+      "0.9": [
+       0.338,
+       0.824
+      ],
+      "0.95": [
+       0.31,
+       0.897
+      ]
+     }
+    ]
+   },
+   "fixed": {
+    "c": [
+     1.897,
+     0.424,
+     {
+      "0.9": [
+       1.199,
+       2.594
+      ],
+      "0.95": [
+       1.065,
+       2.728
+      ]
+     }
+    ],
+    "prac_s": [
+     -0.318,
+     0.077,
+     {
+      "0.9": [
+       -0.445,
+       -0.19
+      ],
+      "0.95": [
+       -0.469,
+       -0.166
+      ]
+     }
+    ],
+    "prac_u": [
+     0.434,
+     0.082,
+     {
+      "0.9": [
+       0.299,
+       0.569
+      ],
+      "0.95": [
+       0.273,
+       0.595
+      ]
+     }
+    ]
+   }
+  },
+  "reference_fit_on_the_cut_log": {
+   "answers": 3662,
+   "sd": {
+    "player": [
+     0.857,
+     {
+      "0.9": [
+       0.582,
+       1.262
+      ],
+      "0.95": [
+       0.54,
+       1.359
+      ]
+     }
+    ],
+    "pu": [
+     0.618,
+     {
+      "0.9": [
+       0.466,
+       0.818
+      ],
+      "0.95": [
+       0.442,
+       0.863
+      ]
+     }
+    ],
+    "gen": [
+     0.804,
+     {
+      "0.9": [
+       0.624,
+       1.036
+      ],
+      "0.95": [
+       0.595,
+       1.087
+      ]
+     }
+    ],
+    "photo": [
+     0.46,
+     {
+      "0.9": [
+       0.266,
+       0.798
+      ],
+      "0.95": [
+       0.239,
+       0.886
+      ]
+     }
+    ]
+   },
+   "fixed": {
+    "c": [
+     1.905,
+     0.406,
+     {
+      "0.9": [
+       1.236,
+       2.574
+      ],
+      "0.95": [
+       1.108,
+       2.702
+      ]
+     }
+    ],
+    "prac_s": [
+     -0.319,
+     0.079,
+     {
+      "0.9": [
+       -0.449,
+       -0.189
+      ],
+      "0.95": [
+       -0.473,
+       -0.164
+      ]
+     }
+    ],
+    "prac_u": [
+     0.456,
+     0.084,
+     {
+      "0.9": [
+       0.318,
+       0.595
+      ],
+      "0.95": [
+       0.291,
+       0.622
+      ]
+     }
+    ]
+   }
+  },
+  "fit": {
+   "answers": 3990,
+   "players": 15,
+   "cut": false,
+   "minutes": 5.884,
+   "fit": {
+    "sd": {
+     "player": [
+      0.984,
+      {
+       "0.9": [
+        0.663,
+        1.461
+       ],
+       "0.95": [
+        0.615,
+        1.576
+       ]
+      }
+     ],
+     "pu": [
+      0.632,
+      {
+       "0.9": [
+        0.484,
+        0.826
+       ],
+       "0.95": [
+        0.459,
+        0.87
+       ]
+      }
+     ],
+     "gen": [
+      0.827,
+      {
+       "0.9": [
+        0.643,
+        1.064
+       ],
+       "0.95": [
+        0.613,
+        1.116
+       ]
+      }
+     ],
+     "photo": [
+      0.527,
+      {
+       "0.9": [
+        0.338,
+        0.824
+       ],
+       "0.95": [
+        0.31,
+        0.897
+       ]
+      }
+     ]
+    },
+    "fixed": {
+     "c": [
+      1.897,
+      0.424,
+      {
+       "0.9": [
+        1.199,
+        2.594
+       ],
+       "0.95": [
+        1.065,
+        2.728
+       ]
+      }
+     ],
+     "prac_s": [
+      -0.318,
+      0.077,
+      {
+       "0.9": [
+        -0.445,
+        -0.19
+       ],
+       "0.95": [
+        -0.469,
+        -0.166
+       ]
+      }
+     ],
+     "prac_u": [
+      0.434,
+      0.082,
+      {
+       "0.9": [
+        0.299,
+        0.569
+       ],
+       "0.95": [
+        0.273,
+        0.595
+       ]
+      }
+     ]
+    },
+    "converged": true,
+    "seconds": 9.343
+   },
+   "accept_rated": {
+    "done": 20,
+    "reps": 20,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "mean": 0.459,
+      "bias": -0.041,
+      "sd_of_estimates": 0.18,
+      "covered": 14,
+      "done": 20,
+      "verdict": "fail"
+     },
+     "pu": {
+      "truth": 0.3,
+      "mean": 0.134,
+      "bias": -0.166,
+      "sd_of_estimates": 0.135,
+      "covered": 13,
+      "done": 20,
+      "verdict": "fail"
+     },
+     "gen": {
+      "truth": 0.37,
+      "mean": 0.382,
+      "bias": 0.012,
+      "sd_of_estimates": 0.053,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass"
+     },
+     "photo": {
+      "truth": 0.46,
+      "mean": 0.222,
+      "bias": -0.238,
+      "sd_of_estimates": 0.153,
+      "covered": 15,
+      "done": 20,
+      "verdict": "fail"
+     }
+    }
+   },
+   "accept_own": {
+    "done": 20,
+    "reps": 20,
+    "values": {
+     "player": {
+      "truth": 0.984,
+      "mean": 0.936,
+      "bias": -0.049,
+      "sd_of_estimates": 0.182,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass"
+     },
+     "pu": {
+      "truth": 0.632,
+      "mean": 0.452,
+      "bias": -0.181,
+      "sd_of_estimates": 0.131,
+      "covered": 17,
+      "done": 20,
+      "verdict": "fail"
+     },
+     "gen": {
+      "truth": 0.827,
+      "mean": 0.798,
+      "bias": -0.029,
+      "sd_of_estimates": 0.136,
+      "covered": 18,
+      "done": 20,
+      "verdict": "pass"
+     },
+     "photo": {
+      "truth": 0.527,
+      "mean": 0.059,
+      "bias": -0.468,
+      "sd_of_estimates": 0.107,
+      "covered": 4,
+      "done": 20,
+      "verdict": "fail"
+     }
+    }
+   },
+   "report": {
+    "player": {
+     "verdict": "not estimable on today's log"
+    },
+    "pu": {
+     "verdict": "not estimable on today's log"
+    },
+    "gen": {
+     "verdict": "pass",
+     "value": 0.827,
+     "ci95": [
+      0.613,
+      1.116
+     ]
+    },
+    "photo": {
+     "verdict": "not estimable on today's log"
+    }
+   }
+  },
+  "sibling": null,
+  "centring": {
+   "primary": true,
+   "units": 39,
+   "C1": {
+    "tau": 0.273,
+    "I2": 0.677,
+    "Q": 117.564,
+    "units": 39
+   },
+   "C2": {
+    "units": 39,
+    "rho": -0.788,
+    "p": 0
+   },
+   "C2offline": {
+    "units": 39,
+    "rho": -0.882,
+    "p": 0
+   },
+   "halves": [
+    {
+     "units": 33,
+     "rho": -0.607,
+     "p": 0
+    },
+    {
+     "units": 16,
+     "rho": -0.543,
+     "p": 0.031
+    }
+   ],
+   "verdict": "not centred: a Q136 rating uses the centred delta or stays on the chain"
+  },
+  "gibbs": {
+   "answers": 3990,
+   "cut": false,
+   "minutes": 14.514,
+   "steps": [
+    "fit",
+    "prior_check",
+    "accept_rated",
+    "accept_own"
+   ],
+   "chain": {
+    "iters": 6000,
+    "burn": 1000,
+    "chains": 2,
+    "rep_iters": 1500,
+    "rep_burn": 500
+   },
+   "prior": {
+    "scale": 1,
+    "other": 0.5
+   },
+   "converge": {
+    "rhat": 1.1,
+    "ess": 100,
+    "prior_shift": 0.1
+   },
+   "fit": {
+    "player": {
+     "median": 1.165,
+     "mean": 1.198,
+     "ci90": [
+      0.832,
+      1.68
+     ],
+     "ci95": [
+      0.782,
+      1.801
+     ],
+     "rhat": 1.001,
+     "ess": 2636.57,
+     "converged": true
+    },
+    "pu": {
+     "median": 0.913,
+     "mean": 0.916,
+     "ci90": [
+      0.706,
+      1.139
+     ],
+     "ci95": [
+      0.665,
+      1.18
+     ],
+     "rhat": 1.001,
+     "ess": 493.214,
+     "converged": true
+    },
+    "gen": {
+     "median": 0.936,
+     "mean": 0.947,
+     "ci90": [
+      0.709,
+      1.226
+     ],
+     "ci95": [
+      0.673,
+      1.29
+     ],
+     "rhat": 1,
+     "ess": 1456.942,
+     "converged": true
+    },
+    "photo": {
+     "median": 1.184,
+     "mean": 1.189,
+     "ci90": [
+      0.894,
+      1.496
+     ],
+     "ci95": [
+      0.84,
+      1.55
+     ],
+     "rhat": 1.001,
+     "ess": 287.662,
+     "converged": true
+    },
+    "c": {
+     "median": 2.484,
+     "mean": 2.494,
+     "ci90": [
+      1.619,
+      3.388
+     ],
+     "ci95": [
+      1.451,
+      3.57
+     ],
+     "rhat": 1,
+     "ess": 1917.778,
+     "converged": true
+    },
+    "prac_s": {
+     "median": -0.455,
+     "mean": -0.458,
+     "ci90": [
+      -0.622,
+      -0.302
+     ],
+     "ci95": [
+      -0.658,
+      -0.274
+     ],
+     "rhat": 1.001,
+     "ess": 1536.768,
+     "converged": true
+    },
+    "prac_u": {
+     "median": 0.619,
+     "mean": 0.621,
+     "ci90": [
+      0.446,
+      0.802
+     ],
+     "ci95": [
+      0.413,
+      0.838
+     ],
+     "rhat": 1.001,
+     "ess": 1286.248,
+     "converged": true
+    }
+   },
+   "accept_rated": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 17,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "mean": 0.617,
+      "bias": 0.117,
+      "sd_of_estimates": 0.175,
+      "covered": 17,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 143.249,
+       "median": 332.876
+      }
+     },
+     "pu": {
+      "truth": 0.3,
+      "mean": 0.264,
+      "bias": -0.036,
+      "sd_of_estimates": 0.116,
+      "covered": 18,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 19.3,
+       "median": 40.912
+      }
+     },
+     "gen": {
+      "truth": 0.37,
+      "mean": 0.352,
+      "bias": -0.018,
+      "sd_of_estimates": 0.086,
+      "covered": 18,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 53.697,
+       "median": 116.865
+      }
+     },
+     "photo": {
+      "truth": 0.46,
+      "mean": 0.412,
+      "bias": -0.048,
+      "sd_of_estimates": 0.128,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 7.347,
+       "median": 24.292
+      }
+     }
+    }
+   },
+   "accept_own": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 16.63,
+    "values": {
+     "player": {
+      "truth": 1.165,
+      "mean": 1.097,
+      "bias": -0.068,
+      "sd_of_estimates": 0.256,
+      "covered": 18,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 101.594,
+       "median": 217.481
+      }
+     },
+     "pu": {
+      "truth": 0.913,
+      "mean": 0.893,
+      "bias": -0.02,
+      "sd_of_estimates": 0.162,
+      "covered": 16,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 11.455,
+       "median": 38.469
+      }
+     },
+     "gen": {
+      "truth": 0.936,
+      "mean": 0.899,
+      "bias": -0.037,
+      "sd_of_estimates": 0.18,
+      "covered": 18,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 36.51,
+       "median": 138.243
+      }
+     },
+     "photo": {
+      "truth": 1.184,
+      "mean": 1.1,
+      "bias": -0.084,
+      "sd_of_estimates": 0.235,
+      "covered": 17,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 6.281,
+       "median": 20.487
+      }
+     }
+    }
+   },
+   "fit_other_prior": {
+    "player": {
+     "median": 0.982,
+     "mean": 1.001,
+     "ci90": [
+      0.727,
+      1.335
+     ],
+     "ci95": [
+      0.692,
+      1.421
+     ],
+     "rhat": null,
+     "ess": 2056.709,
+     "converged": true
+    },
+    "pu": {
+     "median": 0.845,
+     "mean": 0.844,
+     "ci90": [
+      0.64,
+      1.037
+     ],
+     "ci95": [
+      0.595,
+      1.073
+     ],
+     "rhat": null,
+     "ess": 296.337,
+     "converged": true
+    },
+    "gen": {
+     "median": 0.863,
+     "mean": 0.869,
+     "ci90": [
+      0.657,
+      1.105
+     ],
+     "ci95": [
+      0.622,
+      1.154
+     ],
+     "rhat": null,
+     "ess": 1026.307,
+     "converged": true
+    },
+    "photo": {
+     "median": 1.071,
+     "mean": 1.07,
+     "ci90": [
+      0.808,
+      1.331
+     ],
+     "ci95": [
+      0.749,
+      1.381
+     ],
+     "rhat": null,
+     "ess": 130.858,
+     "converged": true
+    },
+    "c": {
+     "median": 2.4,
+     "mean": 2.408,
+     "ci90": [
+      1.63,
+      3.205
+     ],
+     "ci95": [
+      1.489,
+      3.358
+     ],
+     "rhat": null,
+     "ess": 1159.897,
+     "converged": true
+    },
+    "prac_s": {
+     "median": -0.436,
+     "mean": -0.438,
+     "ci90": [
+      -0.598,
+      -0.288
+     ],
+     "ci95": [
+      -0.635,
+      -0.261
+     ],
+     "rhat": null,
+     "ess": 824.729,
+     "converged": true
+    },
+    "prac_u": {
+     "median": 0.591,
+     "mean": 0.594,
+     "ci90": [
+      0.429,
+      0.769
+     ],
+     "ci95": [
+      0.398,
+      0.809
+     ],
+     "rhat": null,
+     "ess": 779.677,
+     "converged": true
+    }
+   },
+   "report": {
+    "player": {
+     "verdict": "not estimable on today's log"
+    },
+    "pu": {
+     "verdict": "pass",
+     "value": 0.913,
+     "ci95": [
+      0.665,
+      1.18
+     ]
+    },
+    "gen": {
+     "verdict": "pass",
+     "value": 0.936,
+     "ci95": [
+      0.673,
+      1.29
+     ]
+    },
+    "photo": {
+     "verdict": "prior-driven",
+     "shift": -0.114
+    }
+   }
+  },
+  "replay2b": null
+ },
+ "fish": {
+  "reference_fit": {
+   "sd": {
+    "player": [
+     1.102,
+     {
+      "0.9": [
+       0.711,
+       1.707
+      ],
+      "0.95": [
+       0.654,
+       1.857
+      ]
+     }
+    ],
+    "pu": [
+     0.847,
+     {
+      "0.9": [
+       0.665,
+       1.08
+      ],
+      "0.95": [
+       0.635,
+       1.131
+      ]
+     }
+    ],
+    "fam": [
+     0.955,
+     {
+      "0.9": [
+       0.671,
+       1.359
+      ],
+      "0.95": [
+       0.627,
+       1.454
+      ]
+     }
+    ],
+    "gen": [
+     0.568,
+     {
+      "0.9": [
+       0.305,
+       1.058
+      ],
+      "0.95": [
+       0.271,
+       1.192
+      ]
+     }
+    ],
+    "sp": [
+     0.506,
+     {
+      "0.9": [
+       0.272,
+       0.943
+      ],
+      "0.95": [
+       0.241,
+       1.062
+      ]
+     }
+    ],
+    "photo": [
+     0.019,
+     {
+      "0.9": [
+       0,
+       0.389
+      ],
+      "0.95": [
+       0,
+       0.452
+      ]
+     }
+    ]
+   },
+   "fixed": {
+    "c": [
+     2.337,
+     0.629,
+     {
+      "0.9": [
+       1.303,
+       3.372
+      ],
+      "0.95": [
+       1.105,
+       3.57
+      ]
+     }
+    ],
+    "prac_s": [
+     -0.057,
+     0.109,
+     {
+      "0.9": [
+       -0.235,
+       0.122
+      ],
+      "0.95": [
+       -0.269,
+       0.156
+      ]
+     }
+    ],
+    "prac_u": [
+     0.211,
+     0.111,
+     {
+      "0.9": [
+       0.029,
+       0.393
+      ],
+      "0.95": [
+       -0.006,
+       0.428
+      ]
+     }
+    ],
+    "r_genus": [
+     1.745,
+     0.474,
+     {
+      "0.9": [
+       0.966,
+       2.525
+      ],
+      "0.95": [
+       0.816,
+       2.675
+      ]
+     }
+    ],
+    "r_species": [
+     -2.407,
+     5.466,
+     {
+      "0.9": [
+       -11.397,
+       6.584
+      ],
+      "0.95": [
+       -13.119,
+       8.306
+      ]
+     }
+    ],
+    "kappa": [
+     0.272,
+     0.079,
+     {
+      "0.9": [
+       0.141,
+       0.402
+      ],
+      "0.95": [
+       0.116,
+       0.427
+      ]
+     }
+    ]
+   }
+  },
+  "reference_fit_on_the_cut_log": {
+   "answers": 2813,
+   "sd": {
+    "player": [
+     1.851,
+     {
+      "0.9": [
+       1.118,
+       3.067
+      ],
+      "0.95": [
+       1.015,
+       3.379
+      ]
+     }
+    ],
+    "pu": [
+     0.789,
+     {
+      "0.9": [
+       0.586,
+       1.062
+      ],
+      "0.95": [
+       0.554,
+       1.124
+      ]
+     }
+    ],
+    "fam": [
+     0.834,
+     {
+      "0.9": [
+       0.536,
+       1.297
+      ],
+      "0.95": [
+       0.492,
+       1.412
+      ]
+     }
+    ],
+    "gen": [
+     0.622,
+     {
+      "0.9": [
+       0.307,
+       1.26
+      ],
+      "0.95": [
+       0.269,
+       1.442
+      ]
+     }
+    ],
+    "sp": [
+     0.485,
+     {
+      "0.9": [
+       0.173,
+       1.355
+      ],
+      "0.95": [
+       0.142,
+       1.65
+      ]
+     }
+    ],
+    "photo": [
+     0.014,
+     {
+      "0.9": [
+       0,
+       0.396
+      ],
+      "0.95": [
+       0,
+       0.462
+      ]
+     }
+    ]
+   },
+   "fixed": {
+    "c": [
+     2.674,
+     0.822,
+     {
+      "0.9": [
+       1.321,
+       4.026
+      ],
+      "0.95": [
+       1.062,
+       4.285
+      ]
+     }
+    ],
+    "prac_s": [
+     -0.207,
+     0.119,
+     {
+      "0.9": [
+       -0.403,
+       -0.01
+      ],
+      "0.95": [
+       -0.44,
+       0.027
+      ]
+     }
+    ],
+    "prac_u": [
+     0.344,
+     0.118,
+     {
+      "0.9": [
+       0.149,
+       0.538
+      ],
+      "0.95": [
+       0.112,
+       0.575
+      ]
+     }
+    ],
+    "r_genus": [
+     1.612,
+     0.474,
+     {
+      "0.9": [
+       0.833,
+       2.391
+      ],
+      "0.95": [
+       0.683,
+       2.54
+      ]
+     }
+    ],
+    "kappa": [
+     0.23,
+     0.087,
+     {
+      "0.9": [
+       0.086,
+       0.374
+      ],
+      "0.95": [
+       0.059,
+       0.401
+      ]
+     }
+    ]
+   }
+  },
+  "fit": {
+   "answers": 3524,
+   "players": 9,
+   "cut": true,
+   "minutes": 33.221,
+   "fit": {
+    "sd": {
+     "player": [
+      1.102,
+      {
+       "0.9": [
+        0.711,
+        1.707
+       ],
+       "0.95": [
+        0.654,
+        1.857
+       ]
+      }
+     ],
+     "pu": [
+      0.847,
+      {
+       "0.9": [
+        0.665,
+        1.08
+       ],
+       "0.95": [
+        0.635,
+        1.131
+       ]
+      }
+     ],
+     "fam": [
+      0.955,
+      {
+       "0.9": [
+        0.671,
+        1.359
+       ],
+       "0.95": [
+        0.627,
+        1.454
+       ]
+      }
+     ],
+     "gen": [
+      0.568,
+      {
+       "0.9": [
+        0.305,
+        1.058
+       ],
+       "0.95": [
+        0.271,
+        1.192
+       ]
+      }
+     ],
+     "sp": [
+      0.506,
+      {
+       "0.9": [
+        0.272,
+        0.943
+       ],
+       "0.95": [
+        0.241,
+        1.062
+       ]
+      }
+     ],
+     "photo": [
+      0.019,
+      {
+       "0.9": [
+        0,
+        0.389
+       ],
+       "0.95": [
+        0,
+        0.452
+       ]
+      }
+     ]
+    },
+    "fixed": {
+     "c": [
+      2.337,
+      0.629,
+      {
+       "0.9": [
+        1.303,
+        3.372
+       ],
+       "0.95": [
+        1.105,
+        3.57
+       ]
+      }
+     ],
+     "prac_s": [
+      -0.057,
+      0.109,
+      {
+       "0.9": [
+        -0.235,
+        0.122
+       ],
+       "0.95": [
+        -0.269,
+        0.156
+       ]
+      }
+     ],
+     "prac_u": [
+      0.211,
+      0.111,
+      {
+       "0.9": [
+        0.029,
+        0.393
+       ],
+       "0.95": [
+        -0.006,
+        0.428
+       ]
+      }
+     ],
+     "r_genus": [
+      1.745,
+      0.474,
+      {
+       "0.9": [
+        0.966,
+        2.525
+       ],
+       "0.95": [
+        0.816,
+        2.675
+       ]
+      }
+     ],
+     "r_species": [
+      -2.407,
+      5.466,
+      {
+       "0.9": [
+        -11.397,
+        6.584
+       ],
+       "0.95": [
+        -13.119,
+        8.306
+       ]
+      }
+     ],
+     "kappa": [
+      0.272,
+      0.079,
+      {
+       "0.9": [
+        0.141,
+        0.402
+       ],
+       "0.95": [
+        0.116,
+        0.427
+       ]
+      }
+     ]
+    },
+    "converged": true,
+    "seconds": 39.157
+   },
+   "accept_rated": {
+    "done": 13,
+    "reps": 20,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "pu": {
+      "truth": 0.3,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "fam": {
+      "truth": 0.37,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "gen": {
+      "truth": 0.3,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "sp": {
+      "truth": 0.3,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "photo": {
+      "truth": 0.46,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "r_genus": {
+      "truth": 0.4,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     },
+     "r_species": {
+      "truth": 0.8,
+      "done": 13,
+      "verdict": "the measure cannot tell"
+     }
+    }
+   },
+   "accept_own": {
+    "done": 0,
+    "reps": 20,
+    "values": {
+     "player": {
+      "truth": 1.102,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "pu": {
+      "truth": 0.847,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "fam": {
+      "truth": 0.955,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "gen": {
+      "truth": 0.568,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "sp": {
+      "truth": 0.506,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "photo": {
+      "truth": 0.019,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "r_genus": {
+      "truth": 1.745,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     },
+     "r_species": {
+      "truth": -2.407,
+      "done": 0,
+      "verdict": "the measure cannot tell"
+     }
+    }
+   },
+   "report": {
+    "player": {
+     "verdict": "the measure cannot tell"
+    },
+    "pu": {
+     "verdict": "the measure cannot tell"
+    },
+    "fam": {
+     "verdict": "the measure cannot tell"
+    },
+    "gen": {
+     "verdict": "the measure cannot tell"
+    },
+    "sp": {
+     "verdict": "the measure cannot tell"
+    },
+    "photo": {
+     "verdict": "the measure cannot tell"
+    },
+    "r_genus": {
+     "verdict": "the measure cannot tell"
+    },
+    "r_species": {
+     "verdict": "the measure cannot tell"
+    }
+   }
+  },
+  "sibling": {
+   "answers": 3524,
+   "players": 9,
+   "cut": false,
+   "minutes": 1.407,
+   "fit": {
+    "sd": {
+     "player": [
+      1.105,
+      {
+       "0.9": [
+        0,
+        1.829
+       ],
+       "0.95": [
+        0,
+        2.046
+       ]
+      }
+     ],
+     "pu": [
+      0.846,
+      {
+       "0.9": [
+        0,
+        1.059
+       ],
+       "0.95": [
+        0,
+        1.102
+       ]
+      }
+     ],
+     "fam": [
+      0.956,
+      {
+       "0.9": [
+        0,
+        1.327
+       ],
+       "0.95": [
+        0,
+        1.409
+       ]
+      }
+     ],
+     "gen": [
+      0.568,
+      {
+       "0.9": [
+        0,
+        0.894
+       ],
+       "0.95": [
+        0,
+        0.959
+       ]
+      }
+     ],
+     "sp": [
+      0.506,
+      {
+       "0.9": [
+        0,
+        0.772
+       ],
+       "0.95": [
+        0,
+        0.821
+       ]
+      }
+     ],
+     "sib": [
+      0.06,
+      {
+       "0.9": [
+        0,
+        1.161
+       ],
+       "0.95": [
+        0,
+        1.392
+       ]
+      }
+     ],
+     "photo": [
+      0.009,
+      {
+       "0.9": [
+        0,
+        0.389
+       ],
+       "0.95": [
+        0,
+        0.452
+       ]
+      }
+     ]
+    },
+    "fixed": {
+     "c": [
+      2.337,
+      0.63,
+      {
+       "0.9": [
+        1.302,
+        3.373
+       ],
+       "0.95": [
+        1.104,
+        3.571
+       ]
+      }
+     ],
+     "prac_s": [
+      -0.057,
+      0.109,
+      {
+       "0.9": [
+        -0.235,
+        0.122
+       ],
+       "0.95": [
+        -0.269,
+        0.156
+       ]
+      }
+     ],
+     "prac_u": [
+      0.211,
+      0.111,
+      {
+       "0.9": [
+        0.029,
+        0.393
+       ],
+       "0.95": [
+        -0.006,
+        0.428
+       ]
+      }
+     ],
+     "r_genus": [
+      1.746,
+      0.474,
+      {
+       "0.9": [
+        0.965,
+        2.526
+       ],
+       "0.95": [
+        0.816,
+        2.675
+       ]
+      }
+     ],
+     "r_species": [
+      -2.408,
+      5.465,
+      {
+       "0.9": [
+        -11.396,
+        6.581
+       ],
+       "0.95": [
+        -13.118,
+        8.303
+       ]
+      }
+     ],
+     "kappa": [
+      0.272,
+      0.079,
+      {
+       "0.9": [
+        0.141,
+        0.402
+       ],
+       "0.95": [
+        0.116,
+        0.427
+       ]
+      }
+     ]
+    },
+    "converged": true,
+    "seconds": 84.324
+   }
+  },
+  "centring": {
+   "primary": false,
+   "units": 34,
+   "C1": {
+    "tau": 0.25,
+    "I2": 0.686,
+    "Q": 105.138,
+    "units": 34
+   },
+   "C2": {
+    "units": 34,
+    "rho": -0.906,
+    "p": 0
+   },
+   "C2offline": {
+    "units": 34,
+    "rho": -0.762,
+    "p": 0
+   },
+   "halves": [
+    {
+     "units": 27,
+     "rho": -0.86,
+     "p": 0
+    },
+    {
+     "units": 8,
+     "rho": -1,
+     "p": 0
+    }
+   ],
+   "verdict": "not centred: a Q136 rating uses the centred delta or stays on the chain"
+  },
+  "gibbs": {
+   "answers": 3524,
+   "cut": false,
+   "minutes": 18.87,
+   "steps": [
+    "fit",
+    "prior_check",
+    "accept_rated",
+    "accept_own"
+   ],
+   "chain": {
+    "iters": 6000,
+    "burn": 1000,
+    "chains": 2,
+    "rep_iters": 1500,
+    "rep_burn": 500
+   },
+   "prior": {
+    "scale": 1,
+    "other": 0.5
+   },
+   "converge": {
+    "rhat": 1.1,
+    "ess": 100,
+    "prior_shift": 0.1
+   },
+   "fit": {
+    "player": {
+     "median": 1.597,
+     "mean": 1.642,
+     "ci90": [
+      1.084,
+      2.351
+     ],
+     "ci95": [
+      1.016,
+      2.545
+     ],
+     "rhat": 1.001,
+     "ess": 560.088,
+     "converged": true
+    },
+    "pu": {
+     "median": 1.491,
+     "mean": 1.495,
+     "ci90": [
+      1.098,
+      1.924
+     ],
+     "ci95": [
+      1.034,
+      2.019
+     ],
+     "rhat": 1.004,
+     "ess": 116.648,
+     "converged": true
+    },
+    "fam": {
+     "median": 1.33,
+     "mean": 1.321,
+     "ci90": [
+      0.646,
+      1.95
+     ],
+     "ci95": [
+      0.354,
+      2.08
+     ],
+     "rhat": 1.006,
+     "ess": 127.186,
+     "converged": true
+    },
+    "gen": {
+     "median": 1.036,
+     "mean": 1.008,
+     "ci90": [
+      0.25,
+      1.648
+     ],
+     "ci95": [
+      0.124,
+      1.76
+     ],
+     "rhat": 1.007,
+     "ess": 113.135,
+     "converged": true
+    },
+    "sp": {
+     "median": 1.014,
+     "mean": 1.002,
+     "ci90": [
+      0.458,
+      1.493
+     ],
+     "ci95": [
+      0.338,
+      1.594
+     ],
+     "rhat": 1.019,
+     "ess": 137.498,
+     "converged": true
+    },
+    "photo": {
+     "median": 2.084,
+     "mean": 2.122,
+     "ci90": [
+      1.506,
+      2.853
+     ],
+     "ci95": [
+      1.416,
+      2.969
+     ],
+     "rhat": 1.011,
+     "ess": 57.929,
+     "converged": false
+    },
+    "c": {
+     "median": 3.84,
+     "mean": 3.869,
+     "ci90": [
+      2.144,
+      5.699
+     ],
+     "ci95": [
+      1.816,
+      6.053
+     ],
+     "rhat": 1.002,
+     "ess": 404.681,
+     "converged": true
+    },
+    "prac_s": {
+     "median": -0.103,
+     "mean": -0.105,
+     "ci90": [
+      -0.411,
+      0.2
+     ],
+     "ci95": [
+      -0.469,
+      0.257
+     ],
+     "rhat": 1.002,
+     "ess": 1784.957,
+     "converged": true
+    },
+    "prac_u": {
+     "median": 0.306,
+     "mean": 0.31,
+     "ci90": [
+      0.005,
+      0.629
+     ],
+     "ci95": [
+      -0.056,
+      0.691
+     ],
+     "rhat": 1.001,
+     "ess": 1431.573,
+     "converged": true
+    },
+    "r_genus": {
+     "median": 3.212,
+     "mean": 3.247,
+     "ci90": [
+      1.853,
+      4.731
+     ],
+     "ci95": [
+      1.609,
+      5.086
+     ],
+     "rhat": 1.001,
+     "ess": 344.292,
+     "converged": true
+    },
+    "r_species": {
+     "median": -5.701,
+     "mean": -6.64,
+     "ci90": [
+      -19.019,
+      2.604
+     ],
+     "ci95": [
+      -21.696,
+      3.853
+     ],
+     "rhat": 1.001,
+     "ess": 813.601,
+     "converged": true
+    },
+    "kappa": {
+     "median": 0.387,
+     "mean": 0.391,
+     "ci90": [
+      0.16,
+      0.629
+     ],
+     "ci95": [
+      0.12,
+      0.672
+     ],
+     "rhat": 1.003,
+     "ess": 807.445,
+     "converged": true
+    }
+   },
+   "accept_rated": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 21.912,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "mean": 0.599,
+      "bias": 0.099,
+      "sd_of_estimates": 0.178,
+      "covered": 16,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 93.003,
+       "median": 327.004
+      }
+     },
+     "pu": {
+      "truth": 0.3,
+      "mean": 0.33,
+      "bias": 0.03,
+      "sd_of_estimates": 0.17,
+      "covered": 17,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 13.101,
+       "median": 33.079
+      }
+     },
+     "fam": {
+      "truth": 0.37,
+      "mean": 0.37,
+      "bias": 0,
+      "sd_of_estimates": 0.104,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 13.98,
+       "median": 43.803
+      }
+     },
+     "gen": {
+      "truth": 0.3,
+      "mean": 0.321,
+      "bias": 0.021,
+      "sd_of_estimates": 0.122,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 10.099,
+       "median": 34.172
+      }
+     },
+     "sp": {
+      "truth": 0.3,
+      "mean": 0.341,
+      "bias": 0.041,
+      "sd_of_estimates": 0.134,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 9.292,
+       "median": 32.369
+      }
+     },
+     "photo": {
+      "truth": 0.46,
+      "mean": 0.578,
+      "bias": 0.118,
+      "sd_of_estimates": 0.281,
+      "covered": 17,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 5.988,
+       "median": 12.844
+      }
+     },
+     "r_genus": {
+      "truth": 0.4,
+      "mean": 0.478,
+      "bias": 0.078,
+      "sd_of_estimates": 0.37,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 148.142,
+       "median": 312.862
+      }
+     },
+     "r_species": {
+      "truth": 0.8,
+      "mean": 3.036,
+      "bias": 2.236,
+      "sd_of_estimates": 5.685,
+      "covered": 10,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 24.58,
+       "median": 58.255
+      }
+     }
+    }
+   },
+   "accept_own": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 21.819,
+    "values": {
+     "player": {
+      "truth": 1.597,
+      "mean": 1.229,
+      "bias": -0.368,
+      "sd_of_estimates": 0.229,
+      "covered": 17,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 19.878,
+       "median": 143.456
+      }
+     },
+     "pu": {
+      "truth": 1.491,
+      "mean": 1.324,
+      "bias": -0.167,
+      "sd_of_estimates": 0.228,
+      "covered": 15,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 6.442,
+       "median": 20.407
+      }
+     },
+     "fam": {
+      "truth": 1.33,
+      "mean": 1.125,
+      "bias": -0.205,
+      "sd_of_estimates": 0.338,
+      "covered": 15,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 10.103,
+       "median": 35.329
+      }
+     },
+     "gen": {
+      "truth": 1.036,
+      "mean": 0.895,
+      "bias": -0.141,
+      "sd_of_estimates": 0.262,
+      "covered": 18,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 4.075,
+       "median": 20.948
+      }
+     },
+     "sp": {
+      "truth": 1.014,
+      "mean": 0.853,
+      "bias": -0.162,
+      "sd_of_estimates": 0.226,
+      "covered": 19,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 4.449,
+       "median": 19.803
+      }
+     },
+     "photo": {
+      "truth": 2.084,
+      "mean": 1.763,
+      "bias": -0.321,
+      "sd_of_estimates": 0.456,
+      "covered": 15,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 4.03,
+       "median": 7.593
+      }
+     },
+     "r_genus": {
+      "truth": 3.212,
+      "mean": 3.078,
+      "bias": -0.134,
+      "sd_of_estimates": 0.882,
+      "covered": 17,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 11.097,
+       "median": 85.414
+      }
+     },
+     "r_species": {
+      "truth": -5.701,
+      "mean": -6.699,
+      "bias": -0.998,
+      "sd_of_estimates": 1.564,
+      "covered": 20,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 38.516,
+       "median": 67.294
+      }
+     }
+    }
+   },
+   "fit_other_prior": {
+    "player": {
+     "median": 1.077,
+     "mean": 1.092,
+     "ci90": [
+      0.768,
+      1.468
+     ],
+     "ci95": [
+      0.722,
+      1.541
+     ],
+     "rhat": null,
+     "ess": 1202.098,
+     "converged": true
+    },
+    "pu": {
+     "median": 1.091,
+     "mean": 1.1,
+     "ci90": [
+      0.85,
+      1.375
+     ],
+     "ci95": [
+      0.798,
+      1.424
+     ],
+     "rhat": null,
+     "ess": 155.64,
+     "converged": true
+    },
+    "fam": {
+     "median": 0.961,
+     "mean": 0.953,
+     "ci90": [
+      0.527,
+      1.339
+     ],
+     "ci95": [
+      0.418,
+      1.419
+     ],
+     "rhat": null,
+     "ess": 148.632,
+     "converged": true
+    },
+    "gen": {
+     "median": 0.631,
+     "mean": 0.624,
+     "ci90": [
+      0.116,
+      1.091
+     ],
+     "ci95": [
+      0.055,
+      1.157
+     ],
+     "rhat": null,
+     "ess": 88.395,
+     "converged": false
+    },
+    "sp": {
+     "median": 0.822,
+     "mean": 0.791,
+     "ci90": [
+      0.337,
+      1.146
+     ],
+     "ci95": [
+      0.204,
+      1.199
+     ],
+     "rhat": null,
+     "ess": 80.823,
+     "converged": false
+    },
+    "photo": {
+     "median": 1.121,
+     "mean": 1.131,
+     "ci90": [
+      0.633,
+      1.648
+     ],
+     "ci95": [
+      0.521,
+      1.73
+     ],
+     "rhat": null,
+     "ess": 32.819,
+     "converged": false
+    },
+    "c": {
+     "median": 2.942,
+     "mean": 2.958,
+     "ci90": [
+      1.738,
+      4.232
+     ],
+     "ci95": [
+      1.517,
+      4.498
+     ],
+     "rhat": null,
+     "ess": 599.786,
+     "converged": true
+    },
+    "prac_s": {
+     "median": -0.06,
+     "mean": -0.059,
+     "ci90": [
+      -0.283,
+      0.174
+     ],
+     "ci95": [
+      -0.323,
+      0.219
+     ],
+     "rhat": null,
+     "ess": 1000.939,
+     "converged": true
+    },
+    "prac_u": {
+     "median": 0.228,
+     "mean": 0.23,
+     "ci90": [
+      -0.009,
+      0.477
+     ],
+     "ci95": [
+      -0.057,
+      0.524
+     ],
+     "rhat": null,
+     "ess": 1024.479,
+     "converged": true
+    },
+    "r_genus": {
+     "median": 2.505,
+     "mean": 2.514,
+     "ci90": [
+      1.449,
+      3.626
+     ],
+     "ci95": [
+      1.252,
+      3.823
+     ],
+     "rhat": null,
+     "ess": 534.642,
+     "converged": true
+    },
+    "r_species": {
+     "median": -5.893,
+     "mean": -6.866,
+     "ci90": [
+      -18.603,
+      1.652
+     ],
+     "ci95": [
+      -20.9,
+      2.628
+     ],
+     "rhat": null,
+     "ess": 380.572,
+     "converged": true
+    },
+    "kappa": {
+     "median": 0.303,
+     "mean": 0.303,
+     "ci90": [
+      0.128,
+      0.482
+     ],
+     "ci95": [
+      0.093,
+      0.526
+     ],
+     "rhat": null,
+     "ess": 795.654,
+     "converged": true
+    }
+   },
+   "report": {
+    "player": {
+     "verdict": "not estimable on today's log"
+    },
+    "pu": {
+     "verdict": "not estimable on today's log"
+    },
+    "fam": {
+     "verdict": "not estimable on today's log"
+    },
+    "gen": {
+     "verdict": "not estimable on today's log"
+    },
+    "sp": {
+     "verdict": "not estimable on today's log"
+    },
+    "photo": {
+     "verdict": "not estimable on today's log"
+    },
+    "r_genus": {
+     "verdict": "not estimable on today's log"
+    },
+    "r_species": {
+     "verdict": "not estimable on today's log"
+    }
+   }
+  },
+  "replay2b": null
+ },
+ "gibbs_synth": {
+  "fish": {
+   "answers": 3000,
+   "cut": false,
+   "minutes": 6.841,
+   "chain": {
+    "iters": 3000,
+    "burn": 1000,
+    "chains": 2,
+    "rep_iters": 1500,
+    "rep_burn": 500
+   },
+   "prior": {
+    "scale": 1,
+    "other": 0.5
+   },
+   "design": "fish",
+   "accept": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 20.515,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "mean": 0.489,
+      "bias": -0.011,
+      "sd_of_estimates": 0.219,
+      "covered": 17,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 66.328,
+       "median": 242.233
+      }
+     },
+     "pu": {
+      "truth": 0.3,
+      "mean": 0.372,
+      "bias": 0.072,
+      "sd_of_estimates": 0.146,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 11.303,
+       "median": 22.166
+      }
+     },
+     "fam": {
+      "truth": 0.37,
+      "mean": 0.318,
+      "bias": -0.052,
+      "sd_of_estimates": 0.105,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 19.687,
+       "median": 56.997
+      }
+     },
+     "gen": {
+      "truth": 0.3,
+      "mean": 0.259,
+      "bias": -0.041,
+      "sd_of_estimates": 0.104,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 17.022,
+       "median": 41.779
+      }
+     },
+     "sp": {
+      "truth": 0.3,
+      "mean": 0.302,
+      "bias": 0.002,
+      "sd_of_estimates": 0.142,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 12.83,
+       "median": 32.09
+      }
+     },
+     "photo": {
+      "truth": 0.46,
+      "mean": 0.543,
+      "bias": 0.083,
+      "sd_of_estimates": 0.217,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 4.735,
+       "median": 13.723
+      }
+     },
+     "r_genus": {
+      "truth": 0.4,
+      "mean": 0.465,
+      "bias": 0.065,
+      "sd_of_estimates": 0.144,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 129.601,
+       "median": 250.682
+      }
+     },
+     "r_species": {
+      "truth": 0.8,
+      "mean": 1.061,
+      "bias": 0.261,
+      "sd_of_estimates": 0.265,
+      "covered": 16,
+      "done": 20,
+      "verdict": "fail",
+      "ess": {
+       "min": 48.723,
+       "median": 179.892
+      }
+     }
+    }
+   }
+  },
+  "coral": {
+   "answers": 4000,
+   "cut": false,
+   "minutes": 4.841,
+   "chain": {
+    "iters": 3000,
+    "burn": 1000,
+    "chains": 2,
+    "rep_iters": 1500,
+    "rep_burn": 500
+   },
+   "prior": {
+    "scale": 1,
+    "other": 0.5
+   },
+   "design": "coral",
+   "accept": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 14.516,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "mean": 0.551,
+      "bias": 0.051,
+      "sd_of_estimates": 0.118,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 208.037,
+       "median": 353.938
+      }
+     },
+     "pu": {
+      "truth": 0.3,
+      "mean": 0.266,
+      "bias": -0.034,
+      "sd_of_estimates": 0.103,
+      "covered": 19,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 16.367,
+       "median": 38.103
+      }
+     },
+     "gen": {
+      "truth": 0.37,
+      "mean": 0.35,
+      "bias": -0.02,
+      "sd_of_estimates": 0.074,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 35.18,
+       "median": 141.388
+      }
+     },
+     "photo": {
+      "truth": 0.46,
+      "mean": 0.481,
+      "bias": 0.021,
+      "sd_of_estimates": 0.146,
+      "covered": 17,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 7.321,
+       "median": 29.488
+      }
+     }
+    }
+   }
+  },
+  "coral-large": {
+   "answers": 4000,
+   "cut": false,
+   "minutes": 3.145,
+   "chain": {
+    "iters": 3000,
+    "burn": 1000,
+    "chains": 2,
+    "rep_iters": 1500,
+    "rep_burn": 500
+   },
+   "prior": {
+    "scale": 1,
+    "other": 0.5
+   },
+   "design": "coral-large",
+   "accept": {
+    "done": 20,
+    "reps": 20,
+    "seconds_per_chain": 9.429,
+    "values": {
+     "player": {
+      "truth": 0.5,
+      "mean": 0.509,
+      "bias": 0.009,
+      "sd_of_estimates": 0.13,
+      "covered": 17,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 93.036,
+       "median": 305.856
+      }
+     },
+     "pu": {
+      "truth": 0.3,
+      "mean": 0.285,
+      "bias": -0.015,
+      "sd_of_estimates": 0.093,
+      "covered": 18,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 33.377,
+       "median": 65.635
+      }
+     },
+     "gen": {
+      "truth": 0.37,
+      "mean": 0.368,
+      "bias": -0.002,
+      "sd_of_estimates": 0.111,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 75.872,
+       "median": 131.86
+      }
+     },
+     "photo": {
+      "truth": 0.46,
+      "mean": 0.468,
+      "bias": 0.008,
+      "sd_of_estimates": 0.066,
+      "covered": 20,
+      "done": 20,
+      "verdict": "pass",
+      "ess": {
+       "min": 89.458,
+       "median": 224.008
+      }
+     }
+    }
+   }
+  }
+ }
+}
