@@ -75,7 +75,6 @@ They live in the admin since 2026-11-05 (Pierre: he settles most of them himself
 - **Scientific genera: the step feels too early**: [REE-94](https://linear.app/reef-id/issue/REE-94)
 - **A level's group, per parent?**: [REE-158](https://linear.app/reef-id/issue/REE-158)
 - **Fish genera need a presentation and ID cues before they open widely**: [REE-95](https://linear.app/reef-id/issue/REE-95)
-- **Fish common names: 1 to 3 curated per species**: [REE-33](https://linear.app/reef-id/issue/REE-33)
 - **A held-out photo set**: [REE-58](https://linear.app/reef-id/issue/REE-58)
 - **Auto-sort follow-ups**: [REE-134](https://linear.app/reef-id/issue/REE-134)
 - **Measured photo block: the full run**: [REE-19](https://linear.app/reef-id/issue/REE-19)
