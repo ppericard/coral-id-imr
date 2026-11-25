@@ -2799,7 +2799,8 @@ function sumUnits_(){
   const bg = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus');
   return bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : [];
 }
-// One path for every subject (rule S1).
+// One path for every subject (rule S1), but for the save summary's subject (sum: its "By genus" units and Progress
+// column, a listed exception, tests/subject-neutral.test.js).
 function board_(sid){
   const S = boardSubj_(sid), sum = S.id === sumSubj_(), key = boardCache_(S);
   const cache = CacheService.getScriptCache(), hit = cache.get(key);

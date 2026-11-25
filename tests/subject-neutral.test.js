@@ -43,9 +43,12 @@ const ONE_ENGINE = 'One engine for every subject, what is left';
 // The hidden tests on a subject still in the code: [file, the line's text, the docs/ROADMAP.md row that removes it]. An
 // entry whose line is gone fails (the exception went: drop it), and so does one whose ROADMAP row is gone (the row was
 // done or dropped without the code): an exception never outlives its reason.
-// None left: one-engine step 9 made the sync script's replay and leaderboard one path for every subject (Code.gs
-// replay_, rplMake_, boardRpl_, board_; tests/board.test.js).
-const ALLOWED = [];
+// One-engine step 9 made the sync script's replay one path for every subject (Code.gs replay_, rplMine_, rplMake_,
+// boardRpl_; tests/board.test.js), and the leaderboard one path but for this: the save summary's subject (sumSubj_,
+// the subject of the unprefixed fields, core.js replay: the corals) counts the "By genus" columns when no units were
+// sent and falls back on the RAs Progress column; Code.gs boardUnitsSave_ leaves it out the same way. Both go when the
+// summary is sent per subject, or "By genus" is retired (REE-256 question D).
+const ALLOWED = [[GS, 'sum = S.id === sumSubj_()', ONE_ENGINE]];
 // The SUBJECTS fields true for exactly one subject: [field, what it switches on, the docs/ROADMAP.md row that tracks it].
 const FLAGS = [
   ['flat', "a flat subject: the corals' data.json, a flat list keyed by name, not a tree with ids (app.js build, GX)", ONE_ENGINE],
@@ -258,6 +261,6 @@ test('rule S1: the checks catch what they are for (planted cases)', () => {
   );
   // an exception: its line gone, its row gone or absent
   assert.match(exceptions([['progress.js', 'no such line', ONE_ENGINE]], read, ROADMAP).join(), /stale exception/);
-  assert.match(exceptions([[GS, 'function board_(sid){']], read, ROADMAP).join(), /names no ROADMAP row/);
-  assert.doesNotMatch(exceptions([[GS, 'function board_(sid){']], read, ROADMAP).join(), /stale exception/);
+  assert.match(exceptions([[ALLOWED[0][0], ALLOWED[0][1]]], read, ROADMAP).join(), /names no ROADMAP row/);
+  assert.doesNotMatch(exceptions([[ALLOWED[0][0], ALLOWED[0][1]]], read, ROADMAP).join(), /stale exception/);
 });

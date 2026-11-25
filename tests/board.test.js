@@ -480,16 +480,19 @@ test('players named constructor, __proto__, toString: every board served, their 
 
 // One-engine step 9 (docs/reviews/2026-11-19-one-engine-audit.md §3, rule S1): one replay path and one leaderboard path
 // in the sync script for every subject. Each subject differs only by what it declares: its rows, units, rules versions
-// and Replayed tab (SUBJECTS replayed tab), its pooled statistics (SUBJECTS offsets), and, for the subject of the
-// unprefixed fields (replay), the save summary's "By genus" columns and Progress column.
+// and Replayed tab (SUBJECTS replayed tab), its pooled statistics (SUBJECTS offsets), and, for the save summary's subject
+// (the subject of the unprefixed fields, replay), the "By genus" columns and Progress column (the one exception the S1
+// test lists, tests/subject-neutral.test.js ALLOWED).
 const fnOf = name => {
   const i = CODE.indexOf('\nfunction ' + name + '(');
   assert.ok(i > 0, name);
   return CODE.slice(i, CODE.indexOf('\n}\n', i));
 };
-test('one replay path and one leaderboard path in the sync script: no test on a subject inside them', () => {
+test('one replay path and one leaderboard path in the sync script: no test on a subject in the replay, one declared in the board', () => {
   for (const f of ['replay_', 'rplMine_', 'rplMake_', 'boardRpl_', 'board_', 'boardWarm_'])
     assert.doesNotMatch(fnOf(f), /replaySubject\(\)|SUBJECTS\.find\(|\b(main|first)\s*=[^=]/, f);
+  for (const f of ['replay_', 'rplMine_', 'rplMake_', 'boardRpl_', 'boardWarm_']) assert.doesNotMatch(fnOf(f), /sumSubj_/, f);
+  assert.deepStrictEqual(fnOf('board_').match(/sumSubj_\(\)/g), ['sumSubj_()'], 'board_: the save summary subject, once');
   const s = loadCodeGs({fetch: withAll().fetch}),
     run = code => JSON.parse(vm.runInContext('JSON.stringify(' + code + ')', s.ctx));
   // Each subject's Replayed tab: the one it declares (the corals', named before there was another), else its name's.
