@@ -1,9 +1,11 @@
 require('./slot.js').testGuard();
 // The faster typed-answer reading: core.js typeDist keeps three rows of its matrix instead of the whole one,
 // typeMatchIn skips a name whose length is further from the text's than its tolerance, typeElse reads its lists'
-// names once per norm, and treeTypeNames reads the names near a short form through an index by length. Each gives
-// exactly the answers of the plain code, kept here as the reference: the same distances, matches, nudges and typed
-// names on the real fish, sea slug and coral names, their slips, random texts and made-up trees.
+// names once per norm, treeTypeNames reads the names near a short form through an index by length and measures only
+// those whose letters are within the tolerance, treeTypeNames and typeKnown find a unit's entry through a map, and
+// treeNameIndex reads each name once. Each gives exactly the answers of the plain code, kept here as the reference: the
+// same distances, matches, nudges, typed names and name index on the real fish, sea slug and coral names, their slips,
+// random texts, made-up trees and made-up exceptions.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -184,9 +186,11 @@ test('easyRank: equal photos in the order of the name hash, as before', () => {
   );
 });
 
-// core.js treeTypeNames as it was, word for word: every short form read against every name and short form. It runs
-// inside core.js's own source (in place of the new one), so it reads the same helpers (typeNormAll, typeDist, TYPE,
-// typeWiden, typeForms, typeKnown, typeOff).
+// core.js treeTypeNames as it was, word for word, twice: first every short form read against every name and short form
+// (treeTypeNamesRef), then through the index by length (treeTypeNamesLen, with out.find for a unit's key). Each runs
+// inside core.js's own source in place of the new one, with typeKnown and treeNameIndex as they were too (out.find for a
+// unit's key, each name read three times), so it reads the same other helpers (typeNormAll, typeDist, TYPE, typeWiden,
+// typeForms, typeOff).
 function treeTypeNamesRef(gen, drop = '', known = []) {
   const out = [],
     // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
@@ -242,23 +246,181 @@ function treeTypeNamesRef(gen, drop = '', known = []) {
   typeOff(out, known);
   return out;
 }
+function treeTypeNamesLen(gen, drop = '', known = []) {
+  const out = [],
+    // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
+    // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
+    add = (k, g, x, i, oft, sc) => {
+      if (!k) return;
+      const o = out.find(y => y.k === k && y.g === g);
+      if (o) return typeWiden(o, sc);
+      out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})});
+    },
+    scOf = (g, x) => (g.scopes || {})[x],
+    oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
+  Object.values(gen || {}).forEach(g =>
+    (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
+  );
+  const d = typeNormAll(drop);
+  if (!d) return out;
+  const cut = new RegExp("^([A-Za-z][A-Za-z '-]*?)[ -]*" + d + '(?:es)?$', 'i'),
+    short = out
+      .map(o => {
+        const x = typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
+          m = String(x || '').match(cut),
+          k = m ? typeNormAll(m[1]) : '';
+        // the short form and its plural, and the name's own plural or singular ("Triggers", "Triggerfishes",
+        // "Frogfish": plain right answers, not spellings to fix)
+        const one = o.k.endsWith(d + 'es') ? [o.k.slice(0, -2), x.replace(/es$/i, '')] : o.k.endsWith(d) ? [o.k + 'es', x + 'es'] : null;
+        return m && k.length >= 3 && k !== o.k
+          ? [
+              {k, g: o.g, x: m[1].trim(), oft: o.oft, sc: o.sc},
+              {k: k + 's', g: o.g, x: m[1].trim() + 's', oft: o.oft, sc: o.sc},
+              ...(one ? [{k: one[0], g: o.g, x: one[1].trim(), own: !o.old, oft: o.oft, sc: o.sc}] : [])
+            ]
+          : [];
+      })
+      .flat(),
+    near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
+  // A short form is kept unless it is within the tolerance of another unit's name or short form. The names are read by
+  // length, each key once with the units it names (byLen: length → key → units): a distance is never less than the two
+  // lengths' difference, so only the lengths within the tolerance of the short form's are read (tests/typefast.test.js).
+  const byLen = new Map(),
+    reach = new Map(),
+    lensNear = n => {
+      if (reach.has(n)) return reach.get(n);
+      const ms = [...byLen.keys()].filter(m => Math.abs(m - n) <= TYPE.tol(Math.min(m, n)));
+      reach.set(n, ms);
+      return ms;
+    },
+    clash = s => {
+      for (const m of lensNear(s.k.length))
+        for (const [k, gs] of byLen.get(m)) if ((gs.size > 1 || !gs.has(s.g)) && near(s.k, k)) return true;
+      return false;
+    };
+  [...out, ...short].forEach(o => {
+    if (!byLen.has(o.k.length)) byLen.set(o.k.length, new Map());
+    const L = byLen.get(o.k.length);
+    if (!L.has(o.k)) L.set(o.k, new Set());
+    L.get(o.k).add(o.g);
+  });
+  short.filter(s => !clash(s)).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
+  // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
+  // scientific name's (a unit of a scientific rank, a family's sciNames: "Zebrasomas" is no plural), which keeps its
+  // spelling step.
+  Object.values(gen || {})
+    .filter(g => !g.rank)
+    .forEach(g =>
+      (g.names || [g.name]).forEach(
+        (x, i) =>
+          !(g.sciNames || []).includes(x) &&
+          typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
+      )
+    );
+  typeKnown(out, known);
+  typeOff(out, known);
+  return out;
+}
+function typeKnownRef(out, known) {
+  const have = new Set(out.filter(o => !o.known).map(o => o.k)),
+    seen = new Set(out.map(o => o.k + '|' + o.g));
+  (known || [])
+    .filter(e => e.g)
+    .forEach(e =>
+      [e.x, ...(['ss', 'gs'].includes(e.vr) ? [] : typeForms(e.x))].forEach(y => {
+        const k = typeNormAll(y);
+        if (k.length < 3) return;
+        if (seen.has(k + '|' + e.g)) {
+          // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it, and
+          // the wider reading holds
+          const o = out.find(x => x.k === k && x.g === e.g && !x.known);
+          if (o && e.oft && !o.oft) o.oft = e.oft;
+          if (o) typeWiden(o, e.sc);
+          return;
+        }
+        seen.add(k + '|' + e.g);
+        have.add(k);
+        out.push({
+          k,
+          g: e.g,
+          old: y,
+          alt: 1,
+          vr: e.vr,
+          ...(e.n ? {n: e.n, of: e.of} : {}),
+          ...(e.oft ? {oft: e.oft} : {}),
+          ...(e.sc ? {sc: e.sc} : {})
+        });
+      })
+    );
+  (known || [])
+    .filter(e => !e.g)
+    .forEach(({x, w}) =>
+      [x, ...typeForms(x)].forEach(y => {
+        const k = typeNormAll(y);
+        if (k.length >= 3 && !have.has(k)) (have.add(k), out.push({k, g: '', old: y, alt: 1, known: 1, ...(w ? {w: 1} : {})}));
+      })
+    );
+}
+function treeNameIndexRef(F, cur) {
+  const out = [],
+    fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
+    C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
+    off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
+    oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
+    put = (x, g, vr, n, of, sc) => {
+      if (!x || !fam.has(g)) return;
+      if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
+      const o = oft(x, g),
+        // Pierre's on or often gives the name to the whole family, whatever part it named
+        whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
+      out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
+    };
+  const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
+  game.forEach(s => {
+    [...(s.cn || []), ...(s.cnr || [])].forEach(L => L.forEach(x => put(x, s.family, 'sp', 0, 0, [s.id])));
+    [s.name, s.now].forEach(x => put(x, s.family, 'ss', 0, 0, [s.id]));
+  });
+  const inGame = new Set(game.map(s => s.genus));
+  ((F && F.genera) || [])
+    .filter(g => inGame.has(g.id))
+    .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
+  // A kind word designates the species that carry it ("razorfish" on a cleaner wrasse is a mistake); Pierre's
+  // on or often gives it to the whole family.
+  ((F && F.vn) || []).forEach(([x, owners]) =>
+    (owners || []).forEach(([g, r, n, of, sp]) => {
+      const c = (C[typeNormAll(x)] || {})[g];
+      put(x, g, 'k', n, of, c === 'on' || c === 'often' ? null : sp);
+    })
+  );
+  // Pierre's own names (on), the index's or not.
+  Object.entries(cur || {}).forEach(([x, v]) =>
+    Object.entries(v || {}).forEach(([g, c]) => {
+      if ((c === 'on' || c === 'often') && !out.some(e => e.g === g && typeNormAll(e.x) === typeNormAll(x))) put(x, g, 'cur');
+    })
+  );
+  return out;
+}
 
-// core.js's source with treeTypeNames replaced (by the reference, or a mutant of the new one), loaded as a module.
+// core.js's source with some of its functions replaced (by a reference, or a mutant of the new one; {name: source}),
+// loaded as a module.
 const CORE_SRC = fs.readFileSync(path.join(__dirname, '..', 'core.js'), 'utf8'),
-  TTN = block(CORE_SRC, '  function treeTypeNames(', '\n  }\n', {through: 1, file: 'core.js'}),
-  coreWith = fn => {
+  fnOf = name => block(CORE_SRC, `  function ${name}(`, '\n  }\n', {through: 1, file: 'core.js'}),
+  TTN = fnOf('treeTypeNames'),
+  coreWith = reps => {
     const m = {exports: {}};
-    new Function(
-      'module',
-      'exports',
-      CORE_SRC.replace(TTN, () => fn)
-    )(m, m.exports);
+    let src = CORE_SRC;
+    Object.entries(reps).forEach(([name, fn]) => (src = src.replace(fnOf(name), () => fn)));
+    new Function('module', 'exports', src)(m, m.exports);
     return m.exports;
-  };
+  },
+  asIn = (f, name) => '  ' + f.toString().replace(f.name, name) + '\n',
+  // the code before: typeKnown and treeNameIndex as they were, with either reading of treeTypeNames
+  BEFORE = {typeKnown: asIn(typeKnownRef, 'typeKnown'), treeNameIndex: asIn(treeNameIndexRef, 'treeNameIndex')};
 
 // A made-up tree whose short forms often fall within the tolerance of another unit's name or short form: names of a
 // few letters at every length around the tolerance's step (6 / 7 letters), some the same stem as another unit's, some
-// a slip of one (a letter left out, doubled, changed, two neighbours swapped), each with a word "fish" or none.
+// a slip of one (a letter left out, doubled, changed, two neighbours swapped), each with a word "fish" or none. Some units
+// have a name in common use (oft) and a name for part of them (scopes).
 const madeUp = () => {
   const A = 'aeinorst',
     tails = [' fish', 'fish', 'fishes', ' fishes', '-fish', ' Fish', ''],
@@ -275,12 +437,45 @@ const madeUp = () => {
       stems.push(w);
       return w[0].toUpperCase() + w.slice(1) + pick(tails);
     });
-    gen['u' + i] = {id: 'u' + i, name: names[0], names, ...(rnd() < 0.15 ? {rank: 'genus'} : {})};
+    gen['u' + i] = {
+      id: 'u' + i,
+      name: names[0],
+      names,
+      ...(rnd() < 0.15 ? {rank: 'genus'} : {}),
+      ...(names.length > 1 && rnd() < 0.3 ? {oft: [[names[0], pick(names.slice(1))]]} : {}),
+      ...(rnd() < 0.3 ? {scopes: {[pick(names)]: ['s' + i]}} : {})
+    };
   }
   return gen;
 };
+// A made-up name index for tree gen (treeNameIndex's shape): names of its units, some twice for one unit (with other
+// species, Pierre's often), some a slip of a unit's name, some new; words owned by none; a name taken off a unit (off).
+const madeKnown = gen => {
+  const ids = Object.keys(gen),
+    nameOf = () => pick(gen[pick(ids)].names),
+    out = [];
+  for (let i = 0, n = Math.floor(rnd() * 30); i < n; i++) {
+    const r = rnd(),
+      x = r < 0.5 ? nameOf() : r < 0.75 ? slip(nameOf()) : pick(['Sea pig', 'Razorfish', 'Toby', 'Tang', 'Chromis']),
+      g = pick(ids);
+    if (rnd() < 0.15) out.push({x, g: '', ...(rnd() < 0.5 ? {w: 1} : {})});
+    else if (rnd() < 0.05) out.push({x, g: '', vr: 'w', w: 1, off: g});
+    else
+      out.push({
+        x,
+        g,
+        vr: pick(['sp', 'ss', 'gs', 'gc', 'k']),
+        ...(rnd() < 0.3 ? {n: 2, of: 5} : {}),
+        ...(rnd() < 0.3 ? {oft: ['Usual', x]} : {}),
+        ...(rnd() < 0.6 ? {sc: ['s' + Math.floor(rnd() * 4)]} : {})
+      });
+    // the same name of the same unit again, for other species
+    if (rnd() < 0.3) out.push({...out[out.length - 1], sc: ['s' + Math.floor(rnd() * 4)]});
+  }
+  return out;
+};
 
-test('treeTypeNames: the names of the pairwise reading, in its order, on every tree; its mutants caught', () => {
+test('treeTypeNames: the names of the readings before, in their order, on every tree; its mutants caught', () => {
   seed = 2026;
   const SL = read('seaslug.json'),
     drop = C.subjectOf('fish').typeDrop,
@@ -315,28 +510,115 @@ test('treeTypeNames: the names of the pairwise reading, in its order, on every t
     ['sea slugs', slugs, C.subjectOf('seaslug').typeDrop || '', []],
     ['sea slugs, a word dropped', slugs, 'doris', []],
     ['corals, a word dropped', corals, 'pora', []],
-    ...Array.from({length: 200}, (_, i) => [`made-up ${i}`, madeUp(), 'fish', []])
+    ...Array.from({length: 200}, (_, i) => {
+      const gen = madeUp();
+      return [`made-up ${i}`, gen, 'fish', i % 2 ? madeKnown(gen) : []];
+    })
   ];
-  const ref = coreWith('  ' + treeTypeNamesRef.toString().replace('treeTypeNamesRef', 'treeTypeNames') + '\n'),
-    want = cases.map(([, gen, drop, known]) => ref.treeTypeNames(gen, drop, known));
-  cases.forEach(([what, gen, drop, known], i) => assert.deepStrictEqual(C.treeTypeNames(gen, drop, known), want[i], what));
+  // The code before, both readings.
+  const run = (M, [, gen, drop, known]) => M.treeTypeNames(gen, drop, known),
+    pairwise = coreWith({...BEFORE, treeTypeNames: asIn(treeTypeNamesRef, 'treeTypeNames')}),
+    want = cases.map(c => run(pairwise, c)),
+    len = coreWith({...BEFORE, treeTypeNames: asIn(treeTypeNamesLen, 'treeTypeNames')});
+  cases.forEach((c, i) => {
+    assert.deepStrictEqual(run(len, c), want[i], c[0] + ' (the readings before)');
+    assert.deepStrictEqual(run(C, c), want[i], c[0]);
+  });
   // Each mutant of the new reading gives other names on at least one tree: the cases meet a short form within the
   // tolerance of another unit's name at the window's edge (one letter of difference on a short name, two on a long
-  // one), of a key two units share, and of its own unit's names only.
-  const W = 'Math.abs(m - n) <= TYPE.tol(Math.min(m, n))',
-    G = '(gs.size > 1 || !gs.has(s.g))';
+  // one) and at the letters' edge (as many letters apart as the tolerance), of a key two units share, and of its own
+  // unit's names only; a unit's key read twice, and an index name a unit already has, alone and twice.
+  const W = 'Math.abs(m - n) <= t',
+    G = '(gs.size > 1 || !gs.has(s.g))',
+    TK = fnOf('typeKnown');
   [
-    ['a window one letter narrower', W, 'Math.abs(m - n) < TYPE.tol(Math.min(m, n))'],
-    ['one letter at most on a long name', W, 'Math.abs(m - n) <= Math.min(1, TYPE.tol(Math.min(m, n)))'],
+    ['a window one letter narrower', W, 'Math.abs(m - n) < t'],
+    ['one letter at most on a long name', 'TYPE.tol(Math.min(m, n))]', 'Math.min(1, TYPE.tol(Math.min(m, n)))]'],
     ['the same length only', W, 'm === n'],
-    ['a key another unit shares with this one left out', G, '!gs.has(s.g)'],
+    ['a key another unit shares with this one left out', G, '(!gs.has(s.g))'],
     ["the unit's own names read as another's", G, 'true'],
-    ['no short form ever within the tolerance', '&& near(s.k, k)) return true', '&& false) return true']
-  ].forEach(([what, from, to]) => {
-    assert.strictEqual(TTN.split(from).length, 2, `${what}: ${from} occurs once in treeTypeNames`);
-    const M = coreWith(TTN.replace(from, () => to));
+    ['no short form ever within the tolerance', '&& near(s.k, k)) return true', '&& false) return true'],
+    ['the letters one letter stricter', 'i < t; i++', 'i < t - 1; i++'],
+    ['the letters both keys hold read as apart', 'x = a & ~bits.get(k)', 'x = a & bits.get(k)'],
+    ["a letter's bit read with its place", '1 << (o.k.charCodeAt(i) % 32)', '1 << ((o.k.charCodeAt(i) + i) % 32)'],
+    ["the short form's letters read as none", 'const a = bits.get(s.k);', 'const a = 0;'],
+    ['the first name of a unit normalised again as another', 'oftOf(g, k), scOf(g, x)', "oftOf(g, ''), scOf(g, x)"],
+    ["a unit's key read as the key alone (any unit's entry)", 'const o = G.get(g);', 'const o = G.values().next().value;'],
+    ["a unit's key not kept (read twice)", 'G.set(g, e);', ''],
+    ['an index name a unit has: no entry found', 'o = G && G.get(e.g);', 'o = undefined;', 'typeKnown'],
+    ["an index name a unit has: another unit's entry", 'o = G && G.get(e.g);', 'o = G && G.values().next().value;', 'typeKnown'],
+    ['an index name added: not kept for the next', 'keep(n);', '', 'typeKnown']
+  ].forEach(([what, from, to, fn = 'treeTypeNames']) => {
+    const src = fn === 'typeKnown' ? TK : TTN;
+    assert.strictEqual(src.split(from).length, 2, `${what}: ${from} occurs once in ${fn}`);
+    const M = coreWith({[fn]: src.replace(from, () => to)});
     assert.ok(
-      cases.some(([, gen, drop, known], i) => !util.isDeepStrictEqual(M.treeTypeNames(gen, drop, known), want[i])),
+      cases.some((c, i) => !util.isDeepStrictEqual(run(M, c), want[i])),
+      `mutant not caught: ${what}`
+    );
+  });
+});
+
+// core.js treeNameIndex reads each name once for Pierre's word on it, and a kind word once for all its families: the
+// index of the code before, entry for entry, with no exceptions, with the test's, and with seeded ones on every kind of
+// name (off, on, often, on a name the index does not hold); its mutants caught.
+test('treeNameIndex: the index of the code before, with and without exceptions; its mutants caught', () => {
+  seed = 77;
+  const SL = read('seaslug.json'),
+    fams = F.families.map(f => f.id),
+    names = [
+      ...F.species.flatMap(s => [...(s.cn || []).flat(), s.name]),
+      ...F.genera.flatMap(g => [g.name, g.common]),
+      ...(F.vn || []).map(([x]) => x)
+    ].filter(Boolean),
+    curs = [
+      undefined,
+      {},
+      {
+        razorfish: {'f:Wrasses': 'off', 'f:Shrimpfishes': 'often'},
+        Tuskfish: {'f:Wrasses': 'on'},
+        'sea pig': {'f:Wrasses': 'on'},
+        Hogfish: {'f:Wrasses': 'off'},
+        Chromis: {'f:Damselfishes': 'often'},
+        Tang: {'f:Surgeonfishes': 'often'}
+      },
+      ...Array.from({length: 30}, () =>
+        Object.fromEntries(
+          Array.from({length: 1 + Math.floor(rnd() * 40)}, () => [
+            rnd() < 0.8 ? pick(names) : slip(pick(names)),
+            Object.fromEntries(Array.from({length: 1 + Math.floor(rnd() * 2)}, () => [pick(fams), pick(['off', 'on', 'often', ''])]))
+          ])
+        )
+      ),
+      // a kind word given to, or taken off, one of the families that carry it
+      ...Array.from({length: 10}, () =>
+        Object.fromEntries(
+          Array.from({length: 1 + Math.floor(rnd() * 10)}, () => {
+            const [x, owners] = pick(F.vn);
+            return [x, {[pick(owners)[0]]: pick(['off', 'on', 'often'])}];
+          })
+        )
+      )
+    ],
+    cases = [...curs.map((cur, i) => [`fish, exceptions ${i}`, F, cur]), ['sea slugs', SL, {}]];
+  const old = coreWith(BEFORE),
+    want = cases.map(([, R, cur]) => old.treeNameIndex(R, cur));
+  cases.forEach(([what, R, cur], i) => assert.deepStrictEqual(C.treeNameIndex(R, cur), want[i], what));
+  // every word is met
+  const words = new Set(want.flat().map(e => (e.off ? 'off' : e.oft ? 'often' : e.vr)));
+  ['off', 'often', 'cur', 'k', 'sp', 'ss', 'gs', 'gc'].forEach(w => assert.ok(words.has(w), w));
+  // A kind word's own read of Pierre's word (P, read once for its families) is an equivalent mutant: put reads the same
+  // word again and drops the species of a name on or often (whole), so a word read wrong or not at all gives the same index.
+  const TNI = fnOf('treeNameIndex');
+  [
+    ["Pierre's word read for another family", 'const c = (C[typeNormAll(x)] || {})[g];', "const c = (C[typeNormAll(x)] || {})[''];"],
+    ['off never read', "if (c === 'off')", "if (c === 'of')"],
+    ['often not the whole family', "whole = ['on', 'often'].includes(c)", "whole = ['on'].includes(c)"]
+  ].forEach(([what, from, to]) => {
+    assert.strictEqual(TNI.split(from).length, 2, `${what}: ${from} occurs once in treeNameIndex`);
+    const M = coreWith({treeNameIndex: TNI.replace(from, () => to)});
+    assert.ok(
+      cases.some(([, R, cur], i) => !util.isDeepStrictEqual(M.treeNameIndex(R, cur), want[i])),
       `mutant not caught: ${what}`
     );
   });
