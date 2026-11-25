@@ -48,8 +48,8 @@ the issue's Agent notes, never retyped here. A new line for every agent goes int
   the reason it does not apply. Reply on its thread, and resolve the thread only after its fix is pushed: resolving first
   lets the queue merge the head without the fix. If the resolve is refused, report the thread IDs. Never re-run a
   failed job to get green.
-- When findings come back twice in a row on the same part, stop: that part leaves the PR for a short design note, and
-  you report it (rule W27). Never fix the same part a third time.
+- Fix findings while they are new and small. When they keep coming back on the same part (say twice in a row), stop
+  and report it: the integrator cuts that part from the PR for a short design note (rule W27, no fixed number of rounds).
 - Never merge. The integrator merges (AGENTS.md "Working mode").
 - Commits and the PR description end with the trailers or footer your session gives.
 
