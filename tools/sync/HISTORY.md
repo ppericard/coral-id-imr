@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v230 (2026-11-25)
+
+The Events and Pages writer (`events_`) skips a retried event even when its device stayed offline while more than 2000 rows arrived. It still checks an incoming id against the ids of the last 2000 rows of its tab (`EV_WINDOW`), which costs nothing more than before. An id made before that window began (its first 8 base36 characters are its creation time, `Date.now()` in `sync.js` `ev`; an id without them counts as older) makes the request read the rows before the window too, so the tab's whole id column, once. The window's start is the median creation time of its first 200 ids plus an hour, not its first row's time, because rows are appended as they arrive and an old event can arrive late. Before, such a retry was written a second time and counted twice in the visits and page summaries (the integrator's call, REE-293, 2026-11-25). The app is unchanged, so there is no gate, and an older script keeps the old window
+
 ## v229 (2026-11-25)
 
 The embedded `core.js` lays a species' own list of common names over the built one (`treeCnApply`, run by `contentApply`, so the sheet's replay reads the same names as the app and the admin): `curation.json` `fish` `cn`, `{species id: [1 to 3 names]}`, written by the admin only (Pierre, 2026-11-21, Q444). A list never changes whether a species has a list, so the species and score units, the replay and the leaderboards are the same with or without it; the script needs no gate and an older script replays as before. No sheet column, no reply field
