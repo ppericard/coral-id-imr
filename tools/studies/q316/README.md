@@ -22,7 +22,7 @@ sampler below: [docs/reviews/2026-11-25-q316-refit.md](../../../docs/reviews/202
 | `replay2b.js` | 2B on the real log: the half fits, then the replay of the arms (after `run.py`, on its out directory) |
 | `run.py` | Every step for both subjects under one 40-minute clock |
 | `gibbs.py` | The same model's SDs from their posterior (the Gibbs sampler, REE-193), its acceptance test and checks; one subject per run |
-| `refit/` | REE-193's extract tools (`pseudonymise.js`, `cut.js`), the aggregates' writer (`summarise.js`) and the refit's aggregates (`q316-refit-2026-11-25.json`) |
+| `refit/` | REE-193's extract tools (`pseudonymise.js`, `cut.js`), the aggregates' writer (`summarise.js`), the refit's aggregates (`q316-refit-2026-11-25.json`) and an exploratory cross-check (`crosscheck.py`) |
 
 Tests: `tests/q316.test.js` (the loader, check 2C, the declared rules; and, with numpy and scipy, `tests/q316fit_check.py`:
 the sparse Laplace objective against a dense computation, a planted SD recovered, the acceptance rule, the clock).
@@ -185,6 +185,9 @@ recovered, R-hat and ESS on independent draws.
   `--delete-input` removes the raw replies once the log is written.
 - `refit/cut.js`: the log cut at a moment, to rerun today's code on an earlier fit's answers (the data's growth told
   from the code's changes).
+- `refit/summarise.js`: a run directory's aggregates (no row, label or unit effect), the committed
+  `refit/q316-refit-2026-11-25.json`.
+- `refit/crosscheck.py` (exploratory): answers simulated from the sampler's medians, fitted by the Laplace fit.
 - The results: [docs/reviews/2026-11-25-q316-refit.md](../../../docs/reviews/2026-11-25-q316-refit.md).
 
 ## Running it on the real log
