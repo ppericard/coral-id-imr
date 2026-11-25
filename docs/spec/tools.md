@@ -181,7 +181,13 @@ subject is a test case, not the definition of the target.
   window (`model.js` `SEENQ`) and the planner's memory of it (`last`, `lastQs`), so no restart of the plans or the numbers
   could undo it: `fish:50` at seed 3 asked another sequence in one run of five, 0.113 M or 0.118 M calls an answer. About
   draws no question; the tool waits for every tier set up (`HAVE`), the Lab files loaded (`LAB.pending`), the planned
-  questions' photos and the idle tasks, fails
+  questions' photos and the idle tasks, then lets the draw's data be filled in idle time (`app.js` `drawFillSoon`,
+  held since the boot by `DRAW_FILL_HOLD`) and waits for it (`drawFillDone`) in a window of its own: the row's `fill`
+  (the units the slices went through, their named calls and `top` functions), the table's "Filled idle" column. Its
+  calls are in no answer's count, as a player's answers after a load find it done; a fill still running inside an
+  answer's window would move between answers with the machine's speed. `fillIn` counts the units filled idle within each
+  answer counted (a data version that moved during the count): their calls are that answer's, and the column names them.
+  Then it fails
   naming the page's state when a question, a window of photos or a bar is still there, then drops the plans, starts the
   numbers from the seed and opens the quiz), and the data (every
   `.json` file the page asks for) is the pinned tree's, as the players are, while the code is the tree under test's. So
