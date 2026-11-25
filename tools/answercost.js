@@ -5,8 +5,10 @@
 // (rule D1), the player is signed out, no photo is served.
 //
 //   node tools/answercost.js                                  every subject at three histories: fish, corals and sea slugs at
-//                                                             50, 500 and 3,000 answers (STATES; CI's "answer cost" job runs this)
-//   node tools/answercost.js --states fish:50,fish:500        other states (subject:answers, subject fish|coral|seaslug)
+//                                                             50, 500 and 3,000 answers, each in the middle of a session and
+//                                                             back after a break (STATES; CI's "answer cost" job runs this)
+//   node tools/answercost.js --states fish:50,fish:500:back   other states (subject:answers, subject fish|coral|seaslug;
+//                                                             :back, the player back after BACK, 30 days: a comeback)
 //   node tools/answercost.js --dump A.json,B.json             saved states made earlier (tools/learnsim.js --dump)
 //   node tools/answercost.js --budget tools/answercost-budget.json   fail (exit 1) when a count passes its ceiling
 //   node tools/answercost.js --write-budget FILE [--margin 1.25] [--also A.json,B.json]   write the measured counts (the
@@ -22,9 +24,9 @@
 // A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the page's own answers; the sea slugs play the
 // fish part of the profile, the same engine) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in
 // the temporary directory, shared by every worktree). The missing states of a subject are made by one run to the longest
-// of them, which saves each of the others on its way: the nine states of STATES take about 2 minutes 15 s on a quiet 4-core
-// machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting them 40 s
-// at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
+// of them, which saves each of the others on its way: the nine players take about 2 minutes 15 s on a quiet 4-core
+// machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting the
+// eighteen states of STATES (each player in a session and back) about 1 minute 30 s at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
 // formats), each through the tap, the feedback, the deferred planning, Next and its top-up. V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
@@ -40,9 +42,14 @@
 // neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
 // (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
 // seconds (30) after the state's last answer, so the player is in the middle of a session whenever the file is played: a
-// gap of several hours since the last answer starts a comeback (model.js rustNow), which draws from fewer units and costs
-// less (fish 50 answers: 0.36 M calls an answer after a gap of hours, 0.51 M inside a session). --clock off: the machine's
-// clock, so the file's age decides (and the run is not repeatable).
+// gap of 30 minutes or more since the last answer starts a new visit, and one that left rust a comeback (model.js
+// rustNow), whose answers sum the rust again (rustAdd) and draw from the units answered right (comebackOf). --clock off:
+// the machine's clock, so the file's age decides (and the run is not repeatable). A comeback state (subject:answers:back)
+// starts the page's clock BACK (30 days) after the state's last answer, plays no warm-up (the visit's first answer is the
+// comeback's first, which a session state's warm-up leaves out), and counts only the answers given in the comeback (rust
+// left, model.js CB.r), each taken alone (V8's coverage and the storage counters read and started over after each answer;
+// the row's `each` keeps each answer's calls): after a short history the comeback ends within a few answers (corals and
+// sea slugs at 50 answers: 3), and the answers after it are a session's. Fewer than BACK_MIN of them fails the run.
 //
 // Heavy (rule W24): it takes the machine slot before it starts Chromium. No routine local check runs it (Pierre,
 // 2026-11-24 14:06: a minute or two a check, times the checks, times the agents, climbs very fast): the unit tests
@@ -80,6 +87,9 @@ const WATCH = [
   // the opening's checks: the units ready (readyCalc, once a version; readyPart, per unit), the cards (cardsCalc), circle
   // 2's condition (c1MetCalc); the rust, summed at a visit or in a comeback (rustAdd), else skipped (rustSkip)
   'readyCalc', 'readyPart', 'cardsCalc', 'c1MetCalc', 'rustAdd', 'rustSkip',
+  // the confusion groups' pairs, from each unit's part (groupUnitCalc, once a data version per unit; the code before:
+  // groupConf, declaredOf, confPrior per pair) and the units in play's photos (photoAny, once a data version per unit)
+  'groupUnitCalc', 'groupConf', 'declaredOf', 'confPrior', 'comebackOf',
   'introduced', 'closed', 'asked', 'askedOpen', 'introReady', 'introMap', 'mayOpen', 'treeGate', 'treeC3', 'photoAny', 'GX',
   'headScore', 'headPct', 'progPct', 'treeScore', 'pctOf', 'rustNow', 'recallAt', 'stability', 'genusDiff', 'photoDiff', 'photoSet',
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',
@@ -91,7 +101,14 @@ const WATCH = [
 // the study.
 const SUBJECTS = ['fish', 'coral', 'seaslug'];
 const HISTORIES = [50, 500, 3000];
-const STATES = SUBJECTS.flatMap(s => HISTORIES.map(n => `${s}:${n}`)).join(',');
+// Each state twice: a player in the middle of a session (the page's clock --clock seconds after the state's last answer),
+// and the same player back after a break of BACK seconds (subject:answers:back), whose answers are all a comeback's
+// (model.js rustNow, comebackOf): the rust is summed at each of them.
+// 30 days: a month away, after which every state's comeback lasts at least BACK_MIN answers (the shortest, corals at 50
+// answers: 3).
+const BACK = 30 * 86400,
+  BACK_MIN = 2; // a comeback state counts at least this many comeback answers, or it fails
+const STATES = SUBJECTS.flatMap(s => HISTORIES.flatMap(n => [`${s}:${n}`, `${s}:${n}:back`])).join(',');
 const BUDGETED = ['namedCalls', 'getCalls', 'getChars', 'setChars'];
 // The computations of the views whose count grows with the state when a version is lost (metCalc, genScoreCalc,
 // examOnCalc, lvlNeedCalc: once a version, per unit or class; drawPhotosCalc: once a data version per unit drawn).
@@ -104,15 +121,17 @@ const PLAYER = {profile: 'lectureRA', seed: 1};
 // ---------------------------------------------------------------------------------------------------------------
 // Pure parts (tests/answercost.test.js): states named, counts flattened, ceilings checked and written.
 
-// 'fish:50,coral:3000' -> [{name, subject, answers}]
+// 'fish:50,coral:3000,fish:500:back' -> [{name, subject, answers, back}]; back: the player comes back after a break
+// (BACK), so every answer counted is a comeback's.
 function parseStates(spec) {
   return String(spec)
     .split(',')
     .filter(Boolean)
     .map(s => {
-      const m = new RegExp(`^(${SUBJECTS.join('|')}):(\\d+)$`).exec(s.trim());
-      if (!m || Number(m[2]) < 1) throw new Error(`bad state ${s} (fish:50, coral:3000: subject ${SUBJECTS.join(', ')}, then the answers)`);
-      return {name: `${m[1]}:${m[2]}`, subject: m[1], answers: Number(m[2])};
+      const m = new RegExp(`^(${SUBJECTS.join('|')}):(\\d+)(:back)?$`).exec(s.trim());
+      if (!m || Number(m[2]) < 1)
+        throw new Error(`bad state ${s} (fish:50, coral:3000, fish:500:back: subject ${SUBJECTS.join(', ')}, then the answers, then :back for a comeback)`);
+      return {name: `${m[1]}:${m[2]}${m[3] || ''}`, subject: m[1], answers: Number(m[2]), back: !!m[3]};
     });
 }
 
@@ -211,7 +230,8 @@ function table(rows) {
       const m = metrics(r),
         s = r.size;
       return [
-        multi ? `${r.state} (seed ${r.seed})` : r.state,
+        // a comeback state: the comeback answers counted
+        (multi ? `${r.state} (seed ${r.seed})` : r.state) + (/:back$/.test(r.state) ? `, ${r.answers} answers` : ''),
         fmt(s.records),
         fmt(s.play),
         fmt(s.tree),
@@ -421,9 +441,16 @@ async function oneAnswer(p, i, why) {
   let fmt;
   try {
     // 4 s to read and answer; the virtual clock (count) stands still otherwise
-    const r = await p.evaluate(pick => (window.__tick && __tick(4000), smokeAnswer(pick)), i % 4 !== 3); // three right, one wrong
+    // back: whether the answer is given in a comeback (model.js CB.r: the rust left, which rustNow sums again at the
+    // answer), read before it. Not the question's own flag (quiz.js SHOWNQ.warm): a surprise question shown in a comeback
+    // is no photo-quiz question, and the comeback goes on through it.
+    const r = await p.evaluate(
+      pick => ({back: typeof CB === 'object' && CB.r > 0, ...(window.__tick && __tick(4000), smokeAnswer(pick))}),
+      i % 4 !== 3
+    ); // three right, one wrong
     fmt = r.fmt;
     (why.asked = why.asked || []).push(r.t); // the units asked (the row's `asked`: what a count is of)
+    why.back = (why.back || 0) + (r.back ? 1 : 0);
   } catch (e) {
     why.push('smokeAnswer: ' + String(e.message).slice(0, 200));
     return null;
@@ -625,30 +652,68 @@ async function count(browser, base, file, name, o, expect) {
   await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
   const fmts = [];
   const why = [];
-  for (let i = o.warm; i < o.warm + o.n; i++) fmts.push(await oneAnswer(p, i, why));
-  const {result} = await cdp.send('Profiler.takePreciseCoverage');
-  await cdp.send('Profiler.stopPreciseCoverage');
-  const n = fmts.filter(Boolean).length;
-  // Most of the answers played, and no page error: a count over a broken page is no count.
-  if (n < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${n} of ${o.n} answers were played (${errs.join('; ') || 'no page error'}; ${why[0] || 'no reason seen'})`);
-  if (errs.length) throw new Error(`${name}: page errors: ${errs.join('; ')}`);
-  const by = new Map();
+  const by = new Map(),
+    st = {get: {calls: 0, chars: 0}, set: {calls: 0, chars: 0}, keys: {}};
   let total = 0;
-  for (const s of result) {
-    if (!FILES.test(s.url)) continue;
-    const f = path.basename(s.url).replace(/\?.*/, '');
-    for (const fn of s.functions) {
-      const c = fn.ranges[0].count;
-      if (!fn.functionName || !c) continue;
-      total += c;
-      by.set(fn.functionName + '@' + f, (by.get(fn.functionName + '@' + f) || 0) + c);
+  const each = []; // the calls of each take (a comeback state: of each answer counted)
+  // The calls and the storage traffic since the last take, added to the count (keep) or left out; both counters start over
+  // (V8's takePreciseCoverage resets its call counts).
+  const take = async keep => {
+    const {result} = await cdp.send('Profiler.takePreciseCoverage'),
+      s = await p.evaluate(() => {
+        const C = window.__st,
+          out = JSON.parse(JSON.stringify(C));
+        C.get = {calls: 0, chars: 0};
+        C.set = {calls: 0, chars: 0};
+        C.keys = {};
+        return out;
+      });
+    if (!keep) return;
+    const t0 = total;
+    for (const sc of result) {
+      if (!FILES.test(sc.url)) continue;
+      const f = path.basename(sc.url).replace(/\?.*/, '');
+      for (const fn of sc.functions) {
+        const c = fn.ranges[0].count;
+        if (!fn.functionName || !c) continue;
+        total += c;
+        by.set(fn.functionName + '@' + f, (by.get(fn.functionName + '@' + f) || 0) + c);
+      }
     }
+    each.push(total - t0);
+    for (const op of ['get', 'set']) for (const k of ['calls', 'chars']) st[op][k] += s[op][k];
+    for (const [k, v] of Object.entries(s.keys)) {
+      const c = (st.keys[k] = st.keys[k] || {calls: 0, chars: 0});
+      c.calls += v.calls;
+      c.chars += v.chars;
+    }
+  };
+  // A comeback state (back) counts the answers given in the comeback only, each taken alone: after a short history the
+  // comeback ends within a few answers (fish 50 answers, 30 days away: 5), and the answers after it are mid-session ones.
+  let n = 0;
+  for (let i = o.warm; i < o.warm + o.n; i++) {
+    const b = why.back || 0,
+      f = await oneAnswer(p, i, why);
+    fmts.push(f);
+    if (expect && expect.back) {
+      const inBack = (why.back || 0) > b;
+      if (f && inBack) n++;
+      await take(inBack);
+    } else if (f) n++;
   }
+  if (!(expect && expect.back)) await take(true);
+  await cdp.send('Profiler.stopPreciseCoverage');
+  const played = fmts.filter(Boolean).length;
+  // Most of the answers played, and no page error: a count over a broken page is no count.
+  if (played < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${played} of ${o.n} answers were played (${errs.join('; ') || 'no page error'}; ${why[0] || 'no reason seen'})`);
+  if (errs.length) throw new Error(`${name}: page errors: ${errs.join('; ')}`);
+  // A comeback state counts a comeback: at least BACK_MIN answers counted were a comeback's, else it is another player's.
+  if (expect && expect.back && n < BACK_MIN)
+    throw new Error(`${name}: ${n} of the ${o.n} answers counted were a comeback's, fewer than ${BACK_MIN} (the break of ${BACK} s started none, or it ended too soon)`);
   const per = x => Math.round((10 * x) / n) / 10,
     watch = {};
   for (const [k, c] of by) if (WATCH.includes(k.split('@')[0])) watch[k] = per(c);
-  const st = await p.evaluate(() => window.__st),
-    rtrace = o.trace ? await p.evaluate(() => window.__rt || []) : undefined;
+  const rtrace = o.trace ? await p.evaluate(() => window.__rt || []) : undefined;
   await ctx.close();
   return {
     state: name,
@@ -656,6 +721,8 @@ async function count(browser, base, file, name, o, expect) {
     answers: n,
     fmts: fmts.join(','),
     asked: why.asked || [],
+    back: why.back || 0, // the answers played (after the warm-up) that were a comeback's
+    each, // the named calls of each take: a comeback state's, of each answer counted
     rtrace,
     errs,
     namedCalls: per(total),
@@ -677,7 +744,7 @@ async function count(browser, base, file, name, o, expect) {
 // ---------------------------------------------------------------------------------------------------------------
 
 const USAGE =
-  'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
+  'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500:back | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
   '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now] [--throttle N] [--repeat N] [--trace]';
 
 async function main() {
@@ -740,7 +807,7 @@ async function main() {
           for (let k = queue.shift(); k !== undefined; k = queue.shift()) {
             const {i, seed} = jobs[k],
               t1 = Date.now();
-            rows[k] = {...(await count(browser, base, files[i], states[i].name, {...o, seed}, states[i].subject ? states[i] : null)), seed};
+            rows[k] = {...(await count(browser, base, files[i], states[i].name, {...o, seed, ...(states[i].back ? {clock: BACK, warm: 0} : {})}, states[i].subject ? states[i] : null)), seed};
             console.error(`answercost: ${states[i].name}${o.seeds.length > 1 ? ` seed ${seed}` : ''} counted in ${Math.round((Date.now() - t1) / 1000)} s.`);
           }
         } finally {
@@ -784,7 +851,7 @@ async function main() {
   }
 }
 
-module.exports = {repeatable, TOL, parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {repeatable, TOL, BACK, BACK_MIN, parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);

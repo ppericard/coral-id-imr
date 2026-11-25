@@ -122,6 +122,12 @@ The data views:
 - each unit's part of a pair's confusion prior (`model.js` `confUnit`, `confUnitCalc`: its declared and data
   look-alikes and its family) and its growth forms (`formsOf`): `pooledConf` reads them, where it read both records and
   computed both units' forms for every pair;
+- each unit's part of a pair's group score (`model.js` `groupUnit`, `groupUnitCalc`: its declared look-alikes as
+  `declaredOf` gives them, its data look-alikes and its family) and its growth forms (`formsOf`): `groupsOfRank` reads
+  them once for its loop (`groupPairFn`), where every pair of a rank read both records and computed both units' forms,
+  tens of thousands of pairs whenever the units in play or the pooled stats change;
+- whether a unit has a game photo to show (`model.js` `photoAnyBy`, `photoAny`): the units in play (`app.js`
+  `poolCalc`) read it once for their loop (`photoAnyFn`), where they asked `photoAny` of every unit at every answer;
 - the choice labels (`model.js` `choiceKeyFn`), per unit and per IMR answer: a species named by its common name is
   labelled with the player's first common name (`app.js` `treeGenera` `name`, `cnFirst`), so the answer (`imrNow`,
   read once) is in the key and each key's label is computed under it. Only a subject that names its species by their
@@ -171,7 +177,12 @@ before them on made-up units, with the records, the IMR answer, the pooled answe
 between reads, and fails a record, a unit's forms, a name or a class changed under the player's bump alone.
 `tests/openview.test.js` compares the units ready, the cards' window, circle 2's gate, the units met in the openings'
 loops and the comeback's rust (`rustNow`) with the code before them on made-up records and intro maps, the clock and
-the time moving between reads, and fails the intro map or a record changed with no bump.
+the time moving between reads, and fails the intro map or a record changed with no bump. `tests/poolview.test.js`
+compares the units in play with the code before `photoAny`'s view, with the slate, the bonus units and the units' photos
+written between reads, and fails a photo refused under the player's bump alone; `tests/groupview.test.js` compares every
+pair's group score, its declared test and the groups with the code before them, with the pooled stats and the units'
+look-alikes, families and forms written between reads, and fails a unit's look-alikes changed under the player's bump
+alone.
 
 ## Which unit next
 

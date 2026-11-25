@@ -160,8 +160,14 @@ subject is a test case, not the definition of the target.
   many times each named function of the app runs per answer (V8's precise coverage) and the characters
   `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
   fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
-  the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
-  costs less; `--clock 14400` is the study's condition). **A count is repeatable** (REE-281): the clock is virtual
+  the middle of a session; `--clock 14400` is the study's condition). **Each state is also counted back after a break**
+  (`subject:answers:back`): the clock starts 30 days (`BACK`) after the state's last answer, so the first question starts
+  a new visit and a comeback (`model.js` `rustNow`: the rust is summed again at every answer of it, `rustAdd`), no
+  warm-up is played (the visit's first answer is the comeback's first; a session state's two warm-up answers are left
+  out), and only the answers given in the comeback (rust left, `CB.r`) are counted, each taken alone (the coverage and the
+  storage counters read and started over after each answer; the row's `each` keeps each answer's calls). After a short
+  history the comeback ends within a few answers (corals and sea slugs at 50 answers: 3), and fewer than `BACK_MIN` (2)
+  fails the run. **A count is repeatable** (REE-281): the clock is virtual
   (`Date` and `performance.now` stand still between the tool's ticks: 4 s of thinking and 6 s of pause an answer), the random
   numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, the **page boots on About
   and is at rest before the quiz opens** (the script tiers come in as they load, and a `route()` of theirs
@@ -181,8 +187,8 @@ subject is a test case, not the definition of the target.
   answer twice and 183,144 the third time (on one commit), which failed a merge train. A change that needs newer data (a
   field the code now reads) moves the pin. The run fails, naming the state, when the page loaded another
   subject than the state's, holds a history far from the state's, played under three quarters of its answers or raised a
-  page error. Options: `--states fish:50,coral:500,seaslug:3000` (subject `fish`, `coral` or `seaslug`, then the answers; the
-  default is the nine states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed 1,2,3` (each state
+  page error. Options: `--states fish:50,coral:500,seaslug:3000:back` (subject `fish`, `coral` or `seaslug`, then the answers,
+  then `:back` for the comeback; the default is the eighteen states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed 1,2,3` (each state
   counted once a seed), `--clock`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming the state and the count),
   `--write-budget FILE [--margin 1.25] [--also A.json,B.json]` (the largest counts of this run and of earlier `--out`
   files, times the margin, as the ceilings of the states measured only), `--regen`, `--par N` (N states made or counted
@@ -192,7 +198,7 @@ subject is a test case, not the definition of the target.
   `--repeat N` (each state and seed counted N times; exit 1, naming the run, when the questions asked (`asked`) differ or
   the calls an answer differ by more than 0.1% or the storage counts by more than 5%; `--out` keeps every run and
   `--write-budget` takes the largest). To check a change to the tool or to how the page is started: `--repeat 5`
-  on the nine states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.
+  on the eighteen states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.
   A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
   card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
   `reefid-answercost` in the temporary directory. The missing states of a subject are made by one run to the longest of
@@ -221,12 +227,14 @@ subject is a test case, not the definition of the target.
   count over its ceiling fails that job and names the state and the count (an `OVER BUDGET` line and an error
   annotation), and the job's summary holds the table of every state's calls per answer. A pull request that changes only
   docs skips it with the smokes; a merge train runs it. The job makes the saved players afresh each run, on the
-  pinned version of the app (three `learnsim` runs, one a subject, side by side, then the nine counts three at a time),
+  pinned version of the app (three `learnsim` runs, one a subject, side by side, then the eighteen counts three at a
+  time; the comeback states read the same saved players),
   and keeps nothing between runs. If its time ever passes the longest smoke's (the job's time is in each run, and in the
   PR that added it), the next step is the Actions cache for the players, under a key of the pin and
   `tools/learnprof.js`; a cache made on a branch is read by that branch only, so a merge train would need it made on main.
-- **By hand, for an agent working on speed** (the nine states: about 2 minutes 15 s to make on a quiet machine, once, then
-  about 2 minutes to count, 40 s with `--par 3`; much longer when the machine is loaded or the slot is taken):
+- **By hand, for an agent working on speed** (the nine saved players: about 2 minutes 15 s to make on a quiet machine,
+  once, then the eighteen states about 3 minutes to count, 1 minute 30 s with `--par 3`; much longer when the machine is
+  loaded or the slot is taken):
   `SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget tools/answercost-budget.json`,
   or `--states fish:500,seaslug:500` for the states a change touches.
 
