@@ -49,7 +49,9 @@ sys.path.insert(0, HERE)
 import fit as Q  # noqa: E402
 
 # ---- Declared before any real run (the README repeats them; tests/q316.test.js checks they agree).
-CHAIN = {'iters': 3000, 'burn': 1000, 'chains': 2, 'rep_iters': 1500, 'rep_burn': 500}
+# iters was 3000 when first declared (051d66ad); raised to 6000 after the synthetic runs (the photo SD's ESS about 14-30
+# per 1,000 draws) and before any real run, so that the ESS rule below can be met.
+CHAIN = {'iters': 6000, 'burn': 1000, 'chains': 2, 'rep_iters': 1500, 'rep_burn': 500}
 PRIOR = {'scale': 1.0, 'other': 0.5}  # half-normal prior scale of every random level's SD; 'other': the prior check
 CONVERGE = {'rhat': 1.1, 'ess': 100, 'prior_shift': 0.1}
 PG_TERMS = 64
@@ -221,6 +223,7 @@ def accept(D, truth, reps, rng, clock=None, log=None, scale=PRIOR['scale']):
     est = {p: [] for p in S.pos}
     est.update({f: [] for f in D['fixed'] if f in Q.TESTED_FIXED})
     cov = {k: 0 for k in est}
+    ess_of = {k: [] for k in est}
     done, secs = 0, []
     try:
         for r in range(reps):
@@ -232,6 +235,7 @@ def accept(D, truth, reps, rng, clock=None, log=None, scale=PRIOR['scale']):
                 x = R['sd'][k] if k in R['sd'] else R['fixed'][k]
                 sm = summary(x)
                 est[k].append(sm['median'])
+                ess_of[k].append(ess(x))
                 t = truth['sd'][k] if k in truth['sd'] else truth['beta'][k]
                 cov[k] += sm['ci90'][0] <= t <= sm['ci90'][1]
             done += 1
@@ -243,6 +247,8 @@ def accept(D, truth, reps, rng, clock=None, log=None, scale=PRIOR['scale']):
     for k, v in est.items():
         t = truth['sd'][k] if k in truth['sd'] else truth['beta'][k]
         vals[k] = Q.verdict(v, t, cov[k], done, reps)
+        if ess_of[k]:
+            vals[k]['ess'] = {'min': float(min(ess_of[k])), 'median': float(np.median(ess_of[k]))}
     return {'reps': reps, 'done': done, 'seconds_per_chain': (sum(secs) / len(secs)) if secs else None, 'values': vals}
 
 
@@ -252,7 +258,7 @@ def real_fit(D, rng, clock, log, scale=PRIOR['scale'], chains=CHAIN['chains']):
     runs = []
     for c in range(chains):
         t0 = time.time()
-        runs.append(S.run(D['y'], CHAIN['iters'], CHAIN['burn'], rng, sd0=(0.3, 1.0)[c % 2], clock=clock))
+        runs.append(S.run(D['y'], CHAIN['iters'], CHAIN['burn'], rng, sd0=(0.3, 1.0)[c % 2], clock=clock, keep_fixed=D['fixed']))
         log(f'  chain {c + 1}/{chains}: {time.time() - t0:.1f} s')
     out = {}
     keys = list(runs[0]['sd']) + list(runs[0]['fixed'])
@@ -311,15 +317,15 @@ def run_real(ex, args, clock, log):
         out['fit'] = F
         out['steps'].append('fit')
         log('  posterior medians (no verdict yet): ' + ', '.join(f'{Q.LABEL.get(k, k)} {v["median"]:.2f} (R-hat {v["rhat"]:.2f}, ESS {v["ess"]:.0f})' for k, v in F.items()))
+        Fo = real_fit(D, rng, clock, log, scale=PRIOR['other'], chains=1)
+        out['fit_other_prior'] = Fo
+        out['steps'].append('prior_check')
         A1 = accept(D, Q.truth_rated(D, subject), reps, rng, clock, log)
         out['accept_rated'] = A1
         out['steps'].append('accept_rated')
         A2 = accept(D, truth_own(D, F), reps, rng, clock, log)
         out['accept_own'] = A2
         out['steps'].append('accept_own')
-        Fo = real_fit(D, rng, clock, log, scale=PRIOR['other'], chains=1)
-        out['fit_other_prior'] = Fo
-        out['steps'].append('prior_check')
     except Q.Deadline:
         out['cut'] = True
         log(f'  stopped at the deadline ({Q.BUDGET_MIN} minutes, rule L11): what is done is kept; the rest: {Q.CANNOT_TELL}')

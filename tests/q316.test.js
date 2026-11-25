@@ -341,10 +341,10 @@ test('refit/pseudonymise.js: names become K1, K2... at once, the prefixes kept, 
 
 test("the rules the README declares for the Gibbs sampler are gibbs.py's", () => {
   const g = fs.readFileSync(path.join(DIR, 'gibbs.py'), 'utf8');
-  assert.match(g, /CHAIN = \{'iters': 3000, 'burn': 1000, 'chains': 2, 'rep_iters': 1500, 'rep_burn': 500\}/);
+  assert.match(g, /CHAIN = \{'iters': 6000, 'burn': 1000, 'chains': 2, 'rep_iters': 1500, 'rep_burn': 500\}/);
   assert.match(g, /PRIOR = \{'scale': 1\.0, 'other': 0\.5\}/);
   assert.match(g, /CONVERGE = \{'rhat': 1\.1, 'ess': 100, 'prior_shift': 0\.1\}/);
-  for (const s of ['3,000 sweeps', '1,000 burn-in', '1,500 sweeps', 'half-normal prior of scale 1', 'scale 0.5', 'R-hat is above 1.1', 'under 100', 'more than 0.1'])
+  for (const s of ['6,000 sweeps', '1,000 burn-in', '1,500 sweeps', 'half-normal prior of scale 1', 'scale 0.5', 'R-hat is above 1.1', 'under 100', 'more than 0.1'])
     assert.ok(README.includes(s), 'README: ' + s);
 });
 

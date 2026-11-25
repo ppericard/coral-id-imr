@@ -131,9 +131,13 @@ PR's, declared here before any real run.
   mean); every coefficient at once from its Gaussian conditional (the data and the prior perturbed, one sparse solve:
   Papandreou and Yuille 2010), so the nested levels move together; each SD twice, non-centred (a regression
   coefficient, Gaussian) then centred (a slice draw in log SD): Yu and Meng's interweaving (2011).
-- **Chains**: the real answers, 2 chains of 3,000 sweeps with 1,000 burn-in (starting SDs 0.3 and 1.0); each
+- **Chains**: the real answers, 2 chains of 6,000 sweeps with 1,000 burn-in (starting SDs 0.3 and 1.0); each
   acceptance replicate, one chain of 1,500 sweeps with 500 burn-in. Summary: the posterior median and the equal-tailed
-  90% and 95% credible intervals.
+  90% and 95% credible intervals. The real chains were declared at 3,000 sweeps (commit 051d66ad) and raised to 6,000
+  after the synthetic runs below showed the photo SD's effective sample size at about 14-30 per 1,000 draws, before any
+  real run.
+- **The order of a real run**: the two chains, then the chain under the other prior, then the acceptance replicates
+  (from the rated world's values, then from the chains' own medians, every fixed effect included).
 - **Acceptance**: `fit.py`'s `ACCEPT`, unchanged (20 replicates on the real design from the rated world's values, then
   from the sampler's own medians; the mean of the medians within ±0.1 of the truth, the 90% interval covering it in 15
   or more of 20). A value that fails either: "not estimable on today's log", with no value.
@@ -146,6 +150,26 @@ PR's, declared here before any real run.
 
     python3 tools/studies/q316/gibbs.py synth <design> out.json          # simulated answers only, the check first
     python3 tools/studies/q316/gibbs.py fit /path/outside/export-fish.json /path/outside/gibbs-fish.json
+
+**On simulated answers first** (`gibbs.py synth`, 20 replicates each, seed 1, the designs and truth of the Laplace
+table below, replicate chains of 1,500 sweeps; the rule `ACCEPT`). Mean of the 20 posterior medians (bias), 90%
+intervals covering the truth, verdict; the Laplace fit's verdict on the same design beside it:
+
+| Value (truth) | Coral-like, large clusters | Coral-like | Fish-like | Laplace on coral-like / fish-like |
+| --- | --- | --- | --- | --- |
+| player (0.5) | 0.51 (+0.01), 17: pass | 0.55 (+0.05), 20: pass | 0.49 (−0.01), 17: pass | pass / pass |
+| player × unit, τ (0.3) | 0.29 (−0.01), 18: pass | 0.27 (−0.03), 19: pass | 0.37 (+0.07), 19: pass | fail / fail |
+| family (0.37) | | | 0.32 (−0.05), 19: pass | / pass |
+| genus (0.3; corals 0.37) | 0.37 (0.00), 20: pass | 0.35 (−0.02), 20: pass | 0.26 (−0.04), 20: pass | pass / fail |
+| species (0.3) | | | 0.30 (0.00), 20: pass | / fail |
+| photo (0.46) | 0.47 (+0.01), 20: pass | 0.48 (+0.02), 17: pass | 0.54 (+0.08), 19: pass | fail / fail |
+| rank offset, genus (0.4) | | | 0.47 (+0.07), 19: pass | / pass |
+| rank offset, species (0.8) | | | 1.06 (+0.26), 16: fail | / fail |
+
+3.1, 4.8 and 6.8 minutes. **Reading**: where the Laplace fit is biased toward 0 on small clusters (the photo SD, τ, the
+fish genus and species), the sampler is not, on these designs. The photo SD's chains mix slowly (effective sample size
+14-30 per 1,000 draws in the replicates' chains; τ 22-38): the reason the real chains were lengthened. The species rank
+offset, on 5% of 3,000 answers, fails. Simulated answers only.
 
 Tests: `tests/q316gibbs_check.py` (through `tests/q316.test.js`): the Pólya-Gamma draws' mean and variance, the joint
 draw against the dense Gaussian conditional, a planted genus SD (strong data) and a planted photo SD (large clusters)
