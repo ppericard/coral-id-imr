@@ -425,7 +425,7 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 | Questions for Pierre | Linear issues labelled Decision for Pierre (the Decisions view); asked in the chat in French, and written on its issue the same turn |
 | Substantial studies, cross-cutting explanations | Drive Reef_ID, linked both ways with their Linear issue |
 | Code, specs, code-coupled studies, decisions | This repo (GitHub) |
-| Conversation | The integrator's chat: never the only copy of anything another collaborator needs |
+| Conversation | The integrator's chat or a session scratchpad: never the only copy of anything another collaborator needs |
 
 - **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
   opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
