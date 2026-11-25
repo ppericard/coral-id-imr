@@ -19,9 +19,10 @@ it, byte for byte, or when the slate the coral layer declares differs from data.
 
 The IMR lecture's photo records (data.json course and the lecture's cmp records, imr: true) are the course layer's
 (tools/instances/imr/course.json), which this module writes and reads so that the tools that write data.json do not
-change: dump() writes the course and the lecture's cmp records it is given to the layer file, and data.json gets the same;
-load() lays the layer on what it reads (an edit of the layer file is seen at once; data.json's copy is not the source,
-and a difference is said on stderr); the rewrite and --check give data.json as the layer says.
+change: dump() writes the course and the lecture's cmp records it changes from the data.json on disk to the layer file,
+and data.json gets the same; load() lays the layer on what it reads (an edit of the layer file is seen at once;
+data.json's copy is not the source, and a difference is said on stderr); a tool that reads data.json itself (json.load)
+and leaves them alone does not undo an edit of the layer file; the rewrite and --check give data.json as the layer says.
 """
 import json, os, sys
 
@@ -133,7 +134,12 @@ def dump(d, path=PATH):
     if is_data(path) and isinstance(d, dict) and 'gen' in d:
         d = instance.coral_layered(d)
         if course_on(path, d):
-            d = instance.course_written(d)  # the lecture's photo records go to their layer file, data.json gets the same
+            try:
+                with open(path, encoding='utf-8') as fh: prev = json.load(fh)
+            except (OSError, ValueError): prev = None
+            # The lecture's photo records d changes go to their layer file, data.json gets the same (a tool that read
+            # data.json itself and left them as they are does not undo an edit of the layer file made since).
+            d = instance.course_written(d, prev)
     with open(path, 'w', encoding='utf-8', newline='\n') as fh:
         fh.write(dumps(d))
     if is_data(path) and isinstance(d, dict) and 'gen' in d:

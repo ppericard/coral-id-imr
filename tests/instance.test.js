@@ -881,6 +881,19 @@ with contextlib.redirect_stderr(err):
 out.append([d['course']['Acropora'][1]['slide'], 'data.json course differ' in err.getvalue()])
 datajson.dump(d, dp)
 out.append([dat()['course']['Acropora'][1]['slide'], text(lp) == instance.layer_dumps(lay())])
+# A tool that reads data.json itself (json.load), leaves the records alone and changes something else: an edit of the layer
+# file made since (and not laid yet) stays; one that changes a record gives it to the layer file.
+L = lay()
+L['course']['Acropora'][1]['slide'] = 77
+instance.write_layer('course', L, lp)
+raw = dat()
+raw['tips'][0] = 'Another first tip'
+datajson.dump(raw, dp)
+out.append([lay()['course']['Acropora'][1]['slide'], dat()['course']['Acropora'][1]['slide'], dat()['tips'][0]])
+raw = dat()
+raw['course']['Acropora'][1]['slide'] = 78
+datajson.dump(raw, dp)
+out.append([lay()['course']['Acropora'][1]['slide'], dat()['course']['Acropora'][1]['slide']])
 # A cmp record that is not the lecture's stays in data.json, after the lecture's.
 d = datajson.load(dp)
 d['cmp'].append({'f': 'sources-cmp', 'g': ['Acropora', 'Pocillopora']})
@@ -898,16 +911,19 @@ d = datajson.load(dp)
 del d['course'], d['cmp']
 datajson.dump(d, dp)
 out.append([len(dat()['course']), [r['f'] for r in dat()['cmp']]])
+shutil.rmtree(tmp)
 print(json.dumps(out))`)
   );
   assert.deepStrictEqual(out[0], [true, true], 'unchanged, byte for byte');
   assert.deepStrictEqual(out[1], ['medium', 'medium', 'a new caption', 'a new caption', true]);
   assert.deepStrictEqual(out[2], [99, true]);
   assert.deepStrictEqual(out[3], [99, true]);
-  assert.deepStrictEqual(out[4], [['imrl-p8_i2'], ['imrl-p8_i2', 'sources-cmp'], ['imrl-p8_i2', 'sources-cmp']]);
-  assert.strictEqual(out[5][0] in RAW.course, false);
-  assert.deepStrictEqual(out[5], [out[5][0], out[5][0], out[5][0], RAW.course.Acropora.length - 1]);
-  assert.deepStrictEqual(out[6], [34, ['imrl-p8_i2']]);
+  assert.deepStrictEqual(out[4], [77, 77, 'Another first tip'], 'a tool that left the records alone kept the layer’s edit');
+  assert.deepStrictEqual(out[5], [78, 78], 'a tool that changed one gave it to the layer file');
+  assert.deepStrictEqual(out[6], [['imrl-p8_i2'], ['imrl-p8_i2', 'sources-cmp'], ['imrl-p8_i2', 'sources-cmp']]);
+  assert.strictEqual(out[7][0] in RAW.course, false);
+  assert.deepStrictEqual(out[7], [out[7][0], out[7][0], out[7][0], RAW.course.Acropora.length - 1]);
+  assert.deepStrictEqual(out[8], [34, ['imrl-p8_i2']]);
   assert.deepStrictEqual(
     ['tools/instances/imr/course.json', 'data.json'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')),
     real,

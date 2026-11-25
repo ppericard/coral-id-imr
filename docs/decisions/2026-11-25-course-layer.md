@@ -23,9 +23,11 @@ read, and the lecture records stay laid into `data.json`.
   `tools/instances/imr/imr_sources.json`: it is about IMR's photos. The photos stay in `img/` and on R2 (REE-93).
 - **One writer instead of a check in each tool** (rule W27's model). About fifteen tools write `data.json`; refusing an edit,
   as `dump()` does for the genus fields, would break each of them. `datajson.dump()` takes the `course` and the lecture's
-  `cmp` records it is given and writes them to the layer file when they changed, and `data.json` gets the same records;
-  `load()` lays the layer on what it reads, so an edit of the layer file is never written back over; the rewrite and
-  `--check` give `data.json` as the layer says. No tool changed except the three that name `imr_sources.json`. Data with no
+  `cmp` records it changes from the `data.json` on disk and writes them to the layer file, and `data.json` gets the same
+  records; `load()` lays the layer on what it reads, and a tool that reads `data.json` itself and leaves the records alone
+  does not undo an edit of the layer file made since; the rewrite and `--check` give `data.json` as the layer says. No tool
+  changed except the three that name `imr_sources.json`. The Candidate photos workflow, which commits what its tools write
+  (an excluded or restored lecture photo changes the layer file too), stages and allows `course.json` beside `data.json`. Data with no
   `course` or `cmp` is data that does not say, and gets the layer's. A `cmp` record without `imr: true` is the sources' and
   stays in `data.json`, after the lecture's.
 - **The layer wins over `data.json`'s copy.** A hand edit of those records in `data.json` is replaced at the next load or
@@ -36,9 +38,11 @@ read, and the lecture records stay laid into `data.json`.
   `data.json` does not carry it and nothing reads it at run time. `python3 tools/datajson.py --check` (and so the PR check)
   fails when `data.json` `gen` or the core's `BENTHIC` differ from it, or the numbers of the genera are not 1, 2, … then 0.
 - **Curation skips an id it does not know.** Read: `core/curation.js` (`applyCuration`: exclude, single, out, add, hide,
-  move, feat, cover, levels; `applySlots`: pins and hints through `find`, quality, use) and the admin (`own`, `photos` and
-  `KNOWN` are built from the data lists, `missing()` lists the choices that name nothing). Each path drops the id or finds
-  nothing, none stops, and the admin keeps the choice and lists it. `tests/coursecuration.test.js` checks it on the real
+  move, feat, cover, levels; `applySlots`: pins and hints through `find` and `filter(Boolean)`, quality, use) and the
+  admin (`own`, `photos` and `KNOWN` are built from the data lists; `hidden`, `viewOf` and `outs` are asked of each photo
+  listed, never of an id; `rowOf` finds its pins and `cover` its pick with `find`, then falls back; `missing()` lists the
+  choices that name nothing). Each path drops the id or finds nothing, none stops, and the admin keeps the choice and
+  lists it. `tests/coursecuration.test.js` checks it on the real
   files: ghost ids in every field change no list a player reads, and an edition with no lecture photo plays the real
   `curation.json` with no lecture photo in any list and the field photos unchanged. `curation.json` is not touched (rule A1).
 

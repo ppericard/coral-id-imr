@@ -45,9 +45,10 @@ instance's, in tools/instances/imr/:
 - course: course {genus: [photo record]} and cmp [record], the references of the IMR lecture's photos (data.json
   course, 118 records, and the lecture's cmp record, the one with imr: true; the photos themselves stay in img/ and on
   R2). data.json carries a copy where it always had them. The layer file is where they are edited: datajson.dump()
-  writes the course and the lecture's cmp records it is given to the layer file and data.json gets the same (so the
-  tools that write data.json do not change), datajson.load() lays the layer on what it reads, and the rewrite and
-  --check give data.json as the layer says. A cmp record without imr: true is the sources', and stays in data.json.
+  writes the course and the lecture's cmp records it changes from the data.json on disk to the layer file and data.json
+  gets the same (so the tools that write data.json do not change; one that reads data.json itself and leaves them alone
+  does not undo an edit of the layer file), datajson.load() lays the layer on what it reads, and the rewrite and --check
+  give data.json as the layer says. A cmp record without imr: true is the sources', and stays in data.json.
 
 Another instance gets its own instance.json and layer files; a subject with no layer file builds with no layer (fish:
 every node in circle 1 by the build's default, no declared pair, no starter core).
@@ -439,23 +440,33 @@ def course_differs(d, lay):
     return [k for k, v in mine if json.dumps(v) != json.dumps(lay.get(k) or ({} if k == "course" else []))]
 
 
-def course_layer(d, lay):
+def course_part(d, k):
+    """The course layer's field k ("course" or "cmp") as data.json (d) holds it, as text (the order of the genera and of a
+    record's fields is the file's bytes); None when d does not hold it."""
+    if k not in d:
+        return None
+    return json.dumps(d[k] if k == "course" else [r for r in d[k] if course_lecture(r)])
+
+
+def course_layer(d, lay, prev=None):
     """The course layer file as d gives it: d's course and its lecture cmp records, where d holds them (a d with no
-    course, or no cmp, is a d that does not say: the layer's stay)."""
+    course, or no cmp, is a d that does not say: the layer's stay) and, when prev (data.json as it is on disk) is given,
+    where d changes them: a tool that read data.json itself, with the layer edited by hand since, did not touch them, and
+    the layer's stay."""
     out = copy.deepcopy(lay)
-    if "course" in d:
-        out["course"] = copy.deepcopy(d["course"])
-    if "cmp" in d:
-        out["cmp"] = [copy.deepcopy(r) for r in d["cmp"] if course_lecture(r)]
+    for k in ("course", "cmp"):
+        if course_part(d, k) is None or (prev is not None and course_part(d, k) == course_part(prev, k)):
+            continue
+        out[k] = copy.deepcopy(d[k]) if k == "course" else [copy.deepcopy(r) for r in d[k] if course_lecture(r)]
     return out
 
 
-def course_written(d):
-    """d as dump() writes it to data.json, the one writer of both files: the course and the lecture's cmp records of d go
-    to the course layer file when they changed, and d comes back with the layer's laid on (the same records where it
-    gave them)."""
+def course_written(d, prev=None):
+    """d as dump() writes it to data.json, the one writer of both files: the course and the lecture's cmp records that d
+    changes from prev (data.json as it is on disk; all it holds when prev is None) go to the course layer file, and d comes
+    back with the layer's laid on."""
     lay = load_layer("course")
-    new = course_layer(d, lay)
+    new = course_layer(d, lay, prev)
     if layer_dumps(new) != layer_dumps(lay):  # by the text: the order of the genera and of a record's fields is bytes
         write_layer("course", new)
     return course_compose(d, new)

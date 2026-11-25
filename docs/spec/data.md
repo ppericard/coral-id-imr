@@ -467,10 +467,13 @@ instance's, in `tools/instances/imr/`:
   once traced) and the lecture's `cmp` record (`imr: true`). The photos stay in `img/` and on R2, and the records stay in
   `data.json` where the core, the app, the admin and the tools read them. The layer file is where they are edited, through
   the tools that have always written `data.json`: `tools/datajson.py` `dump()` writes the `course` and the lecture's `cmp`
-  records it is given to the layer file and `data.json` gets the same (so about fifteen `tools/apply_*.py` and the other
-  writers do not change), `load()` lays the layer on what it reads (an edit of the layer file is seen at once; a
+  records it changes from the `data.json` on disk to the layer file and `data.json` gets the same (so about fifteen
+  `tools/apply_*.py` and the other writers do not change; one that reads `data.json` itself and leaves them alone does not
+  undo an edit of the layer file), `load()` lays the layer on what it reads (an edit of the layer file is seen at once; a
   difference from `data.json`'s copy is said on stderr, and the layer wins), and the rewrite and `--check` give
   `data.json` as the layer says. Data with no `course`, or no `cmp`, is data that does not say: the layer's records stay.
+  The Candidate photos workflow (`.github/workflows/approved-photos.yml`) stages and allows `course.json` beside `data.json`,
+  since an excluded or restored lecture photo changes both.
   A `cmp` record without `imr: true` is the sources' and stays in `data.json` alone, after the lecture's. An edition
   without the layer (`course_compose` of the sources with no layer) has an empty `course` and no lecture comparison: no
   lecture strip on the genus sheet, smaller game pools, and Pierre's choices that name a lecture photo (a dozen
