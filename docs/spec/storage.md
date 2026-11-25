@@ -15,7 +15,13 @@ Institute for Marine Research, `app` IMR Reef ID, `appShort` Reef ID, the home-s
 (`SHEET_NAME`, the progress file message, the sign-in button's tooltip); the static files that carry the name
 (`index.html`'s title, social tags and header; `admin.html` "IMR Reef ID Admin"; `privacy.html`;
 `manifest.webmanifest` `name` / `short_name`; `tools/og/og.html`, then `node tools/og/make_og.js` for `og.jpg`;
-`README.md` and the docs) are written from it by **`tools/rename_app.py`**. Things outside the repository kept their
+`README.md` and the docs) are written from it by **`tools/rename_app.py`**. The same tool writes the **bare
+organisation words** of `index.html`, `privacy.html`, `admin.html` and `tools/og/og.html` (`ORG_FILES`) from `ORG`: the
+whole word "IMR" becomes `ORG.short` and "Institute for Marine Research" becomes `ORG.name` (HTML-escaped), so the
+survey lists line of `index.html`'s description, the "Non-IMR genera" labels and `privacy.html`'s prose follow a fork's
+`ORG` and read as before in the IMR edition; CI's `--check` covers them. Not covered: the organisation's words in pages
+built by JS, which read `ORG` themselves, and the course's vocabulary ("IMR list", "IMR lecture"), which has no `ORG`
+field yet. Things outside the repository kept their
 old name: the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync".
 
 **`tools/rename_app.py`** applies every mechanical part of the rename (the visible name, the storage keys, the shell
@@ -23,7 +29,8 @@ cache's name, the CSP hashes of the inline scripts, Prettier on what it changed)
 branch that still uses the old names, run `python3 tools/rename_app.py` and commit its result on its own (`--check`
 changes nothing and fails when something is left; CI runs it). Lines marked `rename-app: keep` (or blocks between
 `rename-app: keep-begin` / `keep-end`) are left alone: the code that names the old keys on purpose. A fork for another
-organisation edits `ORG` and runs it with `--from "IMR Reef ID"`.
+organisation edits `ORG` and runs it with `--from "IMR Reef ID" --from-short IMR --from-name "Institute for Marine Research"`
+(the earlier app name, short form and full name).
 
 ## Storage keys
 
