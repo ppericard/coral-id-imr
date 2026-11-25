@@ -64,12 +64,10 @@ const hits = text =>
     .map((l, i) => [i + 1, l])
     .filter(([, l]) => WORD.test(code(l)));
 
-const ENGINE =
-    "analysis.js's labels ('IMR lecture' as a photo source, in the model's terms and tables): the engine runs in a Web Worker and in the Action's Node run (tools/analyses.js), neither of which loads core.js, and the labels are kept in the stored report; to move them the worker and the Action must be handed ORG (the integrator places it)",
-  // The Lab's lecture sentences (REE-294; docs/reviews/2026-11-25-imr-layer-round-3.md, question (d): kept as literals).
-  CITE = 'a source citation (rule C2): the sentence comes from that lecture, whatever the edition, so it never follows ORG';
-// The lines still to move: [file, how many, the change that moves them].
-const LEFT = [['analysis.js', 5, ENGINE]];
+// The Lab's lecture sentences (REE-294; docs/reviews/2026-11-25-imr-layer-round-3.md, question (d): kept as literals).
+const CITE = 'a source citation (rule C2): the sentence comes from that lecture, whatever the edition, so it never follows ORG';
+// The lines still to move: [file, how many, the change that moves them]. None is left: a new "IMR" in the code fails.
+const LEFT = [];
 // The lines that stay: [file, a part of the line (unique in it), why]. Not counted in LEFT.
 const KEEP = [
   [GS, "PARENT: 'IMR'", 'the name of the pCloud folder that holds the sheet backups (BACKUP): a place outside the repository'],

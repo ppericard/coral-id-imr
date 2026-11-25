@@ -10,6 +10,15 @@
 // Nothing here is sent anywhere; the admin reads the answer log with its token and keeps the results in its browser.
 (function (root) {
   'use strict';
+  // The organisation's short name in the source labels (core.js ORG.short, one definition): read from core.js where it is
+  // loaded (Node, the admin page), else sent in the Worker's message ({org}), which has no core.js. Read when a label is
+  // built, never at load.
+  let orgShort = (
+    root.ORG ||
+    (typeof module !== 'undefined' && module.exports && typeof require === 'function' && require('./core.js').ORG) ||
+    {}
+  ).short;
+  const O = () => orgShort || 'the organisation';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
   const AV = 18;
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
@@ -968,14 +977,14 @@
   }
 
   /* ---------- 3. Photo factors: view, quality, sharpness, source (LLTM + photo random effect) ---------- */
-  const PH_X = [
+  const phX = () => [
     ['medium', 'Close-up (vs colony)'],
     ['macro', 'Corallites (vs colony)'],
     ['fair', 'Fair quality (vs good)'],
     ['poor', 'Poor quality (vs good)'],
     ['sharp', 'Sharper (per SD of log sharpness)'],
-    ['own', 'Pierre’s photo (vs IMR lecture)'],
-    ['inat', 'Other iNaturalist (vs IMR lecture)'],
+    ['own', `Pierre’s photo (vs ${O()} lecture)`],
+    ['inat', `Other iNaturalist (vs ${O()} lecture)`],
     ['alone', 'One view alone (vs several)']
   ];
   function phRows(A, meta) {
@@ -1041,7 +1050,7 @@
   // answers by feature and the words of the photo lists ("Harder than their … say").
   const PH_LAB = {
     view: k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k,
-    src: k => ({imr: 'IMR lecture', own: 'Pierre’s', inat: 'Other iNaturalist'})[k] || k,
+    src: k => ({imr: O() + ' lecture', own: 'Pierre’s', inat: 'Other iNaturalist'})[k] || k,
     q: k => ({3: 'Good', 2: 'Fair', 1: 'Poor'})[k] || k,
     ease: k => ({5: '5 (very easy)', 1: '1 (very hard)'})[k] || String(k),
     phase: k => (k ? k[0].toUpperCase() + k.slice(1) : 'None (adult)'),
@@ -1063,7 +1072,7 @@
           ]
         }
       : {
-          X: PH_X,
+          X: phX(),
           PH: (meta && meta.ph) || {},
           rows: phRows,
           tabs: [
@@ -4280,8 +4289,20 @@
         inv: true,
         up: 'Sharp photos are easier: prefer sharp photos in the games.'
       },
-      own: {name: 'Pierre’s photo instead of an IMR lecture photo', o: 'right', inv: true},
-      inat: {name: 'Another iNaturalist photo instead of an IMR lecture photo', o: 'right', inv: true},
+      own: {
+        get name() {
+          return `Pierre’s photo instead of an ${O()} lecture photo`;
+        },
+        o: 'right',
+        inv: true
+      },
+      inat: {
+        get name() {
+          return `Another iNaturalist photo instead of an ${O()} lecture photo`;
+        },
+        o: 'right',
+        inv: true
+      },
       alone: {name: 'One view shown alone instead of several views', o: 'right', inv: true},
       // the fish photos' judged features (PH_FX)
       ease: {
@@ -5148,7 +5169,8 @@
   // In a Web Worker (the admin's new Worker('analysis.js?v=N'), Recompute here, and the demo): a whole report per message.
   if (typeof window === 'undefined' && typeof module === 'undefined' && typeof root.postMessage === 'function')
     root.onmessage = e => {
-      const {id, rows, meta, B, Bh, bse, seed, prev, live} = e.data || {};
+      const {id, rows, meta, B, Bh, bse, seed, prev, live, org} = e.data || {};
+      if (org) orgShort = org;
       try {
         root.postMessage({
           id,
