@@ -149,9 +149,9 @@ function unitsOf(r, box) {
 
 // The page: app.js's versions and views, kindRank as app.js makes it (a data view per unit), model.js's code and the
 // reference. check: VIEW_CHECK on. mutate: a change to app.js's block.
-function page(seed, check, mutate = s => s) {
+function page(seed, check, mutate = s => s, kinds = ['cn', 'sci']) {
   const r = rng(seed),
-    box = {imr: false},
+    box = {imr: false, reads: 0},
     {U, CLASS} = unitsOf(r, box),
     later = [];
   let s = 7;
@@ -168,7 +168,7 @@ function page(seed, check, mutate = s => s) {
     startKey: C.startKey,
     keyGet: C.keyGet,
     keyRename: C.keyRename,
-    SUBJ: {id: 'fish', names: ['cn', 'sci']},
+    SUBJ: {id: 'fish', names: kinds},
     CONF: C.CONF,
     confScore: C.confScore,
     pairConf: C.pairConf,
@@ -177,7 +177,7 @@ function page(seed, check, mutate = s => s) {
     GX: n => U[n],
     CLASS,
     imrFormsOf: n => U[n].forms,
-    imrNow: () => box.imr,
+    imrNow: () => (box.reads++, box.imr),
     rankOf: n => CLASS[n].split(':')[0],
     rankUnits: rk => Object.keys(CLASS).filter(n => CLASS[n] === rk),
     trapsFor: () => 1,
@@ -321,6 +321,23 @@ test('the labels follow the IMR answer: one key per answer, each computed under 
   assert.strictEqual(T.choiceKeyFn()('s:0'), a, 'back to the main name, kept under its own key');
   assert.strictEqual(T.dver(), 0, 'the player’s bumps only: the data version did not move');
   assert.deepStrictEqual(pg.later, []);
+});
+
+test('a subject that names no species by its common name reads no IMR answer; its labels are choiceKey’s', () => {
+  for (const check of [false, true]) {
+    const pg = page(8, check, s => s, ['sci']),
+      {T, U, box} = pg;
+    box.reads = 0;
+    const ck = T.choiceKeyFn();
+    assert.strictEqual(box.reads, 0, 'choiceKeyFn read no IMR answer');
+    for (const n of Object.keys(U)) assert.strictEqual(ck(n), T.choiceKey(n), n);
+    assert.deepStrictEqual(pg.later, []);
+    // the fish's names: one read
+    const pf = page(8, check);
+    pf.box.reads = 0;
+    pf.T.choiceKeyFn();
+    assert.strictEqual(pf.box.reads, 1, 'one read of the IMR answer for the loop');
+  }
 });
 
 test('keyView fn: one read of the version for a loop, the same values as the view; a newer version reads the view', () => {
