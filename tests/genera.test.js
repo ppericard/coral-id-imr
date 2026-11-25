@@ -7,7 +7,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {BENTHIC, BONUS, slateOf, gameOf, CAP, lectureGroup, starRefs, starWaits} = require('../core.js');
+const {BENTHIC, BONUS, slateOf, gameOf, CAP, lectureGroup, starRefs, starAfter, afterWaits} = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const RAW = JSON.parse(fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'));
 const py = (code, ...args) =>
@@ -151,8 +151,8 @@ test('fetch_local --plan on the real data: game genera keep their caps, a Key-on
   });
 });
 
-// The starred genera open after the genera their card compares them to (core.js starRefs, starWaits,
-// model.js weighted; docs/LEARNING.md "Starred genera after their reference").
+// The starred genera open after the genera their card compares them to (core.js starRefs, starAfter, afterWaits,
+// model.js openPick; docs/LEARNING.md "Starred genera after their reference").
 test('starRefs: every starred genus of the real data has the surveyed references its card names; no other genus has any', () => {
   const slate = slateOf(RAW),
     star = slate.filter(n => RAW.gen[n] && !RAW.gen[n].n);
@@ -172,7 +172,7 @@ test('starRefs: every starred genus of the real data has the surveyed references
   assert.ok(starRefs(RAW, 'Duncanopsammia').includes('Turbinaria'));
 });
 
-test('starWaits: a starred genus is not eligible before its references are met, is after; a missing reference never blocks', () => {
+test('starAfter, afterWaits: a starred genus is not eligible before its references are met, is after; a missing reference never blocks', () => {
   const D = {
       gen: {
         S: {n: 0, ig: 0, look: ['R1', 'R2', 'O']}, // starred, shown in group 1 (two look-alikes there)
@@ -186,18 +186,57 @@ test('starWaits: a starred genus is not eligible before its references are met, 
     },
     list = Object.keys(D.gen);
   assert.deepStrictEqual(starRefs(D, 'S'), ['R1', 'R2']);
-  const met = M => n => M.includes(n);
-  assert.strictEqual(starWaits(D, 'S', list, met([])), true, 'no reference met: waits');
-  assert.strictEqual(starWaits(D, 'S', list, met(['R1'])), true, 'one of two references met: still waits');
-  assert.strictEqual(starWaits(D, 'S', list, met(['R1', 'R2'])), false, 'every reference met: eligible');
-  assert.strictEqual(starWaits(D, 'S', ['S', 'R1'], met(['R1'])), false, 'a reference not in the list never holds it back');
-  assert.strictEqual(starWaits(D, 'S', ['S'], met([])), false, 'no reference in the list: eligible');
+  // The build writes the references on the starred genus's record, and on no other (S1: the opening reads the field)
+  D.gen.R1.after = ['stale']; // a field a former build left: written again from the data
+  assert.strictEqual(starAfter(D), D);
+  assert.deepStrictEqual(D.gen.S.after, ['R1', 'R2']);
+  ['R1', 'R2', 'O', 'T', 'V'].forEach(n => assert.ok(!('after' in D.gen[n]), n));
+  assert.ok(!('after' in D.x.gen.W));
+  const G = n => D.gen[n] || D.x.gen[n],
+    met = M => n => M.includes(n),
+    waits = (n, L, m) => afterWaits(G(n), L, m);
+  assert.strictEqual(waits('S', list, met([])), true, 'no reference met: waits');
+  assert.strictEqual(waits('S', list, met(['R1'])), true, 'one of two references met: still waits');
+  assert.strictEqual(waits('S', list, met(['R1', 'R2'])), false, 'every reference met: eligible');
+  assert.strictEqual(waits('S', ['S', 'R1'], met(['R1'])), false, 'a reference not in the list never holds it back');
+  assert.strictEqual(waits('S', ['S'], met([])), false, 'no reference in the list: eligible');
   // Never a starred genus as a reference (no cycle), nor a genus missing from the data or off the slate.
   assert.deepStrictEqual(starRefs(D, 'T'), []);
-  assert.strictEqual(starWaits(D, 'T', list, met([])), false);
+  assert.strictEqual(waits('T', list, met([])), false);
   assert.deepStrictEqual(starRefs(D, 'V'), []);
   // A reference never waits itself; nor does a genus unknown to the data.
-  ['R1', 'R2', 'O', 'W', 'Z'].forEach(n => assert.strictEqual(starWaits(D, n, list, met([])), false, n));
+  ['R1', 'R2', 'O', 'W', 'Z'].forEach(n => assert.strictEqual(waits(n, list, met([])), false, n));
+  // A tree subject's unit (a fish family, a sea slug genus) never waits: no `after` on its record, whatever its look-alikes
+  // and its n (the trap a plain swap of the corals' DATA for GX would set: an unnumbered unit with look-alikes).
+  const tree = {id: 'f:A', n: 0, ig: 0, look: ['f:B', 'f:C'], rank: 'family'};
+  assert.strictEqual(afterWaits(tree, ['f:A', 'f:B', 'f:C'], met([])), false);
+  assert.strictEqual(afterWaits(undefined, list, met([])), false, 'no record: no wait');
+});
+
+// One engine (rule S1; one-engine audit step 4): the opening reads the units' own field, never the corals' file, and every
+// builder of coral units writes it, last (its look-alikes, lecture groups and x genera final).
+test('the ★ rule as data: on the real data, after equals starRefs on every coral genus; each builder writes it; the opening reads GX', () => {
+  const d = starAfter(JSON.parse(JSON.stringify(RAW))),
+    star = Object.keys(d.gen).filter(n => starRefs(RAW, n).length);
+  assert.ok(star.length >= 5, star.join());
+  Object.keys(d.gen).forEach(n => assert.deepStrictEqual(d.gen[n].after, starRefs(RAW, n).length ? starRefs(RAW, n) : undefined, n));
+  Object.keys(d.x.gen).forEach(n => assert.ok(!('after' in d.x.gen[n]), n));
+  // the tools' coral units (the rated world, learnsim's rated mode) are built as the app builds them, the field included
+  const {d: W} = require('../tools/ratedworld.js').coralUnits();
+  star.forEach(n => assert.deepStrictEqual(W.gen[n].after, starRefs(W, n), n));
+  assert.ok(
+    star.every(n => W.gen[n].after.length),
+    'every starred genus waits in the rated world too'
+  );
+  // the app's build: starAfter after the x genera's slots, before DATA is set; the opening reads GX, not DATA
+  const app = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    b = app.slice(app.indexOf('function build() {'), app.indexOf('\n}\n', app.indexOf('function build() {'))),
+    model = fs.readFileSync(path.join(ROOT, 'model.js'), 'utf8'),
+    pick = model.slice(model.indexOf('function openPick('), model.indexOf('\n}\n', model.indexOf('function openPick(')));
+  assert.ok(b.indexOf('starAfter(d);') > b.lastIndexOf('applySlots(x,'), 'app.js build: starAfter after the x genera');
+  assert.ok(b.indexOf('starAfter(d);') < b.indexOf('DATA = d;'), 'app.js build: starAfter before DATA is set');
+  assert.match(pick, /afterWaits\(GX\(n\), list, met\)/);
+  assert.ok(!/\bDATA\b/.test(pick), 'model.js openPick reads no subject file');
 });
 
 // iNaturalist's HTTP 429 (a Candidate photos Action run that dies on one leaves the added photos undownloaded):
