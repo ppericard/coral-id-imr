@@ -3292,7 +3292,13 @@ async function tipsCheck(b, base) {
   // under test is in play), basics and ach, the Coral basics record and the achievements (default none), v, the visit
   // (default: open, 12 answers, no tip yet). The player has opened the Coral ID Key (u.i 1) unless u says otherwise.
   const open = async (w, h, u, at = '#practice/quiz', intro = false, x = {}) => {
-    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
+    // x.touch: a touch screen (no hover, a coarse pointer), as a phone or a tablet reports itself.
+    const c = await b.newContext({
+      viewport: {width: w, height: h},
+      serviceWorkers: 'block',
+      intro,
+      ...(x.touch ? {hasTouch: true, isMobile: true} : {})
+    });
     await c.route(
       x => !x.href.startsWith(base),
       r => r.abort()
@@ -4088,6 +4094,148 @@ async function tipsCheck(b, base) {
         );
       for (let i = 0; i < 12; i++) if ((await hintStep(p)).up) n++;
       if (n) fails.push(`${W} hint tip shown to a player who opened the hint`);
+      await c.close();
+    }
+    // The keys tip (h): a player with 30 answers picked with a mouse click (u.p) and no number key ever (u.y) gets the card at
+    // the Next after the 30th, on a device with a keyboard and a mouse; Got it alone, no tap at once, logged. The counters
+    // follow how the answer was picked: a number key is u.y, a real mouse click u.p, a tap on a touch screen and a script's
+    // click (smokeAnswer) neither. A touch screen never gets the tip, however many answers.
+    // One question answered by hand: how is 'click' (a real mouse click on the first answer), 'key' (the number key 1) or
+    // 'tap' (a touch tap), then Next. Returns whether the tip is up after Next, or null for a question with no numbered
+    // answer (a surprise, a typed question): it is answered by script and counts for neither.
+    const pickStep = async (p, how) => {
+      await qa.ready(p, {timeout: 10000});
+      // answer.js: how a numbered answer is picked (a real click, the key, a tap), which smokeAnswer's script click cannot do
+      const sel = '#view .q:not(.done) [data-c]',
+        has = await p.evaluate(sel => {
+          document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          smokeTiles();
+          return !!document.querySelector(sel);
+        }, sel);
+      if (!has) await p.evaluate(() => smokeAnswer(true));
+      // answer.js: the number key itself
+      else if (how === 'key') await p.keyboard.press('1');
+      else if (how === 'tap') await p.locator(sel).first().tap();
+      else await p.locator(sel).first().click();
+      await p.waitForSelector('#view .q.done', {timeout: 10000});
+      await p.evaluate(() => {
+        document.querySelectorAll('.achpop').forEach(x => x.remove());
+        achQ.length = 0;
+        achBusy = false;
+        document.getElementById('next').click();
+      });
+      await p
+        .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {
+          timeout: 10000
+        })
+        .catch(() => {});
+      return has ? !!(await p.$('.tipcard')) : null;
+    };
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 29}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]}
+      });
+      // The device shows the key marks, as the CSS does for a keyboard and a mouse.
+      const kbd = await p.evaluate(() => [
+        matchMedia('(hover: none), (pointer: coarse)').matches,
+        getComputedStyle(document.querySelector('.ans kbd, .fxt kbd') || document.body).display
+      ]);
+      if (kbd[0] || kbd[1] === 'none') fails.push(`${W} keys tip: this context is not a mouse device: ${JSON.stringify(kbd)}`);
+      let up = null;
+      for (let i = 0; i < 6 && up === null; i++) up = await pickStep(p, 'click');
+      const st = await tips(p);
+      if (up !== true || st.u.p !== 30 || st.u.y !== 0 || (st.s.keys || []).length !== 1)
+        fails.push(`${W} keys tip: shown at the Next after the 30th clicked answer: ${JSON.stringify({up, u: st.u, s: st.s})}`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent,
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Answer faster with the keyboard' ||
+          k.body !== 'Press the number shown on an answer to pick it, then Enter for the next question: no need to click.' ||
+          k.btns.join() !== 'Got it' ||
+          !k.dis ||
+          k.wide
+        )
+          fails.push(`${W} keys tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b]');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} keys tip: Got it did not go on to the next question`);
+        const ev = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+            .filter(x => /^tip:/.test(x.src || ''))
+            .map(x => `${x.k}:${x.src}:${x.r}`)
+        );
+        if (ev.join() !== 'pulse:tip:keys:shown,pulse:tip:keys:ok') fails.push(`${W} keys tip events: ${JSON.stringify(ev)}`);
+        for (let i = 0; i < 4; i++) if (await pickStep(p, 'click')) fails.push(`${W} keys tip: shown again in the same visit`);
+      }
+      if (errs.length) fails.push(`${W} keys tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // How each answer is counted: a number key is u.y, a real mouse click u.p, a script's click (smokeAnswer) neither; the
+    // first number key ends the audience at once, with 40 clicks behind it.
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]}
+      });
+      const seen = [];
+      for (const how of ['key', 'click', 'script', 'click', 'key']) {
+        let r = null;
+        for (let i = 0; i < 6 && r === null; i++) {
+          if (how === 'script') {
+            await play(p);
+            r = false;
+          } else r = await pickStep(p, how);
+        }
+        const u = (await tips(p)).u;
+        seen.push(`${how}:${u.y}/${u.p}`);
+      }
+      if (seen.join() !== 'key:1/0,click:1/1,script:1/1,click:1/2,key:2/2') fails.push(`${W} keys tip counters (key:y/p): ${seen.join()}`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 40}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]}
+      });
+      // A number key at the 41st answer: the player knows the keys, so no card now nor at the clicks after it.
+      let n = 0;
+      for (const how of ['key', 'click', 'click', 'click']) if (await pickStep(p, how)) n++;
+      const st = await tips(p);
+      if (n || st.u.y < 1 || (st.s.keys || []).length)
+        fails.push(`${W} keys tip shown to a player who pressed a number key: ${JSON.stringify({n, u: st.u})}`);
+      await c.close();
+    }
+    // A touch screen: the key marks are hidden, a tap counts nowhere, and the tip never comes, however many answers.
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 40}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]},
+        touch: true
+      });
+      const touch = await p.evaluate(() => [
+        matchMedia('(hover: none), (pointer: coarse)').matches,
+        getComputedStyle(document.querySelector('.ans kbd, .fxt kbd') || document.body).display
+      ]);
+      if (!touch[0] || touch[1] !== 'none')
+        fails.push(`${W} keys tip: the touch context is no touch screen or shows the key marks: ${JSON.stringify(touch)}`);
+      let n = 0;
+      for (let i = 0; i < 8; i++) if (await pickStep(p, 'tap')) n++;
+      const st = await tips(p);
+      if (n || st.u.p !== 40 || st.u.y !== 0 || (st.s.keys || []).length)
+        fails.push(`${W} keys tip on a touch screen: ${JSON.stringify({n, u: st.u, s: st.s})}`);
       await c.close();
     }
     // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened, the

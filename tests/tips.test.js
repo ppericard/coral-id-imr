@@ -19,20 +19,20 @@ const MISS = {ctx: 'quiz', miss: true, zm: false},
 
 test('tipsInit: empty, malformed, and seeded once from the device answers', () => {
   assert.deepStrictEqual(tipsInit(null, []), {
-    u: {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0},
+    u: {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0, y: 0, p: 0},
     s: {},
     v: {t: 0, n: 0, tip: 0}
   });
-  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0});
+  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0, y: 0, p: 0});
   assert.deepStrictEqual(tipsInit({u: {q: -3, z: 'a'}, s: {zoom: 'x'}, v: 5}, null), {
-    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0},
+    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0, y: 0, p: 0},
     s: {zoom: []},
     v: {t: 0, n: 0, tip: 0}
   });
   // The seed: the answers' count and their zm flags; never once a state exists.
   const log = [{zm: 1}, {zm: 0}, {}, {zm: 1}, null];
-  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0});
-  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0});
+  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0, y: 0, p: 0});
+  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0, y: 0, p: 0});
 });
 
 test('tipNote: a visit is answers less than 30 minutes apart; a tip shown holds for the visit only', () => {
@@ -254,7 +254,7 @@ test('basics tip: only for b.bx, from 30 questions, at the Next after a miss, in
   // Its game: the Quiz; not the Custom quiz, the Duel tab nor another page.
   for (const ctx of ['quiz-custom', 'quiz-duel', 'genera']) assert.strictEqual(tipDue(fresh(100), {...BX, ctx}), null, ctx);
   // No counter of its own: the state holds no basics count (the module's page records its opening); the Identify tip's is i.
-  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'h', 'i', 'k', 'm', 'q', 'w', 'z']);
+  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'h', 'i', 'k', 'm', 'p', 'q', 'w', 'y', 'z']);
 });
 
 test('basics tip: once a visit, twice ever 150 questions apart, after the other four tips', () => {
@@ -527,7 +527,7 @@ test('hint tip: only at the Next after a miss that left the hint closed (the car
   assert.strictEqual(tipDue(later, HM).id, 'hint');
 });
 
-test('hint tip: once a visit, twice ever 150 questions apart, last of the seven when several are due', () => {
+test('hint tip: once a visit, twice ever 150 questions apart, after the six before it when several are due', () => {
   const visit = (st, n) => played(n, 0, st, st.v.t + TIPR.GAP);
   let st = tipShown(played(30, 0, tipsInit({u: {...HK, w: 12}})), 'hint');
   assert.deepStrictEqual(st.s.hint, [30]);
@@ -538,9 +538,9 @@ test('hint tip: once a visit, twice ever 150 questions apart, last of the seven 
   assert.strictEqual(tipDue(st, HM).id, 'hint'); // 180
   st = tipShown(st, 'hint');
   assert.strictEqual(tipDue(visit(st, 500), HM), null); // never a third time
-  // With every tip due, the others first, one a visit.
-  const ALL = {...HM, mix: 3, bx: 1};
-  let all = played(150, 0, tipsInit({u: {k: 3, w: 12}}));
+  // With every tip due, the others first, one a visit (the keys tip last of the eight).
+  const ALL = {...HM, mix: 3, bx: 1, kb: 1};
+  let all = played(150, 0, tipsInit({u: {k: 3, w: 12, p: 40}}));
   const order = [];
   for (let i = 0; i < 9; i++) {
     const t = tipDue(all, ALL);
@@ -548,7 +548,83 @@ test('hint tip: once a visit, twice ever 150 questions apart, last of the seven 
     order.push(t.id);
     all = visit(tipShown(all, t.id), 12);
   }
-  assert.deepStrictEqual(order, ['zoom', 'custom', 'duels', 'mixups', 'basics', 'typed', 'hint']);
+  assert.deepStrictEqual(order, ['zoom', 'custom', 'duels', 'mixups', 'basics', 'typed', 'hint', 'keys']);
+});
+
+// The keys tip (h): answers picked with a mouse click (u.p) and no number key ever pressed (u.y), on a device with a
+// keyboard and a mouse (b.kb).
+const KK = {c: 1, d: 1, z: 3, m: 1, i: 1};
+const KR = {...RIGHT, kb: 1}; // a break on a device with a keyboard and a mouse
+test('keys run: tipNote counts how an answer was picked (u.y keys, u.p mouse clicks), nothing else', () => {
+  let st = tipsInit({u: KK});
+  assert.deepStrictEqual([st.u.y, st.u.p], [0, 0]);
+  st = tipNote(st, 1e12); // no 5th argument: neither
+  st = tipNote(st, 1e12 + MIN, '', false, '');
+  assert.deepStrictEqual([st.u.q, st.u.y, st.u.p], [2, 0, 0]);
+  st = tipNote(st, 1e12 + 2 * MIN, '', false, 'click');
+  st = tipNote(st, 1e12 + 3 * MIN, '', true, 'click');
+  st = tipNote(st, 1e12 + 4 * MIN, '', false, 'key');
+  st = tipNote(st, 1e12 + 5 * MIN, 'idk', false, 'bogus');
+  assert.deepStrictEqual([st.u.q, st.u.y, st.u.p, st.u.w, st.u.k], [6, 1, 2, 1, 1]);
+  // A state saved before the counters reads as 0, and the log seeds neither (it does not say how an answer was picked).
+  const old = tipsInit({u: {q: 40, z: 3}});
+  assert.deepStrictEqual([old.u.y, old.u.p], [0, 0]);
+  assert.deepStrictEqual([tipsInit(null, [{zm: 1}, {}]).u.y, tipsInit(null, [{}]).u.p], [0, 0]);
+  assert.deepStrictEqual([tipsInit({u: {y: 'x', p: -2}}).u.y, tipsInit({u: {y: 'x', p: -2}}).u.p], [0, 0]);
+});
+
+test('keys tip: TIPR.CLICK clicked answers, no number key ever, on a device with a keyboard; the Quiz and the Custom quiz', () => {
+  const fresh = (n, u) => played(n, 0, tipsInit({u: {...KK, ...u}})),
+    st = fresh(40, {p: 30});
+  assert.strictEqual(TIPR.CLICK, 30);
+  assert.strictEqual(tipDue(fresh(40, {p: 29}), KR), null); // 29 is not always
+  assert.strictEqual(tipDue(st, KR).id, 'keys');
+  assert.strictEqual(tipDue(fresh(400, {p: 900}), KR).id, 'keys');
+  // A number key pressed once, ever, ends the audience (the player knows it): however many clicks.
+  assert.strictEqual(tipDue(fresh(40, {p: 30, y: 1}), KR), null);
+  assert.strictEqual(tipDue(fresh(40, {p: 900, y: 4}), KR), null);
+  // A touch screen (b.kb 0 or missing: the key marks are hidden): counters met, never shown, at any break.
+  for (const kb of [0, undefined]) {
+    assert.strictEqual(tipDue(st, {...RIGHT, kb}), null, String(kb));
+    assert.strictEqual(tipDue(st, {...MISS, kb}), null, String(kb));
+    assert.strictEqual(tipDue(fresh(400, {p: 900}), {...RIGHT, kb}), null, String(kb));
+  }
+  assert.strictEqual(tipDue(st, RIGHT), null);
+  // Any break, a right answer or a miss. Its games: the Quiz and the Custom quiz, not the Duel tab nor a page.
+  assert.strictEqual(tipDue(st, {...MISS, kb: 1}).id, 'keys');
+  assert.strictEqual(tipDue(st, {...KR, ctx: 'quiz-custom'}).id, 'keys');
+  for (const ctx of ['quiz-duel', 'home', 'progress', 'genera']) assert.strictEqual(tipDue(st, {...KR, ctx}), null, ctx);
+  assert.strictEqual(tipDue(st, {...OUT, kb: 1}), null);
+  // The visit's first 9 answers never show it.
+  assert.strictEqual(tipDue(played(9, 0, tipsInit({u: {...KK, p: 30}})), KR), null);
+  assert.ok(!TIPS.find(t => t.id === 'keys').out);
+  // One engine (rule S1): no subject gate, any subject's break shows it (b names none).
+  assert.strictEqual(TIPS.find(t => t.id === 'keys').target({y: 0, p: 30}, {kb: 1, hx: 0}), true);
+});
+
+test('keys tip: once a visit, twice ever 150 questions apart', () => {
+  const visit = (st, n) => played(n, 0, st, st.v.t + TIPR.GAP);
+  let st = tipShown(played(30, 0, tipsInit({u: {...KK, p: 30}})), 'keys');
+  assert.deepStrictEqual(st.s.keys, [30]);
+  assert.strictEqual(tipDue(st, KR), null); // same visit
+  st = visit(st, 149);
+  assert.strictEqual(tipDue(st, KR), null); // 179
+  st = played(1, 0, st, st.v.t + MIN);
+  assert.strictEqual(tipDue(st, KR).id, 'keys'); // 180
+  st = tipShown(st, 'keys');
+  assert.strictEqual(tipDue(visit(st, 500), KR), null); // never a third time
+});
+
+test('keys tip: the card names the keys, nothing to open, no subject named', () => {
+  const t = TIPS.find(x => x.id === 'keys');
+  assert.strictEqual(t.card.kick, 'Did you know?');
+  assert.strictEqual(t.card.title({}), 'Answer faster with the keyboard');
+  assert.strictEqual(
+    t.card.body({}),
+    'Press the number shown on an answer to pick it, then Enter for the next question: no need to click.'
+  );
+  assert.strictEqual(t.act, undefined); // Got it only
+  assert.doesNotMatch(t.card.title({}) + t.card.body({}), /coral|fish|genus|genera|slug/i);
 });
 
 test('hint tip: the card says the link in the subject’s words, nothing to open', () => {
