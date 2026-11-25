@@ -520,17 +520,22 @@ test('the declared names: sync.js SHEETV and model.js OWN_STATS are the keys app
 // Every writer the version declares (app.js STATE_V's comment) bumps it after it writes: a test on the code, so a writer
 // that loses its bump fails here, not only in a smoke that happens to read a view after it. The writers of the player's
 // records and settings bump the state version alone (stateBump('rec')); every other writer bumps the data version too
-// (stateBump(), no argument): the data, the tree, the subject, the photo statistics, a file loaded.
+// (stateBump(), no argument): the data, the tree, the subject, the photo statistics, a file loaded. A swap of the subject
+// or the tree in force (subjectLoad, inSubject, treeAt's treePull) bumps both too, counted as a swap (swapBump: app.js
+// dataBack, tests/visitview.test.js).
 test('every declared writer bumps the version, the data version for every input but the player’s records', () => {
   const has = (S, from, to, file, n = 1, rec = false) => {
     const b = block(S, from, to, {through: 1, file}),
-      re = rec ? /stateBump\('rec'\)/g : /stateBump\(\)/g;
-    assert.ok((b.match(re) || []).length >= n, `${file} ${from.trim()}: ${n} ${rec ? "stateBump('rec')" : 'stateBump()'} at least`);
+      re = rec === 'swap' ? /swapBump\(\)/g : rec ? /stateBump\('rec'\)/g : /stateBump\(\)/g,
+      what = rec === 'swap' ? 'swapBump()' : rec ? "stateBump('rec')" : 'stateBump()';
+    assert.ok((b.match(re) || []).length >= n, `${file} ${from.trim()}: ${n} ${what} at least`);
   };
   has(APP, 'const st = n =>', ';\n', 'app.js', 1, true);
-  has(APP, 'function subjectLoad(S, keep) {', '\n}\n', 'app.js', 2);
-  has(APP, 'function inSubject(id, fn) {', '\n}\n', 'app.js', 2);
-  has(APP, 'function treePull() {', '\n}\n', 'app.js');
+  has(APP, 'function subjectLoad(S, keep) {', '\n}\n', 'app.js', 2, 'swap');
+  has(APP, 'function inSubject(id, fn) {', '\n}\n', 'app.js', 2, 'swap');
+  has(APP, 'function treePull(swap) {', '\n}\n', 'app.js');
+  has(APP, 'function treePull(swap) {', '\n}\n', 'app.js', 1, 'swap');
+  assert.match(APP, /\n {2}TREE_AT = id;\n {2}treePull\(true\);\n/, 'treeAt: the tree in force swapped');
   has(APP, 'const treeBuild = () => {', '\n};\n', 'app.js');
   has(APP, 'function build() {', '\n}\n', 'app.js');
   has(APP, 'function rankPhotos() {', '\n}\n', 'app.js');
@@ -540,7 +545,7 @@ test('every declared writer bumps the version, the data version for every input 
   has(MODEL, 'function answeredAt(s, good', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function varRight(n, L) {', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function statsJoin(base = PBASE) {', '\n}\n', 'model.js');
-  has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js');
+  has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js', 1, true); // the intro map read again: the player's
   assert.match(MODEL, /\nif \(typeof stateBump === 'function'\) stateBump\(\);\n$/, 'model.js: a bump once loaded');
   has(QUIZ, 'function recordAnswer({', '\n}\n', 'quiz.js', 2, true);
   has(SYNC, 'function replayAdoptS(', '\n}\n', 'sync.js', 1, true);

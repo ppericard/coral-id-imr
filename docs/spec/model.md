@@ -61,6 +61,31 @@ subject's `progress`, `quiz`, `intro`, `intro-offer` and `start` (`REC_KEYS`), a
 wrote. Every other bump moves both: the data and the tree in force, the subject, the sheet's version, the photo
 statistics, a file loaded. A bump with no argument moves both, so a writer not sorted makes the data views again too.
 
+**A visit keeps the data version** (REE-298). A signed-in player's sync visits the other subjects at each save and each
+pull (`sync.js` `syncSummary`, `mergeSaved`; at the boot, `progress.js` `achPending`), and lends another tree for a
+while (`app.js` `treeWith`, `sync.js` `boardUnits`, `stsAsk`). A swap of the subject or the tree in force
+(`subjectLoad`, `inSubject`'s return, `treeAt`'s `treePull`) bumps both versions like any other writer (`swapBump`), so
+the views read meanwhile are the visited one's, and is counted apart (`DATA_SW`). When the visit ends with the subject
+and the tree in force back as they were and every data bump since its start was a swap (`dataMark`, `dataBack`), the
+data views' inputs are the ones before it: the data version then reads as the one before (`dataKey`: `DATA_V`'s value
+now is an alias, `DATA_AS`, of that version), so the subject on screen's data views kept for it hold, and the draw's
+data is not filled again. Any other data bump meanwhile keeps the new version: a tree built on the way (a visited tree
+not built yet or stale, `treeBuild`), the statistics, the sheet's version, new data, a stored text another tab changed
+(`stateNow`); so does a tree the visit leaves in force (from the corals with no tree in force before). `DATA_V` only
+goes up and an alias names an older version, so a version once left is never read again (a view read during the visit
+is never served after it). The limits:
+
+- One value a view (one Map a keyed view): a data view the visit reads for the visited subject holds the visited
+  subject's values afterwards, so the subject on screen's are made again at their next read. A sync's visits read no
+  data view (`tools/answercost.js --syncs`: no data view computed in a sync's window).
+- The state version still moves at each visit (the records `P` and the settings `Q` are swapped), so the state views
+  are made again after it, as before.
+- The other memos a visit resets for the subject on screen stay reset: `model.js` `GDIFF` (each unit's difficulty,
+  cleared by its subject hook), the intro map read again (`INTROS`), `quiz.js` `TYPEN` (the typed names).
+
+`model.js`'s subject hook reads the intro map again with `stateBump('rec')`: the intro map is the player's
+(`REC_KEYS`), an input of the state views alone.
+
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
 is compared at the first read of a view in a task (`stateNow`), so another tab's write bumps the version at the next
@@ -122,7 +147,7 @@ The data views:
   that answer. For the units in play (`pool`, those met first), in slices of at most `DRAW_FILL.CAP` photos that end
   with the idle period (`requestIdleCallback`; without it, a slice every 50 ms), each slice reading the view itself, so
   the values are the draw's. It is asked after the boot's first plan, after each plan (`quiz.js` `planNext`), after a
-  visit to another subject (`inSubject`, which moves the data version) and when the photo statistics arrive
+  visit to another subject (`inSubject`: nothing to fill when the visit kept the data version) and when the photo statistics arrive
   (`rankPhotos`); a data version already filled asks nothing, and a slice makes its queue again when the version moved.
   A unit not filled yet (one that came into play later in the version) is filled by its draw, as before;
 - the units of a level's list by parent (`app.js` `kidsOf`, `kidsCalc`) and, for `sciPlay`, each parent's units in
