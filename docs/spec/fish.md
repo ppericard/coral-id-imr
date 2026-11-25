@@ -16,7 +16,9 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
   `id`, `name` and the other sources' common names), the circle-3 sources (`sources`) and the retired ids (`retired`).
 - `tools/instance.json` `key`: the identification key in force, one of `keys`.
 - The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, IMR tag (`src: imr`), dive-sign
-  mark (`sign`), slides (`sl`), cues, look-alike lines and phase lines from the IMR fish presentation, the sub-entries'
+  mark (`sign`), the name and family spelling IMR gives it (`name`, `fam`; and its sub-entries' `name`), the section
+  tokens of the IMR reference PDF it should hold (`pdf`), slides (`sl`), cues, look-alike lines and phase lines from the
+  IMR fish presentation, the sub-entries'
   slides and cues, each species' presentation slide (`sl`), the PDF species' common name, section, pages and cheatsheet
   rank (`common`, `sec`, `pdf`, `cs`) and the presentation's own species (`src: slides`), the starter core `start` and
   the declared look-alike groups `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
@@ -31,7 +33,8 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
   unranked clades kept, missing ranks skipped); `syn` the WoRMS synonyms, accepted when typed; `inat` the iNaturalist
   taxon id; `iname` iNaturalist's name when it differs.
 - `teach`, the teaching tree: the 27 entries of the IMR presentation (level 1, circle 1) in its order, then the other
-  circles; level 2 = species. Each node: `id` (stable, never the name), `name` (as IMR names it), `fam` (as IMR writes
+  circles; level 2 = species. Each node: `id` (stable, never the name), `name` (as IMR names it, from the instance's
+  layer; an entry with none takes its family's label in the key in force), `fam` (as IMR writes
   it; `wfam` the WoRMS families when they differ, e.g. Groupers: Epinephelidae), `group` (its group in the key in force),
   `level`, `circle`, `src` (imr / pdf / diver / wink), `wink`, `note`, `why` (circle 3: why divers want it), `ref` /
   `not` (the AphiaIDs it covers / leaves out), `species` (the ids of its species in the game, the most commonly met
