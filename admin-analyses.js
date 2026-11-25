@@ -2741,7 +2741,7 @@ function anRecompute() {
     // answers (live) in a few minutes here, where the Action's 999 percentile draws would take about 5 times as long;
     // earlier milestones not reused from the stored report keep the model's own interval only
     const st = ANREPS[S.id];
-    ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: st && st.rep, live: 1});
+    ANWORK.postMessage({id: 1, org: ORG.short, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: st && st.rep, live: 1});
   };
   Promise.all([
     ANS && ANS.all && ANS.all.length ? Promise.resolve() : loadStats(),

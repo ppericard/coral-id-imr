@@ -64,12 +64,9 @@ const hits = text =>
     .map((l, i) => [i + 1, l])
     .filter(([, l]) => WORD.test(code(l)));
 
-const ENGINE =
-    "analysis.js's labels ('IMR lecture' as a photo source, in the model's terms and tables): the engine runs in a Web Worker and in the Action's Node run (tools/analyses.js), neither of which loads core.js, and the labels are kept in the stored report; to move them the worker and the Action must be handed ORG (the integrator places it)",
-  LAB = "the Lab's course citations, '(IMR Lecture 6)' and the like: content, not in REE-34's PR plan yet (the integrator places them)";
+const LAB = "the Lab's course citations, '(IMR Lecture 6)' and the like: content, not in REE-34's PR plan yet (the integrator places them)";
 // The lines still to move: [file, how many, the change that moves them].
 const LEFT = [
-  ['analysis.js', 5, ENGINE],
   ['proto/anatomy.js', 17, LAB],
   ['proto/basics.js', 10, LAB],
   ['proto/idkey.js', 9, LAB],
