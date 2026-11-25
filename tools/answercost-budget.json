@@ -283,7 +283,7 @@
    "fn:drawPhotosCalc": 100
   },
   "seaslug:500": {
-   "namedCalls": 19000,
+   "namedCalls": 18000,
    "getCalls": 100,
    "getChars": 780000,
    "setChars": 590000,
