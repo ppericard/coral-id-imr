@@ -602,7 +602,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
     save = T => s.post({name: 'Ana', pin: '1234', data, summary: {board: 1, boards: {fish: T}}, answers: [], rv: C.RV}),
     board = () => {
       Object.keys(s.cache)
-        .filter(k => k.startsWith('board14'))
+        .filter(k => k.startsWith('board15:'))
         .forEach(k => delete s.cache[k]);
       return s.get({board: '1', s: 'fish'}).rows.find(r => r[0] === 'Ana')[1];
     },
