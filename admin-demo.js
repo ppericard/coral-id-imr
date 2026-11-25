@@ -1724,7 +1724,7 @@
         // one subject's answers, as the Action reads them (tools/analyses.js: core.js subjRows): the corals' with their
         // photo features; another subject's report's made-up answers (S.fana), with its judged features (FANA_META)
         const rows = own ? subjRows(answers().rows) : (S.fana[sj] || []).map(r => [aid(r[0]), ...r.slice(1)]);
-        w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META[sj] || {ph: {}}, B: 0, seed: 1});
+        w.postMessage({id: 1, org: ORG.short, rows, meta: own ? ANA_META : FANA_META[sj] || {ph: {}}, B: 0, seed: 1});
       });
     return ANA[sj].then(text => {
       // Code.gs analyses_: each subject's answers counted apart (counts) and answers the corals'; an older script's
