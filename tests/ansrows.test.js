@@ -259,7 +259,7 @@ test('admin.js leanIn: the lean rows read back from LEAN_SHEET, an older reply a
   const o = {ok: true, v: N - 1, rows};
   ctx.leanIn(o);
   assert.deepStrictEqual(o, {ok: true, v: N - 1, rows});
-  // a reply it cannot read: no rows (the page says the log could not be read), never a part of it
+  // a reply it cannot read: no rows (error 'lean': the pages show no log), never a part of it
   const bad = {ok: true, v: N, lean: {...lean, f: 99}};
   ctx.leanIn(bad);
   assert.strictEqual(bad.rows, null);

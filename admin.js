@@ -10360,7 +10360,7 @@ function sheetEarly(h) {
 const LEAN_SHEET = 232;
 const leanOn = j => !!j && !!j.lean && Number(j.v) >= LEAN_SHEET;
 // The rows of a readAnswers reply j, in place: its lean form read back into j.rows (dropped once read); one it cannot read
-// leaves no rows, so the page says the log could not be read rather than showing part of it.
+// leaves no rows (error 'lean'), so the pages show no log, as for any unreadable reply, never a part of it.
 function leanIn(j) {
   if (!leanOn(j)) return;
   try {

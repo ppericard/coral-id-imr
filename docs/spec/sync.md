@@ -257,7 +257,8 @@ texts of space-separated words, when there are too many to list whole, word by w
 plain values one column per key, in an order that keeps each object's own (the scoring record); anything else as it is.
 `{f: 1, n, w, c: [column], l?}` (`l`: the rows' lengths, when they differ). The admin reads it back (`admin.js` `leanIn`,
 `core.js` `rowsUnpack`) into exactly the rows the plain reply holds, the same values and the same JSON, key order
-included, so no page reads anything else; a reply it cannot read leaves no rows (the page says the log could not be read).
+included, so no page reads anything else; a reply it cannot read leaves no rows (error `lean`: the pages show no log, as
+for any unreadable reply, never a part of it).
 - **Gate** (rule D4): the request always asks; an older script ignores `lean` and sends `rows`, read as before. A reply is
   read as lean only from `LEAN_SHEET` (`admin.js` `leanOn`). A request without `lean` (`tools/analyses.js`, an older admin,
   the tools that read a saved reply) gets `rows` as before. Nothing stored changes, nor any other reply; `readLive` sends
