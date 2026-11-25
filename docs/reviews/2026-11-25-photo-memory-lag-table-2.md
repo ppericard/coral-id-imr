@@ -57,8 +57,8 @@ and what the table can conclude. They are not repeated here; that note is the pl
 
 The plan above was pushed as `34c24a5f` (07:06 UTC, 15:06 Manila) before the tab was read (the connector's replies
 came at about 15:07 Manila). The results below were computed after that, with the plan unchanged in substance. Two
-`effort-ok` markers were added to its plan paragraph afterwards, so that the effort-figure check reads "< 1 h" and
-"≥ 1 day" as lag bands; the words are unchanged. One analysis was added after the results and is labelled post hoc.
+`effort-ok` markers were added to its plan paragraph afterwards, so that the effort-figure check reads its two lag bands as
+lag bands, not effort figures; the words are unchanged. One analysis was added after the results and is labelled post hoc.
 
 ### Verdict
 
