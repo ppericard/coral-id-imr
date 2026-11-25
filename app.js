@@ -2570,6 +2570,14 @@ const UNITS = {
       name: 'Coral ID Key',
       lo: 'Tap the growth form and the clues you can see: it ranks the genera that fit, then compares them side by side.'
     },
+    // The words of its question hint, the link under the photos that adds a close-up (quiz.js question, hintb) and the
+    // "Did you know?" tip about it (tips.js hint): name, said in the link ("Show the corallites (hint)") and the card; lo,
+    // what the card says it adds. Declared only by a subject whose questions have one (the fish and the sea slugs show one
+    // view): no words, no tip.
+    hint: {
+      name: 'corallites',
+      lo: 'a close-up of the corallites, the detail that often tells look-alikes apart'
+    },
     // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
     memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
