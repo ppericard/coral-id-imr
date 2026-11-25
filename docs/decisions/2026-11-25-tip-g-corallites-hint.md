@@ -1,6 +1,6 @@
 # "Did you know?" tip (g): the corallites hint, for the player who never opens it after many misses
 
-Date: 2026-11-25. PR: #PR. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/DESIGN.md "Cards"; REE-13.
+Date: 2026-11-25. PR: #1587. Rules or docs touched: S1, W19; docs/spec/cards.md "Did you know tips"; docs/DESIGN.md "Cards"; REE-13.
 
 ## Context
 
