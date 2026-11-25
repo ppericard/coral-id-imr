@@ -172,7 +172,10 @@ connection on `pagehide` (step 4), and a build must check in Chrome and Safari t
   event, an event lost to `ev`'s read-modify-write of `localStorage` (`reefid-evq`) when two tabs queue at once
   [read]. Moving the event queue itself to IndexedDB is a separate change.
 - **Counted twice**: only if the same id reaches the sheet after 2,000 newer Pages rows. The age limit keeps a resend
-  inside that window at the current rate [inference].
+  inside that window at the current rate [inference]. It does not cover a recovered summary whose sheet reply is lost
+  and which is retried from `reefid-evq` after more than 2,000 newer Pages rows: that one can count twice. The same risk
+  exists today for every queued event (`sync.js` `sendEvents` retries with no age check), and the integrator tracks it
+  separately.
 
 ### 2.6 The spec change it would make
 
