@@ -234,9 +234,7 @@
   const easyCover = (L, d) => easyRank(L, d)[0] || null;
   // A family's look-alike lines' sources (treeGen lsrc), by the other family's id.
   const treeLookSrc = t => {
-    const L =
-        t.lsrc ||
-        Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+    const L = t.lsrc || Object.fromEntries((t.look || []).map(([id]) => [id, ORG.fishPres + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
       E = t.esrc || {};
     return Object.keys(E).some(k => k.startsWith('look/'))
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
@@ -346,8 +344,8 @@
         // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
         fam: [
           (t.sci || []).join(', '),
-          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
-          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+          t.imr && t.imr !== t.name ? ORG.short + ': ' + t.imr : '',
+          t.imrWith ? ORG.course + ': with the ' + t.imrWith : ''
         ]
           .filter(Boolean)
           .join(' · '),

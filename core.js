@@ -5,7 +5,27 @@
   // static files (index.html, admin.html, privacy.html, manifest.webmanifest, tools/og/og.html, README.md, the docs) are
   // rewritten from it by tools/rename_app.py. The storage keys never depend on it (KEYS), so a fork renames the app
   // without moving any player's data.
-  const ORG = {short: 'IMR', name: 'Institute for Marine Research', app: 'IMR Reef ID', appShort: 'Reef ID'};
+  // The words of the organisation's course, as the players and the admin meet them, each a whole name without its
+  // article (code writes "the " + ORG.course): course, the course; lecture, the coral lecture as a source (its notes,
+  // groups, photos); lectureRef, the lecture as a reference names it (the data's lsrc lines start with it); fishPres,
+  // the fish presentation (the fish families' look-alike lines start with it); list, slate and benthic, the survey's
+  // coral list, its slate and its benthic slate; trainer, who teaches the course. A phrase not listed builds on ORG.short
+  // ("At " + ORG.short + " or elsewhere"). The data's own values and the identifiers keep their words
+  // (docs/decisions/2026-11-25-org-course-words.md). Flat, quoted values only: tools/rename_app.py reads this literal.
+  const ORG = {
+    short: 'IMR',
+    name: 'Institute for Marine Research',
+    app: 'IMR Reef ID',
+    appShort: 'Reef ID',
+    course: 'IMR course',
+    lecture: 'IMR lecture',
+    lectureRef: 'IMR Lecture 6',
+    fishPres: 'IMR fish presentation',
+    list: 'IMR list',
+    slate: 'IMR slate',
+    benthic: 'IMR benthic slate',
+    trainer: 'IMR trainer'
+  };
   // Storage keys (localStorage, sessionStorage): one app-wide prefix that names the app without the organisation, and is
   // distinct from other apps on the shared origin ppericard.github.io.
   //   reefid-<name>        stays on this device (sign-in record, caches, queues, the admin, the Lab);
@@ -452,7 +472,7 @@
       // several: the report dialog's reason for a photo with more than one of them in frame (sync.js REP_WHY, "Several corals").
       several: 'corals',
       card: 'genus',
-      lecture: 'the IMR coral lecture',
+      lecture: `the ${ORG.short} coral lecture`,
       pv: '',
       hash: '',
       zoom: 'the corallites, the detail that often tells look-alikes apart',
@@ -496,11 +516,11 @@
             {k: 'plain', n: 'Plain words', t: 'text'},
             {k: 'qt', n: 'ID tips', t: 'list'},
             {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
-            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'imr', n: `${ORG.lecture} notes`, t: 'list', imr: 1, keep: 1},
             {k: 'sum', n: 'Summary', t: 'text', keep: 1},
             {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
             {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
-            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'check', n: `To check with an ${ORG.trainer}`, t: 'text'},
             {k: 'info', n: 'Other sources', t: 'list'}
           ]
         }
@@ -524,8 +544,8 @@
         q: 'How well do you know corals?',
         opts: {
           new: ['I’m new to corals', 'Start from scratch: the app shows you the basics first.'],
-          imr: ['I had the IMR coral course', 'You have met the genera in the IMR lecture.'],
-          know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
+          imr: [`I had the ${ORG.short} coral course`, `You have met the genera in the ${ORG.lecture}.`],
+          know: ['I know corals well', `At ${ORG.short} or elsewhere: you can already name many genera.`]
         }
       },
       // The admin's part (one subject switch for the whole admin, its address prefix the subject's hash): cur, its part
@@ -540,7 +560,7 @@
         pages: null,
         todo: ['rule', 'sa', 'poor', 'sug'],
         origins: [
-          ['imr', 'IMR lecture', 'IMR'],
+          ['imr', ORG.lecture, ORG.short],
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
@@ -560,7 +580,7 @@
       what: 'Fish',
       several: 'fish species',
       card: 'fish',
-      lecture: 'the IMR fish presentation',
+      lecture: `the ${ORG.fishPres}`,
       pv: 'fish.',
       hash: 'fish/',
       zoom: 'the markings and the fins',
@@ -679,7 +699,7 @@
         q: 'How well do you know reef fish?',
         opts: {
           new: ['I’m new to reef fish', 'Start from scratch: the basics first, then a few easy families.'],
-          imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
+          imr: [`I’m at ${ORG.short} (Research Assistant programme)`, `You are learning the ${ORG.short} survey families.`],
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }
       },
@@ -697,7 +717,7 @@
         // circles: the words the admin's Tree names each circle in, beside its number (admin-content.js circleLab): the
         // players' own, "the IMR course's families", "the family that opens right after the IMR course's" and "the
         // families beyond the IMR course" (docs/spec/fish.md "Circles"). A circle with no words is its number alone.
-        circles: {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'},
+        circles: {1: ORG.course, 2: 'After the course', 3: 'Beyond the course'},
         // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
         // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
         tags: treeRubric('fish', 'fish', {
@@ -1290,9 +1310,7 @@
   const easyCover = (L, d) => easyRank(L, d)[0] || null;
   // A family's look-alike lines' sources (treeGen lsrc), by the other family's id.
   const treeLookSrc = t => {
-    const L =
-        t.lsrc ||
-        Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+    const L = t.lsrc || Object.fromEntries((t.look || []).map(([id]) => [id, ORG.fishPres + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
       E = t.esrc || {};
     return Object.keys(E).some(k => k.startsWith('look/'))
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
@@ -1402,8 +1420,8 @@
         // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
         fam: [
           (t.sci || []).join(', '),
-          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
-          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+          t.imr && t.imr !== t.name ? ORG.short + ': ' + t.imr : '',
+          t.imrWith ? ORG.course + ': with the ' + t.imrWith : ''
         ]
           .filter(Boolean)
           .join(' · '),
@@ -4487,8 +4505,8 @@
     ['elo1200', 'Elo 1200', 'Reached an Elo of 1200', 2, '⭐', s => s.elo >= 1200],
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
-    ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    ['group', 'Group complete', `You know a whole ${ORG.lecture} group`, 3, '🧩', s => s.group],
+    ['bonus', 'Off the list', `You met a bonus genus, off the ${ORG.list}`, 2, '🔓', s => s.bonus >= 1],
     // Coral basics done: every step of the module seen (proto/basics.js), a
     // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
     ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics],
@@ -4521,7 +4539,7 @@
       s => s.basics
     ],
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetcore', 'Roll call', `Met every family of the ${ORG.course}`, 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
     ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
     ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
@@ -4535,7 +4553,7 @@
     [
       'fcoreadv',
       'House reef',
-      'Every family of the IMR course at Advanced level or above (80%+)',
+      `Every family of the ${ORG.course} at Advanced level or above (80%+)`,
       2,
       '🗺️',
       s => s.core.total && s.core.adv >= s.core.total
@@ -4543,7 +4561,7 @@
     [
       'fc2',
       'Supporting cast',
-      'Every family that opens right after the IMR course’s at Advanced level or above',
+      `Every family that opens right after the ${ORG.course}’s at Advanced level or above`,
       2,
       '🗺️',
       s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
@@ -4551,7 +4569,7 @@
     [
       'fc3adv',
       'Muck diver',
-      '20 families beyond the IMR course at Advanced level or above',
+      `20 families beyond the ${ORG.course} at Advanced level or above`,
       3,
       '🗺️',
       s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
@@ -4559,7 +4577,7 @@
     [
       'flearncore',
       'Transect master',
-      'You know every family of the IMR course for sure',
+      `You know every family of the ${ORG.course} for sure`,
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
@@ -4610,7 +4628,7 @@
     [
       'fdauin20',
       'Local legend',
-      "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names",
+      `Dauin's top 20 (the 20 species of the ${ORG.course}'s families most seen around Dauin) at Advanced level or above by their scientific names`,
       3,
       '🗺️',
       s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
