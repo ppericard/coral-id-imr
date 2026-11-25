@@ -100,11 +100,16 @@ before the visit: `GDV` then the version now, an alias of it), the typed names (
 version, the intro map read (`INTROS`). `subjectLoad` swaps first, before anything is read for the visited subject, so
 nothing read on the way is kept under the version a visit puts back.
 
-The on-screen subject's own sync still moves the state version: `mergeSaved` merges the subject on screen in place, and
-its merge stores its first-launch record (`model.js` `startMerge`), its progress (`sync.js` `mergeSubject`) and
-recalculates (`mxRecalc`) at each sync, whatever changed: the state views read in a sync are still made again after
-those writes (once a sync for the corals on screen, three times for the fish and the sea slugs, where each visit made
-them again before: `tools/answercost.js --syncs`).
+Two things still make the subject on screen's state views again at each sync (`tools/answercost.js --syncs`: its units
+met and header pill once a sync with the corals on screen, twice with the fish or the sea slugs, where each visit made
+them again before):
+
+- its own merge, outside any visit (`mergeSaved` merges the subject on screen in place), stores its first-launch record
+  (`model.js` `startMerge`) and its progress (`sync.js` `mergeSubject`) and recalculates (`mxRecalc`) at each sync,
+  whatever changed: the state version moves;
+- one value a view, as for the data views: the merge of another subject redraws the pill inside its visit
+  (`mergeSubject`'s `prog()`), which computes the visited subject's header and units met, so the subject on screen's
+  are made again at the next read though the version came back.
 
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
