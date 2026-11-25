@@ -191,9 +191,29 @@ test('a comeback state: the clock a break later, no warm-up, only the comeback�
     /back: typeof CB === 'object' && CB\.r > 0, \.\.\.\(window\.__tick/,
     'an answer in a comeback (rust left), read before the answer'
   );
-  assert.match(src, /await take\(inBack\)/, 'each answer of a comeback state taken alone, kept only when it was a comeback’s');
-  assert.match(src, /if \(!\(expect && expect\.back\)\) await take\(true\)/, 'a session state taken once, as before');
+  assert.match(
+    src,
+    /const keep = !\(expect && expect\.back\) \|\| \(why\.back \|\| 0\) > b;[\s\S]{0,60}await take\(keep\);/,
+    'each answer taken alone, a comeback state’s kept only when it was a comeback’s, a session state’s always'
+  );
   assert.match(src, /n < BACK_MIN/, 'too few comeback answers fail the run');
+});
+
+test('the heaviest answer: each answer’s calls kept, the largest budgeted as peakCalls and shown in the table', () => {
+  assert.ok(A.BUDGETED.includes('peakCalls'), 'peakCalls has a ceiling');
+  assert.strictEqual(A.metrics(row('fish:50', {peakCalls: 4321})).peakCalls, 4321);
+  assert.strictEqual(A.metrics(row('fish:50', {each: [10, 900, 30]})).peakCalls, 900, 'from `each` when the row has no peakCalls');
+  assert.strictEqual(A.metrics(row('fish:50')).peakCalls, 0, 'none counted: 0');
+  assert.strictEqual(A.ceilings(row('fish:50', {peakCalls: 4000}), 1.25).peakCalls, 5000);
+  assert.deepStrictEqual(
+    A.over(row('fish:50', {peakCalls: 4001}), {states: {'fish:50': {peakCalls: 4000}}}).map(b => [b.metric, b.value]),
+    [['peakCalls', 4001]],
+    'one answer over its ceiling fails, whatever the average'
+  );
+  assert.match(A.table([row('fish:50', {peakCalls: 250000})]), /\| 0\.25 M \|/, 'the table shows it');
+  const src = read('tools/answercost.js');
+  assert.match(src, /peakCalls: each\.length \? Math\.max\(\.\.\.each\) : 0/, 'the row keeps the heaviest answer');
+  assert.match(src, /each\.push\(total - t0\)/, 'each answer’s calls');
 });
 
 test('the page boots on a page that draws no question and is at rest before the numbers start from the seed (REE-281)', () => {
@@ -272,7 +292,7 @@ test("the table is the study's, one line a state", () => {
   const t = A.table([row('fish:50', {namedCalls: 319464})]).split('\n');
   assert.strictEqual(t.length, 3);
   assert.match(t[0], /^\| State \| U \| V \| T \| R \| Calls per answer/);
-  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
+  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 0 \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
 });
 
 test('several seeds: one row a state and seed, the seed named in the table, the ceiling the largest count', () => {

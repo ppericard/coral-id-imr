@@ -164,8 +164,11 @@ subject is a test case, not the definition of the target.
   (`subject:answers:back`): the clock starts 30 days (`BACK`) after the state's last answer, so the first question starts
   a new visit and a comeback (`model.js` `rustNow`: the rust is summed again at every answer of it, `rustAdd`), no
   warm-up is played (the visit's first answer is the comeback's first; a session state's two warm-up answers are left
-  out), and only the answers given in the comeback (rust left, `CB.r`) are counted, each taken alone (the coverage and the
-  storage counters read and started over after each answer; the row's `each` keeps each answer's calls). After a short
+  out), and only the answers given in the comeback (rust left, `CB.r`) are counted. **Every answer is taken alone**, in
+  a session as in a comeback (the coverage and the storage counters read and started over after each answer, which
+  leaves the totals as they were): the row's `each` keeps each answer's calls, `peakCalls` the heaviest, `peakAt` which
+  answer it was and `peakTop` its functions, and the table shows it ("Heaviest answer"), so a build that lands on one
+  answer (once a page load, or once the units in play change) is seen and budgeted, not only its share of the average. After a short
   history the comeback ends within a few answers (corals and sea slugs at 50 answers: 3), and fewer than `BACK_MIN` (2)
   fails the run. **A count is repeatable** (REE-281): the clock is virtual
   (`Date` and `performance.now` stand still between the tool's ticks: 4 s of thinking and 6 s of pause an answer), the random
@@ -212,7 +215,8 @@ subject is a test case, not the definition of the target.
   players again and setting every ceiling again, in a PR of its own. The sea slugs are played through the same fish engine
   (`learnsim.js --subject seaslug`: each profile's fish part, `tools/learnprof.js` `ENGINE`, rule S1). It takes the machine
   slot (rule W24).
-- **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
+- **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the calls of the heaviest
+  answer (`peakCalls`), the storage read and written, and
   the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStepCalc`, `bonusCalc`, `lvlNext`,
   `treeScore`, `achSnap`, `sheetV`; `bonusCalc` is the units in play computed and `lvStepCalc` a unit's level computed,
   once per version of the state: `app.js` `bonusList` and `model.js` `lvTable` are views whose readers V8 cannot name,
