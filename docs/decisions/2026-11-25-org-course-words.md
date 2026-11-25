@@ -1,6 +1,6 @@
 # The course's words in `ORG`: the core writes them from one place, at today's values
 
-Date: 2026-11-25. PR: #1574. Rules or docs touched: W21 (cited, unchanged), S1, D3; docs/spec/storage.md "The app's name",
+Date: 2026-11-25. PR: #1575. Rules or docs touched: W21 (cited, unchanged), S1, D3; docs/spec/storage.md "The app's name",
 docs/spec/site.md, docs/ARCHITECTURE.md "Names, storage keys and caches", docs/spec/data.md "Not in the layer yet".
 
 ## Context
