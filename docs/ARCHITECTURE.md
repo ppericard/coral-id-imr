@@ -87,7 +87,8 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
 - **Learning model** (`model.js`): [model.md](spec/model.md).
   - **The state version and its views** (`app.js` `STATE_V`, `stateView`, `VIEW_CHECK`: the units in play, the units
     met and ready, the bars, the exam entries, the tree's score and the levels computed once per version of the state; `DATA_V`,
-    `dataView`: the rank classes, the look-alike index and the photo draw's data per unit once per version of the data):
+    `dataView`: the rank classes, the look-alike index, the photo draw's data per unit, whether a unit has a photo and
+    each unit's part of the confusion groups' pair scores once per version of the data):
     [model.md](spec/model.md#the-state-version-and-its-views).
   - **Comeback after a break**: [model.md](spec/model.md#comeback-after-a-break).
   - **First-meeting cards, Open all genera and back to one at a time**: [model.md › Which unit next](spec/model.md#which-unit-next).
