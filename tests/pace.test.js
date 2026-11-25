@@ -601,7 +601,8 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
   // never ranks one family against another); its genera, (3 - 5) x 0.5 for the easy one, (3 - 2) x 0.5 for the other.
   assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, -1, 0.5]);
   f3.e = 5; // the family's mean now 4: still 0 for the family, its genera centred on 4
-  rec.F = {}; // a data build makes the records again (easeMid is kept per record)
+  // a data build makes the records again (easeMid is kept per record)
+  Object.assign(rec, {F: {}, 'g:F1': {parent: 'F'}, 'g:F2': {parent: 'F'}});
   ctx.clear();
   assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, -0.5, 0.25]);
   assert.ok(!/OPEN\.CONF|pooledConf/.test(cut(src, 'const genusDiff = ', '\n};\n', {through: true})));

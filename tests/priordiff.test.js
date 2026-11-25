@@ -31,7 +31,7 @@ test('photoPrior: the unit offset plus (3 - ease) x the calibration of one step;
 test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID, the centre easeMid and the step the subject’s calib.ease', () => {
   assert.strictEqual(PRIOR_MID, +/const PDIFF = \{[^}]*MID: (\d+)/.exec(read('model.js'))[1]);
   assert.match(read('model.js'), /gdOff\(n\) \+ \(p\.e \? \(easeMid\(n\) - p\.e\) \* calibOf\(SUBJ\)\.ease : 0\)/);
-  assert.match(read('model.js'), /EMID\.set\(g, L\.length \? L\.reduce\(\(t, p\) => t \+ p\.e, 0\) \/ L\.length : PDIFF\.MID\)/);
+  assert.match(read('model.js'), /EFAM\.set\(g, L\.length \? L\.reduce\(\(t, p\) => t \+ p\.e, 0\) \/ L\.length : PDIFF\.MID\)/);
 });
 
 // The judged ease's weight (docs/decisions/2026-11-23-judged-ease-weight.md): the shared calibration's 0.3 logit a point,

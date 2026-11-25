@@ -1888,8 +1888,9 @@ const gdOff = n => (PGD[n] || [0])[0] || 0;
 // judged ease (the fish, the sea slugs; the corals' carry none). A unit's family (easeTop): the top of its parents (GX
 // parent, else family: a fish genus's or species', a sea slug genus's or species'), else the unit itself (a fish
 // family). Its photos (judgedOf): every game photo of the family with a judged ease, its reserved ones too (core.js
-// heldOf), as genusDiff counts a unit's; PDIFF.MID when none has one. Kept per family record (EMID), so a data build,
-// which makes the records again, makes it again.
+// heldOf), as genusDiff counts a unit's; PDIFF.MID when none has one. Kept per family record (EFAM) and per unit record
+// (EMID: photoDiff reads it for every photo it rates, so one record read a call), so a data build, which makes the
+// records again, makes them again.
 const judgedOf = n => [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e);
 const easeTop = n => {
   let x = n;
@@ -1901,15 +1902,21 @@ const easeTop = n => {
   }
   return x;
 };
-const EMID = new WeakMap();
-const easeMid = n => {
-  const f = easeTop(n),
-    g = GX(f);
+const EFAM = new WeakMap(),
+  EMID = new WeakMap();
+const easeFam = f => {
+  const g = GX(f);
   if (!g) return PDIFF.MID;
-  if (!EMID.has(g)) {
+  if (!EFAM.has(g)) {
     const L = judgedOf(f);
-    EMID.set(g, L.length ? L.reduce((t, p) => t + p.e, 0) / L.length : PDIFF.MID);
+    EFAM.set(g, L.length ? L.reduce((t, p) => t + p.e, 0) / L.length : PDIFF.MID);
   }
+  return EFAM.get(g);
+};
+const easeMid = n => {
+  const g = GX(n);
+  if (!g) return PDIFF.MID;
+  if (!EMID.has(g)) EMID.set(g, easeFam(easeTop(n)));
   return EMID.get(g);
 };
 function photoDiff(n, p) {
