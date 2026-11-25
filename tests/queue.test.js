@@ -388,8 +388,11 @@ test('nightq trains only on a completed security review read for the very head i
   // code review on #1466): a later head with none is turned to draft and back to ready, once per head
   assert.match(
     t,
-    /case "\$\{sec%% \*\}" in stale\|absent\)\n\s*if \[ "\$pend" = "0" \] && \[ "\$asked" != "\$\{sec#\* \}" \]; then\n\s*asked=\$\{sec#\* \}\n\s*ask_security "\$n"/
+    /case "\$\{sec%% \*\}" in stale\|absent\)\n\s*if \[ "\$pend" = "0" \] && \[ "\$asked" != "\$\{sec#\* \}" \]; then[\s\S]*?if ask_security "\$n"; then\n\s*asked=\$tries_sha/
   );
+  // REE-299: a head is "asked" only after the call succeeded, never before
+  assert.ok(t.indexOf('if ask_security "$n"; then') < t.indexOf('asked=$tries_sha'));
+  assert.doesNotMatch(t, /asked=\$\{sec#\* \}\n\s*ask_security/);
   assert.ok(t.indexOf('asked=""') < t.indexOf('while [ $i -lt 60 ]'), 'reset for each PR');
   assert.doesNotMatch(t, /codex-security\.md|comments -[fF] body="?@codex security review/);
   // a draft is never marked ready by the queue: drafts are skipped before anything else
@@ -494,14 +497,87 @@ test('ask_security: draft then ready through the CCR routes, a PR left a draft s
     'api -X POST repos/o/r/pulls/7/ccr/ready_for_review'
   ]);
   assert.strictEqual(r.out, 'rc=0');
-  // converting refused: nothing else is tried
+  // converting refused: nothing else is tried, and the log names the call (REE-299)
   r = run('convert_to_draft');
   assert.strictEqual(r.calls.length, 1);
-  assert.strictEqual(r.out, 'rc=1');
+  assert.match(r.out, /LOG #7: convert_to_draft refused, Codex's security review not asked\nrc=1/);
   // ready refused twice: the PR is left a draft and the log says so
   r = run('ready_for_review');
   assert.strictEqual(r.calls.length, 3);
   assert.match(r.out, /LOG #7: left as a draft \(ready_for_review refused twice\): mark it ready by hand\nrc=1/);
+});
+
+// The wait loop around ask_security (REE-299): a stand-in gh refuses convert_to_draft the first FAILS times, and a stand-in
+// prstate reports the security review stale until ready_for_review was called, then completed.
+const runAskLoop = fails =>
+  tmp(d => {
+    const calls = path.join(d, 'calls');
+    const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
+    shim('sleep', 'exit 0');
+    shim('pgrep', 'exit 1');
+    shim('git', 'echo "git $*" >> "$CALLS"\n[[ "$*" = "pull -q --ff-only" ]]');
+    shim(
+      'gh',
+      'case "$*" in\n' +
+        '  *"--jq .state") echo open ;;\n  *"--jq .draft") echo false ;;\n  *"--jq .head.sha") echo "$HEAD_SHA" ;;\n' +
+        '  *convert_to_draft) echo "convert" >> "$CALLS"; n=$(cat "$D/n" 2>/dev/null || echo 0); echo $((n + 1)) > "$D/n"\n' +
+        '    [ "$n" -lt "$FAILS" ] && exit 1; exit 0 ;;\n' +
+        '  *ready_for_review) echo "ready" >> "$CALLS"; touch "$D/readied"; exit 0 ;;\n  *) exit 1 ;;\nesac'
+    );
+    shim(
+      'bash',
+      'case "$1" in */wait_ready.sh) exit 0 ;; */prstate.sh) [ -e "$D/readied" ] && s=completed || s=stale\n' +
+        '  echo "#1 open ${HEAD_SHA:0:7} merge=clean [] checks: 24 runs, 0 pending,  failed | codex@head: Didn\'t find any major issues. | security@head: $s $HEAD_SHA | head comments: 0 | open threads: 0 | unanswered@head: 0 | choices: None" ;;\n' +
+        '  *) echo "bash $*" >> "$CALLS"; exit 1 ;; esac'
+    );
+    shim('python3', 'echo "train $*" >> "$CALLS"');
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'nightq.sh'), '1'], {
+      encoding: 'utf8',
+      timeout: 15000,
+      env: {
+        ...process.env,
+        PATH: d + path.delimiter + process.env.PATH,
+        REPO_DIR: d,
+        QUEUE_DIR: d,
+        QUEUE_REPO: 'o/r',
+        CALLS: calls,
+        D: d,
+        FAILS: String(fails),
+        HEAD_SHA: SHA
+      }
+    });
+    assert.strictEqual(r.status, 0, r.error || r.stderr);
+    return {out: r.stdout, calls: fs.existsSync(calls) ? fs.readFileSync(calls, 'utf8').trim().split('\n') : []};
+  });
+
+test('nightq logs a refused convert_to_draft and asks the head again a minute later (REE-299)', () => {
+  const r = runAskLoop(1);
+  assert.match(r.out, /#1: convert_to_draft refused, Codex's security review not asked/);
+  assert.match(r.out, /#1: draft then ready, so Codex reviews the security of /);
+  assert.ok(r.out.indexOf('convert_to_draft refused') < r.out.indexOf('draft then ready'));
+  assert.deepStrictEqual(
+    r.calls.filter(c => c === 'convert' || c === 'ready'),
+    ['convert', 'convert', 'ready']
+  );
+  assert.ok(
+    r.calls.some(c => c.startsWith('train ')),
+    'trained once the review completed'
+  );
+  // asked at once when nothing fails: one conversion only
+  const ok = runAskLoop(0);
+  assert.deepStrictEqual(
+    ok.calls.filter(c => c === 'convert' || c === 'ready'),
+    ['convert', 'ready']
+  );
+  assert.doesNotMatch(ok.out, /refused/);
+});
+
+test('nightq gives up asking a head after 3 attempts and says so (REE-299)', () => {
+  const r = runAskLoop(99);
+  assert.strictEqual(r.calls.filter(c => c === 'convert').length, 3);
+  assert.strictEqual((r.out.match(/convert_to_draft refused/g) || []).length, 3);
+  assert.match(r.out, /#1: security review of \w{7} not asked after 3 attempts/);
+  assert.ok(!r.calls.some(c => c.startsWith('train ')));
 });
 
 test("nightq reads the security field first on the line, so the PR's own text cannot imitate it (REE-232)", () => {
