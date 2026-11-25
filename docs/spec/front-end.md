@@ -213,6 +213,10 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   and follows it on resize. `fitTiles` honours `data-minw` (the phone progress wall: the names stay readable, the wall
   may scroll).
 - `IS_ADMIN`: true in Pierre's admin browser (the token vault present); gates Pierre-only controls.
+- The full-size photo viewer (`zoom.js`, tier 1, right after `app.js`): `lb` (the `#lightbox` element), `lbClose` (the
+  open viewer's close), `VIEW_LABEL`, `ZOOMI` (the enlarge mark), `ZHINT_KEY` and `zoom(list, i, opts)`. At load it
+  registers one listener, `popstate` (Back closes the open viewer); the viewer's own `keydown` listener is added each
+  time one opens. No other script listens to `popstate` (`tests/tiers.test.js` checks it).
 - The ID tips and their sources (`idtips.js`, tier 1, after `gloss.js`): `tipsList` (the short ID tips, or the
   summary), `notesList` (the lecture notes of the genus sheet), `tipsText`, the content editor's sources (`esrcHtml`,
   `esrcTag`, `critRef`; rule C2), `altName` (a name's other spelling), and the Learn list's `listCard`, `tipsHead` and

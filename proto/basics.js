@@ -64,7 +64,7 @@
     return `<svg viewBox="${b.join(' ')}" preserveAspectRatio="none" aria-hidden="true">${mask}${marks.map(draw).join('')}${extra}</svg>
       ${labels.map(([t, x, y, a = 'c', c = '']) => `<span class="bx-lab bx-${a}${c ? ' ' + c : ''}" style="left:${pctX(x, b)};top:${pctY(y, b)}">${esc(t)}</span>`).join('')}`;
   };
-  // The labels of each teaching photo, kept for its enlarged view: the whole photo, labels on (app.js zoom opts.over).
+  // The labels of each teaching photo, kept for its enlarged view: the whole photo, labels on (zoom.js zoom opts.over).
   const ANN = {};
   const over = p => (ANN[p.f] ? layer([0, 0, 960, ANN[p.f].h], ANN[p.f].marks, ANN[p.f].labels, 'lb') : '');
   // zoom: the photo itself opens the enlarged view (a small "Enlarge" link goes unnoticed), with
@@ -683,7 +683,7 @@
         root.querySelector(`.bx-steps a[href^="${hr('basics|' + s.id)}"]`).classList.add('done');
       };
       // A teaching photo opens the enlarged view when tapped (Enter or Space from the keyboard): the whole photo, with
-      // the step's labels on it and a Labels switch to see it bare (app.js zoom opts.over).
+      // the step's labels on it and a Labels switch to see it bare (zoom.js zoom opts.over).
       const wireZoom = () => {
         if (edit) return;
         fig.querySelectorAll('.bx-zoom').forEach(el => {

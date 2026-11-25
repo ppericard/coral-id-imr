@@ -47,7 +47,7 @@ photos and its format from the player's own answers; the feedback after an answe
 the ⚙ Settings; and the service worker that serves it offline and brings each new version in.
 
 **Main files.** `index.html` (the inline tier loader, the ⚙ panel), `app.css`, `home.css`; `app.js` (routing, `build()`,
-the shared helpers, Settings), `gloss.js` (the glossary words and their popup), `idtips.js` (the ID tips, their sources and the Learn list card), `install.js` (the install card), `core.js` (the engine shared with the admin and the sheet script:
+the shared helpers, Settings), `zoom.js` (the full-size photo viewer), `gloss.js` (the glossary words and their popup), `idtips.js` (the ID tips, their sources and the Learn list card), `install.js` (the install card), `core.js` (the engine shared with the admin and the sheet script:
 `SUBJECTS`, `routeOut` / `routeIn`, `scoreAnswer`, the achievement lists; written in its parts, `core/*.js`, which
 `tools/sync_core.py` joins into the one `core.js` the pages load), `model.js` (the learning model), `quiz.js`
 (the games, typed questions, the feedback sheet), `learn.js` (the Learn pages), `progress.js` (My progress,
