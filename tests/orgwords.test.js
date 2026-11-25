@@ -69,7 +69,6 @@ const PR4 = "REE-34 PR 4, the admin's pages: their texts from ORG",
 // The lines still to move: [file, how many, the change that moves them].
 const LEFT = [
   ['admin.js', 45, PR4],
-  ['analysis.js', 5, PR4],
   ['admin-content.js', 2, PR4],
   ['admin-coraltree.js', 1, PR4],
   ['admin-journey.js', 1, PR4],
