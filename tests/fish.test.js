@@ -89,18 +89,20 @@ test('the 27 IMR entries are level 1, circle 1, in the order of the IMR presenta
 });
 
 // Identification groups (rule S3): the key in force for this deployment's region
-// (tools/fish_source.json deploy.key among keys; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish
+// (tools/instance.json key, one of tools/fish_source.json keys; for the Indo-Pacific, the index of a reef fish ID book) is the reference for fish
 // groups. Every teaching node in the game (any circle, winks aside) carries one of its groups, unless the source marks it
 // as waiting (keyGroup null with keyWhy); fish.json is as `build_fish.py --regroup` gives it.
-const KEY = SRC.keys.find(k => k.id === SRC.deploy.key);
+const INST = read('tools/instance.json'),
+  KEY = SRC.keys.find(k => k.id === INST.key);
 const BUILD = path.join(__dirname, '..', 'tools', 'build_fish.py');
-// src: another base (tools/fish_source.json); layer: another layer file of the instance.
-const regroupCheck = (src, layer) => {
+// src: another base (tools/fish_source.json); layer: another layer file of the instance; inst: another tools/instance.json.
+const regroupCheck = (src, layer, inst) => {
   const args = [BUILD, '--regroup', '--check'],
     tmps = [];
   for (const [flag, o] of [
     ['--src', src],
-    ['--layer', layer]
+    ['--layer', layer],
+    ['--instance', inst]
   ]) {
     if (!o) continue;
     const tmp = path.join(require('os').tmpdir(), `fish${flag.slice(1)}.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
@@ -115,7 +117,9 @@ const regroupCheck = (src, layer) => {
 const clone = o => JSON.parse(JSON.stringify(o));
 
 test('identification groups: the key in force, credited, its 20 groups; every node in the game in one of them', () => {
-  assert.ok(KEY, 'deploy.key names a key');
+  assert.ok(KEY, 'the instance’s key names a key');
+  assert.deepStrictEqual(SRC.deploy, {key: INST.key}, 'the source carries the instance’s key as deploy.key, and no region');
+  assert.ok(!('deploy' in BASE), 'the base holds no deploy');
   assert.deepStrictEqual({id: F.key.id, cite: F.key.cite, short: F.key.short}, {id: KEY.id, cite: KEY.cite, short: KEY.short});
   assert.match(F.key.cite, /Reef Fish Identification – Tropical Pacific, 2nd ed\./);
   assert.deepStrictEqual(
@@ -153,20 +157,20 @@ test('the clingfishes are out of circle 3 (Pierre, 2026-11-04: not in the key); 
 test('identification groups: the build fails, naming the node, on a node in the game with no group or two', () => {
   // No group: the jawfishes once their label is gone from the key.
   const a = clone(BASE);
-  a.keys.find(k => k.id === a.deploy.key).groups.find(x => x.n === 13).labels = a.keys
-    .find(k => k.id === a.deploy.key)
+  a.keys.find(k => k.id === KEY.id).groups.find(x => x.n === 13).labels = a.keys
+    .find(k => k.id === KEY.id)
     .groups.find(x => x.n === 13)
     .labels.filter(l => l[0] !== 'Jawfishes');
   let r = regroupCheck(a);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /t58 Jawfishes: no group/);
   // A wait for a decision (keyGroup null) needs its keyWhy, and lets the build go on.
-  a.teach.find(t => t.id === 't58').keyGroup = {[a.deploy.key]: null};
+  a.teach.find(t => t.id === 't58').keyGroup = {[KEY.id]: null};
   r = regroupCheck(a);
   assert.match(r.out, /t58 Jawfishes: keyGroup null needs a keyWhy/);
   // Two groups: the soapfish genus of Groupers (Diploprion) moved to another group of the key.
   const b = clone(BASE),
-    K = b.keys.find(k => k.id === b.deploy.key);
+    K = b.keys.find(k => k.id === KEY.id);
   K.groups.find(x => x.n === 7).labels.find(l => l[0] === 'Soapfishes')[1] = ['Grammistidae'];
   K.groups.find(x => x.n === 12).labels.push(['test', ['Diploprioninae']]);
   r = regroupCheck(b);
@@ -179,16 +183,23 @@ test('identification groups: the build fails, naming the node, on a node in the 
   assert.match(r.out, /is not as key .* gives it/);
   // A label in two groups of a key is refused.
   const c = clone(BASE);
-  c.keys.find(k => k.id === c.deploy.key).groups[0].labels.push(['test', ['Labridae']]);
+  c.keys.find(k => k.id === KEY.id).groups[0].labels.push(['test', ['Labridae']]);
   r = regroupCheck(c);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /Labridae is under groups/);
   // A region with no key has no group rule.
-  const d = clone(BASE);
-  delete d.deploy.key;
-  r = regroupCheck(d);
+  const d = clone(INST);
+  delete d.key;
+  r = regroupCheck(null, null, d);
   assert.doesNotMatch(r.out, /identification groups \(rule S3/);
   assert.match(r.out, /is not as key \(none\) gives it/);
+  // A key the instance names that the source does not hold stops the build; the base never holds the deployment's key.
+  const e = clone(INST);
+  e.key = 'no-such-key';
+  assert.match(regroupCheck(null, null, e).out, /key 'no-such-key' of tools\/instance\.json: no such key/);
+  const f = clone(BASE);
+  f.deploy = {region: 'Dauin', key: KEY.id};
+  assert.match(regroupCheck(f).out, /tools\/fish_source\.json deploy: the deployment's \(tools\/instance\.json key\)/);
 });
 
 test('circles: 1, 2 or 3 in the game; barracudas, trumpetfishes, shrimpfishes and sweepers in circle 2; nothing silvery or pelagic in circle 1', () => {
@@ -866,7 +877,7 @@ test('common names: FishBase main name, shared spellings, linked spellings', () 
 test('families: the book’s, every game species in exactly one, Amphiprion in the Damselfishes, Diploprion in the Soapfishes', () => {
   const FAM = new Map(F.families.map(f => [f.id, f])),
     GEN = new Map(F.genera.map(g => [g.id, g])),
-    labels = new Set(SRC.keys.find(k => k.id === SRC.deploy.key).groups.flatMap(g => g.labels.map(l => l[0])));
+    labels = new Set(SRC.keys.find(k => k.id === KEY.id).groups.flatMap(g => g.labels.map(l => l[0])));
   assert.strictEqual(FAM.size, F.families.length, 'family ids unique');
   F.families.forEach(f => {
     assert.match(f.id, /^f:[A-Za-z]+$/, f.id + ': letters only after f:');
