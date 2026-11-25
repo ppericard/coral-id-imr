@@ -174,7 +174,7 @@ learning change" (rule L11).
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
 | `perf.js` | Speed from a player's side: cold and warm start, throttled phone and network |
 | `studies/q351/` | The scripts of one batch-model study |
-| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, the Q136 centring check (2C) and the step-2 candidates replayed against today's engine (2B, `replay2b.js`) on the real log; read-only, one 40-minute clock ([README](studies/q316/README.md)) |
+| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, the Q136 centring check (2C) and the step-2 candidates replayed against today's engine (2B, `replay2b.js`) on the real log; the Gibbs sampler for the small-cluster SDs (`gibbs.py`) and the refit's extract tools (`refit/`); read-only, one 40-minute clock per run ([README](studies/q316/README.md)) |
 | `studies/ree112/`, `studies/ree191/` | The placement shrinkage check's and the pace-for-fast-learners study's scripts, recovered from the integrator's workspace at the 2026-11-22 pause: reference code, not reviewed tools; inputs private ([REE-112](studies/ree112/README.md), [REE-191](studies/ree191/README.md)) |
 | `queue/recovered/` | The integrator's grouped-train queue scripts of 2026-11-21/22, kept as reference, never run by CI ([README](queue/recovered/README.md), REE-220) |
 

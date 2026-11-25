@@ -1235,7 +1235,10 @@ difficulty split into rank, family, genus, species and photo components, is in R
 offline fit on the real log and the replay of the step-2 candidates (2026-11-21) are in
 [reviews/2026-11-21-q316-offline-fit.md](reviews/2026-11-21-q316-offline-fit.md): the coral genus SD and the fish family
 SD measured (about 0.8 logits each), the photo, the fish genus and species and Q136's τ not estimable yet; whether the
-shared chain predicts the fish answers better or worse than today: the measure cannot tell.
+shared chain predicts the fish answers better or worse than today: the measure cannot tell. Its refit on 1,042 more
+answers with a Gibbs sampler for the small clusters (2026-11-25,
+[reviews/2026-11-25-q316-refit.md](reviews/2026-11-25-q316-refit.md)): on the corals, Q136's τ (about 0.9) and the genus
+SD (about 0.9) measured, the photo SD large (about 1.1-1.2) but resting on the prior; nothing measurable for the fish.
 
 ### The photo's time term
 
