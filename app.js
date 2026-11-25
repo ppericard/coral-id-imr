@@ -2422,7 +2422,7 @@ function treePhoto(f) {
 // every scientific genus name of the tree in force, and its common names (cn, cnr, IMR tags, en), so an English name is
 // told so, never read as a genus. Nothing for another rank.
 function treeTypeOther(rk) {
-  const F = rk === 'genus' && TREERAW && TREERAW.f;
+  const F = rk === 'genus' && (TREEF || (TREERAW && TREERAW.f));
   if (!F) return null;
   const first = x => String(x || '').split(/\s+/)[0],
     en = r => ((r && r.en) || []).map(x => x && x.n);
@@ -2820,9 +2820,15 @@ const UNITS = {
       const G = TREEU ? TREEU.gen : {},
         sci = new Set(sciNow()),
         own = Object.fromEntries(Object.entries(G).filter(([n, g]) => g.rank !== 'species' && (g.rank !== 'genus' || sci.has(n)))),
-        sp = (TREEU ? TREEU.spl || [] : []).map(n => TREEU.sps[G[n].sp]);
+        sp = (TREEU ? TREEU.spl || [] : []).map(n => TREEU.sps[G[n].sp]),
+        // the file with the species' own lists of names laid over it (TREEF), and the tree in force's part of the curation
+        F = TREEF || (TREERAW && TREERAW.f),
+        part = treeCur(
+          SUBJECTS.find(x => x.id === TREE_AT),
+          CUR
+        );
       return [
-        ...treeTypeNames(own, SUBJ.typeDrop, TREERAW && TREERAW.f ? treeNameIndex(TREERAW.f, ((CUR || {}).fish || {}).names) : []),
+        ...treeTypeNames(own, SUBJ.typeDrop, F ? treeNameIndex(F, ((part || {}).fish || {}).names) : []),
         ...cnTypeNames(sp).map(o => ({...o, g: spUnitId('cn', o.g)})),
         ...sciTypeNames(sciSpAll())
       ];

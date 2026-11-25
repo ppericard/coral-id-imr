@@ -269,8 +269,9 @@ is committed; the photos in play are downloaded (R2, the four sizes) when they e
 - `out{f: species id | 'x'}`: Not this, the photo is that species' candidate, or out of every species ("A photo is in
   play" below);
 - `names{name: {family id: 'off' | 'on' | 'often'}}`: Pierre's exceptions to the name index (not that family's name,
-  that family's, that family's and gently corrected; read by `core.js` `treeNameIndex`; no admin editor yet, ROADMAP
-  "Fish common names");
+  that family's, that family's and gently corrected; read by `core.js` `treeNameIndex`; set in the admin's Names box),
+  and `cn{species id: [names]}`: a species' own list of 1 to 3 common names, the main first (read by `core.js`
+  `treeCnApply` through `contentApply`; set in its Common names box, [fish.md](fish.md#curated-common-names));
 - `tags{f: jt}`, `ease{f: 1-5}`, `phase{f}`, `crop{f: [l, t, r, b]}` (the `judging/FISH.md` rubric's fields);
 - `kept{f: set}` (a judging re-judge's proposal he answered Keep mine, by its set: `q308`, the light re-judge, or `one`,
   one judgement per photo; admin Photo review › Light proposals) and
