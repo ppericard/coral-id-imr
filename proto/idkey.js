@@ -9,8 +9,7 @@ LAB.add({
   id: 'idkey',
   icon: '⌕',
   title: 'Coral ID Key',
-  blurb:
-    'Start from whatever you can see, in any order: growth form, corallites or IMR lecture group. The shortlist updates at once, with all local photos.',
+  blurb: `Start from whatever you can see, in any order: growth form, corallites or ${ORG.lecture} group. The shortlist updates at once, with all local photos.`,
   lede: 'Tap the clues you can see on your photo, in any order. Genera are ranked by how well they fit: one wrong or misjudged clue only moves a genus down, it never hides it. Made to stay open beside ReefCloud.',
   render(root, arg) {
     // Genera not on the IMR list but in the Coral Finder book and present at Dauin (data.json "x"): on by default, switch in ⚙.
@@ -22,7 +21,7 @@ LAB.add({
       G = {...DATA.gen, ...XG};
     const addX = k => ({...k, leaves: k.leaves.map(l => ({...l, g: [...l.g, ...(XON && DATA.x ? DATA.x.leaf[l.id] || [] : [])]}))});
     const KEY = [...DATA.key, ...(XON && DATA.x ? DATA.x.groups : [])].map(addX);
-    const xtag = n => (G[n].x.nonscl ? 'Not on IMR list · not a hard coral' : 'Not on IMR list');
+    const xtag = n => (G[n].x.nonscl ? `Not on ${ORG.list} · not a hard coral` : `Not on ${ORG.list}`);
     const uniq = L => [...new Set(L)];
     // Genera that can show a trait; `half` those that show it in some species only (lab.js trHas): half a match.
     const withTr = id => names.filter(n => trHas(G[n], id) > 0),
@@ -48,8 +47,8 @@ LAB.add({
       const cf = startV === 'c';
       const imrF = {
         id: 'imrf',
-        name: cf ? 'IMR growth form' : 'Growth form',
-        note: "The 7 growth forms of IMR Lecture 6, as seen on each genus's photos and in the Coral Finder book. Form is plastic: it ranks, never rules out.",
+        name: cf ? `${ORG.short} growth form` : 'Growth form',
+        note: `The 7 growth forms of ${ORG.lectureRef}, as seen on each genus's photos and in the Coral Finder book. Form is plastic: it ranks, never rules out.`,
         thumbs: true,
         closed: cf,
         opts: IMRF
@@ -87,7 +86,7 @@ LAB.add({
         })),
         {
           id: 'ig',
-          name: 'IMR lecture group',
+          name: `${ORG.lecture} group`,
           note: 'The 11 corallite groups of Lecture 6.',
           thumbs: true,
           opts: DATA.imrg.map(gr => ({id: 'g' + gr.n, t: gr.n + '. ' + gr.t, g: names.filter(n => G[n].ig === gr.n)}))
@@ -371,7 +370,7 @@ LAB.add({
       // Clicking a genus name opens it in place (all its photos, bigger, with the ID cues); the sheet is a small link.
       const isX = n => S.open.has('x:' + n);
       const head = n =>
-        `<span class="ikhead"><button type="button" class="ikname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="iksheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${notIMR(n) ? `<b class="ikxtag">${xtag(n)}</b>` : tag(n)} · ${esc(altName(G[n].fam))}${G[n].ig ? ' · IMR group ' + G[n].ig : ''}</small>`;
+        `<span class="ikhead"><button type="button" class="ikname" data-x="${esc(n)}" aria-expanded="${isX(n)}"><i>${esc(n)}</i></button><a class="iksheetl" href="${genLink(n)}" title="Open the ${esc(n)} sheet">Sheet ↗</a></span><small>${notIMR(n) ? `<b class="ikxtag">${xtag(n)}</b>` : tag(n)} · ${esc(altName(G[n].fam))}${G[n].ig ? ` · ${ORG.short} group ${G[n].ig}` : ''}</small>`;
       // Many varied examples at a glance, as on the paper Coral Finder's pages: cover first, then round-robin over
       // colony / closer / corallites (featured photos lead each view), a different observation each time when possible.
       // With one view picked, only that view's photos (all views when the genus has none of it).
@@ -464,7 +463,7 @@ LAB.add({
       // Phones: with genera fitting every clue, "One clue off" starts folded (one tap opens it) so the best fits are not buried.
       const foldOff = left.length && isPhone() && !S.open.has('off');
       const any = used(F).length + S.not.size;
-      const hd = `<div class="ikhd"><h3 class="ikgrp">${any ? 'Fits every clue' : XON ? 'Genera' : 'IMR genera'} <span class="ikn">${left.length}</span></h3><span class="iksegs"><span class="seg" role="group" aria-label="Layout">${[
+      const hd = `<div class="ikhd"><h3 class="ikgrp">${any ? 'Fits every clue' : XON ? 'Genera' : `${ORG.short} genera`} <span class="ikn">${left.length}</span></h3><span class="iksegs"><span class="seg" role="group" aria-label="Layout">${[
         ['auto', 'Auto', 'Mosaic up to 12 genera, Cards beyond'],
         ['cover', 'Cards', 'One photo and the key features per genus'],
         ['mosaic', 'Mosaic', '8 varied photos per genus'],
@@ -488,7 +487,7 @@ LAB.add({
           ''
         )}${S.q ? `<button type="button" class="chip" data-clearq>“${esc(S.q)}” ×</button>` : ''}${isPhone() ? `<button type="button" class="chip ikadd" data-side aria-pressed="${S.open.has('side')}">${S.open.has('side') ? 'Hide clues' : '+ Clue'}</button>` : ''}</span>${chosen.length || S.q || S.out.size || S.not.size ? `<button type="button" class="next ikreset2" data-reset>↺ Start over</button>` : ''}</div>
         ${any ? nextChecks(F, left.length ? left : close) : ''}
-        ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'ikrows' : mode === 'sheet' ? 'iksheets' : 'ikgrid'}">${left.map(n => (isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n))).join('')}</div>` : `<p class="note">No ${XON ? '' : 'IMR '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
+        ${left.length ? `${hd}<div class="${mode === 'mosaic' ? 'ikrows' : mode === 'sheet' ? 'iksheets' : 'ikgrid'}">${left.map(n => (isX(n) && mode === 'mosaic' ? big(n) : mode === 'mosaic' ? mosaic(n) : mode === 'sheet' ? sheet(n) : tile(n))).join('')}</div>` : `<p class="note">No ${XON ? '' : ORG.short + ' '}genus fits every clue: one of them may be wrong. Check the closest genera below.</p>`}
         ${close.length ? (foldOff ? `<details class="ikoff"><summary class="ikgrp">${close.length} genera one clue off <small>in case a clue was misjudged</small></summary><div class="ikgrid">${close.map(n => tile(n, true)).join('')}</div></details>` : `<h3 class="ikgrp">One clue off <span class="ikn">${close.length}</span> <small>in case a clue was misjudged</small></h3><div class="ikgrid">${close.map(n => tile(n, true)).join('')}</div>`) : ''}
         ${rest.length ? `<details class="ikrest"><summary>${rest.length} other genera <small>two clues off or more</small></summary><p class="ikchosen">${rest.map(n => `<a class="chip" href="${genLink(n)}"><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p></details>` : ''}
         ${near.length ? `<p class="iknear"><span class="label">Also check these look-alikes</span>${near.map(n => `<a class="chip" href="${notIMR(n) || notIMR(left[0]) ? genLink(n) : hr(`cmp-${left[0]}|${n}`)}"${(G[left[0]].lsrc || {})[n] ? ` title="${esc(G[left[0]].lsrc[n])}"` : ''}><img src="${thumb(n, 'macro')}" alt=""><i>${esc(n)}</i></a>`).join('')}</p>` : ''}
@@ -987,7 +986,7 @@ LAB.add({
         `<div class="ikforms${S[f.id].size ? ' mini' : ''}">${f.opts.map(o => formTile(f.id, o, S[f.id].has(o.id), cnt(f, o))).join('')}</div>${andSw(f.id)}`;
       const show = `<button type="button" class="next ikshow${used(F).length ? '' : ' sec'}" data-show>${used(F).length ? `Show the ${left.length} ${left.length === 1 ? 'genus' : 'genera'}` : `Show all ${left.length} genera${left.some(n => !slate.has(n)) ? ` (${left.filter(n => slate.has(n)).length} on the slate)` : ''}`} →</button>`;
       // Two entry points: the paper Coral Finder's path (default) or the IMR forms, as a discreet link at the bottom (a bigger one takes room for nothing).
-      const switcher = `<button type="button" class="linkish iksv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? '← IMR growth forms' : 'Coral Finder book path →'}</button>`;
+      const switcher = `<button type="button" class="linkish iksv" data-sv="${startV === 'c' ? 'a' : 'c'}">${startV === 'c' ? `← ${ORG.short} growth forms` : 'Coral Finder book path →'}</button>`;
       let body;
       if (startV === 'c') {
         // The paper Coral Finder's own path: growth form, then the box of that form, then the shortlist.

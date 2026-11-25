@@ -102,8 +102,8 @@ LAB.add({
   id: 'fishkey',
   icon: '⌕',
   title: 'Fish ID Key',
-  blurb: 'Every species of the IMR reference PDF, by identification group, family and genus, with the names to pick in EventMeasure.',
-  lede: 'Find the name to pick in EventMeasure: type any name, or open a family. Names are those of the IMR reference PDF, with WoRMS beside them when it differs.',
+  blurb: `Every species of the ${ORG.short} reference PDF, by identification group, family and genus, with the names to pick in EventMeasure.`,
+  lede: `Find the name to pick in EventMeasure: type any name, or open a family. Names are those of the ${ORG.short} reference PDF, with WoRMS beside them when it differs.`,
   // Offered (on the Tools page and at its address) only while its subject is open to this player (app.js subjOpen: a
   // subject in its beta group shows to its group and the admin only, rule S1).
   subj: () => SUBJECTS.find(s => (UNITS[s.id] || {}).emkey),
@@ -204,8 +204,8 @@ LAB.add({
         </aside>
         <div class="fkmain">
           ${I.groups.map(g => `<div class="fkgroup" data-g="${g.n || ''}"><h3>${gHead(g)}</h3>${g.fams.map(famBlock).join('')}</div>`).join('')}
-          <p class="fkempty note" hidden>No species of the IMR reference PDF matches. Try a genus, a family or part of a name.</p>
-          <p class="note fksrc">Names: the IMR reference PDF (EventMeasure), WoRMS beside them when it differs. Groups: ${k.short ? `<span title="${esc(k.cite || '')}">${esc(k.short)}</span>` : 'the regional identification key'}${k.region && k.region.name ? `, ${esc(k.region.name)}` : ''}.</p>
+          <p class="fkempty note" hidden>No species of the ${ORG.short} reference PDF matches. Try a genus, a family or part of a name.</p>
+          <p class="note fksrc">Names: the ${ORG.short} reference PDF (EventMeasure), WoRMS beside them when it differs. Groups: ${k.short ? `<span title="${esc(k.cite || '')}">${esc(k.short)}</span>` : 'the regional identification key'}${k.region && k.region.name ? `, ${esc(k.region.name)}` : ''}.</p>
         </div>
       </div>`;
       const q = root.querySelector('#fkq');

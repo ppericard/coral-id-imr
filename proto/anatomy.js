@@ -311,7 +311,7 @@
     {
       id: 'meandroid',
       name: 'Meandering ridges / valleys',
-      tech: 'IMR group 5 · meandroid',
+      tech: `${ORG.short} group 5 · meandroid`,
       draw: () => meandroid(),
       see: [
         'Several mouths share one valley.',
@@ -338,7 +338,7 @@
     {
       id: 'hydno',
       name: 'Hydnophoroid',
-      tech: 'Coral Finder term · IMR: conical mounds',
+      tech: `Coral Finder term · ${ORG.short}: conical mounds`,
       draw: () => hydno(),
       see: [
         'Wall pieces form small cones (monticules).',
@@ -368,7 +368,7 @@
     {
       id: 'solitary',
       name: 'Solitary',
-      tech: 'IMR group 8 · free-living',
+      tech: `${ORG.short} group 8 · free-living`,
       draw: () => solitary(),
       see: [
         'One large polyp, free on the bottom.',
@@ -388,6 +388,13 @@
   const arrOf = n => ARR.filter(a => a.genera.includes(n) || (a.small || []).includes(n));
 
   // Concepts: one idea each, a small drawing, rings on real macro photos [file, genus, [x %, y %, r % of width], note].
+  // A definition the glossary already holds (data.json terms: [term, definition, source, plain]) is read from there, so the
+  // Lab follows the glossary: its sentence, then its source's name without the slide, as the Lab has always cited it. The
+  // data is in when a page draws, not when this file loads: a concept reads it through a getter.
+  const termLine = name => {
+    const t = (DATA.terms || []).find(x => x[0] === name);
+    return t ? `${t[1].replace(/\.$/, '')} (${t[2].replace(/, slide \d+$/, '')}).` : '';
+  };
   const CON = [
     {
       id: 'corallite',
@@ -406,7 +413,9 @@
       id: 'wall',
       name: 'Wall',
       q: 'Shared, separate, or indistinguishable?',
-      def: 'The corallite wall separates septa from costae, and corallite from corallite (IMR Lecture 6). Recognising its structure is one of the IMR ID tips.',
+      get def() {
+        return `${termLine('Wall')} Recognising its structure is one of the ${ORG.short} ID tips.`;
+      },
       minis: [
         [plocoid('wall'), 'Separate walls'],
         [cerioid('wall'), 'Shared walls'],
@@ -422,7 +431,9 @@
       id: 'septa',
       name: 'Septa',
       q: 'Equal or alternating? Plain or toothed?',
-      def: 'Vertical blades inside the coral’s cup-like corallite (IMR Lecture 6).',
+      get def() {
+        return termLine('Septa');
+      },
       minis: [[cup(100, 100, 70, 'septa'), 'Septa inside one corallite']],
       box: '0 0 200 200',
       shots: [
@@ -435,7 +446,9 @@
       id: 'costae',
       name: 'Costae',
       q: 'Do the septa continue outside the wall?',
-      def: 'When septa cross the wall of the corallite they become costae (IMR Lecture 6). Absent with shared walls (IMR).',
+      get def() {
+        return `${termLine('Costae')} Absent with shared walls (IMR).`;
+      },
       minis: [[cup(100, 100, 52, 'costae'), 'Costae outside the wall']],
       shots: [['dipsastraea-macro-746236818', 'Dipsastraea', [60, 68, 4.5], 'Septa running over the rim into the pale coenosteum.']]
     },
@@ -443,7 +456,9 @@
       id: 'coenosteum',
       name: 'Coenosteum',
       q: 'What is between the corallites?',
-      def: 'Space between separate walls (IMR Lecture 6). With indistinguishable walls, look at the skeletal ornaments: beads, spines, parallel striations (IMR tips).',
+      get def() {
+        return `${termLine('Coenosteum')} With indistinguishable walls, look at the skeletal ornaments: beads, spines, parallel striations (IMR tips).`;
+      },
       minis: [[plocoid('coenosteum'), 'Coenosteum between corallites']],
       shots: [
         ['dipsastraea-macro-746236818', 'Dipsastraea', [47, 15, 5], 'Pale tissue over coenosteum between corallites.'],
