@@ -136,7 +136,9 @@ const stateBump = (rec, sid) => {
     try {
       sid = SUBJ ? SUBJ.id : null;
     } catch (e) {
-      sid = null; // no subject declared yet (a part of this file run alone)
+      // SUBJ not declared (a part of this file run alone, a unit test): nobody's known; any other error is thrown
+      if (!(e instanceof ReferenceError)) throw e;
+      sid = null;
     }
   if (sid !== null) (REC_N++, (REC_BY[sid] = (REC_BY[sid] || 0) + 1));
 };
@@ -164,7 +166,9 @@ function dataMark() {
   let s = null;
   try {
     s = SUBJ ? SUBJ.id : null;
-  } catch (e) {} // no subject declared yet (a part of this file run alone)
+  } catch (e) {
+    if (!(e instanceof ReferenceError)) throw e; // SUBJ not declared (a part of this file run alone), as stateBump's
+  }
   return {
     v: DATA_V,
     sw: DATA_SW,
@@ -1907,14 +1911,13 @@ function rankPhotos() {
 const SUBJ_HOOKS = [];
 function subjectLoad(S, keep) {
   SUBJ = S;
-  // the subject, its records and settings: inputs of the views, swapped (swapBump: a tree built for it, a record renamed,
-  // bump on their own); at once, so nothing read on the way is kept under the version a visit puts back (dataBack), and
-  // again after the hooks' own state
-  swapBump();
   treeAt(S.id); // its tree in force (TREEU: the fish's, the sea slugs'), none for the corals
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
+  // the subject, its records and settings: inputs of the views (and again after the hooks' own state); the subject in
+  // force swapped (swapBump: a tree built for it, a record renamed, bump on their own)
+  swapBump();
   SUBJ_HOOKS.forEach(f => f(keep));
   swapBump();
 }

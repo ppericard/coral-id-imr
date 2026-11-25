@@ -2706,15 +2706,17 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     memRecalcAll();
     domRecalcAll();
   });
-// The subject on screen's memos the hook resets, put back after a visit that came back to them (app.js memoPut): each
-// unit's difficulty with the data version (made for the version before it: GDV then the version now, an alias of it);
-// the intro map read with the state version (none of its records written).
+// The subject on screen's memos the hook resets, after a visit that came back to the data version (app.js memoPut): each
+// unit's difficulty put back (made for the version before it: GDV then the version now, an alias of it). The intro map
+// is never put back: read again from the device, as before (another tab may have written it, and introAdd writes the
+// whole map back). With the state version kept, it is read at once and compared with the map the views were made from
+// (its text at the visit's start): another text is a write of nobody's known, so the state version moves.
 if (typeof SUBJ_MEMOS !== 'undefined')
   SUBJ_MEMOS.push({
-    get: () => ({INTROS, GDIFF, GDV, dv: DATA_V}),
+    get: () => ({t: INTROS ? JSON.stringify(INTROS) : null, GDIFF, GDV, dv: DATA_V}),
     put: (m, back) => {
       if (m.GDV === m.dv) ((GDIFF = m.GDIFF), (GDV = DATA_V));
-      if (back.state) INTROS = m.INTROS;
+      if (back.state && INTROS === null && m.t !== null && JSON.stringify(introMap()) !== m.t) stateBump('rec', null);
     }
   });
 // The functions the views read (genScore, introduced, photoAny, imrSaid) are here now: a view made before this file came
