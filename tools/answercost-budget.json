@@ -1,9 +1,10 @@
 {
- "about": "REE-265 step 0, every subject since REE-274: the ceilings of the work one answer may make, per state (tools/answercost.js; CI's \"answer cost\" job counts every state, tests/answercost.test.js holds the pure parts): fish, corals and sea slugs, each at 50, 500 and 3,000 answers, for a player in the middle of a session (the page's clock 30 s after the state's last answer) and, as subject:answers:back, for the same player back after 30 days (a comeback: no warm-up, the comeback's answers alone counted), signed out. The players AND the data the page loads (every .json file) are the pinned tree's (answercost.js PLAYERS_AT, a commit of main), the code counted is the tree under test's, so neither a change of the draw nor a bot's refill of the photos moves a count; and a count is repeatable (REE-281: virtual clock, random numbers started over at each tick, every photo a 1 x 1 picture served at once, the page booted on About, which draws no question, and at rest before the quiz opens: the same state and seed give the same questions and the same count to a few calls, on a loaded machine too). Each ceiling is the largest count measured over the page's seeds 1 to 3 (the seeds change the questions drawn, by up to 2x on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. History: fish and corals at 3,000 were set on main after #1522, tightened when the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc in place of fn:bonusList) and when the tree's score and the levels did (step 4: fn:lvStepCalc in place of fn:lvStep); all nine states were set again on the pinned players when REE-274 added the sea slugs and the corals at 50 and 500 and moved the counts to CI, and again, with the pinned data and the repeatable count, for REE-281 (twice: the second time for the boot, which asked another sequence from the third question under load); the storage reads (getCalls, getChars) of every state were tightened when the stored texts came to be compared once per task (REE-265: app.js freshSeen); every ceiling was set again when the boot's own question stopped being kept (REE-281, a third time: the first question was the boot's, which differed from one load to the next, and the questions that followed with it); the ceilings the views of the units met, the bars, the exam entries and the rank classes lowered were lowered, the others kept (REE-265: model.js introduced, genScore; app.js rankUnits, DATA_V); the ceilings the photo draw's data view, the parents' lists and the named species lowered were lowered, the others kept, and the computations of the views (fn:metCalc, fn:genScoreCalc, fn:examOnCalc, fn:lvlNeedCalc, fn:drawPhotosCalc) got ceilings of their own (REE-265: model.js drawPhotos; app.js kidsOf, sciKids; progress.js achNamed); the ceilings the wrong choices' reads lowered were lowered, the others kept (REE-265: model.js confUnit, formsOf, choiceKeyFn, rankKindFn; app.js keyView fn; quiz.js planPhoto knownNow); the ceilings the opening's checks and the rust's skip lowered were lowered, the others kept (REE-265: model.js readyCalc, introReadyFn, cardsCalc, rustNow's rustAdd and rustSkip; app.js c1Met); the comeback states were added, their ceilings from the counts of the branch that added them, and the ceilings the units in play's photos and the confusion groups' pair scores lowered were lowered, the others kept (REE-265: model.js photoAnyBy, groupUnit, groupPairFn); the ceiling the typed names' index by length lowered was lowered, the others kept (REE-265: core.js treeTypeNames). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --seed 1,2,3 --write-budget tools/answercost-budget.json --margin 1.25 (--states for the states it touches).",
+ "about": "REE-265 step 0, every subject since REE-274: the ceilings of the work one answer may make, per state (tools/answercost.js; CI's \"answer cost\" job counts every state, tests/answercost.test.js holds the pure parts): fish, corals and sea slugs, each at 50, 500 and 3,000 answers, for a player in the middle of a session (the page's clock 30 s after the state's last answer) and, as subject:answers:back, for the same player back after 30 days (a comeback: no warm-up, the comeback's answers alone counted), signed out. The players AND the data the page loads (every .json file) are the pinned tree's (answercost.js PLAYERS_AT, a commit of main), the code counted is the tree under test's, so neither a change of the draw nor a bot's refill of the photos moves a count; and a count is repeatable (REE-281: virtual clock, random numbers started over at each tick, every photo a 1 x 1 picture served at once, the page booted on About, which draws no question, and at rest before the quiz opens: the same state and seed give the same questions and the same count to a few calls, on a loaded machine too). Each ceiling is the largest count measured over the page's seeds 1 to 3 (the seeds change the questions drawn, by up to 2x on fish:3000), times the margin, rounded up to two significant digits, at least 100 calls. History: fish and corals at 3,000 were set on main after #1522, tightened when the units in play became a view of the state version (REE-265 step 3: fn:bonusCalc in place of fn:bonusList) and when the tree's score and the levels did (step 4: fn:lvStepCalc in place of fn:lvStep); all nine states were set again on the pinned players when REE-274 added the sea slugs and the corals at 50 and 500 and moved the counts to CI, and again, with the pinned data and the repeatable count, for REE-281 (twice: the second time for the boot, which asked another sequence from the third question under load); the storage reads (getCalls, getChars) of every state were tightened when the stored texts came to be compared once per task (REE-265: app.js freshSeen); every ceiling was set again when the boot's own question stopped being kept (REE-281, a third time: the first question was the boot's, which differed from one load to the next, and the questions that followed with it); the ceilings the views of the units met, the bars, the exam entries and the rank classes lowered were lowered, the others kept (REE-265: model.js introduced, genScore; app.js rankUnits, DATA_V); the ceilings the photo draw's data view, the parents' lists and the named species lowered were lowered, the others kept, and the computations of the views (fn:metCalc, fn:genScoreCalc, fn:examOnCalc, fn:lvlNeedCalc, fn:drawPhotosCalc) got ceilings of their own (REE-265: model.js drawPhotos; app.js kidsOf, sciKids; progress.js achNamed); the ceilings the wrong choices' reads lowered were lowered, the others kept (REE-265: model.js confUnit, formsOf, choiceKeyFn, rankKindFn; app.js keyView fn; quiz.js planPhoto knownNow); the ceilings the opening's checks and the rust's skip lowered were lowered, the others kept (REE-265: model.js readyCalc, introReadyFn, cardsCalc, rustNow's rustAdd and rustSkip; app.js c1Met); the comeback states were added, their ceilings from the counts of the branch that added them, and the ceilings the units in play's photos and the confusion groups' pair scores lowered were lowered, the others kept (REE-265: model.js photoAnyBy, groupUnit, groupPairFn); the ceiling the typed names' index by length lowered was lowered, the others kept (REE-265: core.js treeTypeNames); every state got a ceiling on its heaviest answer (peakCalls: each answer taken alone, the largest over the seeds' answers counted), and the ceilings the confusion groups' pairs scored up front, the photo draw's first fill and the units' judged ease lowered were lowered, the others kept (REE-265: model.js groupPairFn pairs, photoDiffOf, genusDiff). A step that lowers a count tightens its ceilings in the same PR: node tools/answercost.js --seed 1,2,3 --write-budget tools/answercost-budget.json --margin 1.25 (--states for the states it touches).",
  "margin": 1.25,
  "states": {
   "coral:50": {
-   "namedCalls": 7000,
+   "namedCalls": 6700,
+   "peakCalls": 12000,
    "getCalls": 110,
    "getChars": 81000,
    "setChars": 58000,
@@ -23,7 +24,8 @@
    "fn:drawPhotosCalc": 100
   },
   "coral:50:back": {
-   "namedCalls": 7800,
+   "namedCalls": 7600,
+   "peakCalls": 9900,
    "getCalls": 110,
    "getChars": 75000,
    "setChars": 54000,
@@ -44,6 +46,7 @@
   },
   "coral:500": {
    "namedCalls": 12000,
+   "peakCalls": 19000,
    "getCalls": 100,
    "getChars": 620000,
    "setChars": 460000,
@@ -64,6 +67,7 @@
   },
   "coral:500:back": {
    "namedCalls": 13000,
+   "peakCalls": 20000,
    "getCalls": 100,
    "getChars": 620000,
    "setChars": 460000,
@@ -84,6 +88,7 @@
   },
   "coral:3000": {
    "namedCalls": 15000,
+   "peakCalls": 24000,
    "getCalls": 100,
    "getChars": 2400000,
    "setChars": 1700000,
@@ -103,7 +108,8 @@
    "fn:drawPhotosCalc": 100
   },
   "coral:3000:back": {
-   "namedCalls": 15000,
+   "namedCalls": 14000,
+   "peakCalls": 21000,
    "getCalls": 100,
    "getChars": 2400000,
    "setChars": 1700000,
@@ -123,7 +129,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:50": {
-   "namedCalls": 60000,
+   "namedCalls": 55000,
+   "peakCalls": 140000,
    "getCalls": 110,
    "getChars": 110000,
    "setChars": 71000,
@@ -143,7 +150,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:50:back": {
-   "namedCalls": 44000,
+   "namedCalls": 42000,
+   "peakCalls": 74000,
    "getCalls": 110,
    "getChars": 94000,
    "setChars": 67000,
@@ -163,7 +171,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:500": {
-   "namedCalls": 51000,
+   "namedCalls": 47000,
+   "peakCalls": 100000,
    "getCalls": 100,
    "getChars": 800000,
    "setChars": 580000,
@@ -183,7 +192,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:500:back": {
-   "namedCalls": 77000,
+   "namedCalls": 65000,
+   "peakCalls": 180000,
    "getCalls": 100,
    "getChars": 760000,
    "setChars": 570000,
@@ -203,7 +213,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:3000": {
-   "namedCalls": 83000,
+   "namedCalls": 79000,
+   "peakCalls": 200000,
    "getCalls": 110,
    "getChars": 3100000,
    "setChars": 2300000,
@@ -223,7 +234,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:3000:back": {
-   "namedCalls": 74000,
+   "namedCalls": 57000,
+   "peakCalls": 120000,
    "getCalls": 100,
    "getChars": 3000000,
    "setChars": 2200000,
@@ -244,6 +256,7 @@
   },
   "seaslug:50": {
    "namedCalls": 18000,
+   "peakCalls": 35000,
    "getCalls": 110,
    "getChars": 100000,
    "setChars": 72000,
@@ -263,7 +276,8 @@
    "fn:drawPhotosCalc": 100
   },
   "seaslug:50:back": {
-   "namedCalls": 17000,
+   "namedCalls": 16000,
+   "peakCalls": 20000,
    "getCalls": 110,
    "getChars": 92000,
    "setChars": 66000,
@@ -284,6 +298,7 @@
   },
   "seaslug:500": {
    "namedCalls": 18000,
+   "peakCalls": 36000,
    "getCalls": 100,
    "getChars": 780000,
    "setChars": 590000,
@@ -304,6 +319,7 @@
   },
   "seaslug:500:back": {
    "namedCalls": 22000,
+   "peakCalls": 31000,
    "getCalls": 100,
    "getChars": 780000,
    "setChars": 590000,
@@ -324,6 +340,7 @@
   },
   "seaslug:3000": {
    "namedCalls": 26000,
+   "peakCalls": 43000,
    "getCalls": 100,
    "getChars": 3100000,
    "setChars": 2300000,
@@ -344,6 +361,7 @@
   },
   "seaslug:3000:back": {
    "namedCalls": 29000,
+   "peakCalls": 43000,
    "getCalls": 100,
    "getChars": 3100000,
    "setChars": 2300000,

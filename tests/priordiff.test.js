@@ -26,7 +26,15 @@ test('photoPrior: the unit offset plus (3 - ease) x the calibration of one step;
 
 test('photoPrior follows model.js photoDiff: PRIOR_MID is PDIFF.MID and the step is the subject’s calib.ease', () => {
   assert.strictEqual(PRIOR_MID, +/const PDIFF = \{[^}]*MID: (\d+)/.exec(read('model.js'))[1]);
-  assert.match(read('model.js'), /gdOff\(n\) \+ \(p\.e \? \(PDIFF\.MID - p\.e\) \* calibOf\(SUBJ\)\.ease : 0\)/);
+  assert.match(
+    read('model.js'),
+    /\(du \? du\.gd : gdOff\(n\)\) \+ \(p\.e \? \(PDIFF\.MID - p\.e\) \* \(du \? du\.ease : calibOf\(SUBJ\)\.ease\) : 0\)/
+  );
+  // the same reads, once for a unit's photos (drawPhotosCalc)
+  assert.match(
+    read('model.js'),
+    /const photoDiffOf = n => \(\{gd: gdOff\(n\), ease: calibOf\(SUBJ\)\.ease, tm0: ptimeOff\(undefined, PDIFF\.W\)\}\);/
+  );
 });
 
 // The judged ease's weight (docs/decisions/2026-11-23-judged-ease-weight.md): the shared calibration's 0.3 logit a point,
@@ -124,6 +132,71 @@ test('genusDiff follows the data version: a tree’s new photos move it, the mem
   assert.strictEqual(B.genusDiff('fam'), exp([5]), 'without DATA_V: the memo until cleared');
   B.clear();
   assert.strictEqual(B.genusDiff('fam'), exp([5, 1]), 'cleared by hand: made again');
+});
+
+// genusDiff reads the subject's ease once for a unit's judged photos (a comeback's first answer read it for every judged
+// photo of every unit): the same values as the code before, to the bit, on made-up units and eases; a mutant that reads
+// another calibration is caught.
+test('genusDiff with the ease read once: the code before’s values, to the bit', () => {
+  const src = read('model.js'),
+    REF = `const genusDiff0 = n => {
+  const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e),
+    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
+  return Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100;
+};`;
+  let s = 7;
+  const r = () => ((s = (s * 16807) % 2147483647), s / 2147483647);
+  const engine = model => {
+    const io = {ease: 0.3, U: {}},
+      SUBJ = C.subjectOf('fish'),
+      ctx = {
+        SUBJ,
+        calibOf: S => (S === SUBJ ? {ease: io.ease} : C.calibOf(S)),
+        PGD: {},
+        VIEWS: [['wide'], ['medium'], ['macro']],
+        gamePics: (n, v) => io.U[n][v] || [],
+        heldOf: g => g.held || [],
+        GX: n => io.U[n]
+      };
+    vm.runInNewContext(
+      [
+        block(model, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}),
+        block(model, 'let GDIFF = {};', '\n};\n', {through: 1, file: 'model.js'}),
+        REF,
+        'this.genusDiff = genusDiff; this.genusDiff0 = genusDiff0; this.clear = () => (GDIFF = {});'
+      ].join('\n'),
+      ctx
+    );
+    return {ctx, io};
+  };
+  const world = io => {
+    io.ease = [0.3, 0.1 + r(), 0.7 * r(), 1 / 3][Math.floor(r() * 4)];
+    for (let i = 0; i < 40; i++) {
+      const ph = () =>
+        Array.from({length: Math.floor(r() * 12)}, (_, j) => ({
+          f: `u${i}p${j}${Math.floor(r() * 9)}`,
+          ...(r() < 0.8 ? {e: 1 + Math.floor(r() * 5)} : {})
+        }));
+      io.U['u' + i] = {wide: ph(), medium: ph(), macro: ph(), held: r() < 0.3 ? ph() : []};
+    }
+  };
+  const {ctx: A, io} = engine(src);
+  let n = 0;
+  for (let w = 0; w < 30; w++) {
+    world(io);
+    A.PGD = Object.fromEntries(Object.keys(io.U).map(u => [u, [r() * 2 - 1, 9]]));
+    A.clear();
+    for (const u of Object.keys(io.U)) (assert.strictEqual(A.genusDiff(u), A.genusDiff0(u), `world ${w} ${u}`), n++);
+  }
+  assert.ok(n === 1200);
+  const {ctx: M, io: mio} = engine(src.replace('k = je.length ? calibOf(SUBJ).ease : 0,', 'k = je.length ? calibOf(null).ease : 0,'));
+  let caught = false;
+  for (let w = 0; w < 10 && !caught; w++) {
+    world(mio);
+    M.clear();
+    caught = Object.keys(mio.U).some(u => M.genusDiff(u) !== M.genusDiff0(u));
+  }
+  assert.ok(caught, 'a mutant reading another calibration is caught');
 });
 
 // treePrior and the prior's caption line, run from admin.js.
