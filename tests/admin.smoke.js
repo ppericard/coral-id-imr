@@ -6157,6 +6157,37 @@ async function lazyPart(b, base, fails) {
             fails.push(`${w}px Infrastructure from v${IV}: ${JSON.stringify(i1)}`);
           await q.close();
         }
+        // The answer log read lean (admin.js LEAN_SHEET, leanIn; Code.gs answers_ with lean; core.js rowsPack): before its
+        // version the demo sends rows, from it the lean form (rule D4); either way the log the admin holds is the plain
+        // reply's rows (the demo's reply asked both ways in the page), and Activity draws it.
+        {
+          const LV = await p.evaluate(() => LEAN_SHEET);
+          for (const v of [LV - 1, LV]) {
+            const q = await p.context().newPage();
+            q.on('pageerror', e => fails.push(`${w}px lean answer log page error (v${v}): ${e.message}`));
+            await q.goto(base + `admin.html?demo&v=${v}#players/activity`);
+            await q
+              .waitForFunction(() => ANS && ANS.all && ANS.all.length && document.querySelector('#view .adm-kpis'), null, {timeout: 30000})
+              .catch(() => {});
+            const r = await q.evaluate(async () => {
+              const ask = lean =>
+                fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN, ...(lean ? {lean: 1} : {})})}).then(
+                  x => x.json()
+                );
+              const a = await ask(0),
+                b = await ask(1),
+                back = b.lean ? rowsUnpack(b.lean) : b.rows;
+              return {
+                lean: !!b.lean && !b.rows,
+                same: JSON.stringify(back) === JSON.stringify(a.rows),
+                held: !!ANS && !ANS.old && JSON.stringify(ANS.all) === JSON.stringify(a.rows.filter(x => !winkRow(x))),
+                n: ANS && ANS.all ? ANS.all.length : 0
+              };
+            });
+            if (r.lean !== v >= LV || !r.same || !r.held || !r.n) fails.push(`${w}px lean answer log at v${v}: ${JSON.stringify(r)}`);
+            await q.close();
+          }
+        }
         // To do › Reports lists the demo reports; Activity shows the demo players' answers.
         // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
         await go('inbox/todo/errors');

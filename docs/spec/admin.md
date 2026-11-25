@@ -377,7 +377,10 @@ The draft button carries the status: "● Publish" with a draft (its title lists
     opened on a Players page: once its suggestions are in, `sugLater`, then idle, 4 s at most), at every admin load
     whatever page the admin stays on (rule A1). A Publish that comes before it has finished runs it, or waits for it,
     first (`asortDone`: the draft it reads holds the load's fish proposals).
-  Left, ROADMAP "Admin opening": the answer log, and the data files' revalidation in one call (a deploy manifest).
+  - **The answer log** comes lean from the sheet script that serves it (sync.md "The lean answer log"; `leanIn`): the
+    same rows in about half the bytes (0.22 MB gzipped in place of 0.40 MB for a made-up log of 7,700 answers).
+  Left, ROADMAP "Admin opening": the data files' revalidation in one call (a deploy manifest), and a reply holding only
+  the rows since the last visit (it needs the declined device copy of players' data: Pierre's call).
 - **Memos**: `photos` / `own` / `cands` walk every genus and are memoized per draft state, kept from page to page:
   `render()` clears them only when the draft differs from the one they were computed for (`memoFresh`), and photos or
   candidates sent to another genus are indexed once per state (`sentTo`); code that changes `DRAFT` and then reads them
