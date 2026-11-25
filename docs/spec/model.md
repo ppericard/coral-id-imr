@@ -96,9 +96,18 @@ version.
 
 The memos the subject hooks reset are put back when the data version came back (`app.js` `SUBJ_MEMOS`, `memoGet`,
 `memoPut`, around each visit and tree lent): each unit's difficulty (`model.js` `GDIFF`, when made for the version
-before the visit: `GDV` then the version now, an alias of it), the typed names (`quiz.js` `TYPEN`), and, with the state
-version, the intro map read (`INTROS`). `subjectLoad` swaps first, before anything is read for the visited subject, so
-nothing read on the way is kept under the version a visit puts back.
+before the visit: `GDV` then the version now, an alias of it) and the typed names (`quiz.js` `TYPEN`). The intro map is
+never put back: the hook's reset leaves it to be read again from the device, as before a visit kept anything, so
+another tab's write of it is seen (and `introAdd`, which writes the whole map back, never writes a map from before the
+visit over that tab's entries). With the state version kept, it is read at the visit's return and compared with the map
+the subject on screen's views were made from (its text at the visit's start): another text is a write of nobody's
+known (`stateBump('rec', null)`), so the state version moves. A map not read since its last reset (no text at the
+start) was read by no view kept: it is left to be read when asked.
+
+The invariant the state version's alias rests on, that no state view reads another subject's records, is checked by
+`tests/seaslug.smoke.js` (part 2): each other subject visited and written as a merge writes it, the state version
+kept, every state view read against a computation now (`VIEW_CHECK`), then made again with the stored keys it reads
+recorded, none another subject's.
 
 Two things still make the subject on screen's state views again at each sync (`tools/answercost.js --syncs`: its units
 met and header pill once a sync with the corals on screen, twice with the fish or the sea slugs, where each visit made
