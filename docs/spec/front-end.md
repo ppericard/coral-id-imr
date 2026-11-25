@@ -179,8 +179,9 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   without explanations (`resetHelp()`).
 - `shownGroup()`: places a starred genus in the lecture group of its look-alikes (display only; `core.js`
   `lectureGroup`). `starNote()` names a starred genus's references on its card ("★ look-alike of …": `core.js`
-  `starRefs`, the surveyed look-alikes in that group); the opening of genera reads the same references (`starWaits`,
-  `model.js` `weighted`: a ★ genus opens only once they are met; LEARNING.md "Starred genera after their reference").
+  `starRefs`, the surveyed look-alikes in that group); the opening of genera reads the same references, which `build()`
+  writes on the genus's record as `after` (`core.js` `starAfter`; `model.js` `openPick`, `core.js` `afterWaits`: a ★
+  genus opens only once they are met; LEARNING.md "Starred genera after their reference").
 - `GX(n)`: a genus looked up in both the IMR genera (`DATA.gen`) and the extra Dauin genera (`DATA.x.gen`: the Coral ID
   Key, their sheets, Millepora and the bonus genera in games).
 - **Game genera, defined once** (`core.js`; no genus-specific case in code): `BENTHIC` = `['Millepora']`, `BONUS` (the
