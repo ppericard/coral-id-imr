@@ -2695,7 +2695,7 @@ domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     INTROS = null;
-    if (typeof stateBump === 'function') stateBump(); // the intro map read again: an input of the views (app.js)
+    if (typeof stateBump === 'function') stateBump('rec'); // the intro map read again: the player's, an input of the state views (app.js)
     HOLDS = Number(store.get(HOLDK(), 0)) || 0;
     CB = cbLoad();
     GDIFF = {};

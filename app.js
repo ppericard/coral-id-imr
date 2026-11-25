@@ -125,6 +125,22 @@ const IS_ADMIN =
 let STATE_V = 0;
 let DATA_V = 0;
 const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);
+// A visit to another subject (inSubject) and a tree lent for a while (treeWith) swap the subject or the tree in force and
+// put it back. Their bumps (swapBump: the subject or the tree in force, and nothing else, changed) move both versions,
+// so the views read meanwhile are the visited one's, and are counted (DATA_SW). Back where it started, with every data
+// bump since a swap's (dataBack), the data views' inputs are the ones before the visit: the data version now reads as
+// the one before (DATA_AS: DATA_V's value now, an alias of that version), so the subject on screen's data views kept
+// for it hold (a sync visits the other subjects at each save and each pull). Any other data bump meanwhile (a tree built,
+// the statistics, the sheet's version, new data) leaves the new version. DATA_V only ever goes up and an alias is an
+// older version, so a version once left is never read again.
+let DATA_SW = 0,
+  DATA_AS = {v: -1, k: -1};
+const swapBump = () => (DATA_SW++, stateBump());
+const dataKey = () => (DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
+const dataMark = () => ({v: DATA_V, sw: DATA_SW, k: dataKey()});
+function dataBack(m) {
+  if (DATA_V - m.v === DATA_SW - m.sw) DATA_AS = {v: DATA_V, k: m.k};
+}
 // sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names). REC_KEYS: those of the
 // player's records and settings (stateBump('rec')).
 const REC_KEYS = new Set(SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)))),
@@ -247,8 +263,10 @@ function verView(kind, name, f, now, point = false) {
 function stateView(name, f, point = false) {
   return verView('state', name, f, stateNow, point);
 }
-// The data version now: the stored texts compared first (stateNow), as for a state view.
-const dataNow = () => (stateNow(), DATA_V);
+// The data version now: the stored texts compared first (stateNow), as for a state view; after a visit that wrote
+// nothing, the version before it (dataKey's test, written out: every view's read goes through here, and the answer
+// cost counts named calls).
+const dataNow = () => (stateNow(), DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
 // A view of one argument k (a rank class, a unit), f(k) kept per k and per version: the values of a version are dropped
 // at the next (now: stateNow or dataNow). The same rules and the same check as stateView, value by value. k is a string,
 // a number or an object (a Map's key: the same value or the same object, the same entry).
@@ -1626,9 +1644,12 @@ function mimLay(X, f) {
 // A tree subject's own state (the globals' names), made on first use; the globals from the state in force and back.
 const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, TREEU: null, TREEP: null, TREEH: null, TREERAW: null, TREEF: null, TREEST: '', TREEON: false});
-function treePull() {
+// swap: another tree put in force as it was kept (treeAt), nothing written (swapBump); else its state written (treeSet).
+function treePull(swap) {
   if (TREE_AT) ({TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON} = treeOf(TREE_AT));
-  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
+  // the tree in force: an input of the views
+  if (swap && typeof swapBump === 'function') swapBump();
+  else if (typeof stateBump === 'function') stateBump();
 }
 function treePush() {
   if (TREE_AT) Object.assign(treeOf(TREE_AT), {TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON});
@@ -1639,7 +1660,7 @@ function treeAt(id) {
   if (!UNITS[id] || !UNITS[id].get || id === TREE_AT) return;
   treePush();
   TREE_AT = id;
-  treePull();
+  treePull(true);
   const T = treeOf(id);
   if (TREERAW && DATA && (!TREEU || T.stale)) {
     T.stale = false;
@@ -1649,13 +1670,16 @@ function treeAt(id) {
 }
 // fn() with subject id's tree in force, then the one before: what reads a tree subject's units outside its own context
 // (sync.js boardUnits: each leaderboard's tree, whatever the subject on screen).
+// The tree before back in force, with nothing else written, keeps the data version before (dataBack).
 function treeWith(id, fn) {
-  const was = TREE_AT;
+  const was = TREE_AT,
+    m = typeof dataMark === 'function' ? dataMark() : null;
   treeAt(id);
   try {
     return fn();
   } finally {
     if (was) treeAt(was);
+    if (m && TREE_AT === was) dataBack(m);
   }
 }
 // The units of every tree subject loaded made again (build: a new curation): the one in force at once, the others when
@@ -1833,18 +1857,23 @@ function subjectLoad(S, keep) {
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
-  // the subject, its records and settings: inputs of the views (and again after the hooks' own state)
-  if (typeof stateBump === 'function') stateBump();
+  // the subject, its records and settings: inputs of the views (and again after the hooks' own state); the subject in
+  // force swapped (swapBump: a tree built for it, a record renamed, bump on their own)
+  swapBump();
   SUBJ_HOOKS.forEach(f => f(keep));
-  if (typeof stateBump === 'function') stateBump();
+  swapBump();
 }
 // fn() run as if S were the current subject, then back (the sync's summary and merge, sign-in, sign-out). Synchronous.
 // SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
 let SUBJ_VISIT = 0;
+// The subject and the tree on screen back in force with no other data written meanwhile (every data bump a swap's):
+// the data version before the visit (dataBack), so the data views kept for it hold. A tree the visit put in force
+// that stays (none before it) or a data write leaves the new version.
 function inSubject(id, fn) {
   const S = subjectOf(id),
     was = {S: SUBJ, P, Q, T: TREE_AT};
   if (S === SUBJ) return fn();
+  const m = dataMark();
   SUBJ_VISIT++;
   subjectLoad(S, true);
   try {
@@ -1853,14 +1882,15 @@ function inSubject(id, fn) {
     SUBJ_VISIT--;
     SUBJ = was.S;
     // the subject on screen back: an input of the views, as its records and settings below
-    if (typeof stateBump === 'function') stateBump();
+    swapBump();
     if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
-    if (typeof stateBump === 'function') stateBump();
+    swapBump();
+    if (TREE_AT === was.T) dataBack(m);
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
-    if (typeof drawFillSoon === 'function') drawFillSoon(); // the visit moved the data version: the draw's data filled again ahead
+    if (typeof drawFillSoon === 'function') drawFillSoon(); // a visit that moved the data version: the draw's data filled again ahead
   }
 }
 // The subject switch (docs/DESIGN.md "Subject switch"): Home's row and the header's control (#subjc, not on Home), only

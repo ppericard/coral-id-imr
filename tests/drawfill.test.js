@@ -158,7 +158,7 @@ function page(seed, check, {fill = FILL, idle = true, model = modelCode(MODEL)} 
     make = vm.runInContext(
       `(function (${names.join(', ')}) {\n${APP_CODE}\n${counted(model)}\n${fill}\n` +
         `const set = (k, v) => k === 'PSTAT' ? (PSTAT = v) : k === 'PGD' ? (PGD = v) : k === 'PTM' ? (PTM = v) : k === 'CALSET' ? (CALSET = v) : null;\n` +
-        `return {photoSet, drawPhotos, stateBump, seenAdd, set, P, dver: () => DATA_V, drawFillSoon, drawFillDone, F: DRAW_FILL};\n})`,
+        `return {photoSet, drawPhotos, stateBump, swapBump, dataMark, dataBack, seenAdd, set, P, dver: () => DATA_V, drawFillSoon, drawFillDone, F: DRAW_FILL};\n})`,
       ctx
     );
   assert.ok(counted(model).includes('CALCS.push(n)'), 'model.js drawPhotos as the count expects it');
@@ -296,15 +296,59 @@ function sameData(A, B, label) {
     assert.deepStrictEqual(flat(A.T.drawPhotos(n)), flat(B.T.drawPhotos(n)), `${label}: ${n}'s data`);
 }
 
+// New photo statistics of units U (the subject on screen's) and their bump, the same on both pages from the generator r.
+function stats(pg, r, U = pg.U) {
+  const ps = {};
+  Object.values(U).forEach(u =>
+    Object.values(u.views)
+      .flat()
+      .forEach(p => r() < 0.5 && (ps[p.f] = [r() * 3 - 1.5, Math.floor(r() * 40), Math.floor(r() * 30)]))
+  );
+  pg.T.set('PSTAT', ps);
+  pg.T.stateBump();
+}
+// A visit to another subject on page A, as app.js inSubject makes it (REE-298): the data swapped (the other subject's
+// units in U, its units in play), the swaps bumped (swapBump), the visited subject's draw data read or not, a data write
+// or not, the data put back, the swaps bumped, then dataBack and the fill asked again. Page B makes only the write
+// (outside a visit): the visit itself must change nothing it reads. kind: 'clean' (nothing read, nothing written),
+// 'reads' (the visited units' draw data read: this view's slot then holds them, so A's are made again at their next
+// read), 'write' (the photo statistics written during the visit: every view made again).
+function visit(A, B, kind, s) {
+  const {T, U, play} = A,
+    m = T.dataMark(),
+    kept = {...U},
+    L = play.L,
+    other = unitsOf(rng(s));
+  delete other.Z;
+  const swap = to => {
+    Object.keys(U).forEach(n => delete U[n]);
+    Object.assign(U, to);
+  };
+  swap(other);
+  play.L = Object.keys(other);
+  T.swapBump();
+  if (kind === 'reads') for (const n of ['C3', 'F']) T.drawPhotos(n);
+  if (kind === 'write') stats(A, rng(s + 1), kept);
+  swap(kept);
+  play.L = L;
+  T.swapBump();
+  T.dataBack(m);
+  T.drawFillSoon(); // app.js inSubject
+  if (kind === 'write') stats(B, rng(s + 1));
+}
+
 function run(seed, check, N, opt = {}) {
   const A = page(seed, check, opt),
     B = page(seed, check),
     rA = rng(seed * 7),
     rB = rng(seed * 7),
     rI = rng(seed * 13 + 5),
-    ops = {};
+    rV = rng(seed * 31 + 7),
+    ops = {},
+    visits = {};
   let slices = 0,
-    ready = 0;
+    ready = 0,
+    kept = 0;
   A.T.drawFillSoon(); // asked after the boot's first plan
   for (let i = 0; i < N; i++) {
     const op = write(A, rA);
@@ -312,6 +356,20 @@ function run(seed, check, N, opt = {}) {
     ops[op] = (ops[op] || 0) + 1;
     const label = `seed ${seed} step ${i} after ${op}${check ? ', VIEW_CHECK' : ''}${opt.idle === false ? ', no idle callback' : ''}`;
     A.T.drawFillSoon(); // asked again after each plan (quiz.js planNext) and visit
+    // opt.visits: now and then a visit to another subject on page A (a sync's, app.js inSubject). After one that read
+    // and wrote nothing, a fill done before stays done: nothing asked, and no unit's data computed again below.
+    let clean = false;
+    if (opt.visits && rV() < 0.3) {
+      const x = rV(),
+        kind = x < 0.5 ? 'clean' : x < 0.75 ? 'reads' : 'write',
+        done = kind === 'clean' && rV() < 0.7 && (drain(A), A.T.drawFillDone());
+      visit(A, B, kind, 1 + Math.floor(rV() * 1e6));
+      visits[kind] = (visits[kind] || 0) + 1;
+      if (done) {
+        assert.ok(A.T.drawFillDone() && !A.IDLE.length && !A.TIMERS.length, `${label}: a visit that changed nothing asks no fill`);
+        clean = true;
+      }
+    }
     // some slices, the last one maybe cut short, then a draw mid-fill
     for (let k = Math.floor(rI() * 3); k > 0; k--) slices += slice(A, Math.floor(rI() * 4)) ? 1 : 0;
     const units = B.play.L.filter(n => B.U[n]),
@@ -325,9 +383,13 @@ function run(seed, check, N, opt = {}) {
     // the draw found the data the idle fill made (page B computed it at the draw, page A did not)
     if (!check && A.CALCS.length === a0 && B.CALCS.length > b0) ready++;
     sameData(A, B, label);
+    if (clean && !check) {
+      assert.strictEqual(A.CALCS.length, a0, `${label}: after a visit that changed nothing, every unit's data kept`);
+      kept++;
+    }
   }
   assert.deepStrictEqual(A.later, [], 'no VIEW_CHECK difference thrown later');
-  return {ops, slices, ready};
+  return {ops, slices, ready, visits, kept};
 }
 
 test('the draws and every unit’s data are the same filled idle as on demand, VIEW_CHECK off and on', t => {
@@ -344,6 +406,22 @@ test('the draws and every unit’s data are the same filled idle as on demand, V
   const st = run(4, false, 150, {idle: false});
   t.diagnostic(`no idle callback: ${st.slices} slices, ${st.ready} draws on data filled idle`);
   assert.ok(st.slices > 20 && st.ready > 10, 'without requestIdleCallback: the timed slices');
+});
+
+// REE-298: a visit to another subject and back (app.js inSubject, a sync's), on page A only, between the steps: the
+// draws and every unit's data are still page B's (a fresh fill, no visit); a visit that read and wrote nothing leaves
+// the fill done and every unit's data kept; one that read the visited units' draw data, or wrote data, has them made
+// again, the same.
+test('a visit to another subject and back: the same draws and data as a fresh fill, kept when it changed nothing', t => {
+  for (const check of [false, true])
+    for (const seed of [1, 2, 3]) {
+      const st = run(seed, check, 150, {visits: true});
+      t.diagnostic(
+        `seed ${seed}${check ? ' VIEW_CHECK' : ''}: visits ${JSON.stringify(st.visits)}, ${st.kept} after which every unit's data was kept`
+      );
+      assert.ok(st.visits.clean > 5 && st.visits.reads > 3 && st.visits.write > 3, 'every kind of visit ran');
+      if (!check) assert.ok(st.kept > 3, 'visits that changed nothing kept the data');
+    }
 });
 
 test('once filled, a draw on any unit in play computes nothing; the fill follows a version move and the units in play', () => {

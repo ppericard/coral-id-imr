@@ -156,7 +156,7 @@ sujets, pas juste les poissons. On optimise l'app, pas un sujet en particulier»
 short history, a medium one and a long one (fish, corals and sea slugs at 50, 500 and 3,000 answers), and the heaviest
 subject is a test case, not the definition of the target.
 
-- **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out, in Chromium, and counts how
+- **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out (signed in with `--syncs`, below), in Chromium, and counts how
   many times each named function of the app runs per answer (V8's precise coverage) and the characters
   `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
   fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
@@ -211,7 +211,17 @@ subject is a test case, not the definition of the target.
   part; it also writes the page's state at the restart), `--data-now` (the tree's own data, to see what a refill changes),
   `--repeat N` (each state and seed counted N times; exit 1, naming the run, when the questions asked (`asked`) differ or
   the calls an answer differ by more than 0.1% or the storage counts by more than 5%; `--out` keeps every run and
-  `--write-budget` takes the largest). To check a change to the tool or to how the page is started: `--repeat 5`
+  `--write-budget` takes the largest), `--check` (`VIEW_CHECK` on: every read of a kept view computed again and compared,
+  a difference a page error that fails the run; no budget), **`--syncs K` (signed in, REE-298)**: the page signs in to a
+  made-up account (`Answercost Probe`, its answer log the state's, as `sync.js` `signIn` leaves a new account) and the
+  sync script answers from an in-memory sheet in the tool's process (`tests/gas.js` through `tests/syncpage.js`: the
+  page is a local copy, `app.js` `LOCAL`, so its signed-in requests go to `window.SHEET_STUB` alone, and every other
+  request is aborted: none reaches the real sheet, rule D1). The page syncs at its boot and once more before the restart
+  (the account made, its first load); after the idle fill, K syncs (`syncPush`: the copy held or a load, the merge, the
+  save and its reply) are each counted in a window of their own with the fill they leave (asked as the next plan asks
+  it), the row's `syncs`: whether the data version moved, the units filled again, `drawPhotosCalc`, the named calls,
+  the requests the sheet answered, the views computed (`calcs`), a table of its own. The history is the one the sheet
+  replays from the device's log, which keeps the last 2,000 answers, so the history check is off; no budget. To check a change to the tool or to how the page is started: `--repeat 5`
   on the eighteen states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.
   A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
   card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
