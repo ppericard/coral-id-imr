@@ -67,8 +67,8 @@ while (`app.js` `treeWith`, `sync.js` `boardUnits`, `stsAsk`). A swap of the sub
 (`subjectLoad`, `inSubject`'s return, `treeAt`'s `treePull`) bumps both versions like any other writer (`swapBump`), so
 the views read meanwhile are the visited one's, and is counted apart (`DATA_SW`). When the visit ends with the subject
 and the tree in force back as they were and every data bump since its start was a swap (`dataMark`, `dataBack`), the
-data views' inputs are the ones before it: the data version then reads as the one before (`dataKey`: `DATA_V`'s value
-now is an alias, `DATA_AS`, of that version), so the subject on screen's data views kept for it hold, and the draw's
+data views' inputs are the ones before it: the data version then reads as the one before (`dataNow`: `DATA_V`'s value
+now is an alias, `DATA_AS`, of that version; the test written out, so a view's read makes no named call), so the subject on screen's data views kept for it hold, and the draw's
 data is not filled again. Any other data bump meanwhile keeps the new version: a tree built on the way (a visited tree
 not built yet or stale, `treeBuild`), the statistics, the sheet's version, new data, a stored text another tab changed
 (`stateNow`); so does a tree the visit leaves in force (from the corals with no tree in force before). `DATA_V` only
