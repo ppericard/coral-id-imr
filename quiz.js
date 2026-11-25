@@ -2487,6 +2487,7 @@ function planNext(cur) {
     PF.push(x);
   }
   pump();
+  if (typeof drawFillSoon === 'function') drawFillSoon(); // app.js: the draw's data of the units in play, filled ahead when idle
 }
 const topUp = () => setTimeout(() => planNext(hashNow()), 50);
 const takePlan = cur => {

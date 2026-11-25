@@ -295,7 +295,21 @@ test("the table is the study's, one line a state", () => {
   const t = A.table([row('fish:50', {namedCalls: 319464})]).split('\n');
   assert.strictEqual(t.length, 3);
   assert.match(t[0], /^\| State \| U \| V \| T \| R \| Calls per answer/);
-  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 0 \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
+  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 0 \| 20 \| 41 \| 50 \(4,000\) \| 900 \| - \|$/);
+});
+
+// The draw's data filled in idle time (app.js drawFillSoon) is counted apart, in a window of its own before the count
+// (the row's fill), and a unit filled idle within an answer counted (fillIn) is named: its calls are that answer's.
+test('the idle fill: apart from the answers, in a column of its own', () => {
+  const r = row('fish:3000', {fill: {units: 347, calls: 412345, top: []}, fillIn: [0, 0, 0]});
+  assert.match(A.table([r]).split('\n')[2], /\| 347 units \(0\.41 M\) \|$/, 'the units and the calls, before the count');
+  assert.match(
+    A.table([{...r, fillIn: [0, 3, 0]}]).split('\n')[2],
+    /\| 347 units \(0\.41 M\), 3 in the answers \|$/,
+    'units filled within the answers named'
+  );
+  assert.match(A.table([row('fish:50')]).split('\n')[2], /\| - \|$/, 'an app without it');
+  assert.match(A.table([r]).split('\n')[0], /\| Filled idle \|$/);
 });
 
 test('several seeds: one row a state and seed, the seed named in the table, the ceiling the largest count', () => {

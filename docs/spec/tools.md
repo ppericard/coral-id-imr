@@ -183,12 +183,22 @@ subject is a test case, not the definition of the target.
   draws no question; the tool waits for every tier set up (`HAVE`), the Lab files loaded (`LAB.pending`), the planned
   questions' photos and the idle tasks, fails
   naming the page's state when a question, a window of photos or a bar is still there, then drops the plans, starts the
-  numbers from the seed and opens the quiz), and the data (every
+  numbers from the seed and opens the quiz), the draw's data is filled in idle time before the count (below), and the data (every
   `.json` file the page asks for) is the pinned tree's, as the players are, while the code is the tree under test's. So
   neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the photos
   (a Candidate photos commit changes `seaslug-game.json` and `data/cand.json` on main with no change of code) moves a
   count; the seed alone changes the questions drawn. Before this, the same `fish:50` and seed counted 133,183 calls an
-  answer twice and 183,144 the third time (on one commit), which failed a merge train. A change that needs newer data (a
+  answer twice and 183,144 the third time (on one commit), which failed a merge train. **The draw's data filled in idle
+  time is counted apart** (`app.js` `drawFillSoon`): held since the boot by `DRAW_FILL_HOLD`, let go once the quiz is
+  open and awaited (`drawFillDone`) in a window of its own, the row's `fill` (the units its slices went through, their
+  named calls and `top` functions; the table's "Filled idle" column). Its calls are in no answer's count, as a player's
+  answers find it done once the quiz has been open a moment; a fill still running inside an answer's window would move
+  between answers with the machine's speed. Not before the quiz opens: its first `route()` applies a rebuild pending
+  since the boot (`CUR_NEW`: a fetched curation that differs from the page's copy, another reserve id, the script's
+  structure version; then `build`), which moves the data version and drops every data view (the fish 3,000-answer
+  states do). `fillIn` counts the units
+  filled idle within each answer counted (the data version moved during the count): their calls are that answer's, and
+  the column names them. A change that needs newer data (a
   field the code now reads) moves the pin. The run fails, naming the state, when the page loaded another
   subject than the state's, holds a history far from the state's, played under three quarters of its answers or raised a
   page error. Options: `--states fish:50,coral:500,seaslug:3000:back` (subject `fish`, `coral` or `seaslug`, then the answers,
