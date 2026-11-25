@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 229 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 230 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 229;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 230;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -2409,6 +2409,17 @@ function pagesDrop_(ids){
   for (let i = v.length - 1; i >= 0; i--) if (ids.has(String(v[i][0]))) { sh.deleteRow(i + 2); n++; }
   return n;
 }
+const EV_WINDOW = 2000, EV_SKEW = 3600000;
+// When an event was made, in ms: the first 8 base36 characters of its id are Date.now() (sync.js ev). NaN for an id
+// without them, or one that reads as a time to come (the script's own 'old…' ids).
+function evIdTime_(id){ const s = String(id), t = s.length >= 8 ? parseInt(s.slice(0, 8), 36) : NaN; return t <= Date.now() + EV_SKEW ? t : NaN; }
+// The made-time before which an id may sit in a row outside the window. Rows are appended as they arrive and an old
+// event can arrive late, so the window's first row is no bound: it is the median made-time of the window's first 200
+// ids (the tab's pace when the window began) plus an hour for sending delays. Infinity when none reads: read it all.
+function evWindowTime_(ids){
+  const t = ids.slice(0, 200).map(evIdTime_).filter(x => x === x).sort((a, b) => a - b);
+  return t.length ? t[t.length >> 1] + EV_SKEW : Infinity;
+}
 function events_(p){
   const dev = String(p.dev || '');
   if (!/^[a-z0-9]{8,16}$/.test(dev)) return {ok: false, error: 'input'};
@@ -2429,11 +2440,15 @@ function events_(p){
             : x.k === 'fromhome' ? JSON.stringify({s: num(x.s, 0, 86400), w: x.w ? 1 : 0, tr: x.tr ? 1 : 0}) : '';
       return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.k === 'load' ? word_(x.pop, /^[a-zA-Z0-9, -]*$/, 60) : x.k === 'pages' ? who : x.k === 'fromhome' ? pg(x.to) : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
     };
-    // The pages summaries in their own tab, the other events in Events; an id already in its tab is skipped.
+    // The pages summaries in their own tab, the other events in Events; an id already in its tab is skipped. The ids are
+    // read from the last EV_WINDOW rows; a request with an id made before the window began (a retry from a device that
+    // stayed offline after a lost reply) reads the rows before it too, so the tab's whole id column.
     [['Events', L.filter(x => x.k !== 'pages')], [PAGES_TAB, L.filter(x => x.k === 'pages')]].forEach(([tab, M]) => {
       if (!M.length) return;
-      const sh = sheet_(tab, EVH), n = sh.getLastRow() - 1;
-      const seen = new Set(n > 0 ? sh.getRange(Math.max(2, n - 1998), EVH.length, Math.min(n, 2000), 1).getValues().map(r => String(r[0])) : []);
+      const sh = sheet_(tab, EVH), n = sh.getLastRow() - 1, from = Math.max(2, n - EV_WINDOW + 2);
+      const ids = n > 0 ? sh.getRange(from, EVH.length, Math.min(n, EV_WINDOW), 1).getValues().map(r => String(r[0])) : [], seen = new Set(ids);
+      const began = from > 2 ? evWindowTime_(ids) : 0;
+      if (from > 2 && M.some(x => !(evIdTime_(x.id) >= began))) sh.getRange(2, EVH.length, from - 2, 1).getValues().forEach(r => seen.add(String(r[0])));
       const rows = M.filter(x => !seen.has(String(x.id))).map(row);
       if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
         if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);
