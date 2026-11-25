@@ -21,14 +21,16 @@ live signals.
 4. **Sweep, about every 90 minutes,** from its own `send_later` ("Sweep: follow step 4 of tools/checkin.md"), day
    and night. One Sonnet agent re-checks every open issue that carries a reason, against what merged, what closed and
    what Pierre answered since the last sweep. A label is a claim, not a reason: the sweep checks that the condition
-   behind it still holds today. A Waiting or Blocked label holds only with a blocked-by relation to an open issue or
-   PR, a Scheduled date, or a stated data gate with today's measure; a free-text condition is turned into one of
-   these, or the issue moves to Todo. It moves to Todo each issue whose reason no longer holds, with one line naming
+   behind it still holds today: a blocked-by relation to an open issue or PR, a Scheduled date not passed, or a Waits
+   on label whose stated condition is still unmet (Data: the gate measured again today; Pierre (action) and External:
+   the named action or event not done). A free-text condition is turned into one of these, or the issue moves to
+   Todo. It moves to Todo each issue whose reason no longer holds, with one line naming
    what unblocked it, and reports the newly ready issues. It launches nothing, merges nothing and settles no open question. The integrator then launches the ready
    issues.
 5. **Upkeep.** Linear states for what moved. STATUS is refreshed with each sweep, right after its result, so both
    keep the same rhythm of about 90 minutes ([Habits](../docs/INTEGRATOR.md#habits)).
 6. **Compaction.** If the context was compacted since the last check-in, note on REE-230 what was found again
    without a reminder.
-7. **Rule 0.** Read the time line above. In quiet hours ask Pierre nothing; questions wait in STATUS. Work goes on.
+7. **Rule 0.** Read the time line above. In quiet hours ask Pierre nothing; questions wait in Linear's Decisions for Pierre
+   view. Work goes on.
 8. **Re-arm.** End the turn with the next `send_later` carrying the same one line.

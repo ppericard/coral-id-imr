@@ -2158,3 +2158,15 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **06:28, the sweep and STATUS on one rhythm.** On the sweep (about every 90 minutes) and the STATUS refresh (about
   every 90 minutes of work) listed side by side: «A synchroniser». Applied: tools/checkin.md step 5, docs/INTEGRATOR.md
   "Habits" (STATUS refreshed right after each sweep, with its result).
+- **06:42-06:46, Linear holds the truth; Waiting restructured; the quota note.** On where night questions wait: «Il
+  faut limiter au maximum les redondances. La vérité doit être dans Linear. STATUS n'est qu'un résumé temporaire pour
+  toi, mais doit être considéré comme potentiellement incomplet.» To the wording shown (questions wait in Linear's
+  Decisions for Pierre view; STATUS only summarises them and may be incomplete): «ok». On the Waiting label: «A
+  corriger, et probablement à re-structurer […] "Waiting" pour quoi? […] Etiquette utile et informatives?» To the
+  label group Waits on (Data with a gate line, Pierre (action), External) beside blocked-by relations and Scheduled,
+  Waiting and Blocked retired, and an agent reclassifying the issues: «ok». On the 2026-11-06 quota note: «Le quota
+  c'est un problème de tout les jours. Mais déjà, en limitant les passes de jugement sur des milliers de photos ça va
+  déjà beaucoup mieux […] cette note d'il y a 20 jours n'est plus vraiment valable.» On the integrator's inline
+  sweeps: «Pour économiser quoi????? Tu coutes bien plus cher qu'un agent Sonnet». Applied: AGENTS.md Rule 0,
+  docs/rules/ship.md "Questions, the details", docs/INTEGRATOR.md "Linear" (reason 2) and "Habits" (the quota note
+  removed), tools/checkin.md steps 4 and 7, tools/brief.py's quiet line; Linear label group Waits on.
