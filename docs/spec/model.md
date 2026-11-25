@@ -114,10 +114,17 @@ The data views:
   `setBonus`), whether it is a reference-level photo (`refLevel`), its variant kind and its mimicry entry. `photoSet`
   reads it once per draw and `varOf` takes its kinds; the player's part of a weight (the target, the memory, the
   variants' ramps, the window of recent photos) is computed at each draw. The inputs include the subject's calibration
-  and the calibration set (`app.js` `build` bumps after it is read). It is filled for a unit at its first draw in a
-  visit, so the reads that are the same for every photo of the unit are made once for it (`calU`, `photoDiffOf`: its
-  offset, the subject's ease, the time term of a photo with none; `setFiles`), and each photo's answers (`nAnswers`)
-  once for its three factors, passed to `photoDiff`, `calSd`, `calBonus` and `setBonus`;
+  and the calibration set (`app.js` `build` bumps after it is read). The reads that are the same for every photo of the
+  unit are made once for it (`calU`, `photoDiffOf`: its offset, the subject's ease, the time term of a photo with none;
+  `setFiles`), and each photo's answers (`nAnswers`) once for its three factors, passed to `photoDiff`, `calSd`,
+  `calBonus` and `setBonus`. **It is filled ahead in idle time** (`app.js` `drawFillSoon`, `drawFillStep`), so the
+  answer that draws a unit finds it ready: about ten calls a photo, a fish family's thousands of photos otherwise on
+  that answer. For the units in play (`pool`, those met first), in slices of at most `DRAW_FILL.CAP` photos that end
+  with the idle period (`requestIdleCallback`; without it, a slice every 50 ms), each slice reading the view itself, so
+  the values are the draw's. It is asked after the boot's first plan, after each plan (`quiz.js` `planNext`), after a
+  visit to another subject (`inSubject`, which moves the data version) and when the photo statistics arrive
+  (`rankPhotos`); a data version already filled asks nothing, and a slice makes its queue again when the version moved.
+  A unit not filled yet (one that came into play later in the version) is filled by its draw, as before;
 - the units of a level's list by parent (`app.js` `kidsOf`, `kidsCalc`) and, for `sciPlay`, each parent's units in
   its species order (`sciKids`, `sciKidsCalc`): `spPlay` and `sciPlay` read them;
 - the sets' units with a kind of name and a species (`progress.js` `achNamed`, `achNamedCalc`), which `achBoth`

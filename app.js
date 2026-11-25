@@ -1821,6 +1821,7 @@ function rankPhotos() {
     if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, treeSeen, p => photoDiff(n, p), treeSpPick)).f;
   });
   if (typeof stateBump === 'function') stateBump(); // the tree's photo lists: an input of the views
+  if (typeof drawFillSoon === 'function') drawFillSoon(); // the draw's data of the new version, filled ahead
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
 // questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
@@ -1859,6 +1860,7 @@ function inSubject(id, fn) {
     Q = was.Q;
     if (typeof stateBump === 'function') stateBump();
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
+    if (typeof drawFillSoon === 'function') drawFillSoon(); // the visit moved the data version: the draw's data filled again ahead
   }
 }
 // The subject switch (docs/DESIGN.md "Subject switch"): Home's row and the header's control (#subjc, not on Home), only
@@ -3376,6 +3378,49 @@ const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 // read once for the loop (model.js photoAnyFn): nothing is written during it.
 const poolCalc = () => [...slateGenera(), ...bonusList()].filter(typeof photoAnyFn === 'function' ? photoAnyFn() : photoAny);
 const pool = stateView('pool', poolCalc);
+// The photo draw's data filled ahead, in idle time (docs/spec/model.md "The state version and its views"): the first
+// draw on a unit in a data version fills its data (model.js drawPhotos), about ten calls a photo, a fish family's
+// thousands of photos on the answer that draws it. drawFillSoon asks for it to be filled while the page is idle, for the
+// units in play (pool, those met first), in slices of at most DRAW_FILL.CAP photos that yield between them, so the
+// draw finds it ready; one not filled yet is filled by its draw, as before. A slice fills the view itself, so the values
+// are the ones the draw would make (the view's version rule, app.js dataViewBy). Asked after the boot's first plan, after
+// each plan (quiz.js planNext), after a visit to another subject (inSubject: its version moves) and when the photo
+// statistics arrive (rankPhotos); a version already filled asks nothing. A unit that comes into play later in the same
+// version (the slate widened) is filled by its draw. done: the data version whose units in play were all filled; q: the
+// units left for version qv; n: the units the slices went through (tools/answercost.js reads it).
+const DRAW_FILL = {CAP: 1500, done: -1, qv: -1, q: [], h: 0, n: 0};
+const idleSoon = f => (typeof requestIdleCallback === 'function' ? requestIdleCallback(f) : setTimeout(() => f(null), 50));
+function drawFillSoon() {
+  if (DRAW_FILL.h || !DATA || typeof drawPhotos !== 'function' || DRAW_FILL.done === dataNow()) return;
+  DRAW_FILL.h = idleSoon(drawFillStep);
+}
+// One slice: the units of the queue until CAP photos or the idle period's end, at least one (without
+// requestIdleCallback in the browser: a slice every 50 ms, CAP photos each). The queue is made again when the data
+// version moved since it was made (a subject switch, new data: every writer of the data bumps it), so its units are
+// the data's. window.DRAW_FILL_HOLD (tools/answercost.js): nothing filled until it is cleared and drawFillSoon asked
+// again.
+function drawFillStep(dl) {
+  DRAW_FILL.h = 0;
+  if (globalThis.DRAW_FILL_HOLD || dataPartial()) return;
+  const v = dataNow();
+  if (DRAW_FILL.done === v) return;
+  if (DRAW_FILL.qv !== v) {
+    const L = pool(),
+      met = typeof introReadyFn === 'function' ? introReadyFn() : introReady;
+    DRAW_FILL.qv = v;
+    DRAW_FILL.q = [...L.filter(met), ...L.filter(n => !met(n))];
+  }
+  for (let ph = 0; DRAW_FILL.q.length;) {
+    const n = DRAW_FILL.q.shift();
+    ph += drawPhotos(n).d.size;
+    DRAW_FILL.n++;
+    if (ph >= DRAW_FILL.CAP || (dl && dl.timeRemaining() < 2)) break;
+  }
+  if (DRAW_FILL.q.length) DRAW_FILL.h = idleSoon(drawFillStep);
+  else DRAW_FILL.done = v;
+}
+// Every unit in play filled for the data version now, nothing asked (tools/answercost.js waits for it).
+const drawFillDone = () => !DRAW_FILL.h && DRAW_FILL.done === dataNow();
 // The plain sentence: one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py), clear for
 // everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before the ID
 // tips and lecture notes, in body text with no label (a muted labelled line above the photo gets skipped). It adds to the
@@ -4579,6 +4624,7 @@ Promise.all([
       .then(() => {
         const h = hashNow();
         planNext(h.startsWith('quiz') ? h : 'quiz');
+        drawFillSoon(); // the draw's data of the other units in play, filled while the page is idle
         return prefetched();
       })
       .then(() => need(4))

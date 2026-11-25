@@ -39,7 +39,10 @@
 // at each tick, every photo is the same 1 x 1 picture served at once, the page boots on About, which draws no question (a
 // question the boot draws is kept and shown again by the quiz, with the photos and the planner's memory it left, and which
 // one the boot draws depends on the order the script tiers load in), is at rest (every tier set up, the photos planned ahead
-// in, the idle tasks run) before the plans are dropped, the numbers start from the seed and the quiz opens, and the
+// in, the idle tasks run) before the plans are dropped, the numbers start from the seed and the quiz opens (then the draw's
+// data is filled in idle time, app.js drawFillSoon, held until the quiz is open and counted in a window of its own: the
+// row's fill, the table's "Filled idle", in no answer's count; fillIn, the units it filled within each answer counted,
+// whose calls are that answer's), and the
 // data (.json) is the pinned tree's, so
 // neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
 // (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
@@ -230,10 +233,18 @@ function verdict(rows, budget, file) {
   return {lines, bad, annotations};
 }
 const mil = x => (x >= 1e5 ? (x / 1e6).toFixed(2) + ' M' : fmt(x));
+// The draw's data filled in idle time (app.js drawFillSoon), apart from the answers: the units filled before the count
+// and the named calls it took, in a window of its own (a row's fill), then any unit filled idle inside an answer's window
+// (fillIn, one count an answer: its calls are in that answer's), "-" for an app without it.
+const fillCell = r => {
+  if (!r.fill) return '-';
+  const inside = (r.fillIn || []).reduce((t, x) => t + x, 0);
+  return `${fmt(r.fill.units)} units (${mil(r.fill.calls)})${inside ? `, ${fmt(inside)} in the answers` : ''}`;
+};
 
 // The study's table (section 1.2), one line a state, from the rows.
 function table(rows) {
-  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', 'Heaviest answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
+  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', 'Heaviest answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written', 'Filled idle'],
     multi = new Set(rows.map(r => r.seed)).size > 1, // several seeds: the seed beside the state
     line = r => {
       const m = metrics(r),
@@ -250,7 +261,8 @@ function table(rows) {
         fmt(m['fn:introduced'] || 0),
         fmt(m['fn:scoreOf'] || 0),
         `${fmt(m.getCalls)} (${mil(m.getChars)})`,
-        mil(m.setChars)
+        mil(m.setChars),
+        fillCell(r)
       ];
     };
   return [head, head.map(() => '---'), ...rows.map(line)].map(l => `| ${l.join(' | ')} |`).join('\n');
@@ -405,6 +417,19 @@ const serveFrom = dataRoot => (req, res) => {
   });
 };
 
+// The named calls of the app's files in a coverage taken (V8's precise coverage), by function and file.
+function callsBy(result) {
+  const one = new Map();
+  for (const sc of result) {
+    if (!FILES.test(sc.url)) continue;
+    const f = path.basename(sc.url).replace(/\?.*/, '');
+    for (const fn of sc.functions) {
+      const c = fn.ranges[0].count;
+      if (fn.functionName && c) one.set(fn.functionName + '@' + f, (one.get(fn.functionName + '@' + f) || 0) + c);
+    }
+  }
+  return one;
+}
 // Closes what stands between the player and the next question (cards, achievement pops) and waits for an answerable one.
 async function prep(p) {
   for (let k = 0; k < 40; k++) {
@@ -541,6 +566,9 @@ async function count(browser, base, file, name, o, expect) {
           return x;
         };
       }
+      // The draw's data filled in idle time (app.js drawFillSoon) waits until the page is at rest, then runs in a window of
+      // its own (below), so its calls are counted apart from the boot's and the answers'.
+      window.DRAW_FILL_HOLD = true;
       if (sessionStorage.getItem('answercost')) return;
       sessionStorage.setItem('answercost', '1');
       localStorage.clear();
@@ -607,6 +635,32 @@ async function count(browser, base, file, name, o, expect) {
   });
   await p.waitForFunction(() => /quiz/.test(location.hash), null, {timeout: 30000});
   await settle(p);
+  // The draw's data filled in idle time (app.js drawFillSoon), held since the boot (DRAW_FILL_HOLD): let go once the quiz
+  // is open and awaited in a window of its own, the row's fill (the units its slices went through, the named calls). Not
+  // before the restart: the quiz's first route() applies a rebuild pending since the boot (app.js CUR_NEW: a fetched
+  // curation that differs from the page's copy, another reserve id, the script's structure version; then build), which
+  // moves the data version and drops every data view (fish:3000 and fish:3000:back). So the answers counted
+  // find it filled as a player's do once the quiz has been open a moment, its calls are in no answer's count, and the
+  // count stays repeatable: a fill still running in an answer's window would move between answers with the machine's
+  // speed. An app without it: no fill.
+  let fill = null;
+  if (await p.evaluate(() => typeof drawFillSoon === 'function')) {
+    await cdp.send('Profiler.enable');
+    await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
+    await p.evaluate(() => {
+      window.DRAW_FILL_HOLD = false;
+      drawFillSoon();
+    });
+    await p.waitForFunction(() => drawFillDone(), null, {timeout: 120000});
+    const {result} = await cdp.send('Profiler.takePreciseCoverage');
+    await cdp.send('Profiler.stopPreciseCoverage');
+    const one = callsBy(result);
+    fill = {
+      units: await p.evaluate(() => DRAW_FILL.n),
+      calls: [...one.values()].reduce((t, c) => t + c, 0),
+      top: [...one].sort((a, b) => b[1] - a[1]).slice(0, 12)
+    };
+  }
   if (o.trace) await probe('after the restart');
   for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
@@ -682,17 +736,10 @@ async function count(browser, base, file, name, o, expect) {
       });
     if (!keep) return;
     const t0 = total,
-      one = new Map(); // this answer's calls by function
-    for (const sc of result) {
-      if (!FILES.test(sc.url)) continue;
-      const f = path.basename(sc.url).replace(/\?.*/, '');
-      for (const fn of sc.functions) {
-        const c = fn.ranges[0].count;
-        if (!fn.functionName || !c) continue;
-        total += c;
-        by.set(fn.functionName + '@' + f, (by.get(fn.functionName + '@' + f) || 0) + c);
-        one.set(fn.functionName + '@' + f, (one.get(fn.functionName + '@' + f) || 0) + c);
-      }
+      one = callsBy(result); // this answer's calls by function
+    for (const [k, c] of one) {
+      total += c;
+      by.set(k, (by.get(k) || 0) + c);
     }
     if (total - t0 > Math.max(-1, ...each)) peakTop = [...one].sort((a, b) => b[1] - a[1]).slice(0, 30);
     eachTop.push([...one].sort((a, b) => b[1] - a[1]).slice(0, 12));
@@ -708,7 +755,12 @@ async function count(browser, base, file, name, o, expect) {
   // change lands on one answer, which an average over the window hides. A comeback state (back) counts the answers given in
   // the comeback only: after a short history the comeback ends within a few answers (fish 50 answers, 30 days away: 5),
   // and the answers after it are mid-session ones.
+  // fillIn: the units the idle fill filled within each answer counted (its calls are in that answer's): none while the
+  // data version stays the one filled before the count.
   let n = 0;
+  const fillN = () => p.evaluate(() => (typeof DRAW_FILL === 'object' ? DRAW_FILL.n : 0)),
+    fillIn = [];
+  let f0 = await fillN();
   for (let i = o.warm; i < o.warm + o.n; i++) {
     const b = why.back || 0,
       f = await oneAnswer(p, i, why);
@@ -716,6 +768,9 @@ async function count(browser, base, file, name, o, expect) {
     const keep = !(expect && expect.back) || (why.back || 0) > b;
     if (f && keep) n++;
     await take(keep);
+    const f1 = await fillN();
+    if (keep) fillIn.push(f1 - f0);
+    f0 = f1;
   }
   await cdp.send('Profiler.stopPreciseCoverage');
   const played = fmts.filter(Boolean).length;
@@ -738,6 +793,8 @@ async function count(browser, base, file, name, o, expect) {
     asked: why.asked || [],
     back: why.back || 0, // the answers played (after the warm-up) that were a comeback's
     each, // the named calls of each answer counted
+    fill, // the draw's data filled idle before the count, in a window of its own: {units, calls, top}; null without it
+    fillIn, // the units filled idle within each answer counted
     rtrace,
     errs,
     namedCalls: per(total),
