@@ -42,6 +42,7 @@ Conventions that hold across them:
 | Tool | What it does |
 |---|---|
 | `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre, the links to Linear (where open work is tracked), and whether the local `origin/main` is the remote's main (one bounded `git ls-remote`, nothing fetched). The session hooks run it (`--short`, `--time`); every `send_later` check-in runs `--checkin`, which prints the live signals and then `checkin.md`, the check-in's fixed text |
+| `agent-brief.md` | What every launched agent is told, in any tool: the lines a launch prompt used to repeat, the report, the Linear conventions. A launch prompt says to read it and names the task |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
 | `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |
@@ -173,6 +174,7 @@ learning change" (rule L11).
 | `realcheck.js`, `memreplay.js` | Check the model's estimates against the real answer log (rule L12) |
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
 | `perf.js` | Speed from a player's side: cold and warm start, throttled phone and network |
+| `studies/<issue>/` | A study's scripts go in a folder named for its Linear issue, with a README that names its inputs and whether they are private; its results go to the PR or the study document |
 | `studies/q351/` | The scripts of one batch-model study |
 | `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, the Q136 centring check (2C) and the step-2 candidates replayed against today's engine (2B, `replay2b.js`) on the real log; the Gibbs sampler for the small-cluster SDs (`gibbs.py`) and the refit's extract tools (`refit/`); read-only, one 40-minute clock per run ([README](studies/q316/README.md)) |
 | `studies/ree112/`, `studies/ree191/` | The placement shrinkage check's and the pace-for-fast-learners study's scripts, recovered from the integrator's workspace at the 2026-11-22 pause: reference code, not reviewed tools; inputs private ([REE-112](studies/ree112/README.md), [REE-191](studies/ree191/README.md)) |
