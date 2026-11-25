@@ -39,9 +39,10 @@
 // at each tick, every photo is the same 1 x 1 picture served at once, the page boots on About, which draws no question (a
 // question the boot draws is kept and shown again by the quiz, with the photos and the planner's memory it left, and which
 // one the boot draws depends on the order the script tiers load in), is at rest (every tier set up, the photos planned ahead
-// in, the idle tasks run, then the draw's data filled in idle time, app.js drawFillSoon, held until then and counted in a
-// window of its own: the row's fill, the table's "Filled idle", in no answer's count; fillIn, the units it filled within each
-// answer counted, whose calls are that answer's) before the plans are dropped, the numbers start from the seed and the quiz opens, and the
+// in, the idle tasks run) before the plans are dropped, the numbers start from the seed and the quiz opens (then the draw's
+// data is filled in idle time, app.js drawFillSoon, held until the quiz is open and counted in a window of its own: the
+// row's fill, the table's "Filled idle", in no answer's count; fillIn, the units it filled within each answer counted,
+// whose calls are that answer's), and the
 // data (.json) is the pinned tree's, so
 // neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
 // (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
@@ -627,10 +628,20 @@ async function count(browser, base, file, name, o, expect) {
   // A count over a page that was not at rest is no count (and says why).
   if (at.HAVE < 5 || at.boot || at.lab || at.question || at.seen)
     throw new Error(`${name}: the page was not at rest for the restart (${JSON.stringify(at)}): a question drawn by the boot would carry its draw into the count`);
-  // The draw's data filled in idle time (app.js drawFillSoon), held since the boot (DRAW_FILL_HOLD): let go at rest and
-  // awaited in a window of its own, the row's fill (the units filled, the named calls). So the answers counted find it as
-  // a player's do after a load, its calls are in no answer's count, and the count stays repeatable: a fill still running
-  // in an answer's window would move from one answer to another with the machine's speed. An app without it: no fill.
+  await p.evaluate(() => {
+    if (window.__reseed) __reseed(0);
+    if (typeof dropPlans === 'function') dropPlans();
+    typeof go === 'function' ? go('quiz') : (location.hash = '#quiz');
+  });
+  await p.waitForFunction(() => /quiz/.test(location.hash), null, {timeout: 30000});
+  await settle(p);
+  // The draw's data filled in idle time (app.js drawFillSoon), held since the boot (DRAW_FILL_HOLD): let go once the quiz
+  // is open and awaited in a window of its own, the row's fill (the units its slices went through, the named calls). Not
+  // before the restart: the quiz's first route() applies the curation fetched at the boot when it differs from the copy the
+  // page started on (CUR_NEW: build), which moves the data version and drops every data view (fish:3000 and fish:3000:back). So the answers counted
+  // find it filled as a player's do once the quiz has been open a moment, its calls are in no answer's count, and the
+  // count stays repeatable: a fill still running in an answer's window would move between answers with the machine's
+  // speed. An app without it: no fill.
   let fill = null;
   if (await p.evaluate(() => typeof drawFillSoon === 'function')) {
     await cdp.send('Profiler.enable');
@@ -649,13 +660,6 @@ async function count(browser, base, file, name, o, expect) {
       top: [...one].sort((a, b) => b[1] - a[1]).slice(0, 12)
     };
   }
-  await p.evaluate(() => {
-    if (window.__reseed) __reseed(0);
-    if (typeof dropPlans === 'function') dropPlans();
-    typeof go === 'function' ? go('quiz') : (location.hash = '#quiz');
-  });
-  await p.waitForFunction(() => /quiz/.test(location.hash), null, {timeout: 30000});
-  await settle(p);
   if (o.trace) await probe('after the restart');
   for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
