@@ -148,7 +148,9 @@ test('fish: the presentation’s slides, the IMR tag and the dive-sign mark are 
     BASE.species.map(s => s.id).filter(id => id in FL.species),
     'the layer’s species are the base’s, in its order'
   );
-  Object.values(FL.species).forEach(x => assert.deepStrictEqual(Object.keys(x), ['sl']));
+  Object.values(FL.species).forEach(x =>
+    Object.keys(x).forEach(k => assert.ok(['common', 'sec', 'pdf', 'cs', 'src', 'sl'].includes(k), k))
+  );
   const withSl = Object.entries(FL.nodes).filter(([, x]) => x.sl);
   assert.ok(withSl.length >= 27 && withSl.every(([, x]) => x.sl.every(n => Number.isInteger(n) && n > 0)), 'slide numbers');
   // fish.json carries them as the build writes them, species included.
@@ -161,7 +163,158 @@ test('fish: the presentation’s slides, the IMR tag and the dive-sign mark are 
     [t, ...(t.sub || [])].forEach(u => assert.deepStrictEqual(u.sl, by.get(u.id).sl, `${u.id} sl`));
   });
   F.species.forEach(s => assert.strictEqual(s.sl, sp.get(s.id).sl, `${s.id} sl`));
-  assert.strictEqual(F.species.filter(s => s.sl).length, Object.keys(FL.species).length);
+  assert.strictEqual(F.species.filter(s => s.sl).length, Object.values(FL.species).filter(x => x.sl).length);
+});
+
+// The PDF's species fields (the IMR reference list, the EventMeasure PDF) and the presentation's own species mark are the
+// layer's: the base keeps the common names of the species of the other sources (dauin, wink, slides).
+test('fish: the PDF’s species fields (common name, section, pages, cheatsheet rank) and src slides are the layer’s; the deployment’s key is instance.json’s', () => {
+  const PDF = BASE.species.filter(s => (FL.species[s.id] || {}).pdf);
+  assert.strictEqual(PDF.length, 366, 'the species the PDF lists: the layer gives them their pages');
+  BASE.species.forEach(s => {
+    ['sec', 'pdf', 'cs', 'sl'].forEach(k => assert.ok(!(k in s), `${s.id} ${k} in the base`));
+    assert.ok(!('src' in s) || ['dauin', 'wink'].includes(s.src), `${s.id}: base src ${s.src}`);
+    assert.strictEqual('common' in s, !PDF.includes(s), `${s.id}: the base keeps the common name of a species off the PDF only`);
+  });
+  PDF.forEach(s => {
+    const x = FL.species[s.id];
+    assert.ok(x && x.pdf && x.sec && x.common, `${s.id}: its PDF fields in the layer`);
+    assert.deepStrictEqual(
+      Object.keys(x).filter(k => k !== 'sl'),
+      x.cs ? ['common', 'sec', 'pdf', 'cs'] : ['common', 'sec', 'pdf'],
+      s.id
+    );
+  });
+  const ranked = Object.entries(FL.species).filter(([, x]) => x.cs);
+  assert.strictEqual(ranked.length, 24, 'the 24 species of the cheatsheet');
+  assert.deepStrictEqual(
+    ranked.map(([, x]) => x.cs).sort((a, b) => a - b),
+    Array.from({length: 24}, (_, i) => i + 1)
+  );
+  const slides = Object.entries(FL.species).filter(([, x]) => x.src);
+  assert.deepStrictEqual(
+    slides.map(([id, x]) => [id, x.src, 'pdf' in x]),
+    [
+      ['s367', 'slides', false],
+      ['s368', 'slides', false]
+    ]
+  );
+  Object.entries(FL.species).forEach(([id, x]) => assert.ok(x.pdf || x.src || x.sl, `${id}: a layer species gives something`));
+  // fish.json carries them as the build writes them (the composed source, read by key).
+  const src = JSON.parse(run(['tools/instance.py', '--fish-source']).out),
+    sp = new Map(src.species.map(s => [s.id, s]));
+  F.species.forEach(s => {
+    const b = sp.get(s.id);
+    assert.strictEqual(s.common, b.common || '', `${s.id} common`);
+    ['src', 'sec', 'pdf', 'cs', 'sl'].forEach(k => assert.strictEqual(s[k], b[k], `${s.id} ${k}`));
+  });
+  assert.strictEqual(F.species.filter(s => s.pdf).length, 366);
+  // The deployment's key is tools/instance.json's, laid as deploy.key; its region (read by nothing) is gone.
+  assert.ok(!('deploy' in BASE) && typeof INST.key === 'string' && !('region' in INST));
+  assert.deepStrictEqual(src.deploy, {key: INST.key});
+  assert.ok(
+    BASE.keys.some(k => k.id === INST.key),
+    'the key in force is one of the source’s keys'
+  );
+});
+
+test('fish: a changed PDF field or species mark of the layer no longer gives fish.json, a changed list stops the offline modes; a base or layer out of place stops the build', () => {
+  const t = "is not as key .* gives it, with the instance's layer";
+  const list =
+    /the IMR list changed in the instance's layer \(pdf, cs, src\): run the full build \(python3 tools\/build_fish\.py\)\n\s+s\d+ [^\n]*: (pdf|cs|src) /;
+  // The common name, the section and the slides' mark are laid again offline: a change shows as a difference.
+  const common = clone(FL);
+  common.species.s001.common = 'Another butterflyfish';
+  assert.match(regroup(common).out, new RegExp(t));
+  const sec = clone(FL);
+  sec.species.s002.sec = 'POMACANTHIDAE';
+  assert.match(regroup(sec).out, new RegExp(t));
+  const mark = clone(FL);
+  delete mark.species.s367.src;
+  assert.match(regroup(mark).out, new RegExp(t));
+  const sl = clone(FL);
+  delete sl.species.s057.sl;
+  assert.match(regroup(sl).out, new RegExp(t));
+  // The list (pdf) confirms a species near Dauin and the cheatsheet (cs) ranks it: the full build, never the offline modes.
+  const pdf = clone(FL);
+  pdf.species.s002.pdf = '7';
+  assert.match(regroup(pdf).out, list);
+  const drop = clone(FL);
+  delete drop.species.s044.cs;
+  assert.match(regroup(drop).out, list);
+  const rank = clone(FL);
+  rank.species.s045.cs = 40;
+  assert.match(regroup(rank).out, list);
+  // The base holds none of them (an edit made in the old place, a merge); its common name is its own only off the list.
+  for (const [k, v] of [
+    ['sec', 'CHAETODONTIDAE'],
+    ['pdf', '6'],
+    ['cs', 3],
+    ['src', 'slides']
+  ]) {
+    const stale = clone(BASE);
+    stale.species[0][k] = v;
+    assert.match(regroup(null, stale).out, new RegExp(`tools/fish_source\\.json s001 ${k}: the instance's`), k);
+  }
+  const twice = clone(BASE);
+  twice.species[0].common = 'a second name';
+  assert.match(
+    regroup(null, twice).out,
+    /layer species s001 pdf: the common name of a species of the PDF is the layer's, tools\/fish_source\.json s001 gives one too/
+  );
+  const own = BASE.species.find(s => s.src === 'dauin');
+  // The base's own src (dauin, wink) is not laid again offline, as before; the layer's slides is, and a change of it that
+  // moves who needs near (a species fish.json has as dauin) stops the modes.
+  const wink = clone(BASE);
+  wink.species.find(s => s.id === own.id).src = 'wink';
+  assert.strictEqual(regroup(null, wink).status, 0, 'the base’s dauin or wink is the base’s: fish.json keeps its own');
+  const was = clone(BASE),
+    now = clone(FL);
+  delete was.species.find(s => s.id === own.id).src;
+  now.species[own.id] = {src: 'slides'};
+  assert.match(regroup(now, was).out, list);
+  const layerCommon = clone(FL);
+  layerCommon.species[own.id] = {common: 'x'};
+  assert.match(regroup(layerCommon).out, new RegExp(`layer species ${own.id} common: only on a species of the PDF`));
+  // The layer's own rules: the PDF's fields only with the pdf, the mark slides only on a species with no pdf and no other source.
+  const lone = clone(FL);
+  delete lone.species.s001.pdf;
+  assert.match(
+    regroup(lone).out,
+    /layer species s001 common: only on a species of the PDF[^]*layer species s001 sec: only on a species of the PDF/
+  );
+  const both = clone(FL);
+  both.species.s001.src = 'slides';
+  assert.match(regroup(both).out, /layer species s001 src: only 'slides', on a species with no pdf/);
+  const other = clone(FL);
+  other.species.s367.src = 'pdf';
+  assert.match(regroup(other).out, /layer species s367 src: only 'slides'/);
+  const sourced = clone(FL);
+  sourced.species[own.id] = {pdf: '3'};
+  assert.match(
+    regroup(sourced).out,
+    new RegExp(`layer species ${own.id} pdf: a species of the PDF has no src in the base \\(it has 'dauin'\\)`)
+  );
+  const twoSrc = clone(FL);
+  twoSrc.species[own.id] = {src: 'slides'};
+  assert.match(regroup(twoSrc).out, new RegExp(`layer species ${own.id} src: only 'slides'`));
+  // An edition without the layer has no PDF name, section, pages or rank on its species, and the other sources keep their name.
+  const bare = JSON.parse(
+    py(`from instance import fish_compose
+print(json.dumps(fish_compose(json.load(open('tools/fish_source.json', encoding='utf-8')), {})))`)
+  );
+  assert.ok(bare.species.every(s => !('sec' in s) && !('pdf' in s) && !('cs' in s) && !(s.src === 'slides')));
+  assert.strictEqual(bare.species.filter(s => !('common' in s)).length, 366, 'the species of the PDF have no common name');
+  assert.ok(!('deploy' in bare), 'the key in force is the instance’s, not the layer’s');
+});
+
+test('fish: the key in force is the instance’s: composed as deploy.key, none without it', () => {
+  const key = JSON.parse(
+    py(`from instance import fish_compose
+b = json.load(open('tools/fish_source.json', encoding='utf-8'))
+print(json.dumps([fish_compose(b, {}, 'k').get('deploy'), fish_compose(b, {}).get('deploy')]))`)
+  );
+  assert.deepStrictEqual(key, [{key: 'k'}, null]);
 });
 
 test('fish: a changed slide, tag or mark of the layer no longer gives fish.json; a base or layer out of place stops the build', () => {
@@ -176,7 +329,7 @@ test('fish: a changed slide, tag or mark of the layer no longer gives fish.json;
   species.species.s001.sl = 11;
   assert.match(regroup(species).out, new RegExp(t));
   const nospecies = clone(FL);
-  delete nospecies.species.s057;
+  delete nospecies.species.s057.sl;
   assert.match(regroup(nospecies).out, new RegExp(t));
   const tag = clone(FL);
   delete tag.nodes.t05.src;
@@ -214,8 +367,8 @@ test('fish: a changed slide, tag or mark of the layer no longer gives fish.json;
   ghost.species.s999 = {sl: 3};
   assert.match(regroup(ghost).out, /layer species s999: no species/);
   const field = clone(FL);
-  field.species.s001.common = 'x';
-  assert.match(regroup(field).out, /layer species s001 common: not a field of the layer \(sl\)/);
+  field.species.s001.name = 'x';
+  assert.match(regroup(field).out, /layer species s001 name: not a field of the layer \(common, sec, pdf, cs, src, sl\)/);
   // An edition without the layer has no IMR tag, slide or mark on its entries and no slide on its species.
   const bare = JSON.parse(
     py(`from instance import fish_compose
