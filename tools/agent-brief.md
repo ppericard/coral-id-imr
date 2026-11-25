@@ -7,7 +7,8 @@ the issue's Agent notes, never retyped here. A new line for every agent goes int
 
 ## Before you start
 
-- Check Rule 0 (AGENTS.md): after 17:30 Manila, nobody asks Pierre anything; a question that needs him goes in your report.
+- Check Rule 0 (AGENTS.md): after 17:30 Manila, the integrator asks Pierre nothing until his first message after 04:00;
+  a question that needs him goes in your report.
 - Read the issue, all its comments and linked sources, then reconcile them with current code and open PRs: descriptions
   go stale. Say which source you could not verify. Read the topic rules AGENTS.md "Read on demand" names.
 - Stop and report when Pierre's dated words do not settle what players see (a "decided" item was once already built).
@@ -18,7 +19,8 @@ the issue's Agent notes, never retyped here. A new line for every agent goes int
 - A fresh worktree from `origin/main`, on a branch of your own with your team's prefix (`claude/`, `codex/`), never from
   another PR's branch (rule W22). Stage files by name. One PR per agent.
 - Before starting, check the open PRs and the other teams' branches for the files you will touch: no two open PRs on the
-  same sensitive file, whoever opened them (rule W27).
+  same sensitive file, whoever opened them (rule W27). A PR that waits only for Pierre does not hold its files, unless
+  your work depends on its code.
 - Run the fast tier and the one smoke part your change touches before each push (rule W14); a docs-only change runs no
   smoke. A heavy run takes the machine slot (rule W24). Format with Prettier 3.10.1 (rule W13).
 - Never edit a version number (rule W15) or the sheet's `VERSION` (rule D3), never write `curation.json` (rule A1) or the
