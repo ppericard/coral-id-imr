@@ -946,6 +946,13 @@ cen, the offset plus 0.3 × (family mean − ease); unc, the offset plus 0.3 × 
   and main's overall level, 5 seeds): the lectureRA's later first Open Water (+13) and the strong RA's units at Open
   Water (−2.6) come with the level; the ranking alone breached the strong RA's units met at 300 (−2.6) and plateau
   in one world and held or was unclear elsewhere.
+- **The rated world** (fish, `--app own`, normal photos, 3,000 answers, GitHub runners, one profile a check): its
+  judged ease is drawn from each photo's own deviation around its unit, so every family's mean ease sits near 3 and
+  the change barely moves it; a no-harm check. 10 seeds: every guardrail held for the beginner; unclear cells for the
+  other four (casual diver units at Open Water at 1,000 and plateau, lectureRA E at 300 and the score at 1,000, strong
+  RA the score at 1,000 and 3,000, expert units at Open Water at 1,000). 20 seeds (looks 2): all held for the casual
+  diver, the lectureRA and the expert; the strong RA's runs were cut at 12 pairs, its score at 3,000 unclear (−0.4,
+  bound −1.1): the measure cannot tell. Nothing breached.
 - **Truth unc** (5 seeds, reported, not a verdict): the fish casual diver's plateau +10 breached; the sea slug
   lectureRA's units at Open Water and plateau breached.
 
