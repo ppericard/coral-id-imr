@@ -1,17 +1,19 @@
 'use strict';
 require('./slot.js').testGuard();
-// A visit to another subject keeps the subject on screen's data views (REE-298; app.js swapBump, dataMark, dataBack;
-// docs/spec/model.md "The state version and its views"). A signed-in player's sync visits the other subjects at each
-// save and each pull (sync.js syncSummary, mergeSaved; app.js inSubject), and a tree is lent for a while (treeWith):
-// each swap moves the data version, so the views read meanwhile are the visited one's. Back where it started with no
-// other data written, the version reads as the one before, so the views kept for it hold; a data write meanwhile, or a
-// tree the visit left in force, leaves the new version. app.js's own code runs here (the versions and the views, the
-// trees in force, subjectLoad, inSubject, treeWith), the rest stubbed: two data views read the data inputs (the subject,
-// the tree in force and its build, made-up statistics), and every read is compared with a computation now, VIEW_CHECK
-// off and on. The visits: one that writes nothing (kept), one that writes a record (kept), one that writes data (made
-// again), tree subject to tree subject (kept), a tree to build on the way (made again), from a subject with no tree in
-// force (the visited tree stays in force: made again), nested visits, treeWith, and then real writes after a kept visit
-// (a version handed out again would serve a value read during the visit). Mutants of each rule are caught.
+// A visit to another subject keeps the subject on screen's views and memos (REE-298, REE-300; app.js swapBump,
+// dataMark, dataBack, memoGet, memoPut; docs/spec/model.md "The state version and its views"). A signed-in player's sync
+// visits the other subjects at each save and each pull (sync.js syncSummary, mergeSaved, holdAdopt, replayAdoptS; app.js
+// inSubject), and a tree is lent for a while (treeWith): each swap moves the versions, so the views read meanwhile are
+// the visited one's. Back where it started with no other data written, the data version reads as the one before; with
+// no record of the subject on screen written either (the visited subject's own merge, hold and replay are its records),
+// the state version too, and the memos the subject hooks reset (model.js each unit's difficulty and the intro map read,
+// quiz.js the typed names) are put back. A data write, a tree the visit left in force, a record of the subject on screen
+// written (its key, a visit back to it, another tab's first-launch record) leaves the new version.
+// app.js's own code runs here (the versions and the views, the trees in force, subjectLoad, inSubject, treeWith), with
+// model.js's genusDiff, introMap and subject hook and quiz.js's typeNames and hook; the rest stubbed. Two data views and
+// a state view read the inputs (the subject, the tree in force and its build, made-up statistics; the records, the
+// settings, the intro map through its memo, the first-launch record), and every read, of a view or a memo, is compared
+// with a computation from where the inputs are kept, VIEW_CHECK off and on. Mutants of each rule are caught.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -20,23 +22,44 @@ const test = require('node:test'),
 const cut = require('./block.js'),
   C = require('../core.js'),
   {memStorage} = require('./kept.js');
-const APP = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-const parts = app => [
+const src = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8'),
+  SRC = {app: src('app.js'), model: src('model.js'), quiz: src('quiz.js')};
+const parts = ({app, model, quiz}) => [
   cut(app, 'let STATE_V = 0;', 'const store = {', {file: 'app.js'}),
   cut(app, 'let TREEU = null,', 'const treeBuild = () => {', {file: 'app.js'}),
   cut(app, 'const treeOf = id =>', '// The units of every tree subject loaded made again', {file: 'app.js'}),
-  cut(app, 'const SUBJ_HOOKS = [];', '// The subject switch (docs/DESIGN.md', {file: 'app.js'})
+  cut(app, 'const SUBJ_HOOKS = [];', '// The subject switch (docs/DESIGN.md', {file: 'app.js'}),
+  // model.js: each unit's difficulty (its memo GDIFF), the intro map read (INTROS), the subject hook and its memos
+  'let GDIFF = {}, GDV = null, INTROS = null, HOLDS = 0, CB = null, lastQs = [], last = null;',
+  cut(model, 'const genusDiff = n => {', '// Shaky:', {file: 'model.js'}),
+  cut(model, 'const introMap = () => {', '// An entry', {file: 'model.js'}),
+  cut(model, "if (typeof SUBJ_HOOKS !== 'undefined')\n  SUBJ_HOOKS.push(keep => {\n    INTROS = null;", '// The functions the views read', {
+    file: 'model.js'
+  }),
+  // quiz.js: the typed names (TYPEN), the subject hook and its memo
+  'let TYPEN = null;',
+  cut(quiz, 'const typeNames = () => {', '// rk: the class', {file: 'quiz.js'}),
+  cut(quiz, "if (typeof SUBJ_HOOKS !== 'undefined')\n  SUBJ_HOOKS.push(keep => {\n    TYPEN = null;", 'put: m => (TYPEN = m)});', {
+    through: 1,
+    file: 'quiz.js'
+  })
 ];
 
-// The page: app.js's parts (a mutant's), the subjects' trees (fish and sea slugs; the corals have none), a tree build
-// that counts and bumps as treeBuild does, a hook that reads the intro map again as model.js's does.
-function page(check, app = APP) {
+// The page: the parts above (a mutant's), the subjects' trees (fish and sea slugs; the corals have none), a tree build
+// that counts and bumps as treeBuild does, the stored records (RECS, each subject's under its keys: progress, intro), a
+// subject's genus offsets (PGD) and typed names made from the data inputs. micro: the page's tasks as the browser runs
+// them (app.js freshNow queues the end of a task with queueMicrotask; endTask ends it here), so a read of the state
+// version in a task after its first trusts that task's comparison (stateNow's first return); without, every read
+// compares.
+function page(check, S = SRC, micro = false) {
   const later = [],
     calcs = [],
+    mq = [],
     stubs = {
       window: {VIEW_CHECK_ON: check},
       localStorage: memStorage(),
       setTimeout: f => later.push(f),
+      queueMicrotask: micro ? f => mq.push(f) : undefined,
       SUBJECTS: C.SUBJECTS,
       subjKey: C.subjKey,
       startKey: C.startKey,
@@ -44,120 +67,247 @@ function page(check, app = APP) {
       keyRename: C.keyRename,
       subjectOf: C.subjectOf,
       SUBJ: C.subjectOf('fish'),
-      UNITS: {fish: {get: {}}, seaslug: {get: {}}, coral: {}},
+      UNITS: null,
       DATA: {},
       P: {},
       Q: {},
       unitsRenamed: () => {},
-      store: {get: (k, d) => d},
-      sKey: k => k,
-      qLoad: () => ({}),
+      store: null,
+      sKey: null,
+      qLoad: null,
       prog: () => {},
       calcs
     };
   const names = Object.keys(stubs),
     make = vm.runInContext(
       `(function (${names.join(', ')}) {\n` +
-        `const BUILDS = {n: 0}, DSTAT = {x: 0};\n` +
+        `const BUILDS = {n: 0}, DSTAT = {x: 0}, RECS = new Map(), N = {names: 0, intro: 0};\n` +
+        // the records as stored, each read a copy (the app parses the stored text); the intro map's reads counted
+        `store = {get: (k, d) => (/-intro$/.test(k) && N.intro++, RECS.has(k) ? JSON.parse(RECS.get(k)) : d)};\n` +
+        `sKey = k => subjKey(SUBJ.id, k);\n` +
+        `qLoad = () => ({q: SUBJ.id});\n` +
         `const treeBuild = () => ((TREEU = {id: TREE_AT, n: ++BUILDS.n}), stateBump(), TREEU);\n` +
-        parts(app).join('\n') +
-        `\nSUBJ_HOOKS.push(keep => stateBump('rec'));\n` +
+        `const VIEWS = [['wide']], gamePics = () => [], heldOf = () => [], GX = () => null, calibOf = () => ({ease: 0}),\n` +
+        `  PDIFF = {MID: 0}, HOLDK = () => sKey('hold'), cbLoad = () => ({}), memRecalcAll = () => {}, domRecalcAll = () => {},\n` +
+        `  INTRO = {get KEY() { return sKey('intro'); }};\n` +
+        // a unit's genus offset: the data inputs (the statistics, the tree in force and its build, the subject)
+        `const dnum = n => (DSTAT.x * 7 + (TREEU ? TREEU.n * 3 : 0) + SUBJ.id.length * 11 + n.length) / 4;\n` +
+        `const PGD = new Proxy({}, {get: (o, n) => [dnum(n)]});\n` +
+        // a tree subject's names are its tree's (the tree in force), the corals' their own
+        `const nameList = () => (SUBJ.id === 'coral' ? [SUBJ.id] : [SUBJ.id, TREE_AT, TREEU && TREEU.n]).join(' ');\n` +
+        `UNITS = {fish: {get: {}, names: () => (N.names++, nameList())}, seaslug: {get: {}, names: () => (N.names++, nameList())},\n` +
+        `  coral: {names: () => (N.names++, nameList())}};\n` +
+        parts(S).join('\n') +
         // the data inputs: the subject, the tree in force and its build, the statistics (DSTAT)
-        `const truth = k => JSON.stringify([SUBJ.id, TREE_AT, TREEU && TREEU.id, TREEU && TREEU.n, DSTAT.x, k]);\n` +
+        `\nconst truth = k => JSON.stringify([SUBJ.id, TREE_AT, TREEU && TREEU.id, TREEU && TREEU.n, DSTAT.x, k]);\n` +
+        // the state inputs from where they are kept: the records and settings in force, the stored intro map and
+        // first-launch record, and the data
+        `const struth = k => JSON.stringify([SUBJ.id, P, Q, RECS.get(sKey('intro')) || '{}', localStorage.getItem(startKey(SUBJ.id)), truth(k)]);\n` +
         `const dv = dataViewBy('dv', k => (calcs.push(k), truth(k)));\n` +
         `const dw = dataView('dw', () => (calcs.push('*'), truth('*')));\n` +
         // a view the visits read (the subject on screen does not): its values are the visited subject's
         `const dx = dataViewBy('dx', k => truth('x' + k));\n` +
-        `return {dv, dw, dx, truth, inSubject, treeWith, treeAt, treeOf, stateBump,\n` +
+        // a state view reads the intro map through its memo, as model.js cardsCalc does
+        `const sv = stateViewBy('sv', k => (calcs.push('s' + k), JSON.stringify([SUBJ.id, P, Q, JSON.stringify(introMap()), localStorage.getItem(startKey(SUBJ.id)), truth(k)])));\n` +
+        `return {dv, dw, dx, sv, truth, struth, inSubject, treeWith, treeAt, treeOf, stateBump, N, introMap,\n` +
+        `  gd: n => [GDV !== DATA_V || !(n in GDIFF), genusDiff(n), Math.round(dnum(n) * 100) / 100],\n` +
+        `  tn: () => [typeNames(), nameList()], intro: () => RECS.get(sKey('intro')) || '{}',\n` +
         `  write: () => (DSTAT.x++, stateBump()), stale: id => (treeOf(id).stale = true),\n` +
+        // a record written through the store (its key: storeWrote), or in P as the merge writes it (stateBump('rec'))
+        `  writeKey: (id, name, v) => (RECS.set(subjKey(id, name), JSON.stringify(v)), storeWrote(subjKey(id, name))),\n` +
+        `  writeP: () => ((P.w = (P.w || 0) + 1), RECS.set(sKey('progress'), JSON.stringify(P)), stateBump('rec')),\n` +
+        `  otherTab: id => localStorage.setItem(startKey(id), JSON.stringify({c: 'imr', t: ++BUILDS.n})),\n` +
+        // another tab's write of a subject's intro map: the stored text alone, no storeWrote in this page
+        `  otherIntro: id => RECS.set(subjKey(id, 'intro'), JSON.stringify({Tab: [++BUILDS.n, 1, 0, 'c']})),\n` +
         `  raw: id => (treeOf(id).TREERAW = {}), at: () => TREE_AT, onScreen: id => (SUBJ = subjectOf(id)), dver: () => DATA_V};\n})`,
       vm.createContext({})
     );
-  const T = make(...names.map(k => stubs[k]));
-  return {T, later, calcs};
+  const T = make(...names.map(k => stubs[k])),
+    endTask = () => mq.splice(0).forEach(f => f());
+  // another tab's write reaches the page between its tasks
+  return {T, later, calcs, endTask, tab: id => (T.otherTab(id), endTask())};
 }
 
-// Every value of the subject on screen's views read now equals a computation now; returns how many computations the
-// reads made.
+// Every value of the subject on screen's views and memos read now equals a computation from the inputs as kept; returns
+// what the reads made again: the data views' and the state view's computations, the units' difficulties, the typed
+// names and the intro map read again.
 function readAll(pg, label, keys = ['a', 'b']) {
-  const n = pg.calcs.length;
-  for (const k of keys) assert.strictEqual(pg.T.dv(k), pg.T.truth(k), `${label}: dv(${k})`);
-  assert.strictEqual(pg.T.dw(), pg.T.truth('*'), `${label}: dw`);
-  return pg.calcs.length - n;
+  pg.endTask(); // a read in a task of its own
+  const {T, calcs} = pg,
+    n = calcs.length,
+    nm = T.N.names,
+    ni = T.N.intro;
+  let gd = 0;
+  for (const k of keys) {
+    assert.strictEqual(T.dv(k), T.truth(k), `${label}: dv(${k})`);
+    assert.strictEqual(T.sv(k), T.struth(k), `${label}: sv(${k})`);
+    const [miss, v, fresh] = T.gd(k);
+    assert.strictEqual(v, fresh, `${label}: genusDiff(${k})`);
+    gd += miss;
+  }
+  assert.strictEqual(T.dw(), T.truth('*'), `${label}: dw`);
+  const [tn, fresh] = T.tn();
+  assert.strictEqual(tn, fresh, `${label}: typeNames`);
+  assert.strictEqual(JSON.stringify(T.introMap()), T.intro(), `${label}: the intro map`);
+  const made = calcs.slice(n);
+  return {
+    D: made.filter(c => c[0] !== 's').length,
+    S: made.filter(c => c[0] === 's').length,
+    G: gd,
+    T: T.N.names - nm,
+    I: T.N.intro - ni
+  };
 }
 // What a visit reads (dx): the visited subject's values.
 function visitRead(pg, label) {
   for (const k of ['a', 'c']) assert.strictEqual(pg.T.dx(k), pg.T.truth('x' + k), `${label}: dx(${k})`);
 }
-// The subject on screen's views read, then fn, then read again: the computations the second read made (0: kept).
+// The subject on screen's views and memos read, then fn, then read again: what the second read made again.
 function around(pg, label, fn) {
   readAll(pg, label + ', before');
   fn();
   return readAll(pg, label + ', after');
 }
 // The fish on screen with both trees built (each subject's data in, as after a first visit), or the corals.
-function fishPage(check, app) {
-  const pg = page(check, app);
+function fishPage(check, S, micro) {
+  const pg = page(check, S, micro);
   pg.T.raw('fish');
   pg.T.raw('seaslug');
   pg.T.treeAt('seaslug'); // built
   pg.T.treeAt('fish'); // built, in force
+  pg.T.writeKey('fish', 'intro', {Chromis: [1, 1, 0, 's']});
+  pg.T.writeKey('coral', 'intro', {Acropora: [2, 1, 0, 's']});
   return pg;
 }
 
-// The visits, each with whether the views of the subject on screen must be kept (0 computations after) or made again.
+// The visits, each with what the subject on screen keeps after it (every other thing is made again): D its data views,
+// S its state view, G each unit's difficulty, T the typed names, I the intro map: not read again by the reads after the
+// visit (a visit with the state version kept reads it again at its return, model.js's memo, and compares it).
+const ALL = 'DSGTI';
 const CASES = [
-  ['a visit that writes nothing', true, pg => pg.T.inSubject('coral', () => visitRead(pg, 'the corals visited'))],
-  ['a visit that writes a record', true, pg => pg.T.inSubject('coral', () => (visitRead(pg, 'visited'), pg.T.stateBump('rec')))],
+  ['a visit that writes nothing', ALL, pg => pg.T.inSubject('coral', () => visitRead(pg, 'the corals visited'))],
+  // the visited subject's merge: its progress stored and refilled in P, its intro map
   [
-    'a visit that writes data',
-    false,
-    pg => pg.T.inSubject('coral', () => (visitRead(pg, 'visited'), pg.T.write(), visitRead(pg, 'written')))
+    'a visit that writes the visited subject’s records',
+    ALL,
+    pg =>
+      pg.T.inSubject('coral', () => {
+        visitRead(pg, 'visited');
+        pg.T.writeP();
+        pg.T.writeKey('coral', 'progress', {Acropora: {ok: 3}});
+        pg.T.writeKey('coral', 'intro', {Acropora: [2, 1, 0, 's'], Porites: [3, 1, 0, 'c']});
+      })
   ],
-  ['tree subject to tree subject', true, pg => pg.T.inSubject('seaslug', () => visitRead(pg, 'the sea slugs visited'))],
-  ['a tree built on the way', false, pg => (pg.T.stale('seaslug'), pg.T.inSubject('seaslug', () => visitRead(pg, 'the sea slugs built')))],
+  ['a visit that writes data', '', pg => pg.T.inSubject('coral', () => (visitRead(pg, 'visited'), pg.T.write(), visitRead(pg, 'written')))],
+  ['tree subject to tree subject', ALL, pg => pg.T.inSubject('seaslug', () => visitRead(pg, 'the sea slugs visited'))],
+  ['a tree built on the way', '', pg => (pg.T.stale('seaslug'), pg.T.inSubject('seaslug', () => visitRead(pg, 'the sea slugs built')))],
   [
     'nested visits',
-    true,
+    ALL,
     pg =>
       pg.T.inSubject(
         'coral',
-        () => (visitRead(pg, 'outer'), pg.T.inSubject('seaslug', () => visitRead(pg, 'inner')), visitRead(pg, 'outer again'))
+        () => (
+          visitRead(pg, 'outer'),
+          pg.T.inSubject('seaslug', () => (visitRead(pg, 'inner'), pg.T.writeP())),
+          visitRead(pg, 'outer again')
+        )
       )
   ],
   [
     'a write in a nested visit',
-    false,
+    '',
     pg => pg.T.inSubject('coral', () => pg.T.inSubject('seaslug', () => (visitRead(pg, 'inner'), pg.T.write())))
   ],
-  ['a tree lent (treeWith)', true, pg => pg.T.treeWith('seaslug', () => visitRead(pg, 'the sea slugs lent'))],
-  ['treeWith around a visit', true, pg => pg.T.treeWith('seaslug', () => pg.T.inSubject('coral', () => visitRead(pg, 'both')))],
+  ['a tree lent (treeWith)', ALL, pg => pg.T.treeWith('seaslug', () => visitRead(pg, 'the sea slugs lent'))],
+  [
+    'treeWith around a visit',
+    ALL,
+    pg => pg.T.treeWith('seaslug', () => pg.T.inSubject('coral', () => (visitRead(pg, 'both'), pg.T.writeP())))
+  ],
   // One slot a view: a view the visit itself reads holds the visited subject's values after it, so the subject on
-  // screen's are made again at their next read (a sync's visits read no data view: tools/answercost.js --syncs).
-  ['a visit that reads the views of the subject on screen', false, pg => pg.T.inSubject('coral', () => readAll(pg, 'the corals visited'))]
+  // screen's are made again at their next read (a sync's visits read no view: tools/answercost.js --syncs); the versions
+  // came back, so the memos are put back.
+  ['a visit that reads the views of the subject on screen', 'GTI', pg => pg.T.inSubject('coral', () => readAll(pg, 'the corals visited'))],
+  // A record of the subject on screen written during the visit: the state version and the intro map read are new.
+  [
+    'a visit that writes the subject on screen’s intro map',
+    'DGT',
+    pg =>
+      pg.T.inSubject(
+        'coral',
+        () => (visitRead(pg, 'visited'), pg.T.writeKey('fish', 'intro', {Chromis: [1, 1, 0, 's'], Amphiprion: [4, 1, 0, 'c']}))
+      )
+  ],
+  [
+    'a visit that writes the subject on screen’s progress',
+    'DGT',
+    pg => pg.T.inSubject('coral', () => (visitRead(pg, 'visited'), pg.T.writeKey('fish', 'progress', {Chromis: {ok: 1}})))
+  ],
+  [
+    'a visit back to the subject on screen that writes',
+    'DGT',
+    pg => pg.T.inSubject('coral', () => pg.T.inSubject('fish', () => (visitRead(pg, 'back'), pg.T.writeP())))
+  ],
+  // another tab's first-launch record, seen at the visit's next read (app.js stateNow): nobody's known
+  [
+    'another tab writes the subject on screen’s first-launch record',
+    'DGT',
+    pg => pg.T.inSubject('coral', () => (pg.tab('fish'), visitRead(pg, 'visited')))
+  ],
+  [
+    'another tab writes the visited subject’s first-launch record',
+    'DGT',
+    pg => pg.T.inSubject('coral', () => (pg.tab('coral'), visitRead(pg, 'visited')))
+  ],
+  // another tab's write of the intro map (its stored text, model.js INTROS not told): the subject on screen's read again
+  // at the visit's return and found changed, so its state version moves; the visited subject's changes nothing on screen
+  [
+    'another tab writes the subject on screen’s intro map',
+    'DGTI',
+    pg => pg.T.inSubject('coral', () => (pg.T.otherIntro('fish'), visitRead(pg, 'visited')))
+  ],
+  [
+    'another tab writes the visited subject’s intro map',
+    ALL,
+    pg => pg.T.inSubject('coral', () => (pg.T.otherIntro('coral'), visitRead(pg, 'visited')))
+  ],
+  // a tree lent runs no hook: the intro map stays read
+  [
+    'a tree lent while the subject on screen’s records are written',
+    'DGTI',
+    pg => pg.T.treeWith('seaslug', () => (visitRead(pg, 'lent'), pg.T.writeP()))
+  ],
+  ['the tree on screen built on the return', '', pg => pg.T.inSubject('seaslug', () => (visitRead(pg, 'visited'), pg.T.stale('fish')))],
+  // a difficulty kept for a version left before the visit: not put back (made for that version, model.js GDV)
+  ['a data write, then a visit before any read', 'TI', pg => (pg.T.write(), pg.T.inSubject('coral', () => visitRead(pg, 'visited')))]
 ];
 
-function cases(check, app) {
-  // A version is never handed out twice: a view read during a visit (dw, at the visit's version) and read again only
-  // after k real writes is a computation now, whatever k.
+function cases(check, S, micro) {
+  // A version is never handed out twice: a view read during a visit (at the visit's version) and read again only after
+  // k real writes is a computation now, whatever k.
   for (let k = 1; k <= 6; k++) {
-    const pg = fishPage(check, app);
+    const pg = fishPage(check, S, micro);
     readAll(pg, `a visit then ${k} writes, before`);
-    pg.T.inSubject('coral', () => pg.T.dw());
-    for (let i = 0; i < k; i++) pg.T.write();
+    pg.T.inSubject('coral', () => (pg.T.dw(), pg.T.sv('a')));
+    for (let i = 0; i < k; i++) i % 2 ? pg.T.write() : pg.T.writeP();
     assert.strictEqual(pg.T.dw(), pg.T.truth('*'), `a view read in a visit, then ${k} writes: dw`);
+    assert.strictEqual(pg.T.sv('a'), pg.T.struth('a'), `a view read in a visit, then ${k} writes: sv`);
     assert.deepStrictEqual(pg.later, []);
   }
   for (const [what, keep, fn] of CASES) {
-    // VIEW_CHECK on computes every read again (its comparison): the values alone are checked, and nothing thrown
-    const pg = fishPage(check, app),
+    // VIEW_CHECK on computes every read of a view again (its comparison): the values alone are checked for the views,
+    // and nothing thrown; the memos are no view
+    const pg = fishPage(check, S, micro),
       made = around(pg, what, () => fn(pg));
-    if (keep && !check) assert.strictEqual(made, 0, `${what}: the views of the subject on screen kept`);
-    else assert.ok(made > 0, `${what}: the views made again`);
+    for (const x of 'DSGTI')
+      if (keep.includes(x) && !(check && 'DS'.includes(x))) assert.strictEqual(made[x], 0, `${what}: ${x} kept`);
+      else if (!keep.includes(x)) assert.ok(made[x] > 0, `${what}: ${x} made again`);
     // then real writes: every value is a computation now (a version handed out again would serve a visit's value)
     for (let i = 0; i < 4; i++) {
-      pg.T.write();
-      assert.ok(readAll(pg, `${what}, write ${i + 1} after`) > 0, `${what}: a write after it makes the views again`);
+      i % 2 ? pg.T.writeP() : pg.T.write();
+      const m = readAll(pg, `${what}, write ${i + 1} after`);
+      assert.ok(m.S > 0 && (i % 2 || m.D > 0), `${what}: a write after it makes the views again`);
     }
     assert.deepStrictEqual(pg.later, [], `${what}: no VIEW_CHECK difference thrown later`);
   }
@@ -168,51 +318,154 @@ function cases(check, app) {
     ['a tree lent from no tree in force', pg => pg.T.treeWith('fish', () => visitRead(pg, 'the fish lent'))]
   ])
     for (const raw of [true, false]) {
-      const pg = page(check, app),
+      const pg = page(check, S, micro),
         label = `${what}${raw ? '' : ', its data not in yet'}`;
       if (raw) pg.T.raw('fish');
       pg.T.onScreen('coral');
       assert.strictEqual(pg.T.at(), null);
-      assert.ok(around(pg, label, () => fn(pg)) > 0, `${label}: the views made again`);
+      const made = around(pg, label, () => fn(pg));
+      assert.ok(made.D > 0 && made.S > 0, `${label}: the views made again`);
       assert.strictEqual(pg.T.at(), 'fish', `${label}: the fish's tree stays in force`);
       assert.deepStrictEqual(pg.later, []);
     }
 }
-test('a visit leaves the subject on screen’s data views as a fresh computation has them, kept when it wrote nothing', () => {
-  for (const check of [false, true]) cases(check);
+test('a visit leaves the subject on screen’s views and memos as a fresh computation has them, kept when it wrote nothing of it', () => {
+  for (const check of [false, true]) for (const micro of [false, true]) cases(check, SRC, micro);
 });
 
-// Each mutant from app.js's source; every rule broken is caught, the unmutated code passes the same cases.
-test('mutation: the rules that keep or drop the views, each broken, are caught', t => {
+// Each mutant from the files' source; every rule broken is caught, the unmutated code passes the same cases.
+test('mutation: the rules that keep or drop the views and the memos, each broken, are caught', t => {
   const MUT = [
-    ['a data write in the visit ignored', 'if (DATA_V - m.v === DATA_SW - m.sw) DATA_AS', 'if (true) DATA_AS'],
-    ['the version put back by number (handed out again)', 'DATA_AS = {v: DATA_V, k: m.k};', 'DATA_V = m.k;'],
-    ['the tree left in force ignored', '    if (TREE_AT === was.T) dataBack(m);', '    dataBack(m);'],
-    ['treeWith from no tree', 'if (m && TREE_AT === was) dataBack(m);', 'if (m) dataBack(m);'],
+    ['a data write in the visit ignored', 'app', 'const data = DATA_V - m.v === DATA_SW - m.sw,', 'const data = true,'],
+    ['the version put back by number (handed out again)', 'app', 'if (data) DATA_AS = {v: DATA_V, k: m.k};', 'if (data) DATA_V = m.k;'],
+    ['the tree left in force ignored', 'app', '    if (TREE_AT === was.T) memoPut(memo, dataBack(m));', '    memoPut(memo, dataBack(m));'],
+    ['treeWith from no tree', 'app', 'if (m && TREE_AT === was) memoPut(memo, dataBack(m));', 'if (m) memoPut(memo, dataBack(m));'],
     [
       'a swap that does not move the data version',
-      'const swapBump = () => (DATA_SW++, stateBump());',
-      "const swapBump = () => (DATA_SW++, stateBump('rec'));"
+      'app',
+      "const swapBump = rec => (STATE_SW++, rec === 'rec' || DATA_SW++, stateBump(rec, null));",
+      "const swapBump = rec => (STATE_SW++, DATA_SW++, stateBump('rec', null));"
     ],
-    ['treeAt’s swap counted as a write', '  treePull(true);\n', '  treePull();\n'],
+    ['treeAt’s swap counted as a write', 'app', '  treePull(true);\n', '  treePull();\n'],
     [
-      'the version kept never read',
+      'the data version kept never read',
+      'app',
       'const dataNow = () => (stateNow(), DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);',
       'const dataNow = () => (stateNow(), DATA_V);'
     ],
-    ['a visit never kept', '    if (TREE_AT === was.T) dataBack(m);', '']
+    ['a visit never kept', 'app', '    if (TREE_AT === was.T) memoPut(memo, dataBack(m));', ''],
+    // REE-300: the state version and the memos
+    [
+      'a write of the subject on screen’s records counted as another’s',
+      'app',
+      'STATE_V - m.sv === STATE_SW - m.ssw + (REC_N - m.n) - ((REC_BY[m.s] || 0) - m.own);',
+      'STATE_V - m.sv === STATE_SW - m.ssw + (REC_N - m.n);'
+    ],
+    [
+      'a stored record for the subject in force, not its key’s',
+      'app',
+      "stateBump(REC_KEYS.has(k) ? 'rec' : undefined, REC_KEYS.get(k));",
+      "stateBump(REC_KEYS.has(k) ? 'rec' : undefined);"
+    ],
+    [
+      'another tab’s write for the subject in force',
+      'app',
+      "if (ch) stateBump(ch === 'rec' ? 'rec' : undefined, null);",
+      "if (ch) stateBump(ch === 'rec' ? 'rec' : undefined);"
+    ],
+    [
+      'the hook’s intro map read counted as a write',
+      'model',
+      "if (typeof swapBump === 'function') swapBump('rec');",
+      "if (typeof stateBump === 'function') stateBump('rec');"
+    ],
+    [
+      'a swap of the records counted as the subject in force’s',
+      'app',
+      "const swapBump = rec => (STATE_SW++, rec === 'rec' || DATA_SW++, stateBump(rec, null));",
+      "const swapBump = rec => (STATE_SW++, rec === 'rec' || DATA_SW++, stateBump(rec));"
+    ],
+    [
+      'the state version kept never read',
+      'app',
+      '  STATE_AT = freshNow();\n  return STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V;',
+      '  STATE_AT = freshNow();\n  return STATE_V;'
+    ],
+    ['the state version put back with the data alone', 'app', '    state = data && m.s !== null && STATE_V', '    state = data || STATE_V'],
+    ['the memos put back whatever the data', 'app', 'void (back.data && SUBJ_MEMOS.forEach(', 'void (SUBJ_MEMOS.forEach('],
+    [
+      'the state version kept never read in a task that compared',
+      'app',
+      '    return STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V; // after a visit that wrote nothing on screen, the version before',
+      '    return STATE_V;'
+    ],
+    [
+      'the intro map put back from before the visit',
+      'model',
+      "      if (back.state && INTROS === null && m.t !== null && JSON.stringify(introMap()) !== m.t) stateBump('rec', null);",
+      '      if (back.state && m.t !== null) INTROS = JSON.parse(m.t);'
+    ],
+    [
+      'the intro map read again but not compared',
+      'model',
+      "      if (back.state && INTROS === null && m.t !== null && JSON.stringify(introMap()) !== m.t) stateBump('rec', null);",
+      '      if (back.state && INTROS === null && m.t !== null) introMap();'
+    ],
+    ['a difficulty put back for a version left before the visit', 'model', '      if (m.GDV === m.dv) ((GDIFF', '      if (true) ((GDIFF'],
+    [
+      'the memos never put back',
+      'app',
+      'const memoPut = (memo, back) => void (back.data &&',
+      'const memoPut = (memo, back) => void (false &&'
+    ]
   ];
-  for (const [what, from, to] of [['the code as it is (no mutation: nothing caught)', null, null], ...MUT]) {
-    assert.ok(!from || APP.split(from).length === 2, `${what}: the mutated text occurs once`);
-    const app = from ? APP.replace(from, to) : APP;
+  for (const [what, file, from, to] of [['the code as it is (no mutation: nothing caught)', null, null, null], ...MUT]) {
+    assert.ok(!from || SRC[file].split(from).length === 2, `${what}: the mutated text occurs once`);
+    const S = from ? {...SRC, [file]: SRC[file].replace(from, to)} : SRC;
     let caught = '';
     for (const check of [false, true])
-      try {
-        cases(check, app);
-      } catch (e) {
-        caught = caught || e.message.split('\n')[0];
-      }
+      for (const micro of [false, true])
+        try {
+          cases(check, S, micro);
+        } catch (e) {
+          caught = caught || e.message.split('\n')[0];
+        }
     if (from) (assert.ok(caught, `${what}: not caught`), t.diagnostic(`${what}: ${caught}`));
     else assert.strictEqual(caught, '', 'the code as it is passes');
   }
+});
+
+// The subject in force read for a records bump and a visit's mark (stateBump, dataMark): SUBJ not declared (a part of
+// app.js run alone) or not declared yet (its `let` further down) is nobody's, a records bump then counted for no
+// subject; any other error is thrown, never swallowed.
+test('the subject in force read: nobody when SUBJ is not declared, any other error thrown', () => {
+  const app = cut(SRC.app, 'let STATE_V = 0;', 'const store = {', {file: 'app.js'}),
+    ctx = {
+      SUBJECTS: C.SUBJECTS,
+      subjKey: C.subjKey,
+      startKey: C.startKey,
+      keyGet: C.keyGet,
+      keyRename: C.keyRename,
+      localStorage: memStorage()
+    };
+  const run = (before, after = '') =>
+    vm.runInContext(
+      `(() => {\n${before}\n${app}\nconst r = {}; r.go = () => (stateBump('rec'), [REC_N, dataMark().s]);\n${after}\nreturn r;\n})()`,
+      vm.createContext({...ctx})
+    );
+  // (the arrays are the vm's: copied before comparing)
+  assert.deepStrictEqual([...run('').go()], [0, null], 'SUBJ not declared: nobody');
+  // its `let` further down: the read before it is in the temporal dead zone (a ReferenceError too)
+  const tdz = vm.runInContext(
+    `(() => {\n${app}\nconst r = [stateBump('rec'), REC_N, dataMark().s];\nlet SUBJ = {id: 'fish'};\nreturn [r[1], r[2], (stateBump('rec'), REC_N), REC_BY.fish];\n})()`,
+    vm.createContext({...ctx})
+  );
+  assert.deepStrictEqual([...tdz], [0, null, 1, 1], 'not declared yet: nobody; declared: its own');
+  const bad = run("const SUBJ = {get id() { throw new TypeError('a subject that breaks'); }};");
+  assert.throws(
+    () => bad.go(),
+    e => e.name === 'TypeError' && /a subject that breaks/.test(e.message),
+    'a TypeError reading the subject is thrown'
+  );
+  assert.deepStrictEqual([...run("const SUBJ = {id: 'coral'};").go()], [1, 'coral'], 'a subject: its own');
 });
