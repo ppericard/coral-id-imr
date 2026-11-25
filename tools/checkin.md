@@ -26,8 +26,8 @@ live signals.
    these, or the issue moves to Todo. It moves to Todo each issue whose reason no longer holds, with one line naming
    what unblocked it, and reports the newly ready issues. It launches nothing, merges nothing and settles no open question. The integrator then launches the ready
    issues.
-5. **Upkeep.** Linear states for what moved; STATUS about every 90 minutes of work
-   ([Habits](../docs/INTEGRATOR.md#habits)).
+5. **Upkeep.** Linear states for what moved. STATUS is refreshed with each sweep, right after its result, so both
+   keep the same rhythm of about 90 minutes ([Habits](../docs/INTEGRATOR.md#habits)).
 6. **Compaction.** If the context was compacted since the last check-in, note on REE-230 what was found again
    without a reminder.
 7. **Rule 0.** Read the time line above. In quiet hours ask Pierre nothing; questions wait in STATUS. Work goes on.

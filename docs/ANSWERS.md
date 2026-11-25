@@ -2155,3 +2155,6 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   tienne compte de ça». To the three proposals (the sweep checks the written condition, not only the label; when a PR
   frees a sensitive file, look at once for what waited on it; the brief's other signals — W6 branches, docs past their
   size mark, outdated stack — count as work): «oui. Ok». Applied: tools/checkin.md steps 3-4.
+- **06:28, the sweep and STATUS on one rhythm.** On the sweep (about every 90 minutes) and the STATUS refresh (about
+  every 90 minutes of work) listed side by side: «A synchroniser». Applied: tools/checkin.md step 5, docs/INTEGRATOR.md
+  "Habits" (STATUS refreshed right after each sweep, with its result).

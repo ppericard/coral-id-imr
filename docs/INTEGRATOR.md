@@ -54,7 +54,8 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 - **Pierre's follow-ups go to the running agent** with `SendMessage`, not to a new agent: he corrects the shape of a
   subject quickly.
 - **An interruption to ask a question is not a stop**: answer, then carry on.
-- **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then.
+- **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then,
+  right after the sweep, with its result (2026-11-26; [tools/checkin.md](../tools/checkin.md) step 5).
 - **"Choices I made" is filtered before it is passed on**: what is easy to correct afterwards ships as the integrator's
   call.
 - **A rule credited to Pierre quotes his words**; a paraphrase says "integrator's reading". A decision of his is never
