@@ -398,22 +398,31 @@ back on `dauinU`, `dauin`: [fish.md › The default cover](fish.md#the-default-c
 The built files are the sources plus one instance's layer, resolved at build
 ([design note v2](../reviews/2026-11-14-sheet-overlay-design.md#v2-2026-11-15-per-instance-content-and-roles), section 1
 and step 5); the content editor's edits are the third layer, in `curation.json` `content`, laid over at load
-([content.md](content.md)), never at build. `tools/instance.json` names the instance (`id` `imr`, `name`), its `centre`
-and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR instance's, in `tools/instances/imr/`:
+([content.md](content.md)), never at build. `tools/instance.json` names the instance (`id` `imr`, `name`), its `centre`,
+the identification `key` in force there (the deployment's choice, not the organisation's content: rule S3) and its
+`layer` files, one per subject (the `SUBJECTS` key). Today the IMR instance's, in `tools/instances/imr/`:
 
 - **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families), `nodes` {teaching
   node or sub-entry id: `circle`, `src` and `sign` (nodes only), `sl`, `cues`, `look`, `phase`} and `species` {species id:
-  `sl`}. `src` is the IMR tag (`"imr"`, the 27 entries of the IMR fish presentation: `fish.json` `families[].imr` is
-  the entry's name as IMR writes it), `sign: false` an entry off the presentation's dive-sign list, `sl` the
-  presentation's slide numbers (a species': the slide that names it). `tools/instance.py` `fish_source` lays them on
-  `tools/fish_source.json` (the sources' part), and `tools/build_fish.py` reads the result in every mode. It stops when
-  the base still carries one of those fields (an edit made in the old place, a merge; the base's own `src`, `pdf`,
-  `diver` or `wink`, is not the layer's) or when the layer names a node or species the base does not hold. The offline
-  modes (`--regroup`, `--commonness`, `--near`) lay the layer again on `fish.json` as it is (`relay`: slides, cues,
-  look and phase, the tag and the mark, the species' slides, taken off and put back where the build writes them,
-  `start`, then the families), so an edit of those needs no WoRMS call; a changed circle stops them (the species'
-  circles and their presence test follow it: the full build). An edition without the layer has no IMR tag, slide or
-  mark on its entries, and the families then carry no `imr` name.
+  `common`, `sec`, `pdf`, `cs`, `src`, `sl`}. `src` is the IMR tag (`"imr"`, the 27 entries of the IMR fish
+  presentation: `fish.json` `families[].imr` is the entry's name as IMR writes it), `sign: false` an entry off the
+  presentation's dive-sign list, `sl` the presentation's slide numbers (a species': the slide that names it). A
+  species' `pdf` (its pages in the IMR reference PDF, the EventMeasure list) marks it as the PDF's, 366 species: only
+  then it has `common` (the PDF's common name, never corrected), `sec` (its section) and `cs` (its rank on the
+  cheatsheet, 24 species); a species' `src` is `"slides"` for the two species only the presentation names. The base
+  keeps the common names of the other 305 species (`dauin`, `wink`, `slides`) and their `src` `dauin` or `wink`.
+  `tools/instance.py` `fish_source` lays them on `tools/fish_source.json` (the sources' part) and lays the instance's
+  `key` as `deploy.key`; `tools/build_fish.py` reads the result in every mode. It stops when the base still carries
+  one of those fields (an edit made in the old place, a merge; the base's own `src`, `pdf`, `diver` or `wink`, is not
+  the layer's; its `common` is, once the layer marks the species as the PDF's) or when the layer names a node or
+  species the base does not hold. The offline modes (`--regroup`, `--commonness`, `--near`) lay the layer again on
+  `fish.json` as it is (`relay`: slides, cues, look and phase, the tag and the mark, the species' common names,
+  sections, slides and mark, taken off and put back where the build writes them, `start`, then the families), so an
+  edit of those needs no WoRMS call; a changed circle, or a changed `pdf` or `cs`, stops them (the species' circles,
+  their presence test, which the IMR list confirms near Dauin (rule C8), and their rank follow: the full build); the
+  base's own `src` (`dauin`, `wink`) is not laid again. An
+  edition without the layer has no IMR tag, slide or mark on its entries, and the families then carry no `imr` name;
+  its PDF species have no name, section, pages or cheatsheet rank, so the list no longer confirms a species near Dauin.
 - **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `n` (its number on the IMR slate, 0 for a starred
   genus), `ig`, `imr`, `mn`, `sl` and `rsl` (its Lecture 6 slide numbers and review slide numbers, when it has them),
   `qt` (its short ID tips, condensed from the lecture notes: `tools/id_tips.txt`)} and `pairs`, the IMR
@@ -443,11 +452,10 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
 - **Not in the layer yet** (easy to move later): the fish teaching nodes' names, `fam`, references (`ref`, `pdf`) and
-  tree (they identify the entries, and the layer holds fields of an entry the base names, never an entry); the IMR PDF's
-  common names and sections (`common`, `pdf`, `sec`, `cs`) and the species' `src` of the species the slides name; the
+  tree (they identify the entries, and the layer holds fields of an entry the base names, never an entry); the
   references of the lecture photos
-  (`data.json` `course`, photos marked `imr`); the coral slate's structure beyond each genus's number (the starred
-  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`); and `deploy` (the key in force). The course's
+  (`data.json` `course`, photos marked `imr`); and the coral slate's structure beyond each genus's number (the starred
+  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`). The course's
   words in the code (the IMR course, the IMR lecture, the IMR fish presentation...) are not layer content: they are
   `core.js` `ORG` fields ([storage.md › The app's name](storage.md#the-apps-name)), and the data's values that hold
   them (the source lines "IMR Lecture 6, slide …" and "IMR fish presentation, …") stay as they are.
