@@ -213,8 +213,8 @@
    "fn:drawPhotosCalc": 100
   },
   "fish:3000": {
-   "namedCalls": 66000,
-   "peakCalls": 150000,
+   "namedCalls": 59000,
+   "peakCalls": 110000,
    "getCalls": 110,
    "getChars": 3100000,
    "setChars": 2300000,
