@@ -12,6 +12,7 @@ Update worktrees go to `.claude/worktrees/` (rule W22, git-ignored).
 | Script | What it does |
 |---|---|
 | `nightq.sh N…` | One PR at a time: wait for every check, Codex's receipt and completed security review for the full head SHA. Dry-run and train that SHA on current main under W26. A draft, red PR, unresolved thread or finding, missing review, pending VERSION assign or refused train is skipped and logged. |
+| `fifoq.sh N…` | **Waves in arrival order (REE-220).** Takes a ticket (`$QUEUE_DIR/fifoq.tickets`, named by arrival; a dead queue's ticket, or a wrapped pid, is dropped), waits until no train and no `nightq`, `seqver`, `chainq` or `afterver` runs and no earlier `fifoq.sh` is alive, then takes an exclusive lock (`$QUEUE_DIR/fifoq.lock`, `flock`, held while `nightq.sh` runs), so two waves never run together, and runs `nightq.sh N…` and returns its status. All gates, the security ask and the pinned trains stay `nightq.sh`'s. |
 | `uptodate.sh N` | An explicit branch update for the integrator when needed. Merges `origin/main` into the PR's branch, settling only the decisions index, append-only files and generated data. Anything else aborts ("needs a hand"). Pushes and asks `@codex review`. |
 | `assignver.sh N` | Code.gs PR: update it, then assign the sheet VERSION (rule D3). Takes only main's line 1 and `VERSION`, keeps the branch's own `Code.gs`; a `Code.gs` conflict outside the version lines and the core.js block (`resolve_gs.py`) is "needs a hand". Pushes and asks Codex (`codex.md`). |
 | `seqver.sh N…` | Code.gs PRs one after another: `assignver.sh`, then `nightq.sh`, for each. |
@@ -60,6 +61,12 @@ until it merges.
 
 Code.gs PRs first, one at a time: `bash tools/queue/seqver.sh N1 N2`. The rest after them:
 `bash tools/queue/afterall.sh N3 N4`. Start each in the background (`run_in_background`).
+
+Several waves at once: start each as `bash tools/queue/fifoq.sh N…` instead, from the main checkout, one call per wave
+as its PRs come. They run one wave at a time, the oldest call first, so no wave stops with "main moved" because another
+trained first. A wave that waits for its turn holds back those behind it, and a PR in it that is not ready is waited
+for by `nightq.sh` (up to about an hour) or skipped. Each wave trains its PRs one train per PR (never several in one
+train, so a stack cannot fail at the merge after the first squash; land a stack as its top PR, rule W22).
 
 ## Restarts
 

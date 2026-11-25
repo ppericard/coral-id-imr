@@ -8,7 +8,8 @@ live signals.
 1. **Agents.** Count the running agents and their state. Resume or finish one that was cut off
    ([Merge mechanics](../docs/INTEGRATOR.md#the-merge-mechanics-what-bites): a crowded machine).
 2. **Queue.** Read the queue log (`~/.cache/reefid-queue/nightq.log`, its last line above). Merge only through
-   `tools/queue/nightq.sh` ([tools/queue](queue/README.md)). Restart whatever stopped.
+   `tools/queue/nightq.sh` ([tools/queue](queue/README.md)); start several waves with `tools/queue/fifoq.sh`, which
+   runs them one at a time through `nightq.sh`. Restart whatever stopped.
 3. **Work comes from Linear, never from this prompt.** Every open issue is to be done unless it carries one of the
    five reasons of [INTEGRATOR "Linear"](../docs/INTEGRATOR.md#linear). List every open issue, whatever its column,
    and give an agent to each one that has no valid reason and is not already in progress, High first, as far as the
