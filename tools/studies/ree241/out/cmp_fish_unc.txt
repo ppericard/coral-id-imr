@@ -1,0 +1,40 @@
+Paired comparison: app_fish_unc_before.json (6b50db29) -> app_fish_unc_after.json (6b50db29), fish, 25 pairs (beginner, casualDiver, lectureRA, strongRA, expert)
+Looks declared: 1 (one-sided bounds at 90.0%, the primary at 0.0500)
+
+**Primary: Units at Open Water, unitsOW@300, up** (declared before running)
+Pooled stratified sign-flip: T -6.57, p 0.1941 two-sided (100000 draws), 11 of 25 pairs up: no clear difference
+
+| Profile | Before -> after | Paired difference | Pairs up | Paired t p | Holm | Verdict |
+|---|---|---|---|---|---|---|
+| beginner | 9.6 -> 8.2 | -1.4 | 1/5 | 0.1599 | not tested (pooled not clear) | - |
+| casualDiver | 11.8 -> 11.4 | -0.4 | 2/5 | 0.8149 | not tested (pooled not clear) | - |
+| lectureRA | 19.2 -> 18.8 | -0.4 | 2/5 | 0.6885 | not tested (pooled not clear) | - |
+| strongRA | 23.4 -> 22.8 | -0.6 | 3/5 | 0.7753 | not tested (pooled not clear) | - |
+| expert | 26.4 -> 25.8 | -0.6 | 3/5 | 0.7407 | not tested (pooled not clear) | - |
+
+**Guardrails** (one-sided 90.0% bound of the paired difference on the side of harm; cell: before -> after, difference [bound], verdict)
+
+| Guardrail | At | Margin | beginner | casualDiver | lectureRA | strongRA | expert |
+|---|---|---|---|---|---|---|---|
+| True knowledge (D*, or knowSlate in the app world) | 300 | -0.020 | 0.384 -> 0.382, -0.002 [-0.007] held | 0.397 -> 0.396, -0.001 [-0.004] held | 0.467 -> 0.466, -0.001 [-0.005] held | 0.504 -> 0.501, -0.003 [-0.005] held | 0.944 -> 0.944, +0.000 [-0.000] held |
+| E = bar - D*, units met | 300 | +0.030 | -0.352 -> -0.338, +0.014 [+0.055] unclear | -0.308 -> -0.310, -0.001 [+0.041] unclear | -0.277 -> -0.266, +0.011 [+0.039] unclear | -0.279 -> -0.288, -0.010 [+0.018] held | -0.274 -> -0.283, -0.009 [+0.001] held |
+| Answers to the first unit at Open Water | run | +11.0 / +10.0 / +10.0 / +10.0 / +10.0 | 55.0 -> 59.6, +4.6 [+39.6] unclear | 28.6 -> 26.8, -1.8 [+3.9] held | 24.2 -> 22.6, -1.6 [+3.6] held | 14.2 -> 13.4, -0.8 [+0.4] held | 14.2 -> 13.4, -0.8 [+0.4] held |
+| Units at Open Water | 300 | -2.0 | 9.6 -> 8.2, -1.4 [-2.6] unclear | 11.8 -> 11.4, -0.4 [-2.9] unclear | 19.2 -> 18.8, -0.4 [-1.8] held | 23.4 -> 22.8, -0.6 [-3.6] unclear | 26.4 -> 25.8, -0.6 [-3.2] unclear |
+| Longest plateau of the shown score | run | +11 / +9 / +9 / +8 / +8 | 54 -> 44, -11 [-5] held | 46 -> 56, +10 [+27] breached | 47 -> 55, +8 [+22] unclear | 41 -> 44, +3 [+12] unclear | 39 -> 42, +4 [+7] held |
+| Share under ease 4 before Open Water | 300 | +0.050 | 0.109 -> 0.111, +0.001 [+0.023] held | 0.107 -> 0.124, +0.017 [+0.029] held | 0.120 -> 0.108, -0.012 [+0.001] held | 0.152 -> 0.125, -0.027 [-0.006] held | 0.118 -> 0.121, +0.003 [+0.036] held |
+| Units met | 100 | -2.0 | 18.6 -> 18.4, -0.2 [-1.5] held | 18.8 -> 19.2, +0.4 [-0.4] held | 19.4 -> 19.2, -0.2 [-1.0] held | 19.2 -> 19.0, -0.2 [-1.8] held | 19.2 -> 19.0, -0.2 [-1.6] held |
+| Units met | 300 | -2.0 | 32.0 -> 32.0, +0.0 [+0.0] held | 32.0 -> 32.0, +0.0 [+0.0] held | 32.0 -> 32.0, +0.0 [+0.0] held | 32.0 -> 32.0, +0.0 [+0.0] held | 32.0 -> 32.0, +0.0 [+0.0] held |
+| Families at Advanced (fish) | 300 | -2.0 | 0.6 -> 0.0, -0.6 [-1.0] held | 1.2 -> 1.4, +0.2 [-0.4] held | 2.0 -> 1.6, -0.4 [-1.5] held | 4.8 -> 4.4, -0.4 [-2.0] held | 5.2 -> 5.0, -0.2 [-2.0] held |
+
+Not held: over@300 beginner: unclear; over@300 casualDiver: unclear; over@300 lectureRA: unclear; firstOW@run beginner: unclear; unitsOW@300 beginner: unclear; unitsOW@300 casualDiver: unclear; unitsOW@300 strongRA: unclear; unitsOW@300 expert: unclear; plateau@run casualDiver: breached; plateau@run lectureRA: unclear; plateau@run strongRA: unclear (unclear: one step up; breached, or a cost not declared: to Pierre; rule L11).
+Not measured by these files: The global score as shown.
+
+**Also measured** (cell: before -> after, paired difference [one-sided 90.0% bounds either side]; no margin is set for these)
+
+| Measure | At | beginner | casualDiver | lectureRA | strongRA | expert |
+|---|---|---|---|---|---|---|
+| Right % since the previous checkpoint | 300 | 85.6 -> 85.4, -0.2 [-1.8, +1.4] | 86.0 -> 84.8, -1.2 [-4.3, +1.9] | 91.2 -> 91.6, +0.4 [-1.7, +2.5] | 95.8 -> 94.8, -1.0 [-3.8, +1.8] | 97.4 -> 97.0, -0.4 [-1.5, +0.7] |
+| Share of answers on the scientific genera (fish) | 300 | 0.003 -> 0.000, -0.003 [-0.008, +0.002] | 0.000 -> 0.000, +0.000 [+0.000, +0.000] | 0.004 -> 0.004, +0.000 [-0.010, +0.010] | 0.000 -> 0.000, +0.000 [+0.000, +0.000] | 0.000 -> 0.005, +0.005 [-0.002, +0.012] |
+| Share of answers on the species (fish) | 300 | 0.005 -> 0.000, -0.005 [-0.010, +0.000] | 0.013 -> 0.018, +0.005 [+0.000, +0.010] | 0.015 -> 0.011, -0.005 [-0.016, +0.007] | 0.023 -> 0.023, -0.001 [-0.004, +0.002] | 0.018 -> 0.014, -0.004 [-0.014, +0.006] |
+| Scientific genera at Advanced (fish) | 300 | 0.0 -> 0.0, +0.0 [+0.0, +0.0] | 0.0 -> 0.0, +0.0 [+0.0, +0.0] | 0.0 -> 0.0, +0.0 [+0.0, +0.0] | 0.0 -> 0.0, +0.0 [+0.0, +0.0] | 0.0 -> 0.0, +0.0 [+0.0, +0.0] |
+| Share of answers on the species by their scientific names (fish) | 300 | 0.000 -> 0.000, +0.000 [+0.000, +0.000] | 0.000 -> 0.000, +0.000 [+0.000, +0.000] | 0.000 -> 0.000, +0.000 [+0.000, +0.000] | 0.000 -> 0.000, +0.000 [+0.000, +0.000] | 0.000 -> 0.000, +0.000 [+0.000, +0.000] |
