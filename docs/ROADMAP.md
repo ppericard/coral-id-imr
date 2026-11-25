@@ -105,7 +105,6 @@ They live in the admin since 2026-11-05 (Pierre: he settles most of them himself
 - **Full replay, what is left**: [REE-138](https://linear.app/reef-id/issue/REE-138)
 - **Fish progress replayed from the answer log**: [REE-59](https://linear.app/reef-id/issue/REE-59)
 - **Domain and repository rename, with a migration for players**: [REE-110](https://linear.app/reef-id/issue/REE-110)
-- **Separate IMR-owned content from the core app**: [REE-34](https://linear.app/reef-id/issue/REE-34)
 - **Sea slugs without a species name**: [REE-111](https://linear.app/reef-id/issue/REE-111)
 - **Sea slug achievements, after the first version**: [REE-32](https://linear.app/reef-id/issue/REE-32)
 
