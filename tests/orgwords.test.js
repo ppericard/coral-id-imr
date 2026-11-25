@@ -64,15 +64,9 @@ const hits = text =>
     .map((l, i) => [i + 1, l])
     .filter(([, l]) => WORD.test(code(l)));
 
-const PR4 = "REE-34 PR 4, the admin's pages: their texts from ORG",
-  LAB = "the Lab's course citations, '(IMR Lecture 6)' and the like: content, not in REE-34's PR plan yet (the integrator places them)";
+const LAB = "the Lab's course citations, '(IMR Lecture 6)' and the like: content, not in REE-34's PR plan yet (the integrator places them)";
 // The lines still to move: [file, how many, the change that moves them].
 const LEFT = [
-  ['admin.js', 45, PR4],
-  ['admin-content.js', 2, PR4],
-  ['admin-coraltree.js', 1, PR4],
-  ['admin-journey.js', 1, PR4],
-  ['admin-nodephotos.js', 1, PR4],
   ['proto/anatomy.js', 17, LAB],
   ['proto/basics.js', 10, LAB],
   ['proto/idkey.js', 9, LAB],
@@ -146,9 +140,9 @@ test('ORG words: the guard catches what it is for (planted cases)', () => {
   assert.strictEqual(n("  it's // IMR trainer"), 1);
   // the lists: a file over or under its count, a stale KEEP line, a LEFT file the guard does not read
   const S = f => ({'a.js': "t = 'IMR list';\nu = 'IMR slate';\nfolder = 'IMR';"})[f];
-  assert.deepStrictEqual(check(['a.js'], S, [['a.js', 2, PR4]], [['a.js', "folder = 'IMR'", 'a folder']]), []);
-  assert.match(check(['a.js'], S, [['a.js', 1, PR4]], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /2 line\(s\).*1 listed/);
-  assert.match(check(['a.js'], S, [['a.js', 3, PR4]], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /lower its count/);
-  assert.match(check(['a.js'], S, [['a.js', 3, PR4]], [['a.js', 'gone', 'a folder']]).join('\n'), /KEEP a\.js "gone": 0/);
-  assert.match(check(['a.js'], S, [['b.js', 3, PR4]], []).join('\n'), /LEFT b\.js: not a file/);
+  assert.deepStrictEqual(check(['a.js'], S, [['a.js', 2, 'a change']], [['a.js', "folder = 'IMR'", 'a folder']]), []);
+  assert.match(check(['a.js'], S, [['a.js', 1, 'a change']], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /2 line\(s\).*1 listed/);
+  assert.match(check(['a.js'], S, [['a.js', 3, 'a change']], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /lower its count/);
+  assert.match(check(['a.js'], S, [['a.js', 3, 'a change']], [['a.js', 'gone', 'a folder']]).join('\n'), /KEEP a\.js "gone": 0/);
+  assert.match(check(['a.js'], S, [['b.js', 3, 'a change']], []).join('\n'), /LEFT b\.js: not a file/);
 });

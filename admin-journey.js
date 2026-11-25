@@ -126,7 +126,7 @@ const jStepWords = ([, kind, w]) =>
 // count went down; kept through later choices: no time of their own), q[k + 'H']
 // on by hand before it was due. [[time or null, the set's name, what happened]]: the current state with the time of the
 // latest choice, and the offer's declines apart with no time; a set never offered or chosen left out.
-const JOPT = {bon: 'Bonus genera', sci: 'Scientific names', beyond: 'Families beyond the IMR course'};
+const JOPT = {bon: 'Bonus genera', sci: 'Scientific names', beyond: `Families beyond the ${ORG.course}`};
 function jOptin(q, S) {
   if (!q || typeof q !== 'object') return [];
   return ((S && S.optin) || []).flatMap(k => {

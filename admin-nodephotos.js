@@ -127,7 +127,7 @@ const NODE_PHOTOS = {
           : it.inat
             ? `<img src="${io(it.inat)}.jpg" alt="" loading="lazy" data-ext="0">`
             : '',
-        cap: `${it.unit ? `<a class="adm-gen" href="${esc(genusHref(it.unit))}"><i>${esc(it.unit)}</i></a>` : `<span class="adm-gen">${it.lecture ? 'IMR lecture' : 'no genus'}</span>`}${!it.gone ? srcTag(it.p) : it.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${it.inat}" target="_blank" rel="noopener">iNat ↗</a>` : it.slide ? `<span class="adm-src">IMR lecture</span> <i>slide ${esc(String(it.slide))}</i>` : ''}`
+        cap: `${it.unit ? `<a class="adm-gen" href="${esc(genusHref(it.unit))}"><i>${esc(it.unit)}</i></a>` : `<span class="adm-gen">${it.lecture ? ORG.lecture : 'no genus'}</span>`}${!it.gone ? srcTag(it.p) : it.inat ? `<a class="adm-src" href="https://www.inaturalist.org/photos/${it.inat}" target="_blank" rel="noopener">iNat ↗</a>` : it.slide ? `<span class="adm-src">${ORG.lecture}</span> <i>slide ${esc(String(it.slide))}</i>` : ''}`
       }));
     },
     orphans: () => NODE_PHOTOS.flat.excludedAll().filter(it => !it.unit),
