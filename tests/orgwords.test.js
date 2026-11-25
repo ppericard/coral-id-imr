@@ -65,7 +65,8 @@ const hits = text =>
     .filter(([, l]) => WORD.test(code(l)));
 
 const PR2 = "REE-34 PR 2, the players' pages: their texts from ORG, the data's source prefixes (lsrc) derived from it",
-  PR4 = "REE-34 PR 4, the admin's pages: their texts from ORG",
+  ENGINE =
+    "analysis.js's labels ('IMR lecture' as a photo source, in the model's terms and tables): the engine runs in a Web Worker and in the Action's Node run (tools/analyses.js), neither of which loads core.js, and the labels are kept in the stored report; to move them the worker and the Action must be handed ORG (the integrator places it)",
   LAB = "the Lab's course citations, '(IMR Lecture 6)' and the like: content, not in REE-34's PR plan yet (the integrator places them)";
 // The lines still to move: [file, how many, the change that moves them].
 const LEFT = [
@@ -80,12 +81,8 @@ const LEFT = [
   ['gloss.js', 1, PR2],
   ['model.js', 1, PR2],
   ['tour.js', 1, PR2],
-  ['admin.js', 45, PR4],
-  ['analysis.js', 5, PR4],
-  ['admin-content.js', 4, PR4],
-  ['admin-coraltree.js', 1, PR4],
-  ['admin-journey.js', 1, PR4],
-  ['admin-nodephotos.js', 1, PR4],
+  ['admin-content.js', 2, PR2],
+  ['analysis.js', 5, ENGINE],
   ['proto/anatomy.js', 17, LAB],
   ['proto/basics.js', 10, LAB],
   ['proto/idkey.js', 9, LAB],
@@ -163,5 +160,5 @@ test('ORG words: the guard catches what it is for (planted cases)', () => {
   assert.match(check(['a.js'], S, [['a.js', 1, PR2]], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /2 line\(s\).*1 listed/);
   assert.match(check(['a.js'], S, [['a.js', 3, PR2]], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /lower its count/);
   assert.match(check(['a.js'], S, [['a.js', 3, PR2]], [['a.js', 'gone', 'a folder']]).join('\n'), /KEEP a\.js "gone": 0/);
-  assert.match(check(['a.js'], S, [['b.js', 3, PR4]], []).join('\n'), /LEFT b\.js: not a file/);
+  assert.match(check(['a.js'], S, [['b.js', 3, 'a change']], []).join('\n'), /LEFT b\.js: not a file/);
 });

@@ -108,7 +108,7 @@ function ctRow(T) {
       e = entry(m),
       nd = needs(m);
     return `<span class="adm-g">${c ? `<img src="${img(c, 1)}" alt="" loading="lazy">` : '<span class="none"></span>'}<span><i>${esc(m)}</i>
-      <small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${ph(m)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${e.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${ch.has(m) ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
+      <small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not ' + ORG.short : '★'} · ${ph(m)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${e.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${ch.has(m) ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
   };
   // cnt: a node's genera in words, as the shared page counts a node above the leaves (admin.js renderTree)
   return {row, nG, ph, gn, cnt: gn};

@@ -506,7 +506,7 @@
         : orphan
           ? shVal(isObj(r.e) && (Array.isArray(r.e.v) || typeof r.e.v === 'string') ? r.e.v : null)
           : `${shVal(r.v)}${r.e ? shSrc(r.e.src) : ''}${r.e && r.state === 'fresh' ? `<details class="adm-csorig"><summary>Original</summary>${shVal(r.base)}</details>` : ''}`;
-    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? '<span class="adm-src adm-imrt">IMR</span>' : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
+    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? `<span class="adm-src adm-imrt">${C.ORG.short}</span>` : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
   }
   // The box on node id's page (R: fish.json as built; nameOf: a node's name), '' for a node with no sheet in the app.
   function sheetBox(S, R, id, nameOf) {
@@ -915,7 +915,7 @@
       open = ed || store.get(CN_KEY, true) !== false,
       max = C.CN_MAX,
       vals = ed ? CN_ED.vals : r.v,
-      list = `<ul class="adm-csv">${r.v.map((x, i) => `<li>${esc(x)}${i === r.imr ? ' <span class="adm-src adm-imrt">IMR</span>' : ''}</li>`).join('')}</ul>`,
+      list = `<ul class="adm-csv">${r.v.map((x, i) => `<li>${esc(x)}${i === r.imr ? ` <span class="adm-src adm-imrt">${C.ORG.short}</span>` : ''}</li>`).join('')}</ul>`,
       keys = Array.from({length: max}, (_, i) => C.typeNormAll(vals[i] || '')),
       // the boxes a refused Save points at: the main name left empty, a name with no letter, a name twice
       wrong = i => !!CN_ED && CN_ED.bad && (i === 0 ? !keys[0] : !keys[i] ? !!(vals[i] || '').trim() : keys.indexOf(keys[i]) !== i),

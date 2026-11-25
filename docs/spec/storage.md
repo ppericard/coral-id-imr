@@ -25,7 +25,9 @@ article, at today's values: `course` (IMR course), `lecture` (IMR lecture: its n
 (IMR Lecture 6, as a reference names it), `fishPres` (IMR fish presentation), `list`, `slate` and `benthic` (the
 survey's coral list, slate and benthic slate), `trainer` (IMR trainer); a phrase not listed builds on `ORG.short`
 ("At IMR or elsewhere"). The core (`core/subjects.js`, `core/achievements.js`, `core/tree.js`) writes its texts from
-them; the players' and the admin's pages follow (REE-34). The data's own values (the source lines "IMR Lecture 6, slide …"
+them, and so do the admin's pages (`admin*.js`: the help, the tags, the filters, the token links named for `ORG.app`);
+the players' pages follow (REE-34), and so does `analysis.js`, which runs in a worker and in the Action's Node run with no
+`core.js` and keeps its labels in the stored report. The data's own values (the source lines "IMR Lecture 6, slide …"
 and "IMR fish presentation, …" in `data.json` and `fish.json`) and the identifiers (`imr` fields, `cqByIMR`) keep their words: code derives what it matches from `ORG`.
 `tests/orgwords.test.js` counts the word "IMR" still written in the code outside comments, per file, against the lines
 left to move and the few that stay (the sheet backups' pCloud folder, the rules versions' records)
