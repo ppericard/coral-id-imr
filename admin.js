@@ -2874,7 +2874,7 @@ function fuFilters(T, U, E, D) {
   );
   // Shared names: the families a name shared with another family, or a kind word, reaches (admin-content.js namesFams; the
   // Names box of each family's page holds its choices). Only a subject whose built file has a name index.
-  const NF = typeof namesFams === 'function' ? namesFams(FISHC.raw, F.names) : new Set();
+  const NF = typeof namesFams === 'function' ? namesFams(namesFile(FISHC.raw), F.names) : new Set();
   if (NF.size) out.push({k: 'names', grp: 'Names', t: 'Shared names', on: n => !!n.unit && NF.has(n.id)});
   out.push(
     {

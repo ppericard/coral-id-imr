@@ -358,6 +358,7 @@
     treeCnClean,
     treeCnLay,
     treeCnApply,
+    treeCnLists,
     typeFits,
     typeForms,
     treeGameRow,

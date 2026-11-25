@@ -845,12 +845,23 @@
       also = r.owners.filter(x => x.g !== o.g).map(x => x.name);
     return `${role}${also.length ? ` · also ${also.join(', ')}` : ''}`;
   };
-  function namesBox(S, R, id, tag) {
+  // Built file R with the draft's species lists of names laid over it (core.js treeCnLists), the file the shared names are
+  // read from: a name two species of different families are given is shared as the game reads it. One computation per file
+  // and per lists.
+  let NF_MEMO = null;
+  function namesFile(R) {
+    const M = (DRAFT[TK] || {}).cn,
+      k = JSON.stringify(M || null);
+    if (!NF_MEMO || NF_MEMO.R !== R || NF_MEMO.k !== k) NF_MEMO = {R, k, F: C.treeCnLists(R, M)};
+    return NF_MEMO.F;
+  }
+  function namesBox(S, R0, id, tag) {
     // TK: the curation part of the tree subject on screen (admin.js), where the exceptions are written
-    if (!R || !TK || !Array.isArray(R.vn)) return '';
-    const rows = namesRows(R, (DRAFT[TK] || {}).names)
-      .map(r => ({r, o: r.owners.find(o => o.g === id)}))
-      .filter(x => x.o);
+    if (!R0 || !TK || !Array.isArray(R0.vn)) return '';
+    const R = namesFile(R0),
+      rows = namesRows(R, (DRAFT[TK] || {}).names)
+        .map(r => ({r, o: r.owners.find(o => o.g === id)}))
+        .filter(x => x.o);
     if (!rows.length) return '';
     const can = mayContent(),
       ne = rows.filter(x => x.o.v).length,
@@ -963,8 +974,9 @@
           }
           if (a === 'drop') return put(m => cnPut(m, id, cnRow(R, null, id).base, R));
           if (a === 'save') {
-            const L = C.treeCnClean(((CN_ED && CN_ED.vals) || []).filter(x => x && x.trim()));
-            // not 1 to 3 names, or one twice: the boxes stay open as they are
+            const vs = (CN_ED && CN_ED.vals) || [],
+              L = (vs[0] || '').trim() ? C.treeCnClean(vs.filter(x => x && x.trim())) : null;
+            // no main name, or a name twice: the boxes stay open as they are
             if (!L) {
               if (CN_ED) CN_ED.bad = true;
               return render();
@@ -979,6 +991,7 @@
     cnPut,
     cnBox,
     cnBind,
+    namesFile,
     namesRows,
     namesFams,
     namesPut,

@@ -1295,9 +1295,12 @@
   // app, the admin and the sheet's replay read the same names.
   function treeCnApply(S, R, cur) {
     const k = S && S.admin && S.admin.cur,
-      P = k && isObj(cur) ? cur[k] : null,
-      M = isObj(P) && isObj(P.cn) ? P.cn : null;
-    if (!M || !isObj(R) || !Array.isArray(R.species)) return R;
+      P = k && isObj(cur) ? cur[k] : null;
+    return treeCnLists(R, isObj(P) ? P.cn : null);
+  }
+  // The same over the lists themselves, a subject's part's cn map M ({species id: [names]}), for a reader that holds the part.
+  function treeCnLists(R, M) {
+    if (!isObj(M) || !isObj(R) || !Array.isArray(R.species)) return R;
     let out = null;
     R.species.forEach((s, i) => {
       if (!isObj(s) || !Array.isArray(s.cn) || !s.cn.length || !Object.prototype.hasOwnProperty.call(M, s.id)) return;

@@ -17,13 +17,13 @@ const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
   F = read('fish.json'),
   SEA = read('seaslug.json'),
-  FISH = C.subjectOf('fish'),
+  FSUB = C.subjectOf('fish'),
   SLUG = C.subjectOf('seaslug'),
   norm = C.typeNormAll,
   cur = cn => ({fish: {cn}}),
   names = s => s.cn.map(n => n[0]),
   sp = id => F.species.find(s => s.id === id),
-  apply = (cn, S = FISH, R = F) => C.contentApply(S, R, S === SLUG ? {seaslug: {cn}} : cur(cn));
+  apply = (cn, S = FSUB, R = F) => C.contentApply(S, R, S === SLUG ? {seaslug: {cn}} : cur(cn));
 // A species with two spellings of a name, its IMR name (cni) in the second place of three names, and a regional name (cnr).
 const MANY = F.species.find(s => (s.cn || []).length === 3 && Number.isInteger(s.cni) && s.cni > 0),
   ALT = F.species.find(s => (s.cn || []).some(n => n.length > 1) && Number.isInteger(s.cni)),
@@ -92,8 +92,8 @@ test('the IMR name follows its name to its new place and goes when the list drop
 
 test('the fallback: no entry, an entry that is no clean list, a species the file does not know, a species with no list: the built file itself', () => {
   assert.strictEqual(apply({}), F);
-  assert.strictEqual(C.contentApply(FISH, F, {}), F);
-  assert.strictEqual(C.contentApply(FISH, F, null), F);
+  assert.strictEqual(C.contentApply(FSUB, F, {}), F);
+  assert.strictEqual(C.contentApply(FSUB, F, null), F);
   const bad = {[MANY.id]: ['a', 'b', 'c', 'd'], [ALT.id]: [], [REG.id]: 'A name', 's:none': ['Nobody'], __proto__: null};
   assert.strictEqual(apply(bad), F);
   // a list the base already says changes nothing either
@@ -101,8 +101,8 @@ test('the fallback: no entry, an entry that is no clean list, a species the file
   // a species with no list stays without, whatever his entry says (a list would give it a progress unit)
   assert.strictEqual(apply(Object.fromEntries(NONE.map(s => [s.id, ['Made up']]))), F);
   // the entry sits in the subject's own part only
-  assert.strictEqual(C.contentApply(FISH, F, {seaslug: {cn: {[MANY.id]: ['Made up']}}}), F);
-  assert.strictEqual(C.contentApply(FISH, F, {cn: {[MANY.id]: ['Made up']}}), F);
+  assert.strictEqual(C.contentApply(FSUB, F, {seaslug: {cn: {[MANY.id]: ['Made up']}}}), F);
+  assert.strictEqual(C.contentApply(FSUB, F, {cn: {[MANY.id]: ['Made up']}}), F);
   // a subject whose species list no names (the sea slugs) has no use for the key
   const sid = SEA.species[0].id;
   assert.ok(!(SEA.species[0].cn || []).length);
@@ -118,13 +118,13 @@ test('a curated list replaces the built one for its species alone, every other r
   out.species.forEach((s, i) => s.id === MANY.id || assert.strictEqual(s, F.species[i]));
   ['families', 'genera', 'lookalikes', 'vn'].forEach(k => assert.strictEqual(out[k], F[k]));
   // the text edits and the names are two layers of one apply
-  const both = C.contentApply(FISH, F, {
+  const both = C.contentApply(FSUB, F, {
     fish: {cn: {[MANY.id]: ['Made up main']}, content: {nodes: {'f:Damselfishes': {cues: {v: ['One tip'], was: null, t: 1}}}}}
   });
   assert.deepStrictEqual(both.families.find(f => f.id === 'f:Damselfishes').cues, ['One tip']);
   assert.deepStrictEqual(names(both.species.find(s => s.id === MANY.id)), ['Made up main']);
   // an edit of the structure leaves the names alone, and the names no stamp: the stamp is the structure's
-  assert.strictEqual(C.structStamp(FISH, F, cur({[MANY.id]: ['Made up main']})), '');
+  assert.strictEqual(C.structStamp(FSUB, F, cur({[MANY.id]: ['Made up main']})), '');
 });
 
 test('the players read it: the first name shown, the names typed accepted, a name taken out no longer accepted', () => {
@@ -159,6 +159,22 @@ test('the players read it: the first name shown, the names typed accepted, a nam
   assert.strictEqual(first(got, true), s.cn[s.cni][0] === gone ? 'Quite a new name' : s.cn[s.cni][0]);
   const dropped = apply({[s.id]: ['Quite a new name']}).species.find(x => x.id === s.id);
   assert.strictEqual(first(dropped, true), 'Quite a new name');
+});
+
+test('the admin’s shared names are read from the file in force: a name given to species of two families is shared in both', () => {
+  const {namesRows, namesFams} = require('../admin-content.js'),
+    a = F.species.find(s => (s.cn || []).length && s.circle && s.family),
+    b = F.species.find(s => (s.cn || []).length && s.circle && s.family && s.family !== a.family),
+    out = apply({[a.id]: ['Zzyzx madeup fish'], [b.id]: ['Zzyzx madeup fish']}),
+    row = R => namesRows(R, {}).find(r => norm(r.x) === norm('Zzyzx madeup fish'));
+  assert.ok(!row(F));
+  assert.deepStrictEqual(
+    row(out)
+      .owners.map(o => o.g)
+      .sort(),
+    [a.family, b.family].sort()
+  );
+  assert.ok(namesFams(out, {}).has(a.family) && namesFams(out, {}).has(b.family));
 });
 
 test('a list never changes the units: the species level, the score tree and the sheet’s replay are the same with every species curated', () => {
@@ -247,5 +263,5 @@ test('Publish: the draft merges onto the published curation species by species, 
     ).toString()
   );
   assert.deepStrictEqual(slim.fish.cn, {[x]: ['Mine'], [z]: ['Theirs']});
-  assert.deepStrictEqual(C.contentApply(FISH, F, slim), C.contentApply(FISH, F, {fish: {cn: {[x]: ['Mine'], [z]: ['Theirs']}}}));
+  assert.deepStrictEqual(C.contentApply(FSUB, F, slim), C.contentApply(FSUB, F, {fish: {cn: {[x]: ['Mine'], [z]: ['Theirs']}}}));
 });
