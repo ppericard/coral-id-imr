@@ -58,7 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
-| 2026-11-25 | [The lecture's photo references move into the IMR instance's layer, written by `datajson.dump()`; the coral slate is declared and checked](2026-11-25-course-layer.md) | #1581 |
+| 2026-11-25 | [The lecture's photo references move into the IMR instance's layer, written by `datajson.dump()`; the coral slate is declared and checked](2026-11-25-course-layer.md) | #1582 |
 | 2026-11-25 | [A species' own common names: a `curation.json` `fish` `cn` key, laid over the built names by one reader](2026-11-25-fish-common-names-key.md) | #1568 |
 | 2026-11-25 | [The IMR names and family spellings of the fish entries, and every entry's PDF sections: moved into the IMR instance's layer](2026-11-25-fish-node-names-split.md) | #1580 |
 | 2026-11-25 | [The PDF's species fields and `src: slides`: moved into the IMR instance's layer; `deploy.key` into `tools/instance.json`](2026-11-25-fish-pdf-fields-split.md) | #1578 |

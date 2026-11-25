@@ -1,6 +1,6 @@
 # The lecture's photo references move into the IMR instance's layer, written by `datajson.dump()`; the coral slate is declared and checked
 
-Date: 2026-11-25. PR: #1581 (REE-294, parts 2 and 3). Rules or docs touched: W16 (one sentence: where the IMR fields are
+Date: 2026-11-25. PR: #1582 (REE-294, parts 2 and 3). Rules or docs touched: W16 (one sentence: where the IMR fields are
 edited); docs/spec/data.md "The instance's layer", docs/spec/tools.md.
 
 ## Context
