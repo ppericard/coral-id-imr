@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v229 (2026-11-25)
+
+The embedded `core.js` lays a species' own list of common names over the built one (`treeCnApply`, run by `contentApply`, so the sheet's replay reads the same names as the app and the admin): `curation.json` `fish` `cn`, `{species id: [1 to 3 names]}`, written by the admin only (Pierre, 2026-11-21, Q444). A list never changes whether a species has a list, so the species and score units, the replay and the leaderboards are the same with or without it; the script needs no gate and an older script replays as before. No sheet column, no reply field
+
 ## v228 (2026-11-25)
 
 `readAnswers` and the admin's light read (`readLive`) serve the texts a typed answer refused before it (the Answers tab's Rejected tries, logged since v100) as index 23 of each row: a list of strings, null when none (`answerOut_`, `rejectedOut_`; the cell is read again with the cuts it was written with, 10 texts of 40 characters). Nothing else reads them: no statistic, replay or hold counts differently, and an app that meets a script without them reads no refused text. The admin's Pairs shows them in a Refused texts card (the typed answers' refused texts, as typed, most frequent first, live only). Typed answers, what is left (Pierre, 2026-11-03; decision record 2026-11-18, REE-38)

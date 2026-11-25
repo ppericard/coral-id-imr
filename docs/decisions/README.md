@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-25 | [A species' own common names: a `curation.json` `fish` `cn` key, laid over the built names by one reader](2026-11-25-fish-common-names-key.md) | #1568 |
 | 2026-11-24 | [Pierre's own observations come in whatever the room, for every subject](2026-11-24-own-observations-everywhere.md) | #1534 |
 | 2026-11-24 | [The sea slugs take the fish's strong-blur cap: a strongly blurred photo is at most 2](2026-11-24-sea-slug-blur-cap-as-the-fish.md) | #1532 |
 | 2026-11-24 | [The sea slugs take the fish's softened caps: a partial animal and a head-on or rear view at most 4, the typical look shared](2026-11-24-sea-slug-caps-as-the-fish.md) | #1524 |

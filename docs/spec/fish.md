@@ -176,6 +176,19 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
 - `tools/build_fish.py` `add_families` (every build path, `--regroup` the quickest offline) writes them into
   `fish.json`, species `cn`: `[[name shown, other spellings…], …]`. Two species may carry one name: nothing is dropped
   for it, each such name is flagged `shared` and listed in the file's top-level `shared` (name → species ids).
+- **His own list for a species** (`curation.json` `fish` `cn`, `{species id: [1 to 3 names, the main first]}`; the
+  sea slugs' part would read the same key from their own part, `SUBJECTS` `admin.cur`): `core.js` `treeCnApply`, run
+  by `contentApply` on every path (the app's `treeBuild` into `TREEF`, the admin, the sheet's replay), lays each clean
+  list (`treeCnClean`: 1 to 3 names with letters, none twice as typed names read them) over its species' `cn`
+  (`treeCnLay`): a name the build lists in some spelling keeps its other spellings, a new one has none, the list's order
+  is his, `cni` follows the IMR name to its place and goes when the list drops it, `cnr` stays. A species with no entry,
+  an entry that is not a clean list or a species the file does not know keeps the built names; a species with no built
+  list is left alone whatever the entry says, so a list never changes whether a species has a progress unit
+  (`treeSpUnits`, `treeScoreTree`, `treeReplayGen`: the sheet needs no gate). The name index (`treeNameIndex`), the typed
+  names and every `cnFirst` reader read the file in force (`TREEF`), so a name he takes out is no longer accepted when
+  typed. `fish.json` is not changed: `vn` (the kind words) and `common` (the PDF's name) stay as built. Written in the
+  admin's Common names box ([admin-tree.md](admin-tree.md#common-names-a-species-own-list)). Tests:
+  `tests/fishcnames.test.js`, the Common names step of `tests/admin.smoke.js`.
 - The game reads them through `app.js` `cnList`, `cnShow` (the name a multiple-choice question shows: the player's
   first, `cnFirst`), `cnTypeNames` (typed: only the listed names and their spellings, a name two species list right for
   the species asked, a kind word of `vn` known) and `cnAlso` (the species sheet's "Also used for …", `learn.js`
