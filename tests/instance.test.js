@@ -379,14 +379,18 @@ test('fish: a changed name, family spelling or PDF section of the layer no longe
   const same = clone(FL);
   same.nodes.t02.fam = 'Pomacanthidae';
   assert.match(regroup(same).out, new RegExp(t));
-  // A name the layer does not give falls back (the family's label in the key, the first reference's name for a sub-entry):
-  // the build goes on, naming it as the key does, and fish.json differs.
+  // The tag says "IMR's entry": a tagged entry the layer gives no name, no fam, or a sub-entry no name stops the build,
+  // so the fallback (the family's label in the key) is never written as IMR's name.
   const bare = clone(FL);
   delete bare.nodes.t01.name;
+  delete bare.nodes.t01.fam;
   delete bare.nodes.t01a.name;
   const r = regroup(bare);
-  assert.match(r.out, new RegExp(t));
+  assert.match(r.out, /layer node t01 name: an entry the layer tags \('imr'\) has IMR's name/);
+  assert.match(r.out, /layer node t01 fam: an entry the layer tags/);
+  assert.match(r.out, /layer node t01a name: a sub-entry of an entry the layer tags/);
   assert.doesNotMatch(r.out, /Traceback/);
+  // An entry no layer tags (t05 above, with its tag, name and fam taken off) falls back, as node_names does below.
   // The base holds none of them: an edit made in the old place (a merge), even where the layer gives no name.
   for (const [id, k, v] of [
     ['t01', 'name', 'Damselfish'],

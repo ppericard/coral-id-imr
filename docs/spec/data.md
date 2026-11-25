@@ -419,7 +419,7 @@ the identification `key` in force there (the deployment's choice, not the organi
   `key` as `deploy.key`; `tools/build_fish.py` reads the result in every mode. It stops when the base still carries
   one of those fields (an edit made in the old place, a merge; the base's own `src`, `pdf`, `diver` or `wink`, is not
   the layer's; its `common` is, once the layer marks the species as the PDF's; the base's `name` and `fam` are the
-  layer's on an entry it tags, even when the layer gives none) or when the layer names a node or species the base does
+  layer's on an entry it tags, which must give them, with its sub-entries' names) or when the layer names a node or species the base does
   not hold, or gives `name` or `fam` to an entry it does not tag. The offline modes (`--regroup`, `--commonness`,
   `--near`) lay the layer again on `fish.json` as it is (`relay`: slides, cues, look and phase, the tag and the mark,
   the entries' and sub-entries' names, the entries' `fam` and `wfam`, the species' common names,

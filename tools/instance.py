@@ -25,9 +25,9 @@ layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance
   the layer marks it as the PDF's; a node's name and fam are the base's unless the layer tags the node): a node or
   species of the base with one of them, or a layer node or species the base does not hold, stops the build. A teaching
   node's ref, not, species, ids and order stay in the base, which identifies the entries and places every species (the
-  WoRMS mapping is ours). An edition without the layer has no IMR tag, slide or cue on its entries, no IMR name (a
-  tagged entry takes its family's label in the key in force, build_fish.py node_names), no section list, and no PDF
-  name, section or rank on its species.
+  WoRMS mapping is ours). A tagged entry must have its name and fam in the layer (and its sub-entries their name). An
+  edition without the layer has no IMR tag, slide or cue on its entries, no IMR name (its entries take their family's
+  label in the key in force, build_fish.py node_names), no section list, and no PDF name, section or rank on its species.
 - coral: imrg (the IMR lecture's groups), gen {genus: {n, ig, imr, mn, sl, rsl, qt}} (its slate number, its lecture
   group, its lecture notes verbatim, its mnemonic, its lecture slides and review slides, its ID tips: the tips of a
   genus with a Coral Finder heading, tl, stay in data.json, condensed from the book) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
@@ -178,6 +178,16 @@ def fish_compose(base, lay, key=None):
                            "(the other entries' names are the base's)")
             else:
                 rec[k] = copy.deepcopy(v)
+    # The tag says "IMR's entry": its name and fam, and its sub-entries' names, are IMR's, so the layer gives them all (the
+    # fallback of node_names is for an entry no layer tags, and would otherwise be written as IMR's name).
+    lnodes = lay.get("nodes") or {}
+    for n in sorted(tagged):
+        for k in FISH_NAMES:
+            if k not in lnodes[n]:
+                bad.append(f"layer node {n} {k}: an entry the layer tags ({FISH_TAG!r}) has IMR's {k}")
+        for u in by[n][0].get("sub", []):
+            if "name" not in lnodes.get(u["id"], {}):
+                bad.append(f"layer node {u['id']} name: a sub-entry of an entry the layer tags ({FISH_TAG!r}) has IMR's name")
     held = {n: set(s) for n, s in sp.items()}
     for n, x in (lay.get("species") or {}).items():
         if n not in sp:

@@ -31,7 +31,9 @@ the same, nothing players see). The note's questions (a) to (d) are not touched.
   first reference's name; a sub-entry, its first reference's name; `fam` is the WoRMS family when the references have one
   only (`null` otherwise, as an entry with no `fam` always gave). The note does not settle a node with several
   references (Groupers: three WoRMS families) or a sub-entry; this is the most literal reading, the integrator's call to
-  confirm. Nothing of IMR's edition reads the fallback: every tagged entry has its name in the layer.
+  confirm. Nothing of IMR's edition reads the fallback: the tag says "IMR's entry", so the layer must give a tagged entry
+  its `name` and `fam` and its sub-entries their `name` (the build stops otherwise), and the fallback is only for an
+  entry no layer tags (an edition without the layer), never written as an IMR name.
 - **`relay_names`** takes `name` (and `fam`, `wfam`) off `fish.json` and lays them back from the composed source, where
   the build writes them (after `id`), recomputing `wfam` from `fish.json`'s own reference tree. An IMR name or family
   edited in the layer is therefore laid again by `--regroup` with no WoRMS call, and `--regroup --check` proves it.
