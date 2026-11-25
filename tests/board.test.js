@@ -158,7 +158,7 @@ const savedRow = (S, name) => {
   return [name, C.pctOf(P, FIX[S.id].units), L && L.ok + L.ko >= 200 ? L.th : null];
 };
 const board = (s, S) => s.get({board: '1', s: S.id}).rows;
-const clearBoards = s => Object.keys(s.cache).forEach(k => /^board14/.test(k) && delete s.cache[k]);
+const clearBoards = s => Object.keys(s.cache).forEach(k => /^board15:/.test(k) && delete s.cache[k]);
 
 test('every subject with a leaderboard and rules versions has its fixtures here (a new one must be checked too)', () => {
   assert.ok(BOARDED.length >= 2, BOARDED.map(S => S.id).join());
@@ -427,7 +427,7 @@ test('answers logged while the trigger replays: that replay dropped, made again 
   const mk = s.ctx.rplMake_;
   let late = false;
   s.ctx.rplMake_ = (...a) => {
-    if (!late && !a[4]) {
+    if (!late && a[4] === S.id) {
       late = true;
       assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
     }
@@ -476,4 +476,74 @@ test('players named constructor, __proto__, toString: every board served, their 
       savedRow(S, 'Ben')
     );
   });
+});
+
+// One-engine step 9 (docs/reviews/2026-11-19-one-engine-audit.md §3, rule S1): one replay path and one leaderboard path
+// in the sync script for every subject. Each subject differs only by what it declares: its rows, units, rules versions
+// and Replayed tab (SUBJECTS replayed tab), its pooled statistics (SUBJECTS offsets), and, for the save summary's subject
+// (the subject of the unprefixed fields, replay), the "By genus" columns and Progress column (the one exception the S1
+// test lists, tests/subject-neutral.test.js ALLOWED).
+const fnOf = name => {
+  const i = CODE.indexOf('\nfunction ' + name + '(');
+  assert.ok(i > 0, name);
+  return CODE.slice(i, CODE.indexOf('\n}\n', i));
+};
+test('one replay path and one leaderboard path in the sync script: no test on a subject in the replay, one declared in the board', () => {
+  for (const f of ['replay_', 'rplMine_', 'rplMake_', 'boardRpl_', 'board_', 'boardWarm_'])
+    assert.doesNotMatch(fnOf(f), /replaySubject\(\)|SUBJECTS\.find\(|\b(main|first)\s*=[^=]/, f);
+  for (const f of ['replay_', 'rplMine_', 'rplMake_', 'boardRpl_', 'boardWarm_']) assert.doesNotMatch(fnOf(f), /sumSubj_/, f);
+  assert.deepStrictEqual(fnOf('board_').match(/sumSubj_\(\)/g), ['sumSubj_()'], 'board_: the save summary subject, once');
+  const s = loadCodeGs({fetch: withAll().fetch}),
+    run = code => JSON.parse(vm.runInContext('JSON.stringify(' + code + ')', s.ctx));
+  // Each subject's Replayed tab: the one it declares (the corals', named before there was another), else its name's.
+  const tabs = C.SUBJECTS.filter(S => S.replay || S.replayed).map(S => [S.id, (S.replayed && S.replayed.tab) || 'Replayed ' + S.name]);
+  assert.deepStrictEqual(run('holdSubjects_().map(id => [id, rplTab_(id)])'), tabs);
+  assert.strictEqual(run('rplTab_(CORE_.replaySubject())'), 'Replayed', 'the corals keep their tab (REE-256 question D)');
+  assert.deepStrictEqual(
+    run('rplTabs_()'),
+    tabs.map(t => t[1])
+  );
+  // The save summary is the subject of the app's syncSummary (sync.js: the first subject with a board).
+  assert.match(
+    fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'),
+    /function syncSummary\(\) \{\n {2}const B = SUBJECTS\.find\(x => x\.board\);/
+  );
+  assert.strictEqual(run('sumSubj_()'), C.SUBJECTS.find(x => x.board).id);
+  // Each board cached under its own key.
+  assert.deepStrictEqual(
+    BOARDED.map(S => run(`boardCache_(CORE_.subjectOf('${S.id}'))`)),
+    BOARDED.map(S => 'board15:' + S.id)
+  );
+});
+
+test('the replay reads pooled statistics for a subject with offsets only, its own', () => {
+  const s = loadCodeGs({fetch: withAll().fetch}),
+    run = code => vm.runInContext(code, s.ctx);
+  play(s, 'Ana', '1234', {});
+  // The pooled statistics the replay asks for, by subject (statsServed_, then stats_ while there is no snapshot).
+  run(
+    '__asked = []; const __st = stats_; statsServed_ = sid => (__asked.push(sid), null); stats_ = (read, sid) => (__asked.push(sid), __st(read, sid));'
+  );
+  const got = {};
+  BOARDED.forEach(S => {
+    run('__asked.length = 0');
+    const rp = s.ctx.replay_('Ana', 0, 0, NaN, null, S.id, undefined);
+    assert.ok(rp && rp.n > 0 && Object.keys(rp.rec).length, S.id + ': replayed');
+    got[S.id] = JSON.parse(run('JSON.stringify(__asked)'));
+  });
+  assert.deepStrictEqual(
+    got,
+    Object.fromEntries(BOARDED.map(S => [S.id, S.offsets ? [S.id, S.id] : []])),
+    'its own pooled statistics, for a subject with offsets only'
+  );
+  // Planted: the same replay without the offsets reads none and gives another record (what the parameter switches).
+  const R = C.SUBJECTS.find(S => S.offsets);
+  run('dropHold_(""); __asked.length = 0');
+  s.sheets[tabOf(R.id)].rows.splice(1);
+  const on = s.ctx.replay_('Ana', 0, 0, NaN, null, R.id, undefined).rec;
+  run(`CORE_.subjectOf('${R.id}').offsets = false; __asked.length = 0`);
+  s.sheets[tabOf(R.id)].rows.splice(1);
+  const off = s.ctx.replay_('Ana', 0, 0, NaN, null, R.id, undefined).rec;
+  assert.strictEqual(run('__asked.length'), 0, 'none asked');
+  assert.notDeepStrictEqual(off, on, 'the pooled statistics move the record');
 });

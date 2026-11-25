@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 233 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 234 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 233;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 234;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -268,7 +268,8 @@ function load_(name, row, q){
   // it out (the app keeps its own progress and asks again next time).
   if (q.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data), undefined, stMain_(q)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    const R = CORE_.replaySubject();  // the subject of the unprefixed rv and replay (an older app's, rule D4)
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data, R), q.rv, q.pt, startOf_(data, R), R, stMain_(q)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   const rps = replays_(name, data, q.rvs || {}, q.pt, undefined, undefined, {sts: q.sts, stn: q.stn}); if (rps) out.replays = rps;
   if (q.have === d.rev) { delete out.data; out.same = 1; }  // the device holds this very copy (sync.js sdOf)
@@ -448,7 +449,8 @@ function doPost_(e){
   // The full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
-  if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data), undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
+  const R = CORE_.replaySubject();  // the subject of the unprefixed rv and replay (an older app's, rule D4)
+  if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data, R), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data, R), R, stMain_(p)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
   const rps = replays_(name, p.data, p.rvs, p.pt, undefined, undefined, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;  // the other subjects' (replays_)
   return json_(out);
 }
@@ -718,20 +720,23 @@ function dataJson_(){
 // without) has the replay score the answer with what the app scored it with (core.js scoreAnswer).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL])];
-// start: the player's first-launch answer (the app's reefid-sync-coral-start record): the replay steps the ability
-// with the prior it says, as the app does (core.js startPriorAt).
-// sid: the subject replayed, the corals by default (replays_ for the others: their own rows, units and tab, and no
-// photo memory offsets, pooled confusions, format or genus offsets, which stats_ computes for the corals only: an answer
-// logged with its scoring record, as every fish answer is, replays as the game scored it). No floor: the log is the
-// only reference, a bar may go down (rule D9).
-// appSt: the structure stamp the app applied (undefined: an app that says none; the subject replayed here: stMain_). A
+// start: the player's first-launch answer in that subject (core.js startKey, reefid-sync-<subject>-start): the replay
+// steps the ability with the prior it says, as the app does (core.js startPriorAt).
+// sid: the subject replayed. One path for every subject (rule S1): its own rows (subjRows_), units (subjGen_), variant
+// table (subjVar_), rules versions (rplTop_) and tab (rplTab_). Only its pooled statistics differ, a declared parameter:
+// a subject with offsets (core.js SUBJECTS offsets: the corals) replays with the photo memory, format and genus offsets
+// and pooled confusions of its own stats_; another replays with none, an answer logged with its scoring record (as every
+// fish answer is) replaying as the game scored it (rplMake_). The subject replayed for the request's unprefixed rv
+// (an older app's, rule D4) is core.js replaySubject: the callers pass it (load_, doPost_, anon_), replays_ the others.
+// No floor: the log is the only reference, a bar may go down (rule D9).
+// appSt: the structure stamp the app applied (undefined: an app that says none; for the unprefixed rv: stMain_). A
 // subject with a structure (core.js SUBJECTS structure) is replayed under the one in force (subjRpl_: its units and
 // stamp st), also when the rules version is applied but the stamp is another; the stamp joins the cache's identity
 // (rplSince_) and the reply (st, when not ''). Its units cannot be made (the curation or its file unreadable): no replay.
 function replay_(key, since, appRv, pt, start, sid, appSt){
-  const main = !sid || sid === CORE_.replaySubject(), top = rplTop_(sid);  // its own rules versions (core.js rvOf)
+  const top = rplTop_(sid);  // its own rules versions (core.js rvOf)
   if (typeof appRv !== 'number' || !isFinite(appRv)) return null;
-  const S = CORE_.subjectOf(main ? CORE_.replaySubject() : sid), SX = S.structure ? subjRpl_(S.id) : null;
+  const S = CORE_.subjectOf(sid), SX = S.structure ? subjRpl_(S.id) : null;
   if (S.structure && !SX) return null;
   const stNow = SX ? SX.st : '';
   if (appRv >= top && (appSt === undefined || appSt === stNow)) return null;
@@ -743,7 +748,7 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
   // The cache's identity: the reset time, and the fingerprint of the first-launch history the replay applies (a replay
   // made with another history is not reused). Without a history: the reset time alone.
   const fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stNow), st = stNow ? {st: stNow} : {};
-  const sh = sheet_(main ? RPL.TAB : rplTab_(sid), RPL.HEAD), at = find_(sh, key);
+  const sh = sheet_(rplTab_(sid), RPL.HEAD), at = find_(sh, key);
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0], prev = rplRead_(row);
     // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__"): an old
@@ -757,10 +762,11 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
 }
 // The pieces of replay_, shared with the leaderboard (board_, boardWarm_). A subject's last rules version (core.js
 // rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs).
-const rplTop_ = sid => CORE_.rvOf(!sid ? CORE_.replaySubject() : sid);
-// The structure stamp an app says for the subject replayed here (q: a load's or a save's fields, sts {coral: stamp},
-// sync.js stsAsk), undefined when it says none (an older app: replayed by its rules version alone); with the stamp of
-// the units it holds when another (stn), the curation is read again at once (subjStSeen_), as for another subject.
+const rplTop_ = sid => CORE_.rvOf(sid);
+// The structure stamp an app says for the subject of the unprefixed rv (core.js replaySubject; q: a load's or a save's
+// fields, sts {subject: stamp}, sync.js stsAsk), undefined when it says none (an older app: replayed by its rules version
+// alone); with the stamp of the units it holds when another (stn), the curation is read again at once (subjStSeen_), as
+// replays_ does for the others.
 function stMain_(q){
   const id = CORE_.replaySubject(), sts = q && q.sts && typeof q.sts === 'object' ? q.sts : {}, stn = q && q.stn && typeof q.stn === 'object' ? q.stn : {};
   if (typeof sts[id] !== 'string') return undefined;
@@ -772,8 +778,8 @@ function stMain_(q){
 const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
 // The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
 function rplMine_(key, since, sid){
-  const main = !sid || sid === CORE_.replaySubject(), who = lc_(key);
-  return (main ? answerRows_() : subjRows_(sid)).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
+  const who = lc_(key);
+  return subjRows_(sid).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
 }
 // A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for an old floored one); null when broken.
 function rplRead_(row){
@@ -783,21 +789,22 @@ function rplRead_(row){
 const rplFresh_ = (row, top, n, sinceKey) => Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey;
 // The replayed record of a record kept (an old floored one kept {P: record, F: reference}).
 const rplRec_ = o => (o && o.P && o.F ? o.P : o);
-// The replay itself (core.js replayProgress) over the player's rows (mine). {rec}, null without the units (gen_,
-// subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
+// The replay itself (core.js replayProgress) over the player's rows (mine) of subject sid. {rec}, null without the units
+// (subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
 // g: the units when the caller has them already (replay_, under the stamp it keys the replay by).
 function rplMake_(who, mine, since, start, sid, g){
-  const main = !sid || sid === CORE_.replaySubject(), rows = mine.map(r => rowOf_(who, r));
-  const gen = g || (main ? gen_() : subjGen_(sid));
+  const S = CORE_.subjectOf(sid), rows = mine.map(r => rowOf_(who, r));
+  const gen = g || subjGen_(sid);
   if (!gen) return null;
   // A subject with a variant table (core.js SUBJECTS replayed vars, subjVar_): the replay marks each unit's variant
   // groups with no right answer in the log (core.js replayProgress vars, vl), which take a learned mark away (replayedOf;
-  // rules D8, D9); none made without the table (the app keeps its own and asks again).
-  const vars = main ? null : subjVar_(sid);
-  if (!main && !vars) return null;
-  // The corals' pooled stats from the snapshot (statsServed_), else stats_; other subjects replay without. photos: the
-  // photos' time terms for an answer logged without its own (core.js replayProgress photos, rtWeight ti; rules version 13).
-  const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
+  // rules D8, D9); none made without the table (the app keeps its own and asks again). {} for a subject with none.
+  const vars = subjVar_(sid);
+  if (!vars) return null;
+  // A subject with offsets (core.js SUBJECTS offsets): its pooled stats from the snapshot (statsServed_), else stats_;
+  // another replays without. photos: the photos' time terms for an answer logged without its own (core.js replayProgress
+  // photos, rtWeight ti; rules version 13).
+  const st = S.offsets ? statsServed_(sid) || stats_(undefined, sid) : {}, rep =CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
   return {rec: rep ? rep.P : {}};
 }
 // Writes the record at row at (0: a new row) of tab sh, in CHUNK-character parts.
@@ -846,11 +853,12 @@ function replays_(key, data, rvs, pt, alt, held, sx){
   } finally { if (lock) lock.releaseLock(); }
   return Object.keys(out).length ? out : null;
 }
-// The tab keeping another subject's replay records: "Replayed Fish", as RPL.TAB keeps the corals'.
-const rplTab_ = sid => RPL.TAB + ' ' + CORE_.subjectOf(sid).name;
-// Every tab of replay records, the corals' first: an account deleted, merged, archived or a device claimed drops its rows
-// in each (rplDrop_).
-const rplTabs_ = () => [RPL.TAB].concat(CORE_.replayedSubjects().map(rplTab_));
+// The tab keeping a subject's replay records: the one its SUBJECTS replayed tab names (the corals' "Replayed", from
+// before there was another), else "Replayed <its name>" ("Replayed Fish").
+const rplTab_ = sid => (S => (S.replayed && S.replayed.tab) || RPL.TAB + ' ' + S.name)(CORE_.subjectOf(sid));
+// Every tab of replay records (holdSubjects_: every subject the sheet replays): an account deleted, merged, archived or a
+// device claimed drops its rows in each (rplDrop_).
+const rplTabs_ = () => holdSubjects_().map(rplTab_);
 function rplDrop_(name){ return rplTabs_().reduce((n, t) => n + dropRows_(t, name), 0); }
 // The units another subject's replay reads (core.js replayProgress gen: look-alikes and family lines): for fish, core.js
 // treeReplayGen over fish.json from GitHub main (the pool's first file, SUBJECTS pool), cached 6 hours as data.json is.
@@ -2595,11 +2603,16 @@ const ELO_MIN = 200;
 // ko). Names are public here by design: the app says so and lets each player opt out in its settings (privacy.html).
 // Nothing else of the player leaves the sheet. Cached 5 minutes.
 // One leaderboard per subject, no merged ranking: &s=<id> asks for that subject's (core.js SUBJECTS board), the same
-// rule on its own progress and level (core.js subjKey), over the units its apps last sent (boardUnitsSave_); no s, or a
-// subject without a leaderboard, the first one's (the corals). The opt-out, an admin's hide and an archive (the Board
-// column) hold for every subject.
+// rule on its own progress and level (core.js subjKey), over its units (board_); no s, or a subject without a
+// leaderboard, the first one's (the corals). The opt-out, an admin's hide and an archive (the Board column) hold for
+// every subject. Each board cached under its subject's id.
 const boardSubj_ = id => CORE_.SUBJECTS.find(S => S.board && S.id === String(id || '')) || CORE_.SUBJECTS.find(S => S.board);
-const boardCache_ = S => S === CORE_.SUBJECTS.find(x => x.board) ? 'board14' : 'board14:' + S.id;
+const boardCache_ = S => 'board15:' + S.id;
+// The subject of a save's summary (sync.js syncSummary: learned, seen, total, review, genera and %), sent in unprefixed
+// fields as an older app sends them (rule D4): the RAs row's Learned to Progress columns and the "By genus" tab hold
+// it. It is the subject of the unprefixed rv (core.js replaySubject: the corals); every other subject's board units come
+// in the summary's boards (boardUnitsSave_). tests/board.test.js checks it is the app's syncSummary subject.
+const sumSubj_ = () => CORE_.replaySubject();
 const BOARD_UNITS_ = 'BOARD_UNITS_';
 // The admin's mark (core.js SEED, the seedling after his name, the name itself unchanged): the admin's account, one at
 // most, is the player account the admin page is signed in to when it
@@ -2637,8 +2650,8 @@ function adminDrop_(h){
   PropertiesService.getScriptProperties().deleteProperty(ADMIN_ACCT_);
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));
 }
-// The units a subject's leaderboard counts, for a subject after the first (the first reads the "By genus" tab's
-// columns): its list as an app last sent it with a save (summary.boards {id: [units]}, sync.js syncSummary), kept in the
+// The units a subject's leaderboard counts, for a subject other than the summary's (sumSubj_, whose units are the "By
+// genus" tab's columns: sumUnits_): its list as an app last sent it with a save (summary.boards {id: [units]}, sync.js syncSummary), kept in the
 // script's properties when it changed, so every player's % is computed over the same units, as the "By genus" columns
 // do for the corals. A unit is a word of the answer log (the Answers tab's Genus shown), at most 400 of them.
 // A subject with a global score (core.js SUBJECTS score) sends its tree instead, {f: [[family, weight, circle]], s:
@@ -2755,8 +2768,8 @@ function boardLog_(id, what, key){
 // Keeps the units or tree each subject's apps sent (summary.boards), and returns bt {id: boardTreeSum_} for each subject
 // with a score, whether it sent one or not.
 function boardUnitsSave_(boards){
-  const B0 = CORE_.SUBJECTS.find(x => x.board), bt = {}, props = PropertiesService.getScriptProperties();
-  CORE_.SUBJECTS.filter(S => S.board && S !== B0).forEach(S => {
+  const bt = {}, props = PropertiesService.getScriptProperties();
+  CORE_.SUBJECTS.filter(S => S.board && S.id !== sumSubj_()).forEach(S => {
     const b = boards && typeof boards === 'object' ? boards[S.id] : null;
     if (Array.isArray(b)) {
       // An app from before the score sends a list: it never replaces a tree a current app sent, so the
@@ -2780,20 +2793,28 @@ function boardUnits_(S){
   if (/^[{@]/.test(v)) return boardTreeGet_(S) || [];
   try { const L = JSON.parse(v || '[]'); return Array.isArray(L) ? L.map(String) : []; } catch (e) { return []; }
 }
+// The units of the summary's subject (sumSubj_): the "By genus" tab's columns, written from each save's summary over the
+// script's own scale (scale_); [] when the tab has none.
+function sumUnits_(){
+  const bg = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus');
+  return bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : [];
+}
+// One path for every subject (rule S1), but for the save summary's subject (sum: its "By genus" units and Progress
+// column, a listed exception, tests/subject-neutral.test.js).
 function board_(sid){
-  const S = boardSubj_(sid), first = S === CORE_.SUBJECTS.find(x => x.board), key = boardCache_(S);
+  const S = boardSubj_(sid), sum = S.id === sumSubj_(), key = boardCache_(S);
   const cache = CacheService.getScriptCache(), hit = cache.get(key);
   if (hit) return JSON.parse(hit);
   const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), out = {ok: true, rows: []};
   if (ra && ra.getLastRow() > 1) {
-    // The % from the saved progress, over the genera of the list (the "By genus" tab's columns, written from each sync's
-    // summary), with the app's formula (pctOf_); the app-sent Progress column only when that can't be read. Another
-    // subject's, over its units (boardUnits_), from its own saved progress only. A subject ranked by a tree, over the
-    // tree the sheet makes with its replay's units under the structure in force when it holds one (subjTreeKept_), so a
-    // circle Publish moves the board with no device's save; a list kept from an old app stays the board's scale.
-    const bg = first ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus') : null,
-      kept = first ? null : boardUnits_(S),
-      list = first ? (bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : []) : Array.isArray(kept) && kept.length ? kept : subjTreeKept_(S) || kept,
+    // The % from the subject's saved progress, with the app's formula, over its units: those its apps last sent
+    // (boardUnits_); else the tree the sheet makes with its replay's units under the structure in force when it holds
+    // one (subjTreeKept_), so a circle Publish moves the board with no device's save (a list kept from an old app stays
+    // the board's scale); else, for the summary's subject, the summary's units (sumUnits_). A subject ranked by a tree:
+    // its score (core.js treeScore); by a list: pctOf_. The summary's subject only: the app-sent Progress column when that
+    // % cannot be read (no saved progress, no units).
+    const kept = boardUnits_(S),
+      list = Array.isArray(kept) && kept.length ? kept : subjTreeKept_(S) || (sum ? sumUnits_() : kept),
       pk = CORE_.subjKey(S.id, 'progress');
     // Rule D8: a player whose saved copy applied an older rules version of the subject than
     // today's (core.js rvOf) is ranked by the progress their app will hold once it adopts the replay of their log
@@ -2803,7 +2824,8 @@ function board_(sid){
     // keeps the saved copy's. Read only here: nothing is fetched or replayed, and no lock is taken.
     const X = boardRpl_(S), D = datas_(ra);
     const dataOf = r => { try { return JSON.parse(D[lc_(r[0])] || '{}'); } catch (e) { return null; } };
-    const progOf = d => { try { const P = JSON.parse((first ? dataKey_(d, 'progress') : d[pk]) || '{}'); return P && typeof P === 'object' ? P : null; } catch (e) { return null; } };
+    // The subject's saved progress under its key's name, else the one from before the app's rename (subjData_).
+    const progOf = d => { try { const P = JSON.parse(subjData_(d, pk) || '{}'); return P && typeof P === 'object' ? P : null; } catch (e) { return null; } };
     // A player whose replay cannot be read or adopted keeps the saved copy's: one account never breaks the board.
     const nowOf = r => { const d = dataOf(r), P = d ? progOf(d) : null; try { return P ? X.adopted(String(r[0]), d, P) : P; } catch (e) { return P; } };
     // The level the app shows (progress.js eloLine): '~level'.th as saved (the app's eloScore rounds the Elo, so every
@@ -2819,7 +2841,7 @@ function board_(sid){
       // A blank Progress cell: learned / total until the player's next sync writes it.
       // Level only from ELO_MIN answers (fewer do not settle the score): null before.
       .map(r => { const P = nowOf(r), lv = levelOf(P), own = !P ? null : !Array.isArray(list) ? (S.score ? CORE_.treeScore(P, list, S.score).pct : null) : list.length ? pctOf_(P, list) : null,
-          pct = own != null || !first ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
+          pct = own != null || !sum ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
         return lv != null || pct || answered(P) ? [String(r[0]), pct, lv].concat(adm && r[6] === adm ? [1] : []) : null; })
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
@@ -2859,8 +2881,7 @@ function datas_(ra){
 // joins the cache's identity (rplSince_). warm (boardWarm_): the stamp read as replay_ reads it (subjSt_, fetched when not
 // cached); else (the public board_) from the cache only (subjStKept_), never a fetch: not there, the rules version alone.
 function boardRpl_(S, warm){
-  const sid = S.id, top = CORE_.rvsOf(sid).length ? rplTop_(sid) : 0, main = sid === CORE_.replaySubject(), arg = main ? undefined : sid,
-    tab = main ? RPL.TAB : rplTab_(sid);
+  const sid = S.id, top = CORE_.rvsOf(sid).length ? rplTop_(sid) : 0, tab = rplTab_(sid);
   let mine = null, kept = null, stIn;
   const rvOf = d => { try { const v = Number(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'rv')) || '0')); return isFinite(v) ? v : 0; } catch (e) { return 0; } };
   const stOf = d => { try { return String(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'st')) || '""') || ''); } catch (e) { return ''; } };
@@ -2871,13 +2892,13 @@ function boardRpl_(S, warm){
     if (!top || !d) return null;
     const st = stHere();
     if (rvOf(d) >= top && (st === null || stOf(d) === st)) return null;
-    if (!mine) { mine = Object.create(null); (main ? answerRows_() : subjRows_(sid)).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
+    if (!mine) { mine = Object.create(null); subjRows_(sid).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
     if (!kept) {
       kept = Object.create(null);
       const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab);
       if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in kept)) kept[k] = {at: i + 2, r: r}; });
     }
-    const since = resetOf_(d, arg), start = startOf_(d, arg), sinceKey = rplSince_(since, start, st || ''),
+    const since = resetOf_(d, sid), start = startOf_(d, sid), sinceKey = rplSince_(since, start, st || ''),
       rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
     return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) || st ? sinceKey : since, rows: rows, n: rows.length,
@@ -2887,7 +2908,7 @@ function boardRpl_(S, warm){
     const x = need(name, d);
     return x && x.rec && typeof x.rec === 'object' ? CORE_.replayAdopted(x.rec, CORE_.renameUnits(S, P), top) : P;
   };
-  return {sid: sid, top: top, arg: arg, tab: tab, need: need, adopted: adopted};
+  return {sid: sid, top: top, tab: tab, need: need, adopted: adopted};
 }
 // The leaderboard's replays made ahead (rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
 // public board_ only reads them: for every subject with a leaderboard and rules versions, each player it lists whose
@@ -2920,7 +2941,7 @@ function boardWarm_(){
       try {
         const x = X.need(name, d);
         if (!x || x.rec) return;
-        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.arg);
+        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.sid);
         if (mk) pend.push({S: S, X: X, name: name, hash: r[6], json: json, x: x, mk: mk});
       } catch (e) {}
     });
@@ -2939,7 +2960,7 @@ function boardWarm_(){
     pend.forEach(p => { try {
       const k = p.name.toLowerCase(), a = acct[k];
       if (!a || String(a[0]) !== p.name || a[6] !== p.hash || (a[9] !== '' && Number(a[9]) <= 0) || now[k] !== p.json) return;
-      if (ans(rplMine_(p.name, p.x.since, p.X.arg)) !== ans(p.x.rows)) return;
+      if (ans(rplMine_(p.name, p.x.since, p.X.sid)) !== ans(p.x.rows)) return;
       const sh = sheet_(p.X.tab, RPL.HEAD), at = find_(sh, p.name),
         row = at ? sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0] : null;
       if (id(row) !== id(p.x.row)) return;
@@ -3885,7 +3906,7 @@ function replayedAll_(users, dcol){
   const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[lc_(r[0])] = r.slice(2).map(String).join(''); });
   answerRows_().forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); });
-  const sh = sheet_(RPL.TAB, RPL.HEAD);
+  const sh = sheet_(rplTab_(CORE_.replaySubject()), RPL.HEAD);
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { cached[lc_(r[0])] = {at: i + 2, r: r}; });
   users.forEach(u => {
     const k = lc_(u.name);
@@ -4194,7 +4215,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     const out = {ok: true, log: true};
     TIM_.op = 'anon save';  // timed as a whole, to its reply (timEnd_)
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's).
-    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null, undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null, CORE_.replaySubject(), stMain_(p)); if (rp) out.replay = rp; } catch (err) {}
     // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
     // {subject: the device's reefid-sync-<subject>-reset and -start}), already under this lock.
     const rps = replays_('~anon ' + id, null, p.rvs, p.pt, {reset: p.sreset, start: p.sstart}, true, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;
@@ -5167,8 +5188,10 @@ const CORE_ = (function () { const module = {exports: {}};
       },
       // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
       // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
-      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
-      replayed: {gen: d => genLooks(d)},
+      // It stays the subject of the sheet's unprefixed rv and replay (replay), never one of replayedSubjects. tab: the
+      // sheet's tab of its replay records (Code.gs rplTab_), named before there was another subject; the others' take
+      // "Replayed <name>".
+      replayed: {gen: d => genLooks(d), tab: 'Replayed'},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {

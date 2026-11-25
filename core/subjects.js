@@ -303,8 +303,10 @@
       },
       // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
       // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
-      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
-      replayed: {gen: d => genLooks(d)},
+      // It stays the subject of the sheet's unprefixed rv and replay (replay), never one of replayedSubjects. tab: the
+      // sheet's tab of its replay records (Code.gs rplTab_), named before there was another subject; the others' take
+      // "Replayed <name>".
+      replayed: {gen: d => genLooks(d), tab: 'Replayed'},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
