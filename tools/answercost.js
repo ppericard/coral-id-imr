@@ -989,7 +989,11 @@ async function main() {
     rows = new Array(jobs.length);
     await Promise.all(
       Array.from({length: Math.min(par, jobs.length)}, async () => {
-        const browser = await chromium.launch();
+        // --syncs: the script's hosts mapped to this computer too, as tests/pages.smoke.js signs in (rule D1): a request
+        // that escaped the page's stub and the routes would find no sheet
+        const browser = await chromium.launch(
+          o.syncs ? {args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']} : {}
+        );
         try {
           for (let k = queue.shift(); k !== undefined; k = queue.shift()) {
             const {i, seed} = jobs[k],

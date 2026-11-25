@@ -264,8 +264,9 @@ function stateView(name, f, point = false) {
   return verView('state', name, f, stateNow, point);
 }
 // The data version now: the stored texts compared first (stateNow), as for a state view; after a visit that wrote
-// nothing, the version before it (dataKey).
-const dataNow = () => (stateNow(), dataKey());
+// nothing, the version before it (dataKey's test, written out: every view's read goes through here, and the answer
+// cost counts named calls).
+const dataNow = () => (stateNow(), DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
 // A view of one argument k (a rank class, a unit), f(k) kept per k and per version: the values of a version are dropped
 // at the next (now: stateNow or dataNow). The same rules and the same check as stateView, value by value. k is a string,
 // a number or an object (a Map's key: the same value or the same object, the same entry).

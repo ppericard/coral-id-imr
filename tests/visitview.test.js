@@ -195,7 +195,11 @@ test('mutation: the rules that keep or drop the views, each broken, are caught',
       "const swapBump = () => (DATA_SW++, stateBump('rec'));"
     ],
     ['treeAt’s swap counted as a write', '  treePull(true);\n', '  treePull();\n'],
-    ['the version kept never read', 'const dataNow = () => (stateNow(), dataKey());', 'const dataNow = () => (stateNow(), DATA_V);'],
+    [
+      'the version kept never read',
+      'const dataNow = () => (stateNow(), DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);',
+      'const dataNow = () => (stateNow(), DATA_V);'
+    ],
     ['a visit never kept', '    if (TREE_AT === was.T) dataBack(m);', '']
   ];
   for (const [what, from, to] of [['the code as it is (no mutation: nothing caught)', null, null], ...MUT]) {
