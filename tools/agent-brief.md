@@ -33,9 +33,11 @@ the issue's Agent notes, never retyped here. A new line for every agent goes int
   our photos, in any outside tool or query (AGENTS.md "Always ask first").
 - Real player and staff names never reach a commit, PR text, GitHub comment or file in the repo (rule D2);
   use the anonymous id, or P1, P2…, and keep the mapping outside the repo.
-- Read the sheet only through the connector (read-only), by the exact tab title and range you need. Ask for aggregates,
-  not rows, and leave out the name column: the anonymous id is enough for a check. Named results go to the integrator in
-  your report, never into the repo.
+- Read the sheet read-only through the connector (rule D2, "Data access"): find the spreadsheet by its exact title,
+  never by a broad Drive search, and read only the tabs and columns your task needs. Leave out the name column unless
+  the task needs names; the anonymous id is usually enough. A real-data check (rule L12) reads answer rows; keep them
+  outside the repo and delete raw dumps when done. Without the connector, work from the extract the integrator gives
+  you. Named results go to the integrator in your report, never into the repo.
 - A screenshot that supports a decision is attached to the issue or the PR; never one that shows a player's name (rule D2).
 
 ## Push and review
