@@ -248,7 +248,7 @@ block it for 10 minutes (`wait`), and answers are logged before the progress is 
 
 The answer log is the largest wait of the admin's opening on a phone (Pierre, 2026-11-19; REE-39;
 [record](../decisions/2026-11-25-lean-answer-log.md)). The admin's read asks for it lean (`admin.js` `loadStats`:
-`readAnswers` with `lean: 1`), and from vNEXT the script sends `lean` in place of `rows` (`Code.gs` `answers_`, `core.js`
+`readAnswers` with `lean: 1`), and from v232 the script sends `lean` in place of `rows` (`Code.gs` `answers_`, `core.js`
 `rowsPack`): the same rows, column by column, each column in the shortest of a few spellings, chosen from its values
 alone (no column is named, so a column added to the rows needs nothing): mostly null as the gaps between its values; whole
 numbers as differences when that is shorter (the times); numbers that are whole once times 10, 100 or 1000 scaled (seconds,

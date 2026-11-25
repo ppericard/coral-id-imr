@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 231 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 232 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 231;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 232;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -1038,7 +1038,7 @@ const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w
 //   refused before it (23, rejectedOut_: a list of strings, null when none, absent from a script before v228). In the oldest rows
 //   expected, ability and new photos are null, choices (the genera offered, space-separated) '', seconds and enlarged
 //   null; the UTC offset (minutes east of UTC on the player's device) is null only when an app sent none.
-// q.lean (the admin from vNEXT, admin.js leanOn): the same rows as lean (core.js rowsPack: column by column, about half
+// q.lean (the admin from v232, admin.js leanOn): the same rows as lean (core.js rowsPack: column by column, about half
 // the bytes) in place of rows; a request without it (tools/analyses.js, an older admin) gets rows as before.
 function answers_(q){
   // The roster read before the answers: a removal while they are read leaves the report stale.
