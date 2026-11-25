@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 227 (2026-11-24). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 228 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -34,7 +34,7 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 //   corals) feeds what the script computes (answerRows_); the others' rows are logged and served (readAnswers).
 // - Scoring: what the app scored the answer with (core.js scoreRec as JSON), so the full replay scores it the same.
 // - Rejected tries: the texts a typed answer refused before it was given (quiz.js typeBind), a JSON list (at most 10,
-//   each cut to 40 characters). Logged only.
+//   each cut to 40 characters). Served by readAnswers as a list of strings, null when none (answerOut_, index 23).
 // - Device: the anonymous id of the device that sent the answer (sync.js devId), blanked when a deleted account's
 //   answers are kept as "~deleted <id>" (deleteAccount_, rule D7). Logged only.
 // - Photo answered: the photo tapped in a Find the X (mode |f), its file stem (pa), as Photos is capped (PH, 400);
@@ -47,6 +47,7 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered', 'Content version'];
 const DEV_COL = LOG.indexOf('Device');
 const SC_COL = LOG.indexOf('Scoring');
+const RJ_COL = LOG.indexOf('Rejected tries');  // 23: the same index in readAnswers rows (answerOut_)
 // The Activity tab (one formula over the Answers tab): answers, right and last answer per player. A surprise card's
 // answer (Mode wink, core.js WINK_MODE) counts in none of them; the older formula (ACTIVITY_V1) is replaced when the
 // first one is logged (logAnswers_), a formula edited by hand is left alone.
@@ -65,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 227;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 228;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -1028,12 +1029,13 @@ function aid_(name, salt){
 // both as no name.
 const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w).indexOf('~deleted ') === 0 || (arch && arch.has(lc_(w))) ? 2 : 0);
 // {ok, rows: [[id, time ms, genus shown, answered, right 0|1, mode, photos, expected, ability, new photos, choices, anonymous 0|1|2,
-//   seconds, enlarged 0|1, UTC offset, typed, retyped right, subject, rank, taxon shown, taxon answered, species shown, scoring]], players:
+//   seconds, enlarged 0|1, UTC offset, typed, retyped right, subject, rank, taxon shown, taxon answered, species shown, scoring, rejected tries]], players:
 //   {id: [learned, seen, total, {genus: ability}]}}. The indexes match the tab's columns: the typed text (15, '' when
 //   none) and the spelling step (16, null when none was asked); the subject (17, core.js LOG_SUBJ: coral in a row
 //   without one), the rank asked (the subject's rank when the row has none), the names at that rank and the species
 //   shown ('' when none); a reader of one subject keeps its rows (core.js subjRows), so a fish answer never counts in a
-//   coral result; the scoring record (22, core.js LOG_SC: scoreRec, an object, null without). In the oldest rows
+//   coral result; the scoring record (22, core.js LOG_SC: scoreRec, an object, null without); the texts a typed answer
+//   refused before it (23, rejectedOut_: a list of strings, null when none, absent from a script before v228). In the oldest rows
 //   expected, ability and new photos are null, choices (the genera offered, space-separated) '', seconds and enlarged
 //   null; the UTC offset (minutes east of UTC on the player's device) is null only when an app sent none.
 function answers_(q){
@@ -1068,7 +1070,15 @@ function answerOut_(r, id, arch){
   return [id(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
     .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i])), [String(r[11] || ''), anonFlag_(r[0], arch)],
       [12, 13, 14].map(i => r[i] === '' || r[i] == null ? null : Number(r[i])), [String(r[15] || ''), r[16] === '' || r[16] == null ? null : Number(r[16])],
-      [sj, String(r[18] || '') || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '', String(r[19] || ''), String(r[20] || ''), String(r[21] || '')], [CORE_.scoreRec(r[SC_COL])]);
+      [sj, String(r[18] || '') || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '', String(r[19] || ''), String(r[20] || ''), String(r[21] || '')], [CORE_.scoreRec(r[SC_COL])], [rejectedOut_(r[RJ_COL])]);
+}
+// The Rejected tries cell (a JSON list written by rejected_) as the list of strings readAnswers serves, null when blank or
+// unreadable (a cell edited by hand); read again with the same cuts as it was written, so no reader meets more.
+function rejectedOut_(x){
+  let L = null;
+  try { L = JSON.parse(String(x || '')); } catch (e) {}
+  L = Array.isArray(L) ? L.filter(t => typeof t === 'string' && t).map(t => t.slice(0, 40)).slice(0, 10) : [];
+  return L.length ? L : null;
 }
 // The admin's light read (a live Players › Activity): POST {readLive: 1, token} →
 // {ok, rows, last, n, k, roster}, re-read every minute while that page is open and in view (admin.js liveRead), where readAnswers

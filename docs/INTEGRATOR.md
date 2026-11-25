@@ -324,6 +324,11 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   2026-11-20 17:33 on the response-time change, decided too fast): a fact he states (answer time carries difficulty) is
   decided; how the engine integrates it was not, and the response-time design got a study first. For other engine work,
   weigh the same way how much study the change needs.
+- **Waves in arrival order: `bash tools/queue/fifoq.sh N1 N2 …`** (REE-220; README in `tools/queue/`). One call per
+  wave, in the background with the longest limit, from the main checkout. It waits until no train, no other queue
+  script and no earlier `fifoq.sh` runs (tickets in arrival order, never by process id: ids wrap), then runs
+  `nightq.sh N1 N2 …`. Several `nightq.sh` waves started at once race on main ("main moved", 2026-11-23); this is the
+  waiter that replaces the integrator's own wrapper script, so nothing needs a file outside the repo.
 - **The queue glue lives in `tools/queue/`** (README there): a loop per PR (merge main, push, `@codex review`, wait for
   CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a wait so that only one
   wave runs. Its log and state go to `QUEUE_DIR` (default `~/.cache/reefid-queue`), never into the repo. A container
@@ -428,14 +433,31 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
   2026-11-23, REE-219); a new issue (label Idea) for every idea discussed and not built; an issue's description holds
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
-  detail in its collapsible "Agent notes". Todo means ready: permitted by a decision of his or the integrator's
-  mandate, never approved by the status alone.
-- **Drain the Todo column until he says stop** (Pierre, 2026-11-21 21:00: «tant que j'ai pas dit qu'on s'arrêtait, il
-  faut continuer … écluser tout ce qu'il y a dans la roadmap qui est faisable sans moi, et déjà décidé»): every Todo
-  issue not assigned to him has an agent, High first, then the rest, evenings and nights included (Rule 0 stops
-  questions, not work); the sensitive files go one PR at a time (rule W27), the rest in parallel. A "Next" list in
-  STATUS is never a substitute for launching. Launch agents from the main checkout: an agent starts in the
-  integrator's current directory, and one started inside a PR's worktree takes it over.
+  detail in its collapsible "Agent notes".
+- **Every open issue is to be done unless it carries a reason not to be** (Pierre, 2026-11-25, REE-244; earlier
+  form 2026-11-21 in ANSWERS). Linear is organised for the agents; Pierre works from the app and the chat. The five
+  reasons:
+  1. a choice of Pierre's (label Decision for Pierre, asked in the chat in French);
+  2. a checkable condition: a blocked-by relation to an issue or a PR, or a Scheduled date. A free-text "after X" is
+     not one;
+  3. an idea not decided yet (Idea: building it is a new requirement, his OK first);
+  4. Parked by him;
+  5. a Study › Open inquiry with no pass assigned to an agent the integrator can launch.
+
+  Backlog holds only issues with one of these reasons; an open issue without one goes to Todo. Every Todo issue not
+  assigned to him and not in progress has an agent, High first, evenings and nights included (Rule 0 stops questions,
+  not work). A lane held by a PR that waits for Pierre is raised to him the same working day. A "Next" list in STATUS
+  is never a substitute for launching. Launch agents from the main checkout: an agent starts in the integrator's
+  current directory, and one started inside a PR's worktree takes it over.
+- **The night report counts the night's launches**: the issues launched, and those left open with their reason. An
+  issue left without a reason is a rule not followed.
+- **Two kinds of study** (Pierre, 2026-11-25; the label group Study, one kind per issue):
+  - **Decision input**: a study that serves a development decision. It is treated like development work: launched
+    when ready, one pass, done when its note merges with a recommendation.
+  - **Open inquiry**: a deep reflection (design, strategy, critique, market). Its description names in advance who
+    runs its passes (agents and models, some launched by the integrator, some by Pierre). Only the passes assigned to
+    agents the integrator can launch are launched, by the sweep or the drain. Each pass files a dated report; one pass
+    never concludes it. It closes only when Pierre has decided what to do with the synthesis.
 - **Pierre never enters tickets**, relays a subagent's result or approves ordinary bookkeeping. Subagents report; the
   integrator updates Linear, unless the brief tells the subagent to.
 - **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in
