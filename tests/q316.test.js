@@ -303,6 +303,51 @@ test(
   }
 );
 
+test(
+  'gibbs.py: Polya-Gamma moments; the joint draw is the Gaussian conditional; planted SDs recovered; R-hat and ESS',
+  {skip: !sci && 'no numpy/scipy'},
+  () => {
+    const r = spawnSync(PY, [path.join(__dirname, 'q316gibbs_check.py')], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      env: {...process.env, OMP_NUM_THREADS: '1'}
+    });
+    assert.strictEqual(r.status, 0, r.stderr);
+    const o = JSON.parse(r.stdout.trim().split('\n').pop());
+    for (const [m, v] of o.pg) assert.ok(Math.abs(m - 1) < 0.02 && Math.abs(v - 1) < 0.03, 'PG(1, c) moments: ' + JSON.stringify(o.pg));
+    assert.ok(o.joint.z < 5, 'the joint draw mean: ' + o.joint.z);
+    assert.ok(o.joint.var[0] > 0.85 && o.joint.var[1] < 1.15, 'the joint draw variances: ' + o.joint.var);
+    const [g, [glo, ghi]] = o.gen;
+    assert.ok(g > 0.7 && g < 1.4 && glo < 1 && ghi > 1, 'genus SD 1.0: ' + JSON.stringify(o.gen));
+    const [p, [plo, phi]] = o.photo;
+    assert.ok(p > 0.4 && p < 0.85 && plo < 0.6 && phi > 0.6, 'photo SD 0.6: ' + JSON.stringify(o.photo));
+    assert.ok(Math.abs(o.diag[0] - 1) < 0.05 && o.diag[1] > 1000, 'R-hat and ESS on independent draws: ' + o.diag);
+  }
+);
+
+test('refit/pseudonymise.js: names become K1, K2... at once, the prefixes kept, no name in the log; cut.js keeps the rows up to a time', () => {
+  const Ps = require(path.join(DIR, 'refit', 'pseudonymise.js')),
+    Cu = require(path.join(DIR, 'refit', 'cut.js'));
+  const row = (w, t) => [w, t, 'Acropora', 'Acropora', '1', 'quiz', 'a-1', 'id', '0.7', '0.2', '1', 'Acropora Porites', '3', '0', '480', '', '', 'coral', 'genus', '', '', '', ''];
+  const head = [Pr.HEAD, row('Ana Real', '2026-11-20 15:50')];
+  const L = Ps.pseudonymise([{values: head}, {values: [row('~anon x7', '2026-11-20 15:51'), row('Ana Real', '2026-11-21 08:00'), row('ana real', '2026-11-21 08:01')]}]);
+  assert.deepStrictEqual(L.values.slice(1).map(r => r[0]), ['K1', '~anon K2', 'K1', 'K3']);
+  assert.ok(!JSON.stringify(L).includes('Ana') && !JSON.stringify(L).includes('x7'));
+  assert.deepStrictEqual(Ps.summary(L), {rows: 4, players: 3, subjects: {coral: 4}, first: '2026-11-20 15:50 Manila', last: '2026-11-21 08:01 Manila'});
+  assert.throws(() => Ps.pseudonymise([{values: [['Who', 'When']]}]), /header/);
+  assert.strictEqual(Cu.cut(L, Pr.timeOf('2026-11-20 15:50')).values.length, 2);
+  assert.strictEqual(Pr.load(L).rows.length, 4);
+});
+
+test("the rules the README declares for the Gibbs sampler are gibbs.py's", () => {
+  const g = fs.readFileSync(path.join(DIR, 'gibbs.py'), 'utf8');
+  assert.match(g, /CHAIN = \{'iters': 3000, 'burn': 1000, 'chains': 2, 'rep_iters': 1500, 'rep_burn': 500\}/);
+  assert.match(g, /PRIOR = \{'scale': 1\.0, 'other': 0\.5\}/);
+  assert.match(g, /CONVERGE = \{'rhat': 1\.1, 'ess': 100, 'prior_shift': 0\.1\}/);
+  for (const s of ['3,000 sweeps', '1,000 burn-in', '1,500 sweeps', 'half-normal prior of scale 1', 'scale 0.5', 'R-hat is above 1.1', 'under 100', 'more than 0.1'])
+    assert.ok(README.includes(s), 'README: ' + s);
+});
+
 test('fit.py: refuses to write its output inside the repository', {skip: !sci && 'no numpy/scipy'}, () => {
   const r = spawnSync(PY, [path.join(DIR, 'fit.py'), 'fit', 'x.json', path.join(ROOT, 'q316-fit.json')], {
     cwd: ROOT,
