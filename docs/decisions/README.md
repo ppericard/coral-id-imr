@@ -58,10 +58,13 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-25 | [The lecture's photo references move into the IMR instance's layer, written by `datajson.dump()`; the coral slate is declared and checked](2026-11-25-course-layer.md) | #1582 |
 | 2026-11-25 | [A species' own common names: a `curation.json` `fish` `cn` key, laid over the built names by one reader](2026-11-25-fish-common-names-key.md) | #1568 |
+| 2026-11-25 | [The IMR names and family spellings of the fish entries, and every entry's PDF sections: moved into the IMR instance's layer](2026-11-25-fish-node-names-split.md) | #1580 |
 | 2026-11-25 | [The PDF's species fields and `src: slides`: moved into the IMR instance's layer; `deploy.key` into `tools/instance.json`](2026-11-25-fish-pdf-fields-split.md) | #1578 |
 | 2026-11-25 | [Admin opening on a phone: the answer log comes column by column, the same rows in about half the bytes](2026-11-25-lean-answer-log.md) | #1579 |
 | 2026-11-25 | [The course's words in `ORG`: the core writes them from one place, at today's values](2026-11-25-org-course-words.md) | #1575 |
+| 2026-11-25 | [The ★ rule read from the unit's own record, for every subject](2026-11-25-star-rule-as-unit-field.md) | #1581 |
 | 2026-11-24 | [Pierre's own observations come in whatever the room, for every subject](2026-11-24-own-observations-everywhere.md) | #1534 |
 | 2026-11-24 | [The sea slugs take the fish's strong-blur cap: a strongly blurred photo is at most 2](2026-11-24-sea-slug-blur-cap-as-the-fish.md) | #1532 |
 | 2026-11-24 | [The sea slugs take the fish's softened caps: a partial animal and a head-on or rear view at most 4, the typical look shared](2026-11-24-sea-slug-caps-as-the-fish.md) | #1524 |

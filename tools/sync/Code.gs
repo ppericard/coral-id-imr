@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 232 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 233 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 232;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 233;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -10034,10 +10034,14 @@ const CORE_ = (function () { const module = {exports: {}};
   // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
   // the first listed); 0 for none (app learn.js shownGroup). starRefs(d, n): the surveyed look-alikes in that group, the
   // genera its card names ("★ look-alike of Turbinaria, Tubastraea", learn.js starNote); [] for any other genus.
-  // starWaits(d, n, list, met): a ★ genus opens only once the genus its card compares it to has been met (its card,
-  // "Like Turbinaria, but corallites about 6 mm", means nothing before Turbinaria): true while
-  // one of n's references is in list (the genera the draw can open) and not met. A reference is always a surveyed genus,
-  // which never waits itself, and one not in the list never holds n back: no genus can wait for ever.
+  // A ★ genus opens only once the genus its card compares it to has been met (its card, "Like Turbinaria, but corallites
+  // about 6 mm", means nothing before Turbinaria). One engine (rule S1; one-engine audit step 4): the flat subject's build
+  // writes the references on the unit's record as data, starAfter(d): `after`, the units it opens after (app.js build,
+  // tools/ratedworld.js coralUnits, last, once its look-alikes, groups and slate are final), and the opening reads that
+  // field on any subject's unit, never the corals' file: afterWaits(u, list, met), true while one of the units u.after
+  // names is in list (the units the draw can open) and not met. A tree unit writes none, so it never waits. A reference
+  // is always a surveyed genus, which never waits itself, and one not in the list never holds n back: no unit can wait
+  // for ever.
   function lectureGroup(d, n) {
     const G = (d && d.gen) || {},
       g = G[n];
@@ -10056,7 +10060,17 @@ const CORE_ = (function () { const module = {exports: {}};
     const k = lectureGroup(d, n);
     return (g.look || []).filter(b => G[b] && G[b].n && !X[b] && G[b].ig === k);
   }
-  const starWaits = (d, n, list, met) => starRefs(d, n).some(r => list.includes(r) && !met(r));
+  function starAfter(d) {
+    Object.keys((d && d.gen) || {}).forEach(n => {
+      const g = d.gen[n],
+        R = starRefs(d, n);
+      if (!isObj(g)) return;
+      if (R.length) g.after = R;
+      else delete g.after;
+    });
+    return d;
+  }
+  const afterWaits = (u, list, met) => ((u && u.after) || []).some(r => list.includes(r) && !met(r));
 
   // Photos on R2 (docs/ARCHITECTURE.md "Photos"): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
@@ -12185,7 +12199,8 @@ const CORE_ = (function () { const module = {exports: {}};
     gameOf,
     lectureGroup,
     starRefs,
-    starWaits,
+    starAfter,
+    afterWaits,
     PHOTO_BASE,
     photoLocal,
     photoOnR2,

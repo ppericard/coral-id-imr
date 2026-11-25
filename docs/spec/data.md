@@ -103,7 +103,7 @@ photo is never shown (rule P6: written by `tools/apply_skeletons.py` from `judgi
 `applyCuration` drops it from every list, as an excluded photo).
 
 **IMR lecture photos** (`course`) carry `imr: true`, `slide` and `v`, their view. Once traced to their original source
-(`tools/imr_sources.json`, written by
+(`tools/instances/imr/imr_sources.json`, written by
 `tools/apply_imr_sources.py` on `course` and on the course records archived in `data/excluded.json`, so that a Restore brings
 one back credited; `--check` runs in the tests), a lecture photo has `a` "<photographer> / Corals of the World" and
 **`pg`**, the page that states that credit: the credit's link (`app.js` `credit`, `lectCredit`, `photoSrc`, the genus
@@ -400,13 +400,18 @@ The built files are the sources plus one instance's layer, resolved at build
 and step 5); the content editor's edits are the third layer, in `curation.json` `content`, laid over at load
 ([content.md](content.md)), never at build. `tools/instance.json` names the instance (`id` `imr`, `name`), its `centre`,
 the identification `key` in force there (the deployment's choice, not the organisation's content: rule S3) and its
-`layer` files, one per subject (the `SUBJECTS` key). Today the IMR instance's, in `tools/instances/imr/`:
+`layer` files, one per subject (the `SUBJECTS` key) and one for the lecture's photo references (`course`). Today the IMR
+instance's, in `tools/instances/imr/`:
 
 - **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families), `nodes` {teaching
-  node or sub-entry id: `circle`, `src` and `sign` (nodes only), `sl`, `cues`, `look`, `phase`} and `species` {species id:
-  `common`, `sec`, `pdf`, `cs`, `src`, `sl`}. `src` is the IMR tag (`"imr"`, the 27 entries of the IMR fish
-  presentation: `fish.json` `families[].imr` is the entry's name as IMR writes it), `sign: false` an entry off the
-  presentation's dive-sign list, `sl` the presentation's slide numbers (a species': the slide that names it). A
+  node or sub-entry id: `circle`, `src`, `sign`, `name`, `fam` and `pdf` (nodes only; a sub-entry has `name`), `sl`,
+  `cues`, `look`, `phase`} and `species` {species id: `common`, `sec`, `pdf`, `cs`, `src`, `sl`}. `src` is the IMR tag
+  (`"imr"`, the 27 entries of the IMR fish presentation: `fish.json` `families[].imr` is the entry's name as IMR writes
+  it), `sign: false` an entry off the presentation's dive-sign list, `name` and `fam` the entry's name as IMR writes it
+  and the family as IMR spells it (`fish.json` `teach` `name`, `fam` and, where WoRMS holds other families, `wfam`),
+  only on an entry the layer tags, and the `name` of its 7 sub-entries; `pdf` the section tokens of the IMR reference
+  PDF whose species the entry should hold (the build's cross-check; 43 entries, whatever their source, the PDF being
+  IMR's list); `sl` the presentation's slide numbers (a species': the slide that names it). A
   species' `pdf` (its pages in the IMR reference PDF, the EventMeasure list) marks it as the PDF's, 366 species: only
   then it has `common` (the PDF's common name, never corrected), `sec` (its section) and `cs` (its rank on the
   cheatsheet, 24 species); a species' `src` is `"slides"` for the two species only the presentation names. The base
@@ -414,15 +419,21 @@ the identification `key` in force there (the deployment's choice, not the organi
   `tools/instance.py` `fish_source` lays them on `tools/fish_source.json` (the sources' part) and lays the instance's
   `key` as `deploy.key`; `tools/build_fish.py` reads the result in every mode. It stops when the base still carries
   one of those fields (an edit made in the old place, a merge; the base's own `src`, `pdf`, `diver` or `wink`, is not
-  the layer's; its `common` is, once the layer marks the species as the PDF's) or when the layer names a node or
-  species the base does not hold. The offline modes (`--regroup`, `--commonness`, `--near`) lay the layer again on
-  `fish.json` as it is (`relay`: slides, cues, look and phase, the tag and the mark, the species' common names,
+  the layer's; its `common` is, once the layer marks the species as the PDF's; the base's `name` and `fam` are the
+  layer's on an entry it tags, which must give them, with its sub-entries' names) or when the layer names a node or species the base does
+  not hold, or gives `name` or `fam` to an entry it does not tag. The offline modes (`--regroup`, `--commonness`,
+  `--near`) lay the layer again on `fish.json` as it is (`relay`: slides, cues, look and phase, the tag and the mark,
+  the entries' and sub-entries' names, the entries' `fam` and `wfam`, the species' common names,
   sections, slides and mark, taken off and put back where the build writes them, `start`, then the families), so an
   edit of those needs no WoRMS call; a changed circle, or a changed `pdf` or `cs`, stops them (the species' circles,
   their presence test, which the IMR list confirms near Dauin (rule C8), and their rank follow: the full build); the
   base's own `src` (`dauin`, `wink`) is not laid again. An
   edition without the layer has no IMR tag, slide or mark on its entries, and the families then carry no `imr` name;
-  its PDF species have no name, section, pages or cheatsheet rank, so the list no longer confirms a species near Dauin.
+  an entry the tag would have marked has no IMR name or family spelling, so it takes its family's label in the key in
+  force (the label of its first reference; else its WoRMS family; else its first reference's name; a sub-entry, its
+  first reference's name) and its `fam` is the WoRMS family when its references have one only (`null` otherwise); no
+  entry has a section list (no cross-check against the PDF), and a genus is no longer tagged `imr` by a sub-entry; its
+  PDF species have no name, section, pages or cheatsheet rank, so the list no longer confirms a species near Dauin.
 - **`coral.json`**: `imrg` (the 11 IMR lecture groups), `gen` {genus: `n` (its number on the IMR slate, 0 for a starred
   genus), `ig`, `imr`, `mn`, `sl` and `rsl` (its Lecture 6 slide numbers and review slide numbers, when it has them),
   `qt` (its short ID tips, condensed from the lecture notes: `tools/id_tips.txt`)} and `pairs`, the IMR
@@ -445,17 +456,40 @@ the identification `key` in force there (the deployment's choice, not the organi
   genera without a `tl` heading** (36): the three whose tips come from the Coral Finder (Merulina, Cyphastrea,
   Halomitra, `tl` set) keep theirs in `data.json`, and the layer giving `qt` to one of them stops the build. The
   scripts that edit those fields (`tools/apply_imr_corrections.py`, `tools/apply_review_slides.py`,
-  `tools/apply_favites.py`, `tools/apply_id_tips.py`) write the layer file.
-- **Checks** (`tests/instance.test.js`): `fish.json` and `data.json` byte for byte as the two layers give them:
+  `tools/apply_favites.py`, `tools/apply_id_tips.py`) write the layer file. `slate` {`order`, `benthic`} declares the
+  IMR slate: the genera of `data.json` `gen` in the order the games teach them (numbered 1 to 34, then the five starred
+  genera, `n` 0) and the genera of `data.json` `x` that the core adds (`core/photos.js` `BENTHIC`: Millepora), which is
+  what `slateOf` returns. Nothing reads it at run time, and `data.json` does not carry it: `python3 tools/datajson.py
+  --check` fails when `data.json` `gen` or the core's `BENTHIC` differ from it (`tools/instance.py` `slate_problems`).
+  The slate as data the core reads is not built: it would change a format the core, the sheet script and the tools follow.
+- **`course.json`**: `course` {genus: [photo record]} and `cmp` [record], the references of the IMR lecture's photos:
+  `data.json` `course` (118 records over 34 genera, each `imr: true`, with `slide` and `v`, and the credit `a` and `pg`
+  once traced) and the lecture's `cmp` record (`imr: true`). The photos stay in `img/` and on R2, and the records stay in
+  `data.json` where the core, the app, the admin and the tools read them. The layer file is where they are edited, through
+  the tools that have always written `data.json`: `tools/datajson.py` `dump()` writes the `course` and the lecture's `cmp`
+  records it changes from the `data.json` on disk to the layer file and `data.json` gets the same (so about fifteen
+  `tools/apply_*.py` and the other writers do not change; one that reads `data.json` itself and leaves them alone does not
+  undo an edit of the layer file), `load()` lays the layer on what it reads (an edit of the layer file is seen at once; a
+  difference from `data.json`'s copy is said on stderr, and the layer wins), and the rewrite and `--check` give
+  `data.json` as the layer says. Data with no `course`, or no `cmp`, is data that does not say: the layer's records stay.
+  The Candidate photos workflow (`.github/workflows/approved-photos.yml`) stages and allows `course.json` beside `data.json`,
+  since an excluded or restored lecture photo changes both.
+  A `cmp` record without `imr: true` is the sources' and stays in `data.json` alone, after the lecture's. An edition
+  without the layer (`course_compose` of the sources with no layer) has an empty `course` and no lecture comparison: no
+  lecture strip on the genus sheet, smaller game pools, and Pierre's choices that name a lecture photo (a dozen
+  ids in `curation.json`) have nothing to apply to: every path of `core/curation.js` skips an id it does not know, and the admin
+  lists such choices apart (`missing()`), never losing them (rule A1; `tests/coursecuration.test.js`).
+  `tools/instances/imr/imr_sources.json` (where each lecture photo was found online, with the sites' terms) lives beside it.
+- **Checks** (`tests/instance.test.js`): `fish.json` and `data.json` byte for byte as the layers give them:
   `build_fish.py --regroup --check` (the layer's fish fields taken off `fish.json` and laid again), and `data.json` with
-  the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
+  the layers' fields taken off and laid again (`python3 tools/datajson.py --check`); a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
-- **Not in the layer yet** (easy to move later): the fish teaching nodes' names, `fam`, references (`ref`, `pdf`) and
-  tree (they identify the entries, and the layer holds fields of an entry the base names, never an entry); the
-  references of the lecture photos
-  (`data.json` `course`, photos marked `imr`); and the coral slate's structure beyond each genus's number (the starred
-  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`). The course's
+- **Not in the layer yet** (easy to move later): the fish teaching tree (ids, sub-entry ids, order) and its WoRMS
+  mapping (`ref`, `not`), which identify the entries and place every species (the layer holds fields of an entry the
+  base names, never an entry; the mapping is ours); the lecture photos' own file that only an IMR edition loads (the
+  records stay in `data.json`, laid from `course.json`); and the coral slate as data the core reads (the starred
+  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`: declared and checked above, not read). The course's
   words in the code (the IMR course, the IMR lecture, the IMR fish presentation...) are not layer content: they are
   `core.js` `ORG` fields ([storage.md › The app's name](storage.md#the-apps-name)), and the data's values that hold
   them (the source lines "IMR Lecture 6, slide …" and "IMR fish presentation, …") stay as they are.

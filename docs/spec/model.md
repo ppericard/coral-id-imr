@@ -201,8 +201,8 @@ there are no coded tracks; the player's own answers set the pace.
   card planned before the miss is planned again.
 - Easier questions while the opening hold is on (`holdEase`): the photos and the format aim `h − INTRO.HOLD` logits
   lower, on every question but an exam, the Duel tab's too (`quiz.js` `planDuel`).
-- A starred unit opens only once its references are met ([front-end.md](front-end.md#shared-helpers-appjs),
-  `starWaits`).
+- A unit opens only once the units its record says it opens after are met (`after`: a starred genus's references,
+  [front-end.md](front-end.md#shared-helpers-appjs); `core.js` `afterWaits`, read for every subject).
 - The draw is simulated by `tests/profiles.smoke.js`, the learning outcomes over many seeds by `tools/learnsim.js`.
 
 **First-meeting cards, Open all and back to one at a time** (`model.js` `INTRO`, `introAdd`, `introduced`, `introReady`,

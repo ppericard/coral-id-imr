@@ -9,20 +9,26 @@ here (rule A1).
 
 tools/instance.json names the instance (id, name), its centre (presence near it: tools/presence.py, rule C8), the
 identification key in force there (key: the deployment's choice, laid by fish_source as deploy.key, rule S3) and its
-layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance's, in tools/instances/imr/:
+layer files, one per subject (SUBJECTS key: fish, coral) and one for the lecture's photo records (course). Today the IMR
+instance's, in tools/instances/imr/:
 
 - fish: start (the starter core), look (the declared look-alike groups of families), nodes {teaching node id:
-  {circle, src, sign, sl, cues, look, phase}} (a sub-entry: sl, cues, look, phase) and species {species id: {common,
-  sec, pdf, cs, src, sl}}. src is the IMR tag ("imr": the entries of the IMR fish presentation), sign: false marks an
-  entry off the presentation's dive-sign list, sl the presentation's slides. A species' pdf (the PDF's pages) marks it
+  {circle, src, sign, name, fam, pdf, sl, cues, look, phase}} (a sub-entry: name, sl, cues, look, phase) and species
+  {species id: {common, sec, pdf, cs, src, sl}}. src is the IMR tag ("imr": the entries of the IMR fish presentation),
+  sign: false marks an entry off the presentation's dive-sign list, name and fam the entry's name as IMR writes it and
+  the family as IMR spells it (only on an entry the layer tags, and the name of its sub-entries), pdf the section
+  tokens of the IMR reference PDF whose species the entry should hold (on any entry: the PDF is IMR's list), sl the
+  presentation's slides. A species' pdf (the PDF's pages) marks it
   as the PDF's, the IMR reference list (the EventMeasure PDF); only then it has the PDF's common name (never
   corrected), sec (its section) and cs (its rank on the cheatsheet); src: "slides" marks a species only the
   presentation names. fish_source() lays them on tools/fish_source.json, and tools/build_fish.py reads the result. The
   base never carries them (its src is the other sources': pdf, diver, wink; a species' common name is the base's unless
-  the layer marks it as the PDF's): a node or species of the base with one of them, or a layer node or species the
-  base does not hold, stops the build. A teaching node's names (name, fam), pdf, ref and species stay in the base: the
-  IMR names are the entries the tag marks, and an edition without the layer has no IMR tag, slide or cue on its
-  entries, and no PDF name, section or rank on its species.
+  the layer marks it as the PDF's; a node's name and fam are the base's unless the layer tags the node): a node or
+  species of the base with one of them, or a layer node or species the base does not hold, stops the build. A teaching
+  node's ref, not, species, ids and order stay in the base, which identifies the entries and places every species (the
+  WoRMS mapping is ours). A tagged entry must have its name and fam in the layer (and its sub-entries their name). An
+  edition without the layer has no IMR tag, slide or cue on its entries, no IMR name (its entries take their family's
+  label in the key in force, build_fish.py node_names), no section list, and no PDF name, section or rank on its species.
 - coral: imrg (the IMR lecture's groups), gen {genus: {n, ig, imr, mn, sl, rsl, qt}} (its slate number, its lecture
   group, its lecture notes verbatim, its mnemonic, its lecture slides and review slides, its ID tips: the tips of a
   genus with a Coral Finder heading, tl, stay in data.json, condensed from the book) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
@@ -32,7 +38,17 @@ layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance
   then python3 tools/datajson.py; dump() refuses a data.json whose fields, or a pair's line or direction, differ from the
   layer, so an edit made in data.json is never lost silently. A pair taken out of the layer stays in data.json until it
   is taken out there too (data.json alone cannot tell it from a Coral Finder pair; tests/instance.test.js fails on a
-  lecture line left in the sources).
+  lecture line left in the sources). slate {order, benthic} declares the IMR slate: the genera of data.json gen in the
+  order the games teach them (the numbered ones, then the starred) and the genera of data.json x that the core adds
+  (core/photos.js BENTHIC). Nothing reads it at run time; python3 tools/datajson.py --check compares it with data.json
+  and the core (slate_problems).
+- course: course {genus: [photo record]} and cmp [record], the references of the IMR lecture's photos (data.json
+  course, 118 records, and the lecture's cmp record, the one with imr: true; the photos themselves stay in img/ and on
+  R2). data.json carries a copy where it always had them. The layer file is where they are edited: datajson.dump()
+  writes the course and the lecture's cmp records it changes from the data.json on disk to the layer file and data.json
+  gets the same (so the tools that write data.json do not change; one that reads data.json itself and leaves them alone
+  does not undo an edit of the layer file), datajson.load() lays the layer on what it reads, and the rewrite and --check
+  give data.json as the layer says. A cmp record without imr: true is the sources', and stays in data.json.
 
 Another instance gets its own instance.json and layer files; a subject with no layer file builds with no layer (fish:
 every node in circle 1 by the build's default, no declared pair, no starter core).
@@ -54,9 +70,12 @@ DATA = ROOT / "data.json"
 
 # A teaching node's fields that are the instance's. src is the IMR tag only ("imr", the presentation's entries): the
 # other sources (pdf, diver, wink) are the sources' and stay in tools/fish_source.json. sign: false marks an entry the
-# presentation's dive-sign list lacks.
-FISH_NODE = ("circle", "src", "sign", "sl", "cues", "look", "phase")
-FISH_SUB = ("sl", "cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle)
+# presentation's dive-sign list lacks. name and fam are IMR's names (the entry's name and the family as IMR writes it):
+# the layer's only on an entry it tags (FISH_NAMES), the base's otherwise; pdf, the PDF's section tokens, is the layer's
+# on every entry.
+FISH_NODE = ("circle", "src", "sign", "name", "fam", "pdf", "sl", "cues", "look", "phase")
+FISH_SUB = ("name", "sl", "cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle); name as FISH_NAMES
+FISH_NAMES = ("name", "fam")  # the fields that are the layer's only on an entry it tags (and a sub-entry of one)
 # A species' fields that are the instance's: the slide of the presentation that names it (sl); the PDF's own fields, only
 # on a species the layer marks as the PDF's by giving its pdf (the PDF's pages): common (the PDF's name for it, never
 # corrected), sec (its section) and cs (its rank on the cheatsheet); and the presentation's mark src: "slides" (a
@@ -73,7 +92,9 @@ FISH_TOP = ("start", "look")
 CORAL_AFTER = {"n": "tr", "ig": "n", "imr": "ig", "mn": "imr", "sl": "lsrc", "qt": "sl", "rsl": "sl"}
 CORAL_TOP_AFTER = {"imrg": "key"}
 CORAL_PAIR_AFTER = {"look": "crit", "lsrc": "levels"}  # where a genus's look and lsrc sit, should a record lack them
-SPLIT = ("nodes", "species", "gen", "pairs")  # a layer file's maps written one entry per line
+COURSE_AFTER = {"course": "traits", "cmp": "cand"}  # where data.json has always had the lecture's photo records
+COURSE_KEYS = ("_doc", "course", "cmp")  # the course layer file's keys
+SPLIT = ("nodes", "species", "gen", "pairs", "course")  # a layer file's maps written one entry per line
 
 
 def instance(path=INSTANCE_PATH):
@@ -128,8 +149,9 @@ def write_layer(subject, lay, path=None):
 def fish_compose(base, lay, key=None):
     """tools/fish_source.json (base) with the instance's layer laid on: the source tools/build_fish.py reads. Stops when
     the base still carries a field of the layer (an edit made in the old place, say by a merge; a src other than the
-    layer's tags is the base's; a species' common name is the base's unless the layer marks the species as the PDF's) or
-    the layer names a node or species the base does not hold. key: the identification key in force (tools/instance.json
+    layer's tags is the base's; a species' common name is the base's unless the layer marks the species as the PDF's; an
+    entry's name and fam, and its sub-entries' names, are the base's unless the layer tags the entry) or the layer names
+    a node or species the base does not hold. key: the identification key in force (tools/instance.json
     key), laid as deploy.key, where tools/build_fish.py key_in_force reads it; the base holds no deploy."""
     src, bad = copy.deepcopy(base), []
     for k in FISH_TOP:
@@ -137,15 +159,18 @@ def fish_compose(base, lay, key=None):
             bad.append(f"tools/fish_source.json {k}: the instance's (its layer file)")
     if "deploy" in src:
         bad.append("tools/fish_source.json deploy: the deployment's (tools/instance.json key)")
-    by = {}
+    by, top = {}, {}  # top: a node's or sub-entry's entry (its own id for an entry)
     for t in src.get("teach", []):
-        by[t["id"]] = (t, FISH_NODE)
+        by[t["id"]], top[t["id"]] = (t, FISH_NODE), t["id"]
         for u in t.get("sub", []):
-            by[u["id"]] = (u, FISH_SUB)
+            by[u["id"]], top[u["id"]] = (u, FISH_SUB), t["id"]
+    # The entries whose IMR tag is the layer's: only there are the names (name, fam) the layer's; an entry of the base's
+    # own source (pdf, diver, wink) keeps its name in the base, a tagged entry the base gives a name to stops the build.
+    tagged = {n for n, x in (lay.get("nodes") or {}).items() if top.get(n) == n and x.get("src") == FISH_TAG and "src" not in by[n][0]}
     sp = {s["id"]: s for s in src.get("species", [])}
     for n, (rec, keys) in by.items():
         for k in keys:
-            if k in rec and not (k == "src" and rec[k] != FISH_TAG):
+            if k in rec and not (k == "src" and rec[k] != FISH_TAG) and not (k in FISH_NAMES and top[n] not in tagged):
                 bad.append(f"tools/fish_source.json {n} {k}: the instance's (its layer file)")
     for n, s in sp.items():
         for k in FISH_SPECIES:
@@ -161,8 +186,21 @@ def fish_compose(base, lay, key=None):
                 bad.append(f"layer node {n} {k}: not a field of the layer ({', '.join(keys)})")
             elif k == "src" and (v != FISH_TAG or "src" in rec):
                 bad.append(f"layer node {n} src: only the tag {FISH_TAG!r}, on a node whose source the base does not name")
+            elif k in FISH_NAMES and top[n] not in tagged:
+                bad.append(f"layer node {n} {k}: only on an entry the layer tags ({FISH_TAG!r}), or one of its sub-entries "
+                           "(the other entries' names are the base's)")
             else:
                 rec[k] = copy.deepcopy(v)
+    # The tag says "IMR's entry": its name and fam, and its sub-entries' names, are IMR's, so the layer gives them all (the
+    # fallback of node_names is for an entry no layer tags, and would otherwise be written as IMR's name).
+    lnodes = lay.get("nodes") or {}
+    for n in sorted(tagged):
+        for k in FISH_NAMES:
+            if k not in lnodes[n]:
+                bad.append(f"layer node {n} {k}: an entry the layer tags ({FISH_TAG!r}) has IMR's {k}")
+        for u in by[n][0].get("sub", []):
+            if "name" not in lnodes.get(u["id"], {}):
+                bad.append(f"layer node {u['id']} name: a sub-entry of an entry the layer tags ({FISH_TAG!r}) has IMR's name")
     held = {n: set(s) for n, s in sp.items()}
     for n, x in (lay.get("species") or {}).items():
         if n not in sp:
@@ -332,6 +370,108 @@ def coral_layered(d, lay=None):
     return coral_compose(d, lay)
 
 
+def slate_problems(d, lay, benthic):
+    """How data.json (d) and the core's BENTHIC list (benthic) differ from the slate the coral layer declares (lay slate
+    {order, benthic}); [] when they agree or the layer declares none. The slate is the genera of d gen in their order, the
+    numbered genera (n 1, 2, …) then the starred (n 0), and the genera of benthic that d x gen holds (core/photos.js
+    slateOf). Nothing reads the declaration at run time: this is its check."""
+    s = lay.get("slate")
+    if s is None:
+        return []
+    out = []
+    if set(s) != {"order", "benthic"}:
+        return [f"the layer's slate has {sorted(s)}, not order and benthic"]
+    order = list(d.get("gen") or {})
+    if s["order"] != order:
+        at = next((i for i, (a, b) in enumerate(zip(s["order"], order)) if a != b), min(len(s["order"]), len(order)))
+        out.append(f"slate order: the layer's differs from data.json gen at {at + 1} "
+                   f"({(s['order'] + [None])[at]!r} against {(order + [None])[at]!r}; {len(s['order'])} and {len(order)} genera)")
+    if s["benthic"] != list(benthic):
+        out.append(f"slate benthic: the layer's {s['benthic']} differs from the core's BENTHIC {list(benthic)}")
+    xgen = (d.get("x") or {}).get("gen") or {}
+    out += [f"slate benthic {g}: not a genus of data.json x gen" for g in s["benthic"] if g not in xgen]
+    ns = [((lay.get("gen") or {}).get(g) or {}).get("n") for g in s["order"]]
+    numbered = [n for n in ns if n != 0]
+    if numbered != list(range(1, len(numbered) + 1)) or ns[:len(numbered)] != numbered:
+        out.append("slate order: the numbered genera are not 1, 2, … in order, then the starred (n 0)")
+    return out
+
+
+# --- the lecture's photo records -------------------------------------------------------------------------------------
+
+def course_lecture(rec):
+    """Whether a cmp record (data.json) is the lecture's: its photo is the lecture's slide (imr: true)."""
+    return rec.get("imr") is True
+
+
+def course_problems(lay):
+    """What is wrong with a course layer file (lay): a key it should not have, a record that is not the lecture's."""
+    return ([f"{k}: not a key of the course layer ({', '.join(COURSE_KEYS)})" for k in lay if k not in COURSE_KEYS]
+            + [f"course {g} {r.get('f')}: not a lecture photo (imr: true)"
+               for g, L in (lay.get("course") or {}).items() for r in L if not course_lecture(r)]
+            + [f"cmp {r.get('f')}: not a lecture photo (imr: true)" for r in lay.get("cmp") or [] if not course_lecture(r)])
+
+
+def course_strip(d):
+    """data.json without the lecture's photo records (the sources alone): a copy without course and without the cmp
+    records of the lecture."""
+    d = copy.deepcopy(d)
+    d.pop("course", None)
+    if "cmp" in d:
+        d["cmp"] = [r for r in d["cmp"] if not course_lecture(r)]
+    return d
+
+
+def course_compose(d, lay):
+    """d with the course layer (lay course, cmp) laid on, its records where data.json has always had them (COURSE_AFTER):
+    the layer's course replaces d's, the layer's cmp records come before the sources' own. A new copy."""
+    d = course_strip(d)
+    _put(d, "course", copy.deepcopy(lay.get("course") or {}), COURSE_AFTER["course"])
+    cmp = copy.deepcopy(lay.get("cmp") or []) + d.get("cmp", [])
+    if cmp or "cmp" in d:
+        _put(d, "cmp", cmp, COURSE_AFTER["cmp"])
+    return d
+
+
+def course_differs(d, lay):
+    """What of d (data.json) is not what the course layer gives: ["course"], ["cmp"], both or none."""
+    mine = (("course", d.get("course")), ("cmp", [r for r in d.get("cmp", []) if course_lecture(r)]))
+    # By their text: the order of the genera and of a record's fields is the file's bytes.
+    return [k for k, v in mine if json.dumps(v) != json.dumps(lay.get(k) or ({} if k == "course" else []))]
+
+
+def course_part(d, k):
+    """The course layer's field k ("course" or "cmp") as data.json (d) holds it, as text (the order of the genera and of a
+    record's fields is the file's bytes); None when d does not hold it."""
+    if k not in d:
+        return None
+    return json.dumps(d[k] if k == "course" else [r for r in d[k] if course_lecture(r)])
+
+
+def course_layer(d, lay, prev=None):
+    """The course layer file as d gives it: d's course and its lecture cmp records, where d holds them (a d with no
+    course, or no cmp, is a d that does not say: the layer's stay) and, when prev (data.json as it is on disk) is given,
+    where d changes them: a tool that read data.json itself, with the layer edited by hand since, did not touch them, and
+    the layer's stay."""
+    out = copy.deepcopy(lay)
+    for k in ("course", "cmp"):
+        if course_part(d, k) is None or (prev is not None and course_part(d, k) == course_part(prev, k)):
+            continue
+        out[k] = copy.deepcopy(d[k]) if k == "course" else [copy.deepcopy(r) for r in d[k] if course_lecture(r)]
+    return out
+
+
+def course_written(d, prev=None):
+    """d as dump() writes it to data.json, the one writer of both files: the course and the lecture's cmp records that d
+    changes from prev (data.json as it is on disk; all it holds when prev is None) go to the course layer file, and d comes
+    back with the layer's laid on."""
+    lay = load_layer("course")
+    new = course_layer(d, lay, prev)
+    if layer_dumps(new) != layer_dumps(lay):  # by the text: the order of the genera and of a record's fields is bytes
+        write_layer("course", new)
+    return course_compose(d, new)
+
+
 def check():
     bad = []
     inst = instance()
@@ -346,6 +486,8 @@ def check():
         s = p.read_text(encoding="utf-8")
         if s != layer_dumps(json.loads(s)):
             bad.append(f"{p.relative_to(ROOT)}: not in its layout (instance.py layer_dumps)")
+        if subject == "course":
+            bad += [f"{p.relative_to(ROOT)} {m}" for m in course_problems(json.loads(s))]
     src = fish_source()  # stops on a stale base or an unknown node
     key = inst.get("key")
     if key is not None and key not in [k["id"] for k in src.get("keys", [])]:

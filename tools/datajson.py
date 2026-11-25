@@ -15,7 +15,14 @@ lsrc entries) live in the coral layer file tools/instance.json names (today tool
 data.json carries a copy where it always had them. dump() to data.json
 lays the layer on, and stops when the data it is given changes one of those fields (an edit belongs in the layer file);
 the rewrite lays the layer on (after an edit of the layer file); --check fails when data.json is not as its layers give
-it, byte for byte.
+it, byte for byte, or when the slate the coral layer declares differs from data.json gen or the core's BENTHIC.
+
+The IMR lecture's photo records (data.json course and the lecture's cmp records, imr: true) are the course layer's
+(tools/instances/imr/course.json), which this module writes and reads so that the tools that write data.json do not
+change: dump() writes the course and the lecture's cmp records it changes from the data.json on disk to the layer file,
+and data.json gets the same; load() lays the layer on what it reads (an edit of the layer file is seen at once;
+data.json's copy is not the source, and a difference is said on stderr); a tool that reads data.json itself (json.load)
+and leaves them alone does not undo an edit of the layer file; the rewrite and --check give data.json as the layer says.
 """
 import json, os, sys
 
@@ -98,9 +105,24 @@ def dump_all(d, path=PATH, cand_path=CAND_PATH, keep=None):
     dump({'cand': waiting}, cand_path)
 
 
+def course_on(path, d):
+    """Whether the course layer is laid on d, the data read from path: data.json, with a course layer named by the instance."""
+    return is_data(path) and isinstance(d, dict) and 'gen' in d and instance.layer_path('course') is not None
+
+
 def load(path=PATH):
     with open(path, encoding='utf-8') as fh:
-        return json.load(fh)
+        d = json.load(fh)
+    if course_on(path, d):
+        # The lecture's photo records are edited in the course layer file: it wins over data.json's copy, so a tool that
+        # reads, changes and dumps never writes an older copy back over an edit of the layer.
+        lay = instance.load_layer('course')
+        bad = instance.course_differs(d, lay)
+        if bad:
+            print(f"datajson.load: data.json {' and '.join(bad)} differ from the course layer; the layer's are read "
+                  "(an edit goes to the layer file, then python3 tools/datajson.py)", file=sys.stderr)
+        d = instance.course_compose(d, lay)
+    return d
 
 
 def is_data(path):
@@ -111,6 +133,13 @@ def is_data(path):
 def dump(d, path=PATH):
     if is_data(path) and isinstance(d, dict) and 'gen' in d:
         d = instance.coral_layered(d)
+        if course_on(path, d):
+            try:
+                with open(path, encoding='utf-8') as fh: prev = json.load(fh)
+            except (OSError, ValueError): prev = None
+            # The lecture's photo records d changes go to their layer file, data.json gets the same (a tool that read
+            # data.json itself and left them as they are does not undo an edit of the layer file made since).
+            d = instance.course_written(d, prev)
     with open(path, 'w', encoding='utf-8', newline='\n') as fh:
         fh.write(dumps(d))
     if is_data(path) and isinstance(d, dict) and 'gen' in d:
@@ -124,14 +153,23 @@ if __name__ == '__main__':
         dump_all(load_all())
         print('candidates split: data.json keeps the curated ones, data/cand.json the others')
         sys.exit(0)
-    bad = []
+    bad, slate = [], []
     for path in (PATH, CAND_PATH):
         if not os.path.exists(path): continue
         with open(path, encoding='utf-8', newline='') as fh:
             s = fh.read()
         d = json.loads(s)
         if is_data(path):
-            d = instance.coral_compose(d, instance.load_layer('coral'))  # the layer wins: an edit of the layer file
+            lay = instance.load_layer('coral')
+            d = instance.coral_compose(d, lay)  # the layers win: an edit of a layer file
+            if course_on(path, d):
+                lec = instance.load_layer('course')
+                for k in instance.course_differs(d, lec):
+                    print(f'data.json {k}: differs from the course layer, which wins')
+                d = instance.course_compose(d, lec)
+            # The slate the coral layer declares, against data.json gen and the core's BENTHIC (core/photos.js).
+            from genera import lists
+            slate += instance.slate_problems(d, lay, lists()[0])
         good = dumps(d)
         name = os.path.basename(path)
         if '--check' in sys.argv[1:]:
@@ -143,7 +181,11 @@ if __name__ == '__main__':
             print(name, 'rewritten')
         else:
             print(name, 'already in layout')
+    if slate:
+        print("the coral layer's slate differs from data.json or the core: " + '; '.join(slate), file=sys.stderr)
     if bad:
         sys.exit(', '.join(bad) + ' not in the canonical layout, or not as its layers give it (data.json: the coral '
-                 'layer, tools/instance.py): run python3 tools/datajson.py (and write it with tools/datajson.py dump(), '
-                 'never json.dump)')
+                 'and course layers, tools/instance.py): run python3 tools/datajson.py (and write it with '
+                 'tools/datajson.py dump(), never json.dump)')
+    if slate:
+        sys.exit(1)

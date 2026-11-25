@@ -84,7 +84,7 @@ Conventions that hold across them:
 | `apply_coral_apart.py`, `coral_apart.json` | The declared coral pairs' tell-apart lines with their sources (the slate's, and those with a bonus or Key-only genus), into `data.json` `ap` / `apsrc`; `--check` for a test |
 | `apply_imr_corrections.py`, `apply_review_slides.py`, `apply_favites.py`, `apply_some_species.py` | One-time content passes on the lecture notes and the traits of some genera |
 | `apply_imr_forms.py` | The IMR growth-form definitions into `forms.json` |
-| `apply_imr_sources.py`, `imr_sources.json` | Credits the IMR lecture photos traced to their original source |
+| `apply_imr_sources.py`, `instances/imr/imr_sources.json` | Credits the IMR lecture photos traced to their original source |
 | `apply_book_rewrite.py`, `book_rewrite.json` | Rewords the texts that followed a book too closely; `--check` for a test |
 | `apply_no_book.py` | Takes the book's crops out of `data.json` and `data/cand.json` |
 | `apply_skeletons.py` | Marks skeleton photos from `judging/skeletons.json` (rule P6) |
