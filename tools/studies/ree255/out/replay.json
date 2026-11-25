@@ -1,0 +1,460 @@
+{
+ "note": "aggregates only, no player label (rule D2); method: README.md",
+ "check": 0,
+ "scored": 3878,
+ "players": 15,
+ "declared": {
+  "grid": [
+   0,
+   0.125,
+   0.25,
+   0.375,
+   0.5
+  ],
+  "label": "declared grid, 0 to 0.5",
+  "today": {
+   "mean": 0.44488,
+   "calib": {
+    "wide": {
+     "n": 1914,
+     "right": 0.822,
+     "predicted": 0.799
+    },
+    "medium": {
+     "n": 748,
+     "right": 0.826,
+     "predicted": 0.799
+    },
+    "macro": {
+     "n": 303,
+     "right": 0.832,
+     "predicted": 0.826
+    },
+    "multi": {
+     "n": 913,
+     "right": 0.807,
+     "predicted": 0.823
+    }
+   }
+  },
+  "shared": {
+   "best_whole_log": {
+    "wide": 0,
+    "medium": 0,
+    "macro": 0
+   },
+   "best_mean": 0.43541,
+   "calib_best": {
+    "wide": {
+     "n": 1914,
+     "right": 0.822,
+     "predicted": 0.814
+    },
+    "medium": {
+     "n": 748,
+     "right": 0.826,
+     "predicted": 0.814
+    },
+    "macro": {
+     "n": 303,
+     "right": 0.832,
+     "predicted": 0.839
+    },
+    "multi": {
+     "n": 913,
+     "right": 0.807,
+     "predicted": 0.791
+    }
+   },
+   "lopo_mean": 0.43541,
+   "lopo_settings": [
+    {
+     "S": {
+      "wide": 0,
+      "medium": 0,
+      "macro": 0
+     },
+     "players": 15
+    }
+   ]
+  },
+  "per-view": {
+   "best_whole_log": {
+    "wide": 0,
+    "medium": 0,
+    "macro": 0
+   },
+   "best_mean": 0.43541,
+   "calib_best": {
+    "wide": {
+     "n": 1914,
+     "right": 0.822,
+     "predicted": 0.814
+    },
+    "medium": {
+     "n": 748,
+     "right": 0.826,
+     "predicted": 0.814
+    },
+    "macro": {
+     "n": 303,
+     "right": 0.832,
+     "predicted": 0.839
+    },
+    "multi": {
+     "n": 913,
+     "right": 0.807,
+     "predicted": 0.791
+    }
+   },
+   "lopo_mean": 0.43541,
+   "lopo_settings": [
+    {
+     "S": {
+      "wide": 0,
+      "medium": 0,
+      "macro": 0
+     },
+     "players": 15
+    }
+   ]
+  },
+  "tests": [
+   {
+    "vs": "today",
+    "kind": "shared",
+    "mean_diff": -0.00947,
+    "players_lower": 14,
+    "p": 0.0001
+   },
+   {
+    "vs": "today",
+    "kind": "per-view",
+    "mean_diff": -0.00947,
+    "players_lower": 14,
+    "p": 0.0001
+   },
+   {
+    "vs": "shared",
+    "kind": "per-view",
+    "mean_diff": 0,
+    "players_lower": 0,
+    "p": 1
+   }
+  ]
+ },
+ "wider": {
+  "grid": [
+   -1,
+   -0.5,
+   -0.25,
+   0,
+   0.25,
+   0.5,
+   0.75
+  ],
+  "label": "wider grid, exploratory",
+  "today": {
+   "mean": 0.44488,
+   "calib": {
+    "wide": {
+     "n": 1914,
+     "right": 0.822,
+     "predicted": 0.799
+    },
+    "medium": {
+     "n": 748,
+     "right": 0.826,
+     "predicted": 0.799
+    },
+    "macro": {
+     "n": 303,
+     "right": 0.832,
+     "predicted": 0.826
+    },
+    "multi": {
+     "n": 913,
+     "right": 0.807,
+     "predicted": 0.823
+    }
+   }
+  },
+  "shared": {
+   "best_whole_log": {
+    "wide": -1,
+    "medium": -1,
+    "macro": -1
+   },
+   "best_mean": 0.42805,
+   "calib_best": {
+    "wide": {
+     "n": 1914,
+     "right": 0.822,
+     "predicted": 0.845
+    },
+    "medium": {
+     "n": 748,
+     "right": 0.826,
+     "predicted": 0.846
+    },
+    "macro": {
+     "n": 303,
+     "right": 0.832,
+     "predicted": 0.867
+    },
+    "multi": {
+     "n": 913,
+     "right": 0.807,
+     "predicted": 0.722
+    }
+   },
+   "lopo_mean": 0.43107,
+   "lopo_settings": [
+    {
+     "S": {
+      "wide": -1,
+      "medium": -1,
+      "macro": -1
+     },
+     "players": 14
+    },
+    {
+     "S": {
+      "wide": -0.5,
+      "medium": -0.5,
+      "macro": -0.5
+     },
+     "players": 1
+    }
+   ]
+  },
+  "per-view": {
+   "best_whole_log": {
+    "wide": -1,
+    "medium": -1,
+    "macro": -1
+   },
+   "best_mean": 0.42805,
+   "calib_best": {
+    "wide": {
+     "n": 1914,
+     "right": 0.822,
+     "predicted": 0.845
+    },
+    "medium": {
+     "n": 748,
+     "right": 0.826,
+     "predicted": 0.846
+    },
+    "macro": {
+     "n": 303,
+     "right": 0.832,
+     "predicted": 0.867
+    },
+    "multi": {
+     "n": 913,
+     "right": 0.807,
+     "predicted": 0.722
+    }
+   },
+   "lopo_mean": 0.432,
+   "lopo_settings": [
+    {
+     "S": {
+      "wide": -1,
+      "medium": -1,
+      "macro": -1
+     },
+     "players": 13
+    },
+    {
+     "S": {
+      "wide": -0.5,
+      "medium": -0.25,
+      "macro": -0.5
+     },
+     "players": 1
+    },
+    {
+     "S": {
+      "wide": -1,
+      "medium": -0.5,
+      "macro": -1
+     },
+     "players": 1
+    }
+   ]
+  },
+  "tests": [
+   {
+    "vs": "today",
+    "kind": "shared",
+    "mean_diff": -0.01381,
+    "players_lower": 9,
+    "p": 0.1015
+   },
+   {
+    "vs": "today",
+    "kind": "per-view",
+    "mean_diff": -0.01288,
+    "players_lower": 9,
+    "p": 0.1188
+   },
+   {
+    "vs": "shared",
+    "kind": "per-view",
+    "mean_diff": 0.00093,
+    "players_lower": 0,
+    "p": 0.5
+   }
+  ]
+ },
+ "late": {
+  "grid": [
+   0,
+   0.125,
+   0.25,
+   0.375,
+   0.5
+  ],
+  "label": "late half (from 2026-11-05 20:05), declared grid, exploratory",
+  "today": {
+   "mean": 0.4884,
+   "calib": {
+    "wide": {
+     "n": 1078,
+     "right": 0.812,
+     "predicted": 0.805
+    },
+    "medium": {
+     "n": 399,
+     "right": 0.817,
+     "predicted": 0.804
+    },
+    "macro": {
+     "n": 128,
+     "right": 0.875,
+     "predicted": 0.835
+    },
+    "multi": {
+     "n": 341,
+     "right": 0.789,
+     "predicted": 0.815
+    }
+   }
+  },
+  "shared": {
+   "best_whole_log": {
+    "wide": 0,
+    "medium": 0,
+    "macro": 0
+   },
+   "best_mean": 0.4802,
+   "calib_best": {
+    "wide": {
+     "n": 1078,
+     "right": 0.812,
+     "predicted": 0.816
+    },
+    "medium": {
+     "n": 399,
+     "right": 0.817,
+     "predicted": 0.817
+    },
+    "macro": {
+     "n": 128,
+     "right": 0.875,
+     "predicted": 0.845
+    },
+    "multi": {
+     "n": 341,
+     "right": 0.789,
+     "predicted": 0.779
+    }
+   },
+   "lopo_mean": 0.4802,
+   "lopo_settings": [
+    {
+     "S": {
+      "wide": 0,
+      "medium": 0,
+      "macro": 0
+     },
+     "players": 12
+    }
+   ]
+  },
+  "per-view": {
+   "best_whole_log": {
+    "wide": 0,
+    "medium": 0,
+    "macro": 0
+   },
+   "best_mean": 0.4802,
+   "calib_best": {
+    "wide": {
+     "n": 1078,
+     "right": 0.812,
+     "predicted": 0.816
+    },
+    "medium": {
+     "n": 399,
+     "right": 0.817,
+     "predicted": 0.817
+    },
+    "macro": {
+     "n": 128,
+     "right": 0.875,
+     "predicted": 0.845
+    },
+    "multi": {
+     "n": 341,
+     "right": 0.789,
+     "predicted": 0.779
+    }
+   },
+   "lopo_mean": 0.48102,
+   "lopo_settings": [
+    {
+     "S": {
+      "wide": 0,
+      "medium": 0,
+      "macro": 0
+     },
+     "players": 11
+    },
+    {
+     "S": {
+      "wide": 0,
+      "medium": 0.25,
+      "macro": 0
+     },
+     "players": 1
+    }
+   ]
+  },
+  "tests": [
+   {
+    "vs": "today",
+    "kind": "shared",
+    "mean_diff": -0.0082,
+    "players_lower": 10,
+    "p": 0.0771
+   },
+   {
+    "vs": "today",
+    "kind": "per-view",
+    "mean_diff": -0.00738,
+    "players_lower": 10,
+    "p": 0.0771
+   },
+   {
+    "vs": "shared",
+    "kind": "per-view",
+    "mean_diff": 0.00082,
+    "players_lower": 0,
+    "p": 1
+   }
+  ]
+ }
+}
