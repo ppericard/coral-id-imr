@@ -211,7 +211,8 @@ const ctx = {
   treeScoreTree: C.treeScoreTree,
   treeSpUnits: C.treeSpUnits,
   treeGenSets: C.treeGenSets,
-  rankWeights: C.rankWeights
+  rankWeights: C.rankWeights,
+  ORG: C.ORG
 };
 vm.createContext(ctx);
 vm.runInContext(

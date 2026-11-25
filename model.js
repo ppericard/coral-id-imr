@@ -2603,7 +2603,10 @@ const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
 // Classic look-alikes: the pairs a source compares in so many words, the IMR lecture (lsrc "IMR Lecture 6...") or the
 // Coral Finder text ("Coral Finder p. ..."): the Look-alikes deck (learn.js classics) and a duel's weight (quiz.js
 // duelPick).
-const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
+const isClassic = (a, b) => {
+  const s = String(lsrcOf(a, b));
+  return s.startsWith(ORG.short) || s.startsWith('Coral Finder p');
+};
 // How many times this player gave one of a and b for the other, both ways (P conf).
 const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
 // The two photos of two genera that make the best side by side (the quiz's mix-up montage, quiz.js; the Look-alikes

@@ -658,7 +658,7 @@ test('glossary links to Coral basics: one mapping, the same before the Tools tie
     a = src.indexOf('const BASICS_WORDS'),
     b = src.indexOf('function showGloss');
   assert.ok(a > 0 && b > a, 'BASICS_WORDS and basicsHref in gloss.js, before showGloss');
-  const ctx = {window: {}};
+  const ctx = {window: {}, ORG: C.ORG};
   vm.createContext(ctx);
   vm.runInContext(src.slice(a, b) + '\nthis.H = basicsHref;', ctx);
   assert.strictEqual(ctx.H('Septa'), 'basics|septa');

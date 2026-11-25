@@ -42,6 +42,7 @@ function app(photoDiff) {
     treeCur: C.treeCur,
     unitRankOf: C.unitRankOf,
     SUBJECTS: C.SUBJECTS,
+    ORG: C.ORG,
     ...(photoDiff ? {photoDiff} : {})
   };
   vm.createContext(ctx);
@@ -304,7 +305,7 @@ test("real data: a curated cover below the automatic choice is still the family'
 test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick (Q291)', () => {
   const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
     X = app(),
-    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst};
+    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, ORG: C.ORG};
   vm.createContext(ctx);
   vm.runInContext(block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) + '\nthis.tile = tilePhoto;', ctx);
   const sq = {f: 'sq', ar: 1, jt: 'p1g0sl1'},
@@ -337,7 +338,7 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
 const homeBand = () => {
   const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
     X = app(),
-    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, refLevel: C.refLevel};
+    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, refLevel: C.refLevel, ORG: C.ORG};
   vm.createContext(ctx);
   vm.runInContext(
     block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) +

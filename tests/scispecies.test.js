@@ -37,6 +37,7 @@ function appOf(subj, X0, Fx, {sheet = 1000, bar = {}, met = new Set()} = {}) {
     treeSpUnits: C.treeSpUnits,
     treeGenSets: C.treeGenSets,
     rankWeights: C.rankWeights,
+    ORG: C.ORG,
     unitRankOf: C.unitRankOf,
     typeNormAll: C.typeNormAll,
     SUBJ: subj,
