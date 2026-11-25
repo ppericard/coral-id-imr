@@ -27,4 +27,6 @@ run in the background with a long timeout. **Dependencies:** `tools/train.py`, `
 - Ordering is among `trainq.sh` processes on one machine only; nothing survives a container restart.
 - The script trusts `prstate.sh`'s text format (the grep pattern) and would silently never fire if it changed.
 
-What a reviewed replacement would need is tracked in Linear REE-220.
+**Superseded (REE-220):** the reviewed waiter is `tools/queue/fifoq.sh`: arrival tickets instead of process ages, then
+`nightq.sh`, which keeps the security ask, the full-SHA pinning and one train per PR. One train for several PRs is not
+part of the queue today.
