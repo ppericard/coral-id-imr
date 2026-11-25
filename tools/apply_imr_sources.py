@@ -1,7 +1,7 @@
 """Credit the IMR lecture photos traced to their original source (Pierre, 2026-11-15, after the study
 docs/reviews/2026-11-15-imr-lecture-photo-sources-study.md, #925: "credit the photos now with their original sources").
 
-From tools/imr_sources.json, each lecture photo found as an original (Corals of the World, its photographer named on the
+From tools/instances/imr/imr_sources.json, each lecture photo found as an original (Corals of the World, its photographer named on the
 species page) gets, on its course record:
   a   its credit, "<photographer> / Corals of the World" (no licence in it: the site states none per picture, so
       core.js licOf reads none);
@@ -22,7 +22,7 @@ import json, os, sys
 from datajson import load, dump, dumps
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, 'tools', 'imr_sources.json')
+SRC = os.path.join(ROOT, 'tools', 'instances', 'imr', 'imr_sources.json')
 GONE = os.path.join(ROOT, 'data/excluded.json')
 
 
