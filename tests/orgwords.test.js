@@ -64,18 +64,10 @@ const hits = text =>
     .map((l, i) => [i + 1, l])
     .filter(([, l]) => WORD.test(code(l)));
 
-const LAB = "the Lab's course citations, '(IMR Lecture 6)' and the like: content, not in REE-34's PR plan yet (the integrator places them)";
-// The lines still to move: [file, how many, the change that moves them].
-const LEFT = [
-  ['proto/anatomy.js', 17, LAB],
-  ['proto/basics.js', 10, LAB],
-  ['proto/idkey.js', 9, LAB],
-  ['proto/fishbasics.js', 4, LAB],
-  ['proto/fishkey.js', 4, LAB],
-  ['proto/map.js', 3, LAB],
-  ['proto/cards.js', 1, LAB],
-  ['proto/spot.js', 1, LAB]
-];
+// The Lab's lecture sentences (REE-294; docs/reviews/2026-11-25-imr-layer-round-3.md, question (d): kept as literals).
+const CITE = 'a source citation (rule C2): the sentence comes from that lecture, whatever the edition, so it never follows ORG';
+// The lines still to move: [file, how many, the change that moves them]. None is left: a new "IMR" in the code fails.
+const LEFT = [];
 // The lines that stay: [file, a part of the line (unique in it), why]. Not counted in LEFT.
 const KEEP = [
   [GS, "PARENT: 'IMR'", 'the name of the pCloud folder that holds the sheet backups (BACKUP): a place outside the repository'],
@@ -88,7 +80,28 @@ const KEEP = [
     'core/rules.js',
     "why: 'One 45-genus coral scale",
     'a rules version\'s record (RVS why), quoting Pierre\'s words ("score ardoise IMR"): kept as written'
-  ]
+  ],
+  // The Lab's lecture sentences and their citations. A definition the glossary holds is read from data.json terms
+  // (proto/anatomy.js termLine); only the citation that follows it stays here.
+  ['proto/anatomy.js', "'Neighbouring corallites do not share a common wall (IMR Lecture 6).'", CITE],
+  ['proto/anatomy.js', "'Corallites made up of septa + costae; they tend to look rounded (IMR).'", CITE],
+  ['proto/anatomy.js', "'Coenosteum between the separate walls (IMR).'", CITE],
+  ['proto/anatomy.js', "'Neighbouring corallites share a common wall (IMR Lecture 6).'", CITE],
+  ['proto/anatomy.js', "'Costae absent (IMR).'", CITE],
+  ['proto/anatomy.js', "'Corallites tend to look polygonal (IMR).'", CITE],
+  ['proto/anatomy.js', "'No clear wall structure (IMR Lecture 6).'", CITE],
+  ['proto/anatomy.js', "'Colonies identified based on skeletal ornaments (IMR).'", CITE],
+  ['proto/anatomy.js', 'IMR tip: check its scale, mm or cm?', CITE],
+  ['proto/anatomy.js', 'Absent with shared walls (IMR).', CITE],
+  ['proto/anatomy.js', 'parallel striations (IMR tips).', CITE],
+  ['proto/anatomy.js', 'No clear wall structure: septo-costae run between corallites', CITE],
+  ['proto/basics.js', 'like <i>Goniopora</i> (IMR Lecture 6).', CITE],
+  ['proto/basics.js', 'Danafungia “large septal teeth”, Fungia', CITE],
+  ['proto/basics.js', "src: 'IMR Lecture 6: “Read the wall structure", CITE],
+  ['proto/basics.js', "'Astreopora: separate walls (IMR).'", CITE],
+  ['proto/basics.js', "'Porites: shared walls in a honeycomb pattern (IMR).'", CITE],
+  ['proto/basics.js', "'Platygyra: a classic brain coral, valleys between ridges (IMR).'", CITE],
+  ['proto/basics.js', "'Pavona: smooth, star-like septo-costae between corallites, no clear wall (IMR).'", CITE]
 ];
 
 function check(files, src, left, keep) {
