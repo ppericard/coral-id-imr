@@ -110,9 +110,16 @@ def prob(D, th, X=None, x=None, g=None, R=None):
     return np.clip(p, 1e-9, 1 - 1e-9), s
 
 
-def fit(D, sds, w=None, th0=None, it=60):
-    """MAP by Fisher scoring with step halving. w: row weights (the bootstrap's counts). Returns theta, H, loglik."""
+def fit(D, sds, w=None, th0=None, it=60, mult=None):
+    """MAP by Fisher scoring with step halving. w: row weights (the bootstrap's counts); mult: {player: times drawn},
+    each drawn copy a player of its own: their identical intercepts are one column whose likelihood and prior both
+    count that many times. Returns theta, H (the observed negative Hessian of the log posterior at the mode, the
+    Laplace approximation's), loglik."""
     lam = D.prec(sds)
+    if mult:
+        for i, c in enumerate(D.cols):
+            if c[0] == 'p' and mult.get(c[1], 0) > 1:
+                lam[i] *= mult[c[1]]
     w = np.ones(len(D.y)) if w is None else w
     th = np.zeros(len(D.cols)) if th0 is None else th0.copy()
 
@@ -138,9 +145,12 @@ def fit(D, sds, w=None, th0=None, it=60):
         th, old, cur = nt, cur, no
         if abs(cur - old) < 1e-8:
             break
+    # the observed curvature at the mode (with a guess floor the Fisher information above is not it): -d2 loglik / d eta2
     p, s = prob(D, th)
-    dp = (1 - D.g) * D.R * s * (1 - s)
-    H = (D.X.T * (w * dp * dp / (p * (1 - p)))) @ D.X + np.diag(lam)
+    a = (1 - D.g) * D.R
+    d1, d2 = a * s * (1 - s), a * s * (1 - s) * (1 - 2 * s)
+    obs = (D.y / p ** 2 + (1 - D.y) / (1 - p) ** 2) * d1 * d1 - (D.y - p) / (p * (1 - p)) * d2
+    H = (D.X.T * (w * obs)) @ D.X + np.diag(lam)
     ll = float(np.sum(w * (D.y * np.log(p) + (1 - D.y) * np.log(1 - p))))
     return th, H, ll
 
@@ -184,7 +194,7 @@ def coefs(D, th, kind):
 
 
 def boot(rows, groups, sds, B, seed=255, **kw):
-    """Percentile intervals of the kind coefficients over players (a player drawn twice counts twice)."""
+    """Percentile intervals of the kind coefficients over players (a player drawn twice is two players: fit's mult)."""
     D = Design(rows, groups, None, **kw)
     th, _, _ = fit(D, sds)
     players = sorted({r['p'] for r in rows})
@@ -199,7 +209,7 @@ def boot(rows, groups, sds, B, seed=255, **kw):
         w = np.zeros(len(rows))
         for p, c in cnt.items():
             w[pidx[p]] = c
-        t, _, _ = fit(D, sds, w=w, th0=th, it=25)
+        t, _, _ = fit(D, sds, w=w, th0=th, it=25, mult=cnt)
         draws.append(t[ki])
     A = np.array(draws)
     return {D.cols[i][1]: [round(float(np.percentile(A[:, j], 2.5)), 3), round(float(np.percentile(A[:, j], 97.5)), 3)]
@@ -227,8 +237,8 @@ def split_boot(rows, half, sds, B, seed=2552):
             cnt = Counter(rng.choice(players, len(players)))
             wE = np.array([cnt.get(p, 0) for p in pE], float)
             wL = np.array([cnt.get(p, 0) for p in pL], float)
-            a, _, _ = fit(DE, sds, w=wE, th0=tE, it=25)
-            b, _, _ = fit(DL, sds, w=wL, th0=tL, it=25)
+            a, _, _ = fit(DE, sds, w=wE, th0=tE, it=25, mult=cnt)
+            b, _, _ = fit(DL, sds, w=wL, th0=tL, it=25, mult=cnt)
             draws.append(a[kE] - b[kL])
         A = np.array(draws)
         res[name] = {k: {'diff': round(float(point[j]), 3), 'ci': [round(float(np.percentile(A[:, j], 2.5)), 3),

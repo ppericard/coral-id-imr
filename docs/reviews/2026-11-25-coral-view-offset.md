@@ -23,7 +23,7 @@ Earlier evidence: the Q351 refit ([2026-11-14-q351-refit.md](2026-11-14-q351-ref
 
 - **Pierre's hypothesis holds on the whole log, for the colony and the close-up.** At equal level band, format,
   player and genus, a colony view alone is answered better than several views of a colony by **+0.34 logit (95%
-  interval over players +0.07 to +0.61)**, a close-up alone by +0.33 (−0.01 to +0.59), corallites alone by −0.02
+  interval over players +0.07 to +0.61)**, a close-up alone by +0.33 (+0.00 to +0.59), corallites alone by −0.02
   (−0.55 to +0.61). That is about **+4 points** of success for the colony and the close-up. The offset that would have
   fitted: colony 0.16, close-up 0.17, corallites 0.52, against 0.5 today. For strong players alone (ability 1.5 or
   more on the genus) the comparison cannot tell: they get few several-view questions [measured].
@@ -35,8 +35,8 @@ Earlier evidence: the Q351 refit ([2026-11-14-q351-refit.md](2026-11-14-q351-ref
   tests). The replay of the sheet's photo ratings agrees: 0 beats 0.5 for 14 of 15 players (p 0.0001) and brings
   every kind within 1.6 points of its success rate. So does the Q351 refit [measured; read].
 - **The excess is mostly in the log's first five days** (exploratory). Before 2026-11-05 20:05 a colony alone was
-  +0.60 logit (SE 0.18); from then on +0.03 (SE 0.22), close-up +0.12 (0.26). Over players the difference is not
-  clear either: +0.57 for the colony (−0.00 to +1.22). Nothing in the log explains the split [measured].
+  +0.60 logit (SE 0.19); from then on +0.03 (SE 0.22), close-up +0.12 (0.26). Over players the difference is not
+  clear either: +0.57 for the colony (−0.01 to +1.20). Nothing in the log explains the split [measured].
 - **Fish and sea slugs:** every question shows one photo, so the offset is a constant there and cannot be measured.
   The fish's judged framing shows no difference from a profile beyond two standard errors (exploratory). Nothing to
   declare under rule S1 [measured; read].
@@ -99,14 +99,15 @@ REE-252 already examined**: the same extract, a new model. The checks added afte
 | Structure | Kind | β | 95% interval | Offset that fits | Points |
 | --- | --- | ---: | --- | ---: | ---: |
 | per-view | Colony alone | +0.34 | +0.07 to +0.61 | 0.16 | +4.1 |
-| per-view | Close-up alone | +0.33 | −0.01 to +0.59 | 0.17 | +4.0 |
+| per-view | Close-up alone | +0.33 | +0.00 to +0.59 | 0.17 | +4.0 |
 | per-view | Corallites alone | −0.02 | −0.55 to +0.61 | 0.52 | −0.2 |
-| two | Colony or close-up | +0.34 | +0.06 to +0.58 | 0.16 | +4.1 |
-| two | Corallites | −0.02 | −0.55 to +0.60 | 0.52 | −0.2 |
-| shared | Any view alone | +0.31 | +0.04 to +0.56 | 0.19 | +3.7 |
+| two | Colony or close-up | +0.34 | +0.08 to +0.59 | 0.16 | +4.1 |
+| two | Corallites | −0.02 | −0.55 to +0.61 | 0.52 | −0.2 |
+| shared | Any view alone | +0.31 | +0.05 to +0.56 | 0.19 | +3.7 |
 
-Per-view differences (bootstrap): colony − corallites +0.36 (−0.23 to +0.81), close-up − corallites +0.35 (−0.23 to
-+0.80), colony − close-up 0.00 (−0.23 to +0.27). The format effects come out as the sheet's offsets do: 2 plausible
+Per-view differences (bootstrap): colony − corallites +0.36 (−0.22 to +0.81), close-up − corallites +0.35 (−0.22 to
++0.80), colony − close-up 0.00 (−0.23 to +0.27). In each bootstrap draw a player drawn twice counts as two players,
+their intercept's prior counted as many times; the standard errors are from the observed curvature at the mode. The format effects come out as the sheet's offsets do: 2 plausible
 choices +0.96, 3 plausible +1.21, Again +0.14, Duel tab +0.12, a duel in the quiz +0.03. The level bands, against a
 4-choice question on several views: under 0.5 +0.25, 0.5 to 1.5 −0.07, 1.5 and over −0.22 [measured].
 
@@ -115,21 +116,21 @@ choices +0.96, 3 plausible +1.21, Again +0.14, Duel tab +0.12, a duel in the qui
 | Check | Answers | Colony | Close-up | Corallites |
 | --- | ---: | ---: | ---: | ---: |
 | The fit above | 3,878 | +0.34 (0.14) | +0.33 (0.17) | −0.02 (0.23) |
-| Hint 1: several views without close-up + corallites | 3,794 | +0.35 (0.14) | +0.35 (0.17) | −0.01 (0.23) |
+| Hint 1: several views without close-up + corallites | 3,794 | +0.35 (0.15) | +0.35 (0.17) | −0.01 (0.23) |
 | Hint 2: several views without any corallites photo | 3,271 | +0.34 (0.21) | +0.35 (0.23) | +0.01 (0.28) |
 | A photo intercept beside the genus's (within a photo) | 3,878 | +0.36 (0.15) | +0.38 (0.18) | −0.01 (0.24) |
 | Typed answers kept | 3,955 | +0.35 (0.14) | +0.36 (0.17) | −0.03 (0.23) |
-| Scoring-record rows, x + the game's format offset | 1,893 | +0.01 (0.22) | +0.17 (0.26) | +0.45 (0.42) |
-| Scoring-record rows, x alone | 1,893 | +0.06 (0.22) | +0.22 (0.26) | +0.48 (0.42) |
-| First half (to 2026-11-05 20:05), 11 players | 1,932 | +0.60 (0.18) | +0.49 (0.23) | −0.22 (0.28) |
-| Second half, 12 players | 1,946 | +0.03 (0.22) | +0.12 (0.26) | +0.30 (0.40) |
-| Ability under 0.5 | 1,653 | +0.35 (0.20) | +0.25 (0.26) | −0.11 (0.43) |
+| Scoring-record rows, x + the game's format offset | 1,893 | +0.01 (0.22) | +0.17 (0.26) | +0.45 (0.41) |
+| Scoring-record rows, x alone | 1,893 | +0.06 (0.22) | +0.22 (0.26) | +0.48 (0.41) |
+| First half (to 2026-11-05 20:05), 11 players | 1,932 | +0.60 (0.19) | +0.49 (0.23) | −0.22 (0.29) |
+| Second half, 12 players | 1,946 | +0.03 (0.22) | +0.12 (0.26) | +0.30 (0.39) |
+| Ability under 0.5 | 1,653 | +0.35 (0.21) | +0.25 (0.27) | −0.11 (0.44) |
 | Ability 0.5 to 1.5 | 1,417 | +0.52 (0.21) | +0.42 (0.25) | −0.03 (0.33) |
-| Ability 1.5 and over (46 several-view answers) | 808 | −0.93 (0.78) | −0.57 (0.82) | −0.90 (0.84) |
+| Ability 1.5 and over (46 several-view answers) | 808 | −0.93 (0.77) | −0.57 (0.81) | −0.90 (0.83) |
 
 Exploratory, added after the fit (uncorrected): photos with under 5 earlier answers, 3,443 answers: +0.44 (0.15),
-+0.42 (0.18), +0.03 (0.24); 5 or more, 435 answers: −0.12 (0.41), +0.15 (0.47), +0.18 (0.93); the second half with a
-photo intercept: +0.06 (0.22), +0.16 (0.27), +0.30 (0.41) [measured].
++0.42 (0.19), +0.03 (0.24); 5 or more, 435 answers: −0.12 (0.41), +0.15 (0.47), +0.18 (0.89); the second half with a
+photo intercept: +0.06 (0.22), +0.16 (0.26), +0.30 (0.40) [measured].
 
 What it says:
 
@@ -139,9 +140,9 @@ What it says:
 - **The time split matters most.** The excess is in the first half; the second half and the scoring-record rows
   (all from 2026-11-06 14:22 on, so all in the second half) show none for the colony. The game's own format offsets
   change nothing within those rows (+0.01 against +0.06). Over players (2,000 draws, both halves refitted; 11 players
-  in the first, 12 in the second, 8 in both), the first half less the second is +0.57 for the colony (−0.00 to
-  +1.22), +0.37 for the close-up (−0.25 to +1.09), −0.52 for the corallites (−1.74 to +0.38), +0.41 for one shared
-  offset (−0.16 to +1.02): the split itself is not clear. **Nor is it explained.** The genus offsets
+  in the first, 12 in the second, 8 in both), the first half less the second is +0.57 for the colony (−0.01 to
+  +1.20), +0.37 for the close-up (−0.26 to +1.08), −0.52 for the corallites (−1.76 to +0.38), +0.41 for one shared
+  offset (−0.17 to +1.01): the split itself is not clear. **Nor is it explained.** The genus offsets
   of the hierarchical photo Elo (#422, 2026-11-04) are added to a question with one view and with several alike, so
   they cancel in this contrast. Photo ratings learned only from a photo shown alone could carry it, but most photos
   have few answers. The players and their levels also differ between the halves.
@@ -161,8 +162,8 @@ log-loss per answer; exact sign-flip over 15 players; Holm over the three declar
 
 Mean log-loss: today 0.4289, shared 0.4272, two 0.4272, per-view 0.4274. The third test only shows that the
 corallites' extra parameter costs a little out of sample: colony and close-up share one value as well as they hold
-two. The Laplace marginal likelihoods rank the structures today, shared, two, per-view (−1,791.1, −1,792.9, −1,795.3,
-−1,799.5): with their weak priors, each added fixed effect costs more than it gains [measured].
+two. The Laplace marginal likelihoods rank the structures today, shared, two, per-view (−1,790.7, −1,792.6, −1,795.1,
+−1,799.3): with their weak priors, each added fixed effect costs more than it gains [measured].
 
 **The replay** (the sheet's photo and genus ratings re-learned under each offset; the setting chosen on the other
 players, scored on the held-out one) [measured]:
@@ -197,7 +198,7 @@ The replay's calibration, right against predicted:
   `eloReplay`), so it is absorbed by the photo and unit ratings and cannot be measured (Q351 found the same: the term
   became the intercept) [read].
 - **Exploratory, the fish's judged framing** (the game file's `jt`; 2,820 answers of 8 players with a tag; the same
-  model, a profile of the whole fish the reference): oblique +0.01 (SE 0.21, 438 answers), from above +0.25 (0.46,
+  model, a profile of the whole fish the reference): oblique +0.01 (SE 0.21, 438 answers), from above +0.25 (0.47,
   104), part of the fish +0.88 (0.53, 105), head-on or tail +0.22 (0.76, 24) [measured]. No framing beyond two
   standard errors. A framing is a photo feature the photo ratings learn; it is not a view shown alone or with others.
 - **Sea slugs**: 163 answers, 2 players. Nothing can be measured.
