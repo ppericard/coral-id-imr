@@ -27,7 +27,8 @@ const ctx = {
   treeScoreTree: C.treeScoreTree,
   treeSpUnits: C.treeSpUnits,
   treeGenSets: C.treeGenSets,
-  rankWeights: C.rankWeights
+  rankWeights: C.rankWeights,
+  ORG: C.ORG
 };
 vm.createContext(ctx);
 vm.runInContext(block(APP, 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.treeGenera = treeGenera;', ctx);

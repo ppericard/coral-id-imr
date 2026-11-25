@@ -63,7 +63,8 @@ const ctx = {
   esc: s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'),
   // a player not at IMR (the main common name first: app.js cnFirst, below), the links of the sources (mimSrc)
   imrSaid: () => false,
-  safeUrl: u => u
+  safeUrl: u => u,
+  ORG: require('../core.js').ORG
 };
 // The card's short source form (quiz.js mimSrc), which the mimicry pair's marks use on the sheet too, and the name a
 // player sees first (app.js cnList, cnFirst).
@@ -219,7 +220,8 @@ function bodyCtx() {
     credit: () => 'credit',
     taxonLine: t => (t ? '<p class="fbsp">This photo: a species</p>' : ''),
     againLeft: () => true,
-    uname: n => `<u>${n}</u>`
+    uname: n => `<u>${n}</u>`,
+    ORG: require('../core.js').ORG
   };
   vm.createContext(C);
   vm.runInContext(

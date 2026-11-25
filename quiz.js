@@ -35,8 +35,8 @@ const customPlayLede = cur =>
 const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
-    : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the verdict and one line that settles it (how to tell the genus from your answer, or its first ID tip); <b>More</b> opens the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
+    : `<p class="lede">${cur.startsWith('quiz-duel') ? `Two genera that are often confused (look-alikes listed by the ${ORG.lecture} or the Coral Finder book, and your own mix-ups): say which one is in the photos.` : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the verdict and one line that settles it (how to tell the genus from your answer, or its first ID tip); <b>More</b> opens the ${ORG.short} ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the ${ORG.list} that are common at Dauin (⚙ Settings, Bonus genera).</p>
   ${customPlayLede(cur)}
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus's % is the share of its photos you would name alone and typed, as far as your answers on it have shown: a right answer on a hard photo or a typed one raises it most, a mistake takes it back down; it fills up to 95%, and it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="${esc(hr('progress'))}">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
@@ -1172,7 +1172,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
     named = inner =>
       fish
         ? `<b>${inner}</b>${ven ? ` <span class="ven">${esc(ven)}</span>` : ''} <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
-        : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+        : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ` (fire coral, ${ORG.benthic})` : g.x ? ` (bonus, not on the ${ORG.list})` : g.n ? '' : ' (★ not surveyed)'}`,
     name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
     // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
     // letters marked (an old name typed: that name, then the unit); the words in normal weight and the name in bold, so
@@ -1186,7 +1186,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
         : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     // A fish entry's names inside it, phases and credits sit flat behind More (the sheet's own More replaced its fold).
     more = fish
-      ? `${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p>`
+      ? `${g.sub.length ? `<p class="vs">${ORG.short} names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p>`
       : // the criteria cited by the source the content editor gave with his edit of them, else the Coral Finder pages
         // (idtips.js critRef), and his summary's and mnemonic's with them (esrcTag; rule C2)
         `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length && g.sum ? `<p class="vs">${esc(g.sum)}${esrcTag(g, 'sum')}</p>` : ''}${(g.crit || []).length ? `<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">${critRef(g)}</p>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
@@ -1208,7 +1208,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
 function pairLine(a, b) {
   const g = GX(a) || {},
     hit = (g.lk || []).find(([o, t]) => o === b && t);
-  if (hit) return {t: hit[1], s: ['IMR', ((g.lksrc || {})[b] || {}).t].filter(Boolean).join('; ')};
+  if (hit) return {t: hit[1], s: [ORG.short, ((g.lksrc || {})[b] || {}).t].filter(Boolean).join('; ')};
   return g.ap && g.ap[b] ? {t: g.ap[b], s: (g.apsrc || {})[b] || ''} : null;
 }
 // What the two records say of the pair (a, b): the line that describes a (b's record gives it), then the one that describes b
@@ -1270,7 +1270,7 @@ const tipsBy = g =>
 const noImr = s =>
   String(s || '')
     .split('; ')
-    .filter(x => x && x !== 'IMR')
+    .filter(x => x && x !== ORG.short)
     .join('; ');
 function fbLine(target, c, good, chs = [], mim = null) {
   const say = (t, s) => `<p class="vs fbline">${t}${noImr(s) ? ` <small class="esrc">(${esc(noImr(s))})</small>` : ''}</p>`;
@@ -1687,7 +1687,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || ORG.short)}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
@@ -3446,11 +3446,11 @@ function cqByIMR(play) {
       const gr = UNITS[SUBJ.id].group(k),
         L = play.filter(n => gk(n) === k);
       return gr
-        ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
+        ? {k, t: esc(gr.t), sub: ORG.lecture + ' group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
         : k === 'F'
-          ? {k, t: 'Fire coral', sub: 'IMR benthic slate, not a hard coral', mark: cqMark('F', 200), L}
+          ? {k, t: 'Fire coral', sub: `${ORG.benthic}, not a hard coral`, mark: cqMark('F', 200), L}
           : k === '+'
-            ? {k, t: 'Bonus genera', sub: 'Not on the IMR list', mark: cqMark('+', 200), L}
+            ? {k, t: 'Bonus genera', sub: `Not on the ${ORG.list}`, mark: cqMark('+', 200), L}
             : {k, t: 'Not covered in the lecture', sub: '', mark: cqMark('★', 200), L};
     });
 }

@@ -184,7 +184,8 @@ test('the fish units from the players copy: the same photos in play, covers and 
       contentApply: C.contentApply,
       treeCur: C.treeCur,
       unitRankOf: C.unitRankOf,
-      SUBJECTS: C.SUBJECTS
+      SUBJECTS: C.SUBJECTS,
+      ORG: C.ORG
     };
   vm.createContext(ctx);
   vm.runInContext(

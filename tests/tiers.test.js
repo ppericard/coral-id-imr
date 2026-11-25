@@ -222,6 +222,7 @@ test('model.js look-alike helpers on the real data: pairs, classic pairs, mix-up
     GX: n => DATA.gen[n] || (DATA.x && DATA.x.gen[n]),
     lectureGroup: core.lectureGroup,
     starRefs: core.starRefs,
+    ORG: core.ORG,
     esc: s => String(s)
   };
   vm.createContext(ctx);
