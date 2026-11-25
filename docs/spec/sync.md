@@ -221,6 +221,7 @@ released.
   rated with no guess rate. Served from the pooled statistics' snapshot (below); `&s=<subject>` asks another subject's.
 - `POST {readAnswers, token, aname, apin}` the anonymous answers for the admin (admin-only); with the caller's own name
   and code, the reply's `me` is the caller's own anonymous id. The salt is secret, in Script Properties `ANON_SALT`.
+  With `lean`, the same rows in their lean form (below, "The lean answer log").
 - `POST {readStats, token, s}` the admin's statistics with the per-player `ras` (below, "The other readers"). The
   public `?stats=1` keeps only the pooled numbers, so a leaderboard name cannot be matched to an answer history.
 - `POST {reports, rname, rpin}` the players' reports, logged once per id. The reporter goes in `rname` / `rpin`, never
@@ -242,6 +243,32 @@ released.
 
 **Hardening**: user strings never become formulas (`safe_`), answer fields are pattern-checked, 5 wrong codes for a name
 block it for 10 minutes (`wait`), and answers are logged before the progress is written.
+
+### The lean answer log
+
+The answer log is the largest wait of the admin's opening on a phone (Pierre, 2026-11-19; REE-39;
+[record](../decisions/2026-11-25-lean-answer-log.md)). The admin's read asks for it lean (`admin.js` `loadStats`:
+`readAnswers` with `lean: 1`), and from v232 the script sends `lean` in place of `rows` (`Code.gs` `answers_`, `core.js`
+`rowsPack`): the same rows, column by column, each column in the shortest of a few spellings, chosen from its values
+alone (no column is named, so a column added to the rows needs nothing): mostly null as the gaps between its values; whole
+numbers as differences when that is shorter (the times); numbers that are whole once times 10, 100 or 1000 scaled (seconds,
+expectations, abilities); few distinct values as a dictionary, the most frequent first (the ids, units, modes, subjects);
+texts of space-separated words, when there are too many to list whole, word by word (the photos, the choices); objects of
+plain values one column per key, in an order that keeps each object's own (the scoring record); anything else as it is.
+`{f: 1, n, w, c: [column], l?}` (`l`: the rows' lengths, when they differ). The admin reads it back (`admin.js` `leanIn`,
+`core.js` `rowsUnpack`) into exactly the rows the plain reply holds, the same values and the same JSON, key order
+included, so no page reads anything else; a reply it cannot read leaves no rows (error `lean`: the pages show no log, as
+for any unreadable reply, never a part of it).
+- **Gate** (rule D4): the request always asks; an older script ignores `lean` and sends `rows`, read as before. A reply is
+  read as lean only from `LEAN_SHEET` (`admin.js` `leanOn`). A request without `lean` (`tools/analyses.js`, an older admin,
+  the tools that read a saved reply) gets `rows` as before. Nothing stored changes, nor any other reply; `readLive` sends
+  its 50 rows as they are.
+- **Measured** (`tools/ansize.js`, made-up logs of `tests/anslog.js` through the script on the tests' stub): at 7,700
+  answers the reply goes from 1.93 MB (0.40 MB gzipped) to 0.81 MB (0.22 MB gzipped), at 23,100 from 5.77 MB (1.20 MB) to
+  2.36 MB (0.61 MB). The admin's read goes from about 7 ms to 23 ms at 7,700 (JSON.parse, then `rowsUnpack`; Node on a
+  desktop), the script's packing adds about 50 ms (126 ms at 23,100) and writes 6 ms less: bytes are the gain, on a slow
+  line about 0.9 s today if the reply is gzipped on the wire, 5.6 s if not. The script's real time is in the Timings tab
+  (`admin answers`); `node tools/ansize.js --in answers.json` measures a saved reply. `tests/ansrows.test.js`.
 
 ## Report images
 

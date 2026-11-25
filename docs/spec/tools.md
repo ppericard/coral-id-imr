@@ -235,6 +235,10 @@ subject is a test case, not the definition of the target.
   ms and most rows read, the trend over time, and the quota lines (6 min an execution, 90 min of triggers a day). Pure
   functions exported for `tests/timings.test.js`.
 - **`analyses.js`**: the admin's Analyses report ([analyses.md › Where it computes](analyses.md#where-it-computes)).
+- **`ansize.js`**: the admin's answer-log read measured, plain against lean ([sync.md › The lean answer log](sync.md#the-lean-answer-log)):
+  `node tools/ansize.js` (made-up logs of 7,700 and 23,100 answers, `tests/anslog.js`, through the script on the tests'
+  stub; `--n N` other sizes) or `--in answers.json` (a saved plain readAnswers reply): the bytes, raw and gzipped, the
+  times to pack, write and read back, the rows checked equal.
 
 ## Coral content
 

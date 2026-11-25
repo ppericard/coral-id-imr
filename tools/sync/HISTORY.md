@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v232 (2026-11-25)
+
+The admin's readAnswers with `lean` sends the answer log as `lean` in place of `rows` (`core.js` `rowsPack`): column by column, each column in the shortest of a few spellings (a dictionary of the ids, units and modes, the times as differences, the photos and choices word by word, the numbers scaled to whole ones, the scoring record one column per key, the mostly empty columns as gaps), about half the bytes of the rows (42% raw, 55% gzipped on a made-up log of 7,700 answers; 41% and 50% at 23,100), and the admin reads it back into exactly the rows it stands for (`rowsUnpack`). A request without `lean` (`tools/analyses.js`, an older admin) gets `rows` as before; no stored data, column or other reply changes. Pierre, 2026-11-19: the admin takes longer and longer to open on his phone, the answer log the largest wait (REE-39; docs/decisions/2026-11-25-lean-answer-log.md)
+
 ## v231 (2026-11-25)
 
 The script's copy of `core.js` writes the course's words from `ORG` (`course`, `lecture`, `lectureRef`, `fishPres`, `list`, `slate`, `benthic`, `trainer`, new fields at today's values) in the subjects' texts, the achievements' descriptions and a fish family's name line and look-alike sources, instead of typing them. Every text is the same as before, byte for byte: nothing the script stores, replays or replies changes, so no rules version and no gate on the script's version. Integrator's call on REE-34, 2026-11-25 (docs/decisions/2026-11-25-org-course-words.md), on Pierre's direction of 2026-11-08 (#737) to separate IMR-owned content from the core app

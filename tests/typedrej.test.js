@@ -338,6 +338,13 @@ test('Code.gs: no reader counts differently with refused texts logged', () => {
     rb.map(r => r[23]),
     Array.from({length: 14}, (_, i) => (i % 2 ? ['xyzcoral', 'brain coral'] : null))
   );
+  // the lean reply the admin asks for (core.js rowsPack, rowsUnpack) gives the same index 23, the same rows
+  const lb = C.rowsUnpack(JSON.parse(JSON.stringify(b.post({readAnswers: 1, token: TOK, lean: 1}).lean)));
+  assert.deepStrictEqual(lb, rb);
+  assert.deepStrictEqual(
+    lb.map(r => r[23]),
+    Array.from({length: 14}, (_, i) => (i % 2 ? ['xyzcoral', 'brain coral'] : null))
+  );
   // the admin's light read serves the rows alike
   assert.deepStrictEqual(
     b.post({readLive: 1, token: TOK}).rows.map(r => r[23]),
