@@ -132,7 +132,12 @@ const REC_BY = {};
 const stateBump = (rec, sid) => {
   STATE_V++;
   if (rec !== 'rec') return void DATA_V++;
-  if (sid === undefined) sid = typeof SUBJ === 'object' && SUBJ ? SUBJ.id : null;
+  if (sid === undefined)
+    try {
+      sid = SUBJ ? SUBJ.id : null;
+    } catch (e) {
+      sid = null; // no subject declared yet (a part of this file run alone)
+    }
   if (sid !== null) (REC_N++, (REC_BY[sid] = (REC_BY[sid] || 0) + 1));
 };
 // A visit to another subject (inSubject) and a tree lent for a while (treeWith) swap the subject or the tree in force and
@@ -156,7 +161,10 @@ let DATA_SW = 0,
 const swapBump = rec => (STATE_SW++, rec === 'rec' || DATA_SW++, stateBump(rec, null));
 const dataKey = () => (DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
 function dataMark() {
-  const s = typeof SUBJ === 'object' && SUBJ ? SUBJ.id : null;
+  let s = null;
+  try {
+    s = SUBJ ? SUBJ.id : null;
+  } catch (e) {} // no subject declared yet (a part of this file run alone)
   return {
     v: DATA_V,
     sw: DATA_SW,
