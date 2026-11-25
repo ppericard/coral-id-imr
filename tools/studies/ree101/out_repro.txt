@@ -1,0 +1,83 @@
+rows 5668 bad time 0 first 2026-11-01 17:47 last 2026-11-13 16:40 (primary)
+
+== coral: 3308 answers, 15 players (15 trusted); rows used 1255; mem 0 / 0.35 / -0.68 / -1.17
+checks {"rec":1255,"within":1255,"skipped":0,"sNot1":0,"oSet":879,"disagreeSeenNoF":0,"disagreeNewF":0,"rows":1255,"seenW":139.6666666666666} lag min {"p10":3,"p25":307,"median":2861,"p75":7134,"p90":14504}
+seen answers 139.7 stop true
+  < 10 min: 22.5 (16%, 8)
+  10 min-1 h: 10.5 (8%, 3)
+  1 h-1 day: 7 (5%, 2)
+  1-7 days: 69.8 (50%, 6) ok
+  > 7 days: 29.8 (21%, 1)
+  | new photo (reference) | 1115.3 | 11 | 81.4 | 74.8 | 6.6 | 2 to 9.6 |
+  | shown never right, < 10 min | 12.5 | 6 | 92 | 62 | (30) | too few |
+  | shown never right, 10 min-1 h | 3 | 2 | 66.7 | 67.8 | (-1.1) | too few |
+  | shown never right, 1 h-1 day | 3 | 1 | 66.7 | 64.4 | (2.2) | too few |
+  | shown never right, 1-7 days | 24 | 6 | 71.5 | 65.5 | 6.1 | -7.7 to 38.7 |
+  | shown never right, > 7 days | 4.3 | 1 | 76.9 | 70.1 | (6.8) | too few |
+  | shown never right, all lags | 46.8 | 8 | 76.9 | 65 | 11.8 | 0.2 to 35 |
+  | right once, < 10 min | 10 | 5 | 90 | 90 | (0) | too few |
+  | right once, 10 min-1 h | 7.5 | 3 | 86.7 | 78.8 | (7.8) | too few |
+  | right once, 1 h-1 day | 3 | 2 | 100 | 79.7 | (20.3) | too few |
+  | right once, 1-7 days | 37.8 | 5 | 82.4 | 80.9 | 1.4 | -7.5 to 24.5 |
+  | right once, > 7 days | 21.8 | 1 | 84 | 79.1 | (4.8) | too few |
+  | right once, all lags | 80.2 | 8 | 84.8 | 81.3 | 3.5 | -3.1 to 17.9 |
+  | right 2+, < 10 min | 0 | 0 |  |  |  |  |
+  | right 2+, 10 min-1 h | 0 | 0 |  |  |  |  |
+  | right 2+, 1 h-1 day | 1 | 1 | 100 | 80.6 | (19.4) | too few |
+  | right 2+, 1-7 days | 8 | 1 | 100 | 92.7 | (7.3) | too few |
+  | right 2+, > 7 days | 3.7 | 1 | 59.1 | 80.8 | (-21.8) | too few |
+  | right 2+, all lags | 12.7 | 2 | 88.2 | 88.3 | (-0.1) | too few |
+  | all seen, < 10 min | 22.5 | 8 | 91.1 | 74.4 | 16.7 | -3.7 to 33.5 |
+  | all seen, 10 min-1 h | 10.5 | 3 | 81 | 75.7 | (5.3) | too few |
+  | all seen, 1 h-1 day | 7 | 2 | 85.7 | 73.3 | (12.4) | too few |
+  | all seen, 1-7 days | 69.8 | 6 | 80.7 | 77 | 3.7 | -2.9 to 30.5 |
+  | all seen, > 7 days | 29.8 | 1 | 79.9 | 78 | (1.9) | too few |
+  | all seen, all lags | 139.7 | 9 | 82.5 | 76.5 | 6 | 0.8 to 21.3 |
+  primary {"players":1,"perPlayer":[[9.7,10.3]],"verdict":"cannot test"}
+  pooled short-long (post hoc) {"est":8.7,"lo":-17.6,"hi":20.4}
+  control {"players":8,"perPlayer":[[-27.6,5],[-8,5],[-5.4,42],[-0.5,23.3],[-0.1,6],[4.8,23],[11.2,23.5],[19.2,7]],"mean":-0.8,"lo":-12.5,"hi":10.9,"p":0.852,"meanSlope":0.123,"logits":-0.06,"logitsLo":-1.02,"logitsHi":0.89}
+  dir | shown never right, 1 miss, < 1 h | 15.5 | 6 | 87.1 | 63.1 | 24 |
+  dir | shown never right, 1 miss, >= 1 day | 21.7 | 6 | 79.2 | 67.7 | 11.5 |
+  dir | shown never right, 2+ misses, < 1 h | 0 | 0 |  |  |  |
+  dir | shown never right, 2+ misses, >= 1 day | 6.7 | 3 | 50 | 61.3 | -11.3 |
+
+== fish: 2355 answers, 9 players (9 trusted); rows used 2355; mem 0 / -0.5 / -0.5 / -1.5
+checks {"rec":2355,"within":2355,"skipped":0,"sNot1":0,"oSet":1251,"disagreeSeenNoF":5,"disagreeNewF":3,"rows":2355,"seenW":79} lag min {"p10":2,"p25":4,"median":8,"p75":13,"p90":1140}
+seen answers 79 stop true
+  < 10 min: 46 (58%, 7) ok
+  10 min-1 h: 21 (27%, 6)
+  1 h-1 day: 7 (9%, 2)
+  1-7 days: 5 (6%, 2)
+  > 7 days: 0 (0%, 0)
+  | new photo (reference) | 2276 | 9 | 87.7 | 81.1 | 6.6 | 4 to 8.5 |
+  | shown never right, < 10 min | 11 | 4 | 90.9 | 84 | (6.9) | too few |
+  | shown never right, 10 min-1 h | 1 | 1 | 100 | 88.8 | (11.2) | too few |
+  | shown never right, 1 h-1 day | 1 | 1 | 100 | 84.2 | (15.8) | too few |
+  | shown never right, 1-7 days | 1 | 1 | 100 | 91.1 | (8.9) | too few |
+  | shown never right, > 7 days | 0 | 0 |  |  |  |  |
+  | shown never right, all lags | 14 | 5 | 92.9 | 84.9 | (8) | too few |
+  | right once, < 10 min | 34 | 7 | 97.1 | 86.8 | 10.2 | 5.9 to 11.8 |
+  | right once, 10 min-1 h | 20 | 6 | 85 | 89.9 | -4.9 | -42.8 to 7.6 |
+  | right once, 1 h-1 day | 5 | 1 | 100 | 89.6 | (10.4) | too few |
+  | right once, 1-7 days | 4 | 2 | 75 | 82.6 | (-7.6) | too few |
+  | right once, > 7 days | 0 | 0 |  |  |  |  |
+  | right once, all lags | 63 | 7 | 92.1 | 87.7 | 4.3 | -1.8 to 8 |
+  | right 2+, < 10 min | 1 | 1 | 100 | 98 | (2) | too few |
+  | right 2+, 10 min-1 h | 0 | 0 |  |  |  |  |
+  | right 2+, 1 h-1 day | 1 | 1 | 100 | 98 | (2) | too few |
+  | right 2+, 1-7 days | 0 | 0 |  |  |  |  |
+  | right 2+, > 7 days | 0 | 0 |  |  |  |  |
+  | right 2+, all lags | 2 | 2 | 100 | 98 | (2) | too few |
+  | all seen, < 10 min | 46 | 7 | 95.7 | 86.4 | 9.3 | 2.1 to 12.3 |
+  | all seen, 10 min-1 h | 21 | 6 | 85.7 | 89.8 | -4.1 | -38.1 to 7.9 |
+  | all seen, 1 h-1 day | 7 | 2 | 100 | 90 | (10) | too few |
+  | all seen, 1-7 days | 5 | 2 | 80 | 84.3 | (-4.3) | too few |
+  | all seen, > 7 days | 0 | 0 |  |  |  |  |
+  | all seen, all lags | 79 | 7 | 92.4 | 87.5 | 4.9 | -2.8 to 8.7 |
+  primary {"players":1,"perPlayer":[[25.7,3]],"verdict":"cannot test"}
+  pooled short-long (post hoc) {"est":12.2,"lo":-24.3,"hi":25.1}
+  control {"players":4,"perPlayer":[[-1.6,34],[-1.5,4],[0.3,57],[21.2,6]],"verdict":"cannot test"}
+  dir | shown never right, 1 miss, < 1 h | 11 | 4 | 90.9 | 84.1 | 6.8 |
+  dir | shown never right, 1 miss, >= 1 day | 1 | 1 | 100 | 91.1 | 8.9 |
+  dir | shown never right, 2+ misses, < 1 h | 1 | 1 | 100 | 88.3 | 11.7 |
+  dir | shown never right, 2+ misses, >= 1 day | 0 | 0 |  |  |  |

@@ -401,6 +401,12 @@ function photoAny(n) {
     )
   );
 }
+// photoAny kept per unit and per data version (it reads the data alone: the unit's photos and their forms, its growth
+// forms, gamePhotoOk), for the units in play (app.js poolCalc), which asked it of every unit at every answer. Where a part
+// of this file runs alone, photoAny itself. photoAnyFn(): for a loop with nothing written during it (the version read
+// once, then each unit a lookup: app.js keyView's fn).
+const photoAnyBy = typeof dataViewBy === 'function' ? dataViewBy('photoAny', photoAny) : photoAny;
+const photoAnyFn = () => (photoAnyBy.fn ? photoAnyBy.fn() : photoAnyBy);
 // The photo variants of unit n (core.js varKindOf, VAR_AT): a unit's home, the record at its subject's unit rank
 // it hangs from (itself for a family; a fish genus's or species' family, a fish species by its scientific name through its
 // genus), holds its juvenile classes (juv) and its thresholds' overrides (varAt); a unit's own varAt wins over its home's
@@ -672,9 +678,13 @@ const easyTrust = () =>
 // hierarchical photo Elo's estimate of the part of a photo's difficulty its genus shares), the one estimate everywhere
 // (drawW, shaky, stability, openPick); adding or curating out a photo never moves it. A unit with judged photos (p.e,
 // the fish) adds the mean of their judged-ease priors (photoDiff's), so it opens easiest first. 0 offline before the
-// sheet's first reply. Cleared when the photo stats change.
+// sheet's first reply. Kept per unit (GDIFF) for the data version it was made in (app.js DATA_V, GDV): the photo
+// statistics, the data and the tree in force and the subject each move that version, so a tree's new photos make it
+// again as the statistics do. Where model.js runs without app.js (the tools, the unit tests), it is cleared by hand.
 let GDIFF = {};
+let GDV = null;
 const genusDiff = n => {
+  if (typeof DATA_V === 'number' && GDV !== DATA_V) ((GDIFF = {}), (GDV = DATA_V));
   if (n in GDIFF) return GDIFF[n];
   // its reserved photos too (g.held: core.js heldOf), so a player's reserve does not move it
   const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e),
@@ -853,8 +863,48 @@ const declared = (t, n) => declaredOf(t).includes(n) || declaredOf(n).includes(t
 // The pair's pooled score for grouping: pooledConf's, on the declared test (the same score for the corals and the fish
 // families, whose `look` is what a teacher declared; for the fish genera, siblings start at the family prior).
 const groupConf = (t, n) => confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, declared(t, n)));
+// A unit's part of a pair's group score: its declared look-alikes (declaredOf), its data look-alikes (dataSeed) and its
+// family, a view of the data version per unit (computed where a part of this file runs alone); its growth forms are
+// formsOf's. groupsOfRank scores every pair of a rank (tens of thousands on a long fish history) whenever the units in play
+// or the pooled stats change, and each pair read its two records and their forms again. null for a name with no record.
+const groupUnitCalc = n => {
+  const g = GX(n);
+  return g ? {decl: g.decl || g.look || [], dl: g.dl || [], fam: g.fam} : null;
+};
+const groupUnit = typeof dataViewBy === 'function' ? dataViewBy('groupUnit', groupUnitCalc) : groupUnitCalc;
+// declared and groupConf for a loop with nothing written during it (groupsOfRank): the views read once, then each pair from
+// its two units' parts, the same tests in the same order; a pair with a unit that has no record as declared and
+// groupConf compute it.
+function groupPairFn() {
+  const U = groupUnit.fn ? groupUnit.fn() : groupUnit,
+    F = typeof formsOf === 'function' ? (formsOf.fn ? formsOf.fn() : formsOf) : imrFormsOf;
+  return {
+    decl: (t, n) => {
+      const a = U(t),
+        b = U(n);
+      return a && b ? a.decl.includes(n) || b.decl.includes(t) : declared(t, n);
+    },
+    conf: (t, n) => {
+      const a = U(t),
+        b = U(n);
+      if (!a || !b) return groupConf(t, n);
+      return confScore(
+        PCONF[t < n ? t + '|' + n : n + '|' + t],
+        a.decl.includes(n) || b.decl.includes(t) || a.dl.includes(n) || b.dl.includes(t)
+          ? CONF.LOOK
+          : b.fam === a.fam
+            ? CONF.FAM
+            : F(n).some(f => F(t).includes(f))
+              ? CONF.FORM
+              : CONF.BASE
+      );
+    }
+  };
+}
 // The groups of the units L (one rank): {unit: its group, members in alphabetical order}; a lone unit has none.
 function groupsOfRank(L) {
+  // declared and groupConf below: the loop's own (groupPairFn), the same values
+  const {decl: declared, conf: groupConf} = groupPairFn();
   L = [...L].sort();
   const cl = new Map(L.map(n => [n, [n]])),
     sc = {},
@@ -1641,10 +1691,10 @@ const rustAdd = (A, from, now, last) => {
     return t + rustOf(recallAt(n, now, last, st), o) - rustOf(recallAt(n, from, last, st), o);
   }, 0);
 };
-// Outside a visit and a comeback the rust is not counted (rustNow). The genus difficulties its sum would read are kept as
-// it would keep them: genusDiff keeps a unit's first value (GDIFF) until the photo statistics, the data or the subject
-// change, and a tree's new photos do not clear it, so which value it keeps must not move with this skip. The units: those
-// asked whose recall a stability reads (a time of their own or the player's last answer, before now), not learned.
+// Outside a visit and a comeback the rust is not counted (rustNow). The genus difficulties its sum would read are still
+// made (genusDiff), so the memo (GDIFF) holds what the sum would leave in it. Its values do not depend on it: the memo
+// follows the data version (genusDiff). The units: those asked whose recall a stability reads (a time of their own or the
+// player's last answer, before now), not learned.
 const rustSkip = (now, last) =>
   cbPlay().forEach(n => {
     const s = P[n] || {},

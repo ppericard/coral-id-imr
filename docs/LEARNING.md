@@ -430,7 +430,9 @@ hold the rest of the path back. Every subject.
 One estimate of a unit's difficulty everywhere (`model.js` `genusDiff`: the draw weight, shaky, the comeback's
 stability, the opening's order, the bar's population): the sheet's genus offset (`?stats=1` `gd`, the hierarchical photo
 Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), plus, for a unit with judged photos, the
-mean of their judged-ease priors. Adding or curating out a photo never moves it; 0 before the sheet's first reply.
+mean of their judged-ease priors. Adding or curating out a photo never moves the offset; it moves a unit's judged-ease
+mean (the fish, the sea slugs), and the value, kept for the data version, follows the photos in force. 0 before the
+sheet's first reply.
 
 ### Common first
 

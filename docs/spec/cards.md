@@ -324,17 +324,17 @@ subject never brings the question at the first answer in another.
 ## Did you know tips
 
 For players who never, or very rarely, use a feature: a reminder that it exists, without them knowing they were picked;
-once a player uses it, how often is their choice. A small generic system with seven tips built (the others are in
+once a player uses it, how often is their choice. A small generic system with eight tips built (the others are in
 [REE-13](https://linear.app/reef-id/issue/REE-13)).
 
 - **Registry and rules** in `tips.js` (pure, no DOM, tier 2 before `quiz.js`, `tests/tips.test.js`): `TIPS` holds each
   tip's `id`, `ctx` (the games whose break may show it; for the one tip with `out: true`, the pages outside the games,
   `home` and `progress`), `target(u, b)` (who it is for, on the usage counters and, for the My mix-ups tip, the
   break's `b.mix`, for the basics tip `b.bx`, for the Identify tip `b.ix`), `from` (the questions answered from which it can first show), `now(b)` (its preferred moment at a
-  break: b = {ctx, miss, zm, mix, bx, ix}),
+  break: b = {ctx, miss, zm, mix, bx, ix, hm, hx}),
   `wait` (questions it waits for that moment before any break will do), `max` showings ever and `every` (questions
-  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics, key}, subj the `core.js` `SUBJECTS` record on
-  screen, basics the `app.js` `UNITS` `basics` words of the subject, key its `UNITS` `idtip` words: the text follows the
+  between two), its card (`kick`, `title(o)`, `body(o)`, o = {mouse, subj, basics, key, hint}, subj the `core.js` `SUBJECTS` record on
+  screen, basics the `app.js` `UNITS` `basics` words of the subject, key its `UNITS` `idtip` words, hint its `UNITS` `hint` words: the text follows the
   subject, whose fields hold the words, never a test on its id, rule S1; the zoom tip reads
   `zoom`: corallites for coral players, markings and fins for fish players) and `act` (its "Show me", `quiz.js`
   `TIP_ACT`; a tip with none shows only **Got it**). `tipDue(state, b, L, now)` picks the tip of a break (a page outside the games passes the time); `TIPR`: at
@@ -352,8 +352,12 @@ once a player uses it, how often is their choice. A small generic system with se
   `i` times the Identify tool's page (the Coral ID Key) was drawn here, `app.js` `route()` through `quiz.js` `tipRoute`, a
   choice the key saved on the device, `reefid-idkey-start2`, `-lay` or `-pv`, also folding in as one; `k` the run of typed
   questions answered "I don't know" here since the last typed answer that was not one, `tipNote` through `tipAfter`, the
-  log's trailing run folding in, `tipIdkRun`), seeded once from the answers the device still holds (`LOG0` /
-  `SYNC.log`: their count, `zm` flags and trailing run; a signed-in device holds only its unsent answers); `s` per tip the `u.q` of each showing; `v` the visit {t, n, tip}.
+  log's trailing run folding in, `tipIdkRun`; `h` times the player tapped the corallites hint's link before answering,
+  `quiz.js` `question()` through `tipOpened`, never the reveal after an answer; `w` misses on a question that offered the
+  hint and left it closed, `answer()` through `tipAfter` and `tipNote`), seeded once from the answers the device still
+  holds (`LOG0` / `SYNC.log`: their count, `zm` flags and trailing run; a signed-in device holds only its unsent
+  answers), except `h` and `w`, which count from the device on (the log cannot say who opened the hint); `s` per tip the
+  `u.q` of each showing; `v` the visit {t, n, tip}.
   Per device on purpose: a tip is about how the person uses this device, the progress format and `core.js` stay
   untouched, and a tip shown on two devices does no harm.
 - **At the break**: `answer()` arms the one-tap question first (`pulseArm`), then the tips (`tipAfter`: when the
@@ -441,6 +445,23 @@ once a player uses it, how often is their choice. A small generic system with se
   retype the genus once to learn its spelling. “I don't know” counts as a miss." and **Got it** only (nothing to open:
   no `act`, so no **Show me**; Escape is Got it). The typed form says it again at the moment itself ("So close!").
   ([record](../decisions/2026-11-22-tip-f-typed-answers.md)).
+- **The corallites hint tip** (`id` `hint`, tip (g) of [REE-13](https://linear.app/reef-id/issue/REE-13)): for a player
+  with **10 or more** (`TIPR.HINT`) misses on questions that offered the hint and left it closed (counter `u.w`:
+  `answer()` already knows the hint left closed, `unseen`, and passes `miss && unseen` through `tipAfter` to `tipNote`)
+  who never opened it (counter `u.h`: the player's own tap on the link under the photos, `question()` through
+  `tipOpened`; the reveal `go()` makes after an answer is no opening). The link is the question's own: the hint is a
+  photo of the colony's corallites that `model.js` `photoSet` gives a colony with the three views, so a subject shows it
+  only if its photos have them: the corals today, never the fish or the sea slugs (one view). The words are the subject's
+  (`UNITS` `hint`: `name`, the link's word and the card's, and `lo`, what it adds), and a subject that declares none gets
+  no tip (`b.hx`; the counters are per device, so this is the gate). In the Quiz and the Custom quiz (a Duel tab question
+  can offer the hint and its misses count, but the card shows in the two games only); **only** at the Next right after
+  another such miss (`b.hm`; `wait: Infinity`: no other break will do, since the card names a link the question just
+  answered had); twice at most, the second 150 questions after the first; last of the seven when several are due. Card:
+  "Did you know?", "Stuck? Show the corallites", "Tap “Show the corallites (hint)” under the photos before you answer: it
+  adds a close-up of the corallites, the detail that often tells look-alikes apart." ("Click" with a mouse) and **Got it**
+  only (no `act`). Built with no measured audience (31 coral rows since the logging fix, 2 with the hint left closed, all
+  from one player) for the players Pierre trains next, as tip (f)
+  ([record](../decisions/2026-11-25-tip-g-corallites-hint.md)).
 - **Logged** with the one-tap questions: `ev('pulse', {r, src: 'tip:<id>', m, n})`, r = `shown`, then `show` (Show me),
   `ok` (Got it, Escape) or `none` (another page opened with it up); no sheet change ([sync.md](sync.md#events-and-pages)).
   The admin (To do › Errors) keeps the `tip:` rows out of the one-tap tables and counts them apart (`tipsView`: per tip,

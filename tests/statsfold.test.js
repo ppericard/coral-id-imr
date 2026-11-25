@@ -677,7 +677,8 @@ test("the replays read the snapshot: each player's record and the admin's list a
       post(s, {w, answers: session(R, w, now - (30 - 6 * d) * H, 4, 'coral').map(a => Object.assign(a, {e: 0.6, th: 0.2 * d}))});
   foldAll(s, now);
   const who = ['ana', 'ben', 'cal-old', '~anon device0001', 'nobody'];
-  const recs = () => wire(who.map(w => s.ctx.rplMake_(w, s.ctx.rplMine_(w, 0), 0, null)));
+  const sid = run(s, 'CORE_.replaySubject()'),
+    recs = () => wire(who.map(w => s.ctx.rplMake_(w, s.ctx.rplMine_(w, 0, sid), 0, null, sid)));
   const list = () => {
     s.sheets.Replayed && s.sheets.Replayed.rows.splice(1); // made again, never reused
     const users = ['Ana', 'Ben', 'Eve'].map(name => ({name}));

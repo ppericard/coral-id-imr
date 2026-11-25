@@ -18,17 +18,21 @@ const MISS = {ctx: 'quiz', miss: true, zm: false},
   RIGHT = {ctx: 'quiz', miss: false, zm: false};
 
 test('tipsInit: empty, malformed, and seeded once from the device answers', () => {
-  assert.deepStrictEqual(tipsInit(null, []), {u: {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0}, s: {}, v: {t: 0, n: 0, tip: 0}});
-  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0});
+  assert.deepStrictEqual(tipsInit(null, []), {
+    u: {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0},
+    s: {},
+    v: {t: 0, n: 0, tip: 0}
+  });
+  assert.deepStrictEqual(tipsInit('x', null).u, {q: 0, z: 0, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0});
   assert.deepStrictEqual(tipsInit({u: {q: -3, z: 'a'}, s: {zoom: 'x'}, v: 5}, null), {
-    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0},
+    u: {q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0},
     s: {zoom: []},
     v: {t: 0, n: 0, tip: 0}
   });
   // The seed: the answers' count and their zm flags; never once a state exists.
   const log = [{zm: 1}, {zm: 0}, {}, {zm: 1}, null];
-  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, k: 0, c: 0, d: 0, m: 0, i: 0});
-  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0});
+  assert.deepStrictEqual(tipsInit(null, log).u, {q: 4, z: 2, k: 0, c: 0, d: 0, m: 0, i: 0, h: 0, w: 0});
+  assert.deepStrictEqual(tipsInit({u: {q: 7, z: 0}}, log).u, {q: 7, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0});
 });
 
 test('tipNote: a visit is answers less than 30 minutes apart; a tip shown holds for the visit only', () => {
@@ -103,7 +107,9 @@ test('registry: every tip is complete', () => {
     ids.add(t.id);
     assert.ok(Array.isArray(t.ctx) && t.ctx.length, t.id);
     for (const k of ['target', 'now']) assert.strictEqual(typeof t[k], 'function', t.id + ' ' + k);
-    for (const k of ['from', 'wait', 'max', 'every']) assert.ok(Number.isInteger(t[k]) && t[k] >= 0, t.id + ' ' + k);
+    // wait Infinity: the tip shows only at its preferred moment (the hint tip).
+    for (const k of ['from', 'wait', 'max', 'every'])
+      assert.ok((Number.isInteger(t[k]) || (k === 'wait' && t[k] === Infinity)) && t[k] >= 0, t.id + ' ' + k);
     assert.ok(t.card && t.card.kick && typeof t.card.body === 'function' && typeof t.card.title === 'function', t.id);
     if (t.act === 'zoom') {
       assert.match(t.card.title({mouse: true}), /^Click/);
@@ -248,7 +254,7 @@ test('basics tip: only for b.bx, from 30 questions, at the Next after a miss, in
   // Its game: the Quiz; not the Custom quiz, the Duel tab nor another page.
   for (const ctx of ['quiz-custom', 'quiz-duel', 'genera']) assert.strictEqual(tipDue(fresh(100), {...BX, ctx}), null, ctx);
   // No counter of its own: the state holds no basics count (the module's page records its opening); the Identify tip's is i.
-  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'i', 'k', 'm', 'q', 'z']);
+  assert.deepStrictEqual(Object.keys(tipsInit(null, []).u).sort(), ['c', 'd', 'h', 'i', 'k', 'm', 'q', 'w', 'z']);
 });
 
 test('basics tip: once a visit, twice ever 150 questions apart, after the other four tips', () => {
@@ -460,6 +466,110 @@ test('typed tip: the card names the subject’s own unit and no subject; nothing
   assert.strictEqual(t.act, undefined); // Got it only: the typed form says it again at a close spelling
   // Every subject that has typed questions is served by the same entry: the unit's word is a field of the subject (S1).
   for (const S of SUBJECTS) assert.ok(typeof S.one === 'string' && S.one, S.id);
+});
+
+// The hint tip (g): misses on questions that offered the corallites hint and left it closed (u.w), the hint never opened
+// (u.h), in a subject that declares the hint's words (b.hx).
+const HK = {c: 1, d: 1, z: 3, m: 1, i: 1};
+const HM = {...MISS, hx: 1, hm: true}; // a miss that left the hint closed, in a subject with a hint
+test('hint run: tipNote counts a miss on a question that offered the hint and left it closed (u.w), nothing else', () => {
+  let st = tipsInit({u: HK});
+  assert.deepStrictEqual([st.u.h, st.u.w], [0, 0]);
+  st = tipNote(st, 1e12); // no 4th argument: not a hinted miss
+  st = tipNote(st, 1e12 + MIN, '', false);
+  assert.deepStrictEqual([st.u.q, st.u.w], [2, 0]);
+  st = tipNote(st, 1e12 + 2 * MIN, '', true);
+  st = tipNote(st, 1e12 + 3 * MIN, 'idk', true); // a typed question can offer the hint too
+  assert.deepStrictEqual([st.u.q, st.u.w, st.u.k], [4, 2, 1]);
+  assert.strictEqual(tipUse(st, 'h').u.h, 1); // quiz.js tipOpened('h'): the player's own tap on the link
+  // A state saved before the counters (no h, no w) reads as 0, and the log seeds neither (it cannot say who opened the hint).
+  const old = tipsInit({u: {q: 40, z: 3}});
+  assert.deepStrictEqual([old.u.h, old.u.w], [0, 0]);
+  assert.deepStrictEqual([tipsInit(null, [{zm: 1}, {}]).u.h, tipsInit(null, [{}]).u.w], [0, 0]);
+});
+
+test('hint tip: TIPR.HINT misses with the hint closed, never opened, in a subject with a hint; the Quiz and the Custom quiz', () => {
+  const fresh = (n, u) => played(n, 0, tipsInit({u: {...HK, ...u}})),
+    st = fresh(40, {w: 10});
+  assert.strictEqual(TIPR.HINT, 10);
+  assert.strictEqual(tipDue(fresh(40, {w: 9}), HM), null); // 9 is not many
+  assert.strictEqual(tipDue(st, HM).id, 'hint');
+  assert.strictEqual(tipDue(fresh(40, {w: 60}), HM).id, 'hint');
+  // The hint opened once, ever, ends the audience (the player knows it).
+  assert.strictEqual(tipDue(fresh(40, {w: 10, h: 1}), HM), null);
+  assert.strictEqual(tipDue(fresh(40, {w: 60, h: 3}), HM), null);
+  // A subject with no hint (b.hx missing or 0: the fish and the sea slugs show one view): counters met, never shown, at
+  // any break. The counters are per device, not per subject, so this is the gate.
+  for (const hx of [0, undefined]) {
+    assert.strictEqual(tipDue(st, {...HM, hx}), null, String(hx));
+    assert.strictEqual(tipDue(fresh(400, {w: 99}), {...MISS, hx}), null, String(hx));
+  }
+  assert.strictEqual(tipDue(st, {ctx: 'quiz', miss: true, zm: false}), null);
+  // Its games: the Quiz and the Custom quiz, not the Duel tab nor a page.
+  assert.strictEqual(tipDue(st, {...HM, ctx: 'quiz-custom'}).id, 'hint');
+  for (const ctx of ['quiz-duel', 'home', 'progress', 'genera']) assert.strictEqual(tipDue(st, {...HM, ctx}), null, ctx);
+  assert.strictEqual(tipDue(st, {...OUT, hx: 1}), null);
+  // The visit's first 9 answers never show it.
+  assert.strictEqual(tipDue(played(9, 0, tipsInit({u: {...HK, w: 10}})), HM), null);
+  assert.ok(!TIPS.find(t => t.id === 'hint').out);
+});
+
+test('hint tip: only at the Next after a miss that left the hint closed (the card names a link the question had)', () => {
+  const st = played(30, 0, tipsInit({u: {...HK, w: 12}}));
+  assert.strictEqual(TIPS.find(x => x.id === 'hint').from, 0);
+  assert.strictEqual(tipDue(st, {...RIGHT, hx: 1}), null); // a right answer
+  assert.strictEqual(tipDue(st, {...MISS, hx: 1}), null); // a miss that was not on a hinted question, or opened its hint
+  assert.strictEqual(tipDue(st, HM).id, 'hint');
+  // However many questions later, no other break will do.
+  const later = played(400, 0, st, st.v.t + MIN);
+  assert.strictEqual(tipDue(later, {...RIGHT, hx: 1}), null);
+  assert.strictEqual(tipDue(later, {...MISS, hx: 1}), null);
+  assert.strictEqual(tipDue(later, HM).id, 'hint');
+});
+
+test('hint tip: once a visit, twice ever 150 questions apart, last of the seven when several are due', () => {
+  const visit = (st, n) => played(n, 0, st, st.v.t + TIPR.GAP);
+  let st = tipShown(played(30, 0, tipsInit({u: {...HK, w: 12}})), 'hint');
+  assert.deepStrictEqual(st.s.hint, [30]);
+  assert.strictEqual(tipDue(st, HM), null); // same visit
+  st = visit(st, 149);
+  assert.strictEqual(tipDue(st, HM), null); // 179
+  st = played(1, 0, st, st.v.t + MIN);
+  assert.strictEqual(tipDue(st, HM).id, 'hint'); // 180
+  st = tipShown(st, 'hint');
+  assert.strictEqual(tipDue(visit(st, 500), HM), null); // never a third time
+  // With every tip due, the others first, one a visit.
+  const ALL = {...HM, mix: 3, bx: 1};
+  let all = played(150, 0, tipsInit({u: {k: 3, w: 12}}));
+  const order = [];
+  for (let i = 0; i < 9; i++) {
+    const t = tipDue(all, ALL);
+    if (!t) break;
+    order.push(t.id);
+    all = visit(tipShown(all, t.id), 12);
+  }
+  assert.deepStrictEqual(order, ['zoom', 'custom', 'duels', 'mixups', 'basics', 'typed', 'hint']);
+});
+
+test('hint tip: the card says the link in the subject’s words, nothing to open', () => {
+  const t = TIPS.find(x => x.id === 'hint'),
+    hint = {name: 'corallites', lo: 'a close-up of the corallites, the detail that often tells look-alikes apart'};
+  assert.strictEqual(t.card.kick, 'Did you know?');
+  assert.strictEqual(t.card.title({hint}), 'Stuck? Show the corallites');
+  assert.strictEqual(
+    t.card.body({hint, mouse: false}),
+    'Tap “Show the corallites (hint)” under the photos before you answer: it adds a close-up of the corallites, the detail that often tells look-alikes apart.'
+  );
+  assert.match(t.card.body({hint, mouse: true}), /^Click “Show the corallites \(hint\)”/);
+  assert.strictEqual(t.act, undefined); // Got it only
+  // Without the subject's words (a subject that declares none is never shown it): a neutral text, no subject named.
+  assert.doesNotMatch(t.card.title({}) + t.card.body({}), /coral|fish|genus|genera|slug/i);
+  // The words are declared by the one subject whose questions have a hint (rule S1: one place, no test on the subject), the
+  // same words as the link says (quiz.js hintName).
+  const app = require('fs').readFileSync(require('path').join(__dirname, '..', 'app.js'), 'utf8');
+  assert.strictEqual((app.match(/^\s+hint: \{/gm) || []).length, 1);
+  const quiz = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8');
+  assert.match(quiz, /id="hintb">Show the \$\{esc\(hintName\(\)\)\} \(hint\)</);
 });
 
 // The card speaks the subject on screen: a fish player is never told to look at the corallites. Every subject gets a

@@ -122,10 +122,21 @@ The data views:
 - each unit's part of a pair's confusion prior (`model.js` `confUnit`, `confUnitCalc`: its declared and data
   look-alikes and its family) and its growth forms (`formsOf`): `pooledConf` reads them, where it read both records and
   computed both units' forms for every pair;
+- each unit's part of a pair's group score (`model.js` `groupUnit`, `groupUnitCalc`: its declared look-alikes as
+  `declaredOf` gives them, its data look-alikes and its family) and its growth forms (`formsOf`): `groupsOfRank` reads
+  them once for its loop (`groupPairFn`), where every pair of a rank read both records and computed both units' forms,
+  tens of thousands of pairs whenever the units in play or the pooled stats change;
+- whether a unit has a game photo to show (`model.js` `photoAnyBy`, `photoAny`): the units in play (`app.js`
+  `poolCalc`) read it once for their loop (`photoAnyFn`), where they asked `photoAny` of every unit at every answer;
 - the choice labels (`model.js` `choiceKeyFn`), per unit and per IMR answer: a species named by its common name is
   labelled with the player's first common name (`app.js` `treeGenera` `name`, `cnFirst`), so the answer (`imrNow`,
   read once) is in the key and each key's label is computed under it. Only a subject that names its species by their
   common names (`SUBJECTS` names `cn`) reads the answer.
+
+Each unit's difficulty (`model.js` `genusDiff`, memo `GDIFF`) is kept for the data version too, read from `DATA_V`
+directly (`GDV`, no storage check: its inputs, the statistics joined and the units built, are written in this tab). So a
+tree's new photos (`app.js` `treeBuild`, `treePull`) make it again, as the statistics, a new curation and a subject
+switch do. Where `model.js` runs without `app.js` (the tools, the unit tests), the memo is cleared by hand.
 
 A keyed view has a read for a loop with nothing written during it (`app.js` `keyView` `fn`, as `introducedFn`): the
 version is read once, then a value kept in it is a lookup; any other read goes through the view (with `VIEW_CHECK` on,
@@ -166,7 +177,12 @@ before them on made-up units, with the records, the IMR answer, the pooled answe
 between reads, and fails a record, a unit's forms, a name or a class changed under the player's bump alone.
 `tests/openview.test.js` compares the units ready, the cards' window, circle 2's gate, the units met in the openings'
 loops and the comeback's rust (`rustNow`) with the code before them on made-up records and intro maps, the clock and
-the time moving between reads, and fails the intro map or a record changed with no bump.
+the time moving between reads, and fails the intro map or a record changed with no bump. `tests/poolview.test.js`
+compares the units in play with the code before `photoAny`'s view, with the slate, the bonus units and the units' photos
+written between reads, and fails a photo refused under the player's bump alone; `tests/groupview.test.js` compares every
+pair's group score, its declared test and the groups with the code before them, with the pooled stats and the units'
+look-alikes, families and forms written between reads, and fails a unit's look-alikes changed under the player's bump
+alone.
 
 ## Which unit next
 
@@ -389,7 +405,8 @@ visit after `SESSION.GAP` = 30 minutes without an answer: the next `COMEBACK.FLO
 blocks the cards in `planPhoto`, the open-all and bonus genera offers in `quizPhoto`; bonus genera, once on, open by
 cards like slate genera). From the FSRS recall per unit (`recallAt`, `stability`) it adds the gap's rust (`rustOf`,
 summed by `rustAdd`, each unit's stability read once for its two times) at a new visit and during a comeback, the only
-times the sum is read; between them it sums nothing (`rustSkip` keeps `genusDiff`'s first values as the sum would). A
+times the sum is read; between them it sums nothing (`rustSkip` still makes the `genusDiff` values the sum would read,
+so the memo holds what the sum would leave in it; the values follow the data version either way). A
 comeback runs while that is above 0 (`comebackOf`: units answered right, the surest half first, then the most rusted;
 the usual choices, `trapsFor`; photos aimed at ability + ln R through `photoSet(n, skip, shift)`; no card, duel or exam;
 `q.warm`, and `q.cb`, the unit's recall) and ends by a CUSUM on its answers (`comebackStep`, with the opening hold's
