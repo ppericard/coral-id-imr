@@ -4,7 +4,10 @@
 // figures, 2C's statistics, the Gibbs sampler's posteriors and diagnostics, 2B's comparisons. No row, no player label,
 // no per-unit effect.
 //
-//   node tools/studies/q316/refit/summarise.js <run dir> <out.json>
+//   node tools/studies/q316/refit/summarise.js <run dir> <out.json> [<cut-log run dir>]
+//
+// <cut-log run dir>: the reference fits (fit.py --no-accept) of the log cut at an earlier extract's last answer
+// (refit/cut.js), to tell the data's growth from the code's changes.
 const fs = require('fs'),
   path = require('path');
 
@@ -55,15 +58,17 @@ function gibbsPart(G) {
   };
 }
 
-function summarise(dir) {
+function summarise(dir, cutDir) {
   const f = n => path.join(dir, n);
   const out = {};
   for (const s of ['coral', 'fish']) {
     const C = read(f(`checks-${s}.json`)),
       B = read(f(`2b-${s}.json`)),
-      ref = read(f(`ref-${s}.json`));
+      ref = read(f(`ref-${s}.json`)),
+      cut = cutDir ? read(path.join(cutDir, `ref-${s}.json`)) : null;
     out[s] = {
       reference_fit: ref && ref.fit && {sd: ref.fit.sd, fixed: ref.fit.fixed},
+      reference_fit_on_the_cut_log: cut && cut.fit && {answers: cut.answers, sd: cut.fit.sd, fixed: cut.fit.fixed},
       fit: fitPart(read(f(`fit-${s}.json`))),
       sibling: fitPart(read(f(`sib-${s}.json`))),
       centring: C && C.centring,
@@ -87,11 +92,11 @@ function summarise(dir) {
 module.exports = {summarise};
 
 if (require.main === module) {
-  const [DIR, OUT] = process.argv.slice(2);
+  const [DIR, OUT, CUT] = process.argv.slice(2);
   if (!DIR || !OUT) {
-    console.error('usage: node tools/studies/q316/refit/summarise.js <run dir> <out.json>');
+    console.error('usage: node tools/studies/q316/refit/summarise.js <run dir> <out.json> [<cut-log run dir>]');
     process.exit(2);
   }
-  fs.writeFileSync(OUT, JSON.stringify(summarise(DIR), null, 1) + '\n');
+  fs.writeFileSync(OUT, JSON.stringify(summarise(DIR, CUT), null, 1) + '\n');
   console.log('written ' + path.basename(OUT));
 }

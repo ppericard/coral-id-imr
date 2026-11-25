@@ -9,7 +9,8 @@ decision's order: the offline fit first, then the sheet, then the app).
 
 **Status: run on the real log on 2026-11-21** (the answers to 2026-11-20 15:50): the results are in
 [docs/reviews/2026-11-21-q316-offline-fit.md](../../../docs/reviews/2026-11-21-q316-offline-fit.md). The figures below
-are on simulated answers only.
+are on simulated answers only. **Refitted on 2026-11-25** (the answers to 2026-11-24 08:29, REE-193), with the Gibbs
+sampler below: [docs/reviews/2026-11-25-q316-refit.md](../../../docs/reviews/2026-11-25-q316-refit.md).
 
 ## Files
 
@@ -20,6 +21,8 @@ are on simulated answers only.
 | `checks.js` | 2C on the real log |
 | `replay2b.js` | 2B on the real log: the half fits, then the replay of the arms (after `run.py`, on its out directory) |
 | `run.py` | Every step for both subjects under one 40-minute clock |
+| `gibbs.py` | The same model's SDs from their posterior (the Gibbs sampler, REE-193), its acceptance test and checks; one subject per run |
+| `refit/` | REE-193's extract tools (`pseudonymise.js`, `cut.js`), the aggregates' writer (`summarise.js`) and the refit's aggregates (`q316-refit-2026-11-25.json`) |
 
 Tests: `tests/q316.test.js` (the loader, check 2C, the declared rules; and, with numpy and scipy, `tests/q316fit_check.py`:
 the sparse Laplace objective against a dense computation, a planted SD recovered, the acceptance rule, the clock).
@@ -166,7 +169,7 @@ intervals covering the truth, verdict; the Laplace fit's verdict on the same des
 | rank offset, genus (0.4) | | | 0.47 (+0.07), 19: pass | / pass |
 | rank offset, species (0.8) | | | 1.06 (+0.26), 16: fail | / fail |
 
-3.1, 4.8 and 6.8 minutes. **Reading**: where the Laplace fit is biased toward 0 on small clusters (the photo SD, τ, the
+Compute: 3.1, 4.8 and 6.8 minutes<!-- effort-ok: compute times -->. **Reading**: where the Laplace fit is biased toward 0 on small clusters (the photo SD, τ, the
 fish genus and species), the sampler is not, on these designs. The photo SD's chains mix slowly (effective sample size
 14-30 per 1,000 draws in the replicates' chains; τ 22-38): the reason the real chains were lengthened. The species rank
 offset, on 5% of 3,000 answers, fails. Simulated answers only.
@@ -259,7 +262,7 @@ rank offset; with four times the answers, the genus and species SDs and both ran
 biased low (toward 0) whenever a photo or a player × unit pair has a handful of answers, even at 12,000 answers: by
 the rule declared above, that is the estimator's limit (the Laplace approximation's known downward bias on small binary
 clusters), not only the data's, since both pass with large clusters. So on the real log they will be reported "not
-estimable"; only another estimator (the study's Gibbs sampler, not built) could give them a value. Synthetic answers
+estimable"; only another estimator could give them a value (the Gibbs sampler, built since: its section above). Synthetic answers
 only: nothing here is about our players.
 
 ## Check 2C on made-up logs (no player)

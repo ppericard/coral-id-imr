@@ -328,15 +328,69 @@ test(
 test('refit/pseudonymise.js: names become K1, K2... at once, the prefixes kept, no name in the log; cut.js keeps the rows up to a time', () => {
   const Ps = require(path.join(DIR, 'refit', 'pseudonymise.js')),
     Cu = require(path.join(DIR, 'refit', 'cut.js'));
-  const row = (w, t) => [w, t, 'Acropora', 'Acropora', '1', 'quiz', 'a-1', 'id', '0.7', '0.2', '1', 'Acropora Porites', '3', '0', '480', '', '', 'coral', 'genus', '', '', '', ''];
+  const row = (w, t) => [
+    w,
+    t,
+    'Acropora',
+    'Acropora',
+    '1',
+    'quiz',
+    'a-1',
+    'id',
+    '0.7',
+    '0.2',
+    '1',
+    'Acropora Porites',
+    '3',
+    '0',
+    '480',
+    '',
+    '',
+    'coral',
+    'genus',
+    '',
+    '',
+    '',
+    ''
+  ];
   const head = [Pr.HEAD, row('Ana Real', '2026-11-20 15:50')];
-  const L = Ps.pseudonymise([{values: head}, {values: [row('~anon x7', '2026-11-20 15:51'), row('Ana Real', '2026-11-21 08:00'), row('ana real', '2026-11-21 08:01')]}]);
-  assert.deepStrictEqual(L.values.slice(1).map(r => r[0]), ['K1', '~anon K2', 'K1', 'K3']);
+  const L = Ps.pseudonymise([
+    {values: head},
+    {values: [row('~anon x7', '2026-11-20 15:51'), row('Ana Real', '2026-11-21 08:00'), row('ana real', '2026-11-21 08:01')]}
+  ]);
+  assert.deepStrictEqual(
+    L.values.slice(1).map(r => r[0]),
+    ['K1', '~anon K2', 'K1', 'K3']
+  );
   assert.ok(!JSON.stringify(L).includes('Ana') && !JSON.stringify(L).includes('x7'));
-  assert.deepStrictEqual(Ps.summary(L), {rows: 4, players: 3, subjects: {coral: 4}, first: '2026-11-20 15:50 Manila', last: '2026-11-21 08:01 Manila'});
+  assert.deepStrictEqual(Ps.summary(L), {
+    rows: 4,
+    players: 3,
+    subjects: {coral: 4},
+    first: '2026-11-20 15:50 Manila',
+    last: '2026-11-21 08:01 Manila'
+  });
   assert.throws(() => Ps.pseudonymise([{values: [['Who', 'When']]}]), /header/);
   assert.strictEqual(Cu.cut(L, Pr.timeOf('2026-11-20 15:50')).values.length, 2);
   assert.strictEqual(Pr.load(L).rows.length, 4);
+});
+
+test('refit/summarise.js: aggregates only: no per-player lines, no unit effects', () => {
+  const Su = require(path.join(DIR, 'refit', 'summarise.js'));
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'q316sum-'));
+  try {
+    fs.writeFileSync(path.join(d, '2b-fish.json'), JSON.stringify({primary: {players: 9, mean: -0.01, per: [{p: 'P1', n: 3, d: 0.1}]}}));
+    fs.writeFileSync(
+      path.join(d, 'fit-coral.json'),
+      JSON.stringify({answers: 9, fit: {sd: {gen: [0.8123456, {}]}, fixed: {}, effects: {gen: {Acropora: 0.3}}}})
+    );
+    const S = Su.summarise(d);
+    assert.deepStrictEqual(S.fish.replay2b.primary, {players: 9, mean: -0.01});
+    assert.strictEqual(S.coral.fit.fit.sd.gen[0], 0.812);
+    assert.ok(!JSON.stringify(S).includes('Acropora') && !JSON.stringify(S).includes('P1'));
+  } finally {
+    fs.rmSync(d, {recursive: true, force: true});
+  }
 });
 
 test("the rules the README declares for the Gibbs sampler are gibbs.py's", () => {
@@ -344,7 +398,16 @@ test("the rules the README declares for the Gibbs sampler are gibbs.py's", () =>
   assert.match(g, /CHAIN = \{'iters': 6000, 'burn': 1000, 'chains': 2, 'rep_iters': 1500, 'rep_burn': 500\}/);
   assert.match(g, /PRIOR = \{'scale': 1\.0, 'other': 0\.5\}/);
   assert.match(g, /CONVERGE = \{'rhat': 1\.1, 'ess': 100, 'prior_shift': 0\.1\}/);
-  for (const s of ['6,000 sweeps', '1,000 burn-in', '1,500 sweeps', 'half-normal prior of scale 1', 'scale 0.5', 'R-hat is above 1.1', 'under 100', 'more than 0.1'])
+  for (const s of [
+    '6,000 sweeps',
+    '1,000 burn-in',
+    '1,500 sweeps',
+    'half-normal prior of scale 1',
+    'scale 0.5',
+    'R-hat is above 1.1',
+    'under 100',
+    'more than 0.1'
+  ])
     assert.ok(README.includes(s), 'README: ' + s);
 });
 
