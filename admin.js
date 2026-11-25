@@ -7164,7 +7164,7 @@ function bindSug() {
       })
   );
 }
-// A click on the enlarged photo shows it at actual size, as in the games (app.js zoom).
+// A click on the enlarged photo shows it at actual size, as in the games (zoom.js zoom).
 const lbFull = lb => {
   const im = lb.querySelector('.lb-in img');
   if (!im) return;
