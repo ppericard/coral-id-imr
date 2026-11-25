@@ -1266,19 +1266,18 @@
   }
   // Species record s (fish.json shape) with its list of names laid over its own: each name of list L (treeCnClean) that
   // the base lists in some spelling keeps its other spellings (the base's entry [name shown, other spellings]), a new name
-  // has none; cni, the place of the IMR name, follows that name to its place in the list and goes when the list drops it;
-  // cnr, the regional names typed only, stay.
+  // has none; cni, the place of the IMR name, follows the IMR name's entry to its place in the list (whichever of its
+  // spellings the list names) and goes when the list drops it; cnr, the regional names typed only, stay.
   function treeCnLay(s, L) {
     const was = Array.isArray(s.cn) ? s.cn : [],
       forms = n => (Array.isArray(n) ? n : [n]).filter(x => typeof x === 'string' && x),
-      imr = Number.isInteger(s.cni) && was[s.cni] ? typeNormAll(forms(was[s.cni])[0] || '') : '',
       taken = new Set(),
       out = {...s};
     let at = -1;
     out.cn = L.map((x, i) => {
       const k = typeNormAll(x),
         j = was.findIndex((n, h) => !taken.has(h) && forms(n).some(y => typeNormAll(y) === k));
-      if (imr && k === imr) at = i;
+      if (j >= 0 && j === s.cni) at = i;
       if (j < 0) return [x];
       taken.add(j);
       return [x, ...forms(was[j]).filter(y => typeNormAll(y) !== k)];

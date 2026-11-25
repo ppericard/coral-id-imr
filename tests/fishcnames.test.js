@@ -90,6 +90,17 @@ test('the IMR name follows its name to its new place and goes when the list drop
   assert.ok(!('cni' in C.treeCnLay(bare, names(s))));
 });
 
+test('the IMR mark stays on its entry when the list names one of its other spellings', () => {
+  const s = F.species.find(x => Number.isInteger(x.cni) && x.cn[x.cni] && x.cn[x.cni].length > 1);
+  assert.ok(s, 'a species whose IMR entry has a spelling');
+  const e = s.cn[s.cni],
+    r = C.treeCnLay(s, ['A different main name', e[1]]);
+  assert.strictEqual(r.cni, 1);
+  assert.deepStrictEqual(r.cn[1], [e[1], e[0], ...e.slice(2)]);
+  assert.strictEqual(C.treeCnLay(s, ['A different main name', e[0]]).cni, 1);
+  assert.ok(!('cni' in C.treeCnLay(s, ['A different main name'])));
+});
+
 test('the fallback: no entry, an entry that is no clean list, a species the file does not know, a species with no list: the built file itself', () => {
   assert.strictEqual(apply({}), F);
   assert.strictEqual(C.contentApply(FSUB, F, {}), F);
