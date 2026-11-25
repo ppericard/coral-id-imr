@@ -12503,14 +12503,26 @@ function noChoiceMixups(R) {
 // retyped: 1 exactly, 0 not, null no step, n], the most frequent first: a close typo of the unit shown (right, its spelling
 // step asked) or another unit's name (a typed mix-up). "I don't know" and exact answers are not near-misses. A removed
 // account's answers (anonymous flag 2: deleted or archived, as goneRow reads it) never show here (rule D7), though they
-// still count in the pooled pairs.
+// still count in the pooled pairs. The texts the form refused before the answer (Rejected tries, readAnswers row 23: a
+// list of strings, null or absent when none, as a sheet script before it serves the rows): rej [typed answers that
+// came after one or more, refused texts in all], refused [text as typed (lower case, trimmed), n], the most frequent first.
 function typedText(R) {
   const tr = trustOf(R),
-    out = {n: 0, step: [0, 0], near: []},
-    N = {};
+    out = {n: 0, step: [0, 0], near: [], rej: [0, 0], refused: []},
+    N = {},
+    X = Object.create(null); // keyed by what players typed: constructor, __proto__ (no inherited entry)
   R.forEach(r => {
     if (!r[2] || r[11] === 2 || !tr[r[0]] || fmtOf(r[5], 0) !== 'typed') return;
     out.n++;
+    const rj = Array.isArray(r[23]) ? r[23].filter(t => typeof t === 'string' && t.trim()) : [];
+    if (rj.length) {
+      out.rej[0]++;
+      out.rej[1] += rj.length;
+      rj.forEach(t => {
+        const k = t.trim().toLowerCase();
+        X[k] = (X[k] || 0) + 1;
+      });
+    }
     const sp = r[16] === 0 || r[16] === 1 ? r[16] : null,
       a = r[3] || '';
     if (sp !== null) (out.step[0]++, (out.step[1] += sp));
@@ -12528,6 +12540,7 @@ function typedText(R) {
   out.near = Object.entries(N)
     .map(([k, n]) => [...JSON.parse(k), n])
     .sort((x, y) => y[4] - x[4] || (x[0] + x[1] < y[0] + y[1] ? -1 : 1));
+  out.refused = Object.entries(X).sort((x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1));
   return out;
 }
 // answerlog: end
@@ -13339,6 +13352,13 @@ function statsConf() {
         )
         .join('')}</tbody></table></section>`
     : '';
+  // The texts the typed form refused before the answer (typedText, Rejected tries: sheet v228), as typed, live only.
+  const rfCard = TT.refused.length
+    ? `<section class="adm-scard"><h3>Refused texts</h3><table class="adm-tbl"><thead><tr><th>Typed</th><th>n</th></tr></thead><tbody>${TT.refused
+        .slice(0, 15)
+        .map(([t, n]) => `<tr><td><span class="adm-cut" title="${esc(t)}">${esc(t)}</span></td><td class="n">${n}</td></tr>`)
+        .join('')}</tbody></table></section>`
+    : '';
   $v.innerHTML =
     head +
     kpis([
@@ -13347,7 +13367,8 @@ function statsConf() {
       ['Traps (score ≥ ' + CONF.TRAP + ')', PR.filter(p => p.sc >= CONF.TRAP).length],
       ['Not declared', surprise],
       ['Look-alikes from the data', PR.filter(p => p.dl).length],
-      ...(TT.step[0] ? [['Spelling steps retyped exactly', `${TT.step[1]}/${TT.step[0]}`]] : [])
+      ...(TT.step[0] ? [['Spelling steps retyped exactly', `${TT.step[1]}/${TT.step[0]}`]] : []),
+      ...(TT.rej[0] ? [['Typed after refused texts', `${TT.rej[0]}/${TT.n}`]] : [])
     ]) +
     `
     <div class="adm-sgrid">
@@ -13365,7 +13386,7 @@ function statsConf() {
     <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', phCell)}</section>
     <section class="adm-scard"><h3>${esc(S.admin.obs || 'Colonies')}</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener">${gnm(o.g)} ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>
     <section class="adm-scard"><h3>Species</h3>${tbl(SP, 'Species', o => `<i>${esc(o.k)}</i>`)}</section>
-    ${noCh(TYP, 'Typed', 'Typed as')}${ttCard}${noCh(OLD, 'Before v10', 'Answered')}
+    ${noCh(TYP, 'Typed', 'Typed as')}${ttCard}${rfCard}${noCh(OLD, 'Before v10', 'Answered')}
     </div>`;
   bindStats();
   // another subject's photos: enlarged alone, captioned with their unit's name

@@ -324,6 +324,11 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   2026-11-20 17:33 on the response-time change, decided too fast): a fact he states (answer time carries difficulty) is
   decided; how the engine integrates it was not, and the response-time design got a study first. For other engine work,
   weigh the same way how much study the change needs.
+- **Waves in arrival order: `bash tools/queue/fifoq.sh N1 N2 …`** (REE-220; README in `tools/queue/`). One call per
+  wave, in the background with the longest limit, from the main checkout. It waits until no train, no other queue
+  script and no earlier `fifoq.sh` runs (tickets in arrival order, never by process id: ids wrap), then runs
+  `nightq.sh N1 N2 …`. Several `nightq.sh` waves started at once race on main ("main moved", 2026-11-23); this is the
+  waiter that replaces the integrator's own wrapper script, so nothing needs a file outside the repo.
 - **The queue glue lives in `tools/queue/`** (README there): a loop per PR (merge main, push, `@codex review`, wait for
   CI and Codex on the head, then `tools/train.py N`), a version step per Code.gs PR as above, and a wait so that only one
   wave runs. Its log and state go to `QUEUE_DIR` (default `~/.cache/reefid-queue`), never into the repo. A container

@@ -513,3 +513,174 @@ test("nightq reads the security field first on the line, so the PR's own text ca
   assert.strictEqual(field(`${head} | security@head: running ${SHA} | ${tail} None | security@head: completed ${SHA} |`), `running ${SHA}`);
   assert.strictEqual(field(`${head} | ${tail} None`), '');
 });
+
+// ---- fifoq.sh: the waiters in arrival order, then nightq.sh (REE-220). Shims for pgrep, sleep and bash: no GitHub. ----
+const sourcedFifoq = (d, script) => {
+  // the case is a script file that sources fifoq.sh (named by the environment): no command line built from values
+  const file = path.join(d, 'case.sh');
+  fs.writeFileSync(file, '. "$FIFOQ"\n' + script);
+  const r = spawnSync('/bin/bash', [file], {
+    encoding: 'utf8',
+    timeout: 15000,
+    env: {...process.env, FIFOQ: path.join(DIR, 'fifoq.sh'), REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r'}
+  });
+  assert.ok(!r.error, r.error);
+  return r;
+};
+
+test('fifoq tickets: arrival order; a dead queue, or a pid that wrapped, never holds the place (REE-220)', () =>
+  tmp(d => {
+    const script = [
+      'T=$TICKETS',
+      'mkdir -p "$T"',
+      'sleep 30 & live=$!',
+      'sleep 30 & other=$!',
+      "trap 'kill $live $other 2>/dev/null' EXIT",
+      'mine=$T/200.$$; start_of $$ > "$mine"',
+      // a live ticket that arrived earlier holds the turn
+      'start_of $live > "$T/100.$live"',
+      'ticket_older "$mine"; echo "earlier live: $?"',
+      // a live ticket that arrived later does not
+      'rm -f "$T/100.$live"; start_of $live > "$T/300.$live"',
+      'ticket_older "$mine"; echo "later live: $?"',
+      'rm -f "$T/300.$live"',
+      // a dead process: its earlier ticket is removed and the turn is free
+      'echo "Mon Jan  1 00:00:00 2001" > "$T/050.99999999"',
+      'ticket_older "$mine"; echo "dead: $?"; [ -e "$T/050.99999999" ]; echo "dead kept: $?"',
+      // a live pid that started at another time (a wrapped pid) is not the queue that took the ticket
+      'echo "Mon Jan  1 00:00:00 2001" > "$T/060.$other"',
+      'ticket_older "$mine"; echo "wrapped: $?"; [ -e "$T/060.$other" ]; echo "wrapped kept: $?"',
+      // ticket_new names this process, by its true start
+      'n=$(ticket_new); echo "new: ${n##*.} $$"; [ "$(cat "$n")" = "$(start_of $$)" ]; echo "new start: $?"',
+      // published by one rename: no hidden half-written file stays behind
+      'ls -A "$T" | grep -c "^[.]"'
+    ].join('\n');
+    const r = sourcedFifoq(d, script);
+    const pid = r.stdout.match(/new: (\d+) /)[1];
+    assert.strictEqual(
+      r.stdout.trim(),
+      [
+        'earlier live: 0',
+        'later live: 1',
+        'dead: 1',
+        'dead kept: 1',
+        'wrapped: 1',
+        'wrapped kept: 1',
+        `new: ${pid} ${pid}`,
+        'new start: 0',
+        '0'
+      ].join('\n')
+    );
+  }));
+
+// pgrep, sleep and bash stand-ins; calls are logged and nothing is written outside the temporary folder
+const runFifoq = ({prs = ['1', '2'], busy = 0, env = {}, setup = null, nightqStatus = 0} = {}) =>
+  tmp(d => {
+    const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
+    shim('sleep', 'echo "sleep" >> "$CALLS"');
+    // a running train, then a running nightq wave, for the first BUSY checks
+    shim(
+      'pgrep',
+      'n=$(cat "$QUEUE_DIR/busy" 2>/dev/null || echo 0)\n[ "$n" -gt 0 ] || exit 1\necho $((n - 1)) > "$QUEUE_DIR/busy"\nexit 0'
+    );
+    fs.writeFileSync(path.join(d, 'busy'), String(busy));
+    shim('bash', `case "$1" in */nightq.sh) shift; echo "nightq $*" >> "$CALLS"; exit ${nightqStatus} ;; *) exit 1 ;; esac`);
+    if (setup) setup(d);
+    const calls = path.join(d, 'calls');
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'fifoq.sh'), ...prs], {
+      encoding: 'utf8',
+      timeout: 20000,
+      env: {...process.env, PATH: d + path.delimiter + process.env.PATH, REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r', CALLS: calls, ...env}
+    });
+    assert.ok(!r.error, r.error);
+    const tickets = path.join(d, 'fifoq.tickets');
+    return {
+      status: r.status,
+      out: r.stdout + r.stderr,
+      calls: fs.existsSync(calls) ? fs.readFileSync(calls, 'utf8').trim().split('\n') : [],
+      tickets: fs.existsSync(tickets) ? fs.readdirSync(tickets) : []
+    };
+  });
+
+test('fifoq runs nightq.sh on its PRs in the order given once it is its turn, and leaves no ticket (REE-220)', () => {
+  const r = runFifoq({prs: ['1438', '1443']});
+  assert.strictEqual(r.status, 0, r.out);
+  assert.deepStrictEqual(r.calls, ['nightq 1438 1443']);
+  assert.deepStrictEqual(r.tickets, []);
+  assert.match(r.out, /fifo wave queued 1438 1443/);
+  // nightq's own status is the wave's
+  assert.strictEqual(runFifoq({nightqStatus: 3}).status, 3);
+});
+
+test('fifoq waits while a train or another queue script runs, and starts nightq.sh only after (REE-220)', () => {
+  const r = runFifoq({busy: 3});
+  assert.strictEqual(r.status, 0, r.out);
+  assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'sleep', 'nightq 1 2']);
+  // the checks: a train, and the queue scripts of afterall.sh's own list
+  const t = read('fifoq.sh');
+  assert.match(t, /! train_running && ! running "nightq\|seqver\|chainq\|afterver" && ! ticket_older "\$1"/);
+  assert.match(read('afterall.sh'), /running "nightq\|seqver\|chainq\|afterver"/);
+  assert.ok(t.indexOf('until its_turn "$TICKET"; do') < t.indexOf('bash "$Q/nightq.sh"'));
+  assert.doesNotMatch(t, /etimes|pgrep -f "tools\/train\.py"/, 'no order by process age or id');
+});
+
+test('fifoq waits behind an earlier live ticket until its queue leaves (REE-220)', () => {
+  const r = runFifoq({
+    setup: d => {
+      // a live earlier queue: this test process, with its true start time (ps), and a ticket named before ours
+      const t = path.join(d, 'fifoq.tickets');
+      fs.mkdirSync(t);
+      const ps = spawnSync('ps', ['-o', 'lstart=', '-p', String(process.pid)], {encoding: 'utf8'})
+        .stdout.trim()
+        .replace(/ +/g, ' ');
+      fs.writeFileSync(path.join(t, `1.${process.pid}`), ps + '\n');
+      // the second sleep removes it: the earlier queue is done
+      fs.writeFileSync(
+        path.join(d, 'sleep'),
+        `#!/bin/bash\necho sleep >> "$CALLS"\n[ "$(grep -c sleep "$CALLS")" -lt 2 ] || rm -f "${t}/1.${process.pid}"\n`,
+        {mode: 0o755}
+      );
+    }
+  });
+  assert.strictEqual(r.status, 0, r.out);
+  assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'nightq 1 2']);
+  assert.deepStrictEqual(r.tickets, []);
+});
+
+test('fifoq admission is exclusive: a wave lock held by another process keeps it waiting (REE-220, Codex review)', () => {
+  let holder = null;
+  try {
+    const r = runFifoq({
+      setup: d => {
+        // another wave holds the lock (flock runs sleep under it, in its own process group)
+        const lock = path.join(d, 'fifoq.lock');
+        holder = require('child_process').spawn('flock', [lock, 'sleep', '60'], {detached: true, stdio: 'ignore'});
+        const end = Date.now() + 5000;
+        while (spawnSync('flock', ['-n', lock, 'true']).status === 0 && Date.now() < end);
+        // the second sleep ends that wave: the lock is free for the third check
+        fs.writeFileSync(
+          path.join(d, 'sleep'),
+          `#!/bin/bash\necho sleep >> "$CALLS"\n[ "$(grep -c sleep "$CALLS")" -lt 2 ] && exit 0\nkill -TERM -- -${holder.pid}\nfor i in $(seq 1 100); do flock -n "${lock}" true && exit 0; /bin/sleep 0.05; done\n`,
+          {mode: 0o755}
+        );
+      }
+    });
+    assert.strictEqual(r.status, 0, r.out);
+    assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'nightq 1 2']);
+  } finally {
+    if (holder) {
+      try {
+        process.kill(-holder.pid, 'SIGKILL');
+      } catch (e) {}
+    }
+  }
+  assert.match(read('fifoq.sh'), /until its_turn "\$TICKET" && flock -n 9; do sleep "\$TURN_POLL"; done/);
+});
+
+test('fifoq takes only PR numbers, and says how to use it (REE-220)', () => {
+  for (const prs of [[], ['12x'], ['1', '']]) {
+    const r = runFifoq({prs});
+    assert.strictEqual(r.status, 2, r.out);
+    assert.deepStrictEqual(r.calls, []);
+  }
+});
