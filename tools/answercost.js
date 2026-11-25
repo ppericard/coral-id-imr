@@ -637,8 +637,9 @@ async function count(browser, base, file, name, o, expect) {
   await settle(p);
   // The draw's data filled in idle time (app.js drawFillSoon), held since the boot (DRAW_FILL_HOLD): let go once the quiz
   // is open and awaited in a window of its own, the row's fill (the units its slices went through, the named calls). Not
-  // before the restart: the quiz's first route() applies the curation fetched at the boot when it differs from the copy the
-  // page started on (CUR_NEW: build), which moves the data version and drops every data view (fish:3000 and fish:3000:back). So the answers counted
+  // before the restart: the quiz's first route() applies a rebuild pending since the boot (app.js CUR_NEW: a fetched
+  // curation that differs from the page's copy, another reserve id, the script's structure version; then build), which
+  // moves the data version and drops every data view (fish:3000 and fish:3000:back). So the answers counted
   // find it filled as a player's do once the quiz has been open a moment, its calls are in no answer's count, and the
   // count stays repeatable: a fill still running in an answer's window would move between answers with the machine's
   // speed. An app without it: no fill.

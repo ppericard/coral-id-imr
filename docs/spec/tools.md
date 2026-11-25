@@ -193,9 +193,10 @@ subject is a test case, not the definition of the target.
   open and awaited (`drawFillDone`) in a window of its own, the row's `fill` (the units its slices went through, their
   named calls and `top` functions; the table's "Filled idle" column). Its calls are in no answer's count, as a player's
   answers find it done once the quiz has been open a moment; a fill still running inside an answer's window would move
-  between answers with the machine's speed. Not before the quiz opens: its first `route()` applies the curation fetched
-  at the boot when it differs from the copy the page started on (`CUR_NEW`, `build`), which moves the data version and
-  drops every data view (the fish 3,000-answer states do). `fillIn` counts the units
+  between answers with the machine's speed. Not before the quiz opens: its first `route()` applies a rebuild pending
+  since the boot (`CUR_NEW`: a fetched curation that differs from the page's copy, another reserve id, the script's
+  structure version; then `build`), which moves the data version and drops every data view (the fish 3,000-answer
+  states do). `fillIn` counts the units
   filled idle within each answer counted (the data version moved during the count): their calls are that answer's, and
   the column names them. A change that needs newer data (a
   field the code now reads) moves the pin. The run fails, naming the state, when the page loaded another
