@@ -27,7 +27,9 @@
 // of them, which saves each of the others on its way: the nine players take about 2 minutes 15 s on a quiet 4-core
 // machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting the
 // eighteen states of STATES (each player in a session and back) about 1 minute 30 s at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
-// formats), each through the tap, the feedback, the deferred planning, Next and its top-up. V8's precise coverage counts
+// formats), each through the tap, the feedback, the deferred planning, Next and its top-up, each taken alone (the row's
+// `each`; peakCalls, the heaviest, is budgeted beside the average and compared by --repeat; peakTop and eachTop say where
+// the calls went). V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
 // Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
@@ -47,8 +49,8 @@
 // the machine's clock, so the file's age decides (and the run is not repeatable). A comeback state (subject:answers:back)
 // starts the page's clock BACK (30 days) after the state's last answer, plays no warm-up (the visit's first answer is the
 // comeback's first, which a session state's warm-up leaves out), and counts only the answers given in the comeback (rust
-// left, model.js CB.r), each taken alone (V8's coverage and the storage counters read and started over after each answer;
-// the row's `each` keeps each answer's calls): after a short history the comeback ends within a few answers (corals and
+// left, model.js CB.r), as a session state's each taken alone (V8's coverage and the storage counters read and started
+// over after each answer): after a short history the comeback ends within a few answers (corals and
 // sea slugs at 50 answers: 3), and the answers after it are a session's. Fewer than BACK_MIN of them fails the run.
 //
 // Heavy (rule W24): it takes the machine slot before it starts Chromium. No routine local check runs it (Pierre,
@@ -109,7 +111,9 @@ const HISTORIES = [50, 500, 3000];
 const BACK = 30 * 86400,
   BACK_MIN = 2; // a comeback state counts at least this many comeback answers, or it fails
 const STATES = SUBJECTS.flatMap(s => HISTORIES.flatMap(n => [`${s}:${n}`, `${s}:${n}:back`])).join(',');
-const BUDGETED = ['namedCalls', 'getCalls', 'getChars', 'setChars'];
+// peakCalls: the named calls of the heaviest answer counted (a row's `each`), so a build that lands on one answer has a
+// ceiling of its own, not only its share of the average.
+const BUDGETED = ['namedCalls', 'peakCalls', 'getCalls', 'getChars', 'setChars'];
 // The computations of the views whose count grows with the state when a version is lost (metCalc, genScoreCalc,
 // examOnCalc, lvlNeedCalc: once a version, per unit or class; drawPhotosCalc: once a data version per unit drawn).
 const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV', 'metCalc', 'genScoreCalc', 'examOnCalc', 'lvlNeedCalc', 'drawPhotosCalc'];
@@ -135,11 +139,12 @@ function parseStates(spec) {
     });
 }
 
-// A row's counts as one flat map: namedCalls, getCalls, getChars, setCalls, setChars, and fn:<name> for each watched
-// function (its calls per answer, over every file).
+// A row's counts as one flat map: namedCalls, peakCalls (the heaviest answer's: the largest of `each`), getCalls,
+// getChars, setCalls, setChars, and fn:<name> for each watched function (its calls per answer, over every file).
 function metrics(row) {
   const m = {
     namedCalls: row.namedCalls,
+    peakCalls: row.peakCalls !== undefined ? row.peakCalls : Math.max(0, ...(row.each || [])),
     getCalls: row.store.getCalls,
     getChars: row.store.getChars,
     setCalls: row.store.setCalls,
@@ -183,8 +188,9 @@ function over(row, budget) {
 const historyOff = (H, answers, warm) => !(Math.abs(H - warm - answers) <= Math.max(10, 0.05 * answers));
 
 // Whether the runs of one state at one seed (rows of the same state and seed, --repeat) agree: the same units asked, in the
-// same order, the same calls an answer (within TOL: the coverage of an idle callback that ran or not moves a count by a few
-// calls of a hundred thousand) and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
+// same order, the same calls an answer and in the heaviest answer (within TOL: the coverage of an idle callback that ran or
+// not moves a count by a few calls of a hundred thousand; work moved from one answer to another moves the heaviest only)
+// and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
 // loaded machine the device's log was read twice more, 3% of the characters read, with the same questions asked; the cause is
 // not known, a timer of the page on the wall clock is a guess).
 // {ok, why}: why names the first run that parts from the first, and how.
@@ -196,6 +202,9 @@ function repeatable(rows, tol = TOL, storeTol = STORE_TOL) {
     const at = `run ${k + 2} of ${r.state}${r.seed === null || r.seed === undefined ? '' : ` seed ${r.seed}`}`;
     if (a.asked.join() !== r.asked.join()) return {ok: false, why: `${at} asked ${r.asked.join(', ')} where run 1 asked ${a.asked.join(', ')}`};
     if (Math.abs(r.namedCalls - a.namedCalls) > tol * a.namedCalls) return {ok: false, why: `${at} counted ${r.namedCalls} calls an answer where run 1 counted ${a.namedCalls}`};
+    const pa = metrics(a).peakCalls,
+      pr = metrics(r).peakCalls;
+    if (Math.abs(pr - pa) > tol * pa) return {ok: false, why: `${at} counted ${pr} calls in its heaviest answer where run 1 counted ${pa}`};
     for (const f of ['getCalls', 'getChars', 'setChars'])
       if (Math.abs(r.store[f] - a.store[f]) > storeTol * a.store[f]) return {ok: false, why: `${at} counted ${r.store[f]} for ${f} where run 1 counted ${a.store[f]}`};
   }
@@ -224,7 +233,7 @@ const mil = x => (x >= 1e5 ? (x / 1e6).toFixed(2) + ' M' : fmt(x));
 
 // The study's table (section 1.2), one line a state, from the rows.
 function table(rows) {
-  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
+  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', 'Heaviest answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
     multi = new Set(rows.map(r => r.seed)).size > 1, // several seeds: the seed beside the state
     line = r => {
       const m = metrics(r),
@@ -237,6 +246,7 @@ function table(rows) {
         fmt(s.tree),
         fmt(s.conf + s.off),
         mil(m.namedCalls),
+        mil(m.peakCalls),
         fmt(m['fn:introduced'] || 0),
         fmt(m['fn:scoreOf'] || 0),
         `${fmt(m.getCalls)} (${mil(m.getChars)})`,
@@ -654,8 +664,10 @@ async function count(browser, base, file, name, o, expect) {
   const why = [];
   const by = new Map(),
     st = {get: {calls: 0, chars: 0}, set: {calls: 0, chars: 0}, keys: {}};
-  let total = 0;
-  const each = []; // the calls of each take (a comeback state: of each answer counted)
+  let total = 0,
+    peakTop = []; // the heaviest answer's functions, by their calls in it
+  const eachTop = []; // each answer's 12 heaviest functions (every answer over a mark, not only the heaviest)
+  const each = []; // the calls of each answer counted, each taken alone (peakCalls: the heaviest)
   // The calls and the storage traffic since the last take, added to the count (keep) or left out; both counters start over
   // (V8's takePreciseCoverage resets its call counts).
   const take = async keep => {
@@ -669,7 +681,8 @@ async function count(browser, base, file, name, o, expect) {
         return out;
       });
     if (!keep) return;
-    const t0 = total;
+    const t0 = total,
+      one = new Map(); // this answer's calls by function
     for (const sc of result) {
       if (!FILES.test(sc.url)) continue;
       const f = path.basename(sc.url).replace(/\?.*/, '');
@@ -678,8 +691,11 @@ async function count(browser, base, file, name, o, expect) {
         if (!fn.functionName || !c) continue;
         total += c;
         by.set(fn.functionName + '@' + f, (by.get(fn.functionName + '@' + f) || 0) + c);
+        one.set(fn.functionName + '@' + f, (one.get(fn.functionName + '@' + f) || 0) + c);
       }
     }
+    if (total - t0 > Math.max(-1, ...each)) peakTop = [...one].sort((a, b) => b[1] - a[1]).slice(0, 30);
+    eachTop.push([...one].sort((a, b) => b[1] - a[1]).slice(0, 12));
     each.push(total - t0);
     for (const op of ['get', 'set']) for (const k of ['calls', 'chars']) st[op][k] += s[op][k];
     for (const [k, v] of Object.entries(s.keys)) {
@@ -688,20 +704,19 @@ async function count(browser, base, file, name, o, expect) {
       c.chars += v.chars;
     }
   };
-  // A comeback state (back) counts the answers given in the comeback only, each taken alone: after a short history the
-  // comeback ends within a few answers (fish 50 answers, 30 days away: 5), and the answers after it are mid-session ones.
+  // Each answer is taken alone, so the heaviest one is seen (peakCalls): a build once a page load or once the units in play
+  // change lands on one answer, which an average over the window hides. A comeback state (back) counts the answers given in
+  // the comeback only: after a short history the comeback ends within a few answers (fish 50 answers, 30 days away: 5),
+  // and the answers after it are mid-session ones.
   let n = 0;
   for (let i = o.warm; i < o.warm + o.n; i++) {
     const b = why.back || 0,
       f = await oneAnswer(p, i, why);
     fmts.push(f);
-    if (expect && expect.back) {
-      const inBack = (why.back || 0) > b;
-      if (f && inBack) n++;
-      await take(inBack);
-    } else if (f) n++;
+    const keep = !(expect && expect.back) || (why.back || 0) > b;
+    if (f && keep) n++;
+    await take(keep);
   }
-  if (!(expect && expect.back)) await take(true);
   await cdp.send('Profiler.stopPreciseCoverage');
   const played = fmts.filter(Boolean).length;
   // Most of the answers played, and no page error: a count over a broken page is no count.
@@ -722,10 +737,14 @@ async function count(browser, base, file, name, o, expect) {
     fmts: fmts.join(','),
     asked: why.asked || [],
     back: why.back || 0, // the answers played (after the warm-up) that were a comeback's
-    each, // the named calls of each take: a comeback state's, of each answer counted
+    each, // the named calls of each answer counted
     rtrace,
     errs,
     namedCalls: per(total),
+    peakCalls: each.length ? Math.max(...each) : 0, // the heaviest answer's named calls
+    peakAt: each.length ? each.indexOf(Math.max(...each)) : -1, // which answer counted it was (0: the first)
+    peakTop, // where its calls went
+    eachTop, // where each answer's calls went
     store: {
       getCalls: per(st.get.calls),
       getChars: per(st.get.chars),
