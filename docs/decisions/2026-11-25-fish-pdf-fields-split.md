@@ -1,6 +1,6 @@
 # The PDF's species fields and `src: slides`: moved into the IMR instance's layer; `deploy.key` into `tools/instance.json`
 
-Date: 2026-11-25. PR: #PRNUM (REE-294, part 1a). Rules or docs touched: S3 (mechanics clause), C8 (read only: the list
+Date: 2026-11-25. PR: #1578 (REE-294, part 1a). Rules or docs touched: S3 (mechanics clause), C8 (read only: the list
 still confirms presence for IMR); docs/spec/data.md "The instance's layer", docs/spec/fish.md.
 
 ## Context
