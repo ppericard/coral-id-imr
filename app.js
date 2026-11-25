@@ -124,7 +124,17 @@ const IS_ADMIN =
 // files loaded. A bump with no argument moves both versions, so a writer not sorted makes the data views again too.
 let STATE_V = 0;
 let DATA_V = 0;
-const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);
+// A bump of the player's records and settings ('rec') is counted for the subject whose records it wrote (sid: a key's
+// subject, storeWrote; by default the subject in force, whose P and Q the writer holds; null, nobody's known: another
+// tab's write, stateNow), so a visit can tell the visited subject's writes from the subject on screen's (REC_BY).
+let REC_N = 0;
+const REC_BY = {};
+const stateBump = (rec, sid) => {
+  STATE_V++;
+  if (rec !== 'rec') return void DATA_V++;
+  if (sid === undefined) sid = typeof SUBJ === 'object' && SUBJ ? SUBJ.id : null;
+  if (sid !== null) (REC_N++, (REC_BY[sid] = (REC_BY[sid] || 0) + 1));
+};
 // A visit to another subject (inSubject) and a tree lent for a while (treeWith) swap the subject or the tree in force and
 // put it back. Their bumps (swapBump: the subject or the tree in force, and nothing else, changed) move both versions,
 // so the views read meanwhile are the visited one's, and are counted (DATA_SW). Back where it started, with every data
@@ -133,18 +143,51 @@ const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);
 // for it hold (a sync visits the other subjects at each save and each pull). Any other data bump meanwhile (a tree built,
 // the statistics, the sheet's version, new data) leaves the new version. DATA_V only ever goes up and an alias is an
 // older version, so a version once left is never read again.
+// The state version the same way (REE-300): the records P and the settings Q swapped with the subject and put back as
+// the same objects, the hooks' state read again (swapBump('rec'), counted in STATE_SW alone), the state views' inputs
+// are the ones before the visit when every state bump since was a swap's or wrote another subject's records (the
+// visited subject's merge, its replay, its hold: REC_BY), with the data version back: the state version then reads as
+// the one before (STATE_AS). A write of the subject on screen's records (its key, or a write with it in force: a visit
+// back to it), one of nobody's known, or any data write leaves the new version.
 let DATA_SW = 0,
-  DATA_AS = {v: -1, k: -1};
-const swapBump = () => (DATA_SW++, stateBump());
+  STATE_SW = 0,
+  DATA_AS = {v: -1, k: -1},
+  STATE_AS = {v: -1, k: -1};
+const swapBump = rec => (STATE_SW++, rec === 'rec' || DATA_SW++, stateBump(rec, null));
 const dataKey = () => (DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
-const dataMark = () => ({v: DATA_V, sw: DATA_SW, k: dataKey()});
-function dataBack(m) {
-  if (DATA_V - m.v === DATA_SW - m.sw) DATA_AS = {v: DATA_V, k: m.k};
+function dataMark() {
+  const s = typeof SUBJ === 'object' && SUBJ ? SUBJ.id : null;
+  return {
+    v: DATA_V,
+    sw: DATA_SW,
+    k: dataKey(),
+    sv: STATE_V,
+    ssw: STATE_SW,
+    sk: STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V,
+    n: REC_N,
+    s,
+    own: REC_BY[s] || 0
+  };
 }
+// {data, state}: whether each version came back to the mark's (each then reads as it).
+function dataBack(m) {
+  const data = DATA_V - m.v === DATA_SW - m.sw,
+    state = data && m.s !== null && STATE_V - m.sv === STATE_SW - m.ssw + (REC_N - m.n) - ((REC_BY[m.s] || 0) - m.own);
+  if (data) DATA_AS = {v: DATA_V, k: m.k};
+  if (state) STATE_AS = {v: STATE_V, k: m.sk};
+  return {data, state};
+}
+// The other files' memos a visit resets with the subject (model.js the intro map read and each unit's difficulty, quiz.js
+// the typed names; their SUBJ_HOOKS): {get, put}, each read before a visit or a tree lent (memoGet) and put back after it
+// when the data version came back (memoPut; put(memo, back) with dataBack's {data, state}: the intro map only with the
+// state version).
+const SUBJ_MEMOS = [];
+const memoGet = () => SUBJ_MEMOS.map(h => h.get());
+const memoPut = (memo, back) => void (back.data && SUBJ_MEMOS.forEach((h, i) => h.put(memo[i], back)));
 // sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names). REC_KEYS: those of the
-// player's records and settings (stateBump('rec')).
-const REC_KEYS = new Set(SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)))),
-  STATE_KEYS = new Set([...REC_KEYS, 'reefid-sheet-v', 'reefid-photo-stats', ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)]);
+// player's records and settings (stateBump('rec')), each to its subject's id.
+const REC_KEYS = new Map(SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => [subjKey(S.id, k), S.id]))),
+  STATE_KEYS = new Set([...REC_KEYS.keys(), 'reefid-sheet-v', 'reefid-photo-stats', ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)]);
 // Storage freshness, one check per task (docs/spec/storage.md "Keys read many times an answer"). A stored text read
 // many times (sync.js keptEntry, stateNow below) is compared with the text kept at its first read in a task, then
 // trusted until the task's microtasks run (freshEnd, queued then) or this tab writes the key (storeWrote). Within a task
@@ -177,7 +220,7 @@ function storeWrote(k) {
       FRESH.delete(n);
       if (STATE_LIVE.includes(n)) STATE_AT = -1;
     }
-  if (STATE_KEYS.has(k)) stateBump(REC_KEYS.has(k) ? 'rec' : undefined);
+  if (STATE_KEYS.has(k)) stateBump(REC_KEYS.has(k) ? 'rec' : undefined, REC_KEYS.get(k));
 }
 // Two inputs are read from storage at every use, kept parsed while their text stays the same (sync.js keptBy): the
 // sheet's version (sheetV) and a subject's first-launch record (model.js imrSaid, startV). Their stored text is compared
@@ -198,17 +241,18 @@ function stateNow() {
   if (STATE_AT === FRESH_T) {
     if (VIEW_CHECK.on && STATE_LIVE.some((k, i) => stateRaw(k) !== STATE_RAW[i]))
       viewFail('stateNow: a stored text changed in this task without storeWrote');
-    return STATE_V;
+    return STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V; // after a visit that wrote nothing on screen, the version before
   }
-  // A first-launch record is the player's own (stateBump('rec')); the sheet's version (the first key) is data.
+  // A first-launch record is the player's own (stateBump('rec')), written by another tab: nobody's known (a visit under
+  // way keeps nothing); the sheet's version (the first key) is data.
   let ch = '';
   STATE_LIVE.forEach((k, i) => {
     const raw = stateRaw(k);
     if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = i && ch !== 'all' ? 'rec' : 'all'));
   });
-  if (ch) stateBump(ch === 'rec' ? 'rec' : undefined);
+  if (ch) stateBump(ch === 'rec' ? 'rec' : undefined, null);
   STATE_AT = freshNow();
-  return STATE_V;
+  return STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V;
 }
 // A view (the units in play: bonusList, pool, sciUp, shareFree): f's value, computed at its first read in a version and
 // read again as it is until the next. f is a function of the inputs alone (no clock, no random number, no planner's
@@ -1670,16 +1714,18 @@ function treeAt(id) {
 }
 // fn() with subject id's tree in force, then the one before: what reads a tree subject's units outside its own context
 // (sync.js boardUnits: each leaderboard's tree, whatever the subject on screen).
-// The tree before back in force, with nothing else written, keeps the data version before (dataBack).
+// The tree before back in force, with nothing else written, keeps the data version before (dataBack), the state version
+// with no record of the subject on screen written, and the memos (memoPut).
 function treeWith(id, fn) {
   const was = TREE_AT,
-    m = typeof dataMark === 'function' ? dataMark() : null;
+    m = typeof dataMark === 'function' ? dataMark() : null,
+    memo = m && memoGet();
   treeAt(id);
   try {
     return fn();
   } finally {
     if (was) treeAt(was);
-    if (m && TREE_AT === was) dataBack(m);
+    if (m && TREE_AT === was) memoPut(memo, dataBack(m));
   }
 }
 // The units of every tree subject loaded made again (build: a new curation): the one in force at once, the others when
@@ -1853,13 +1899,14 @@ function rankPhotos() {
 const SUBJ_HOOKS = [];
 function subjectLoad(S, keep) {
   SUBJ = S;
+  // the subject, its records and settings: inputs of the views, swapped (swapBump: a tree built for it, a record renamed,
+  // bump on their own); at once, so nothing read on the way is kept under the version a visit puts back (dataBack), and
+  // again after the hooks' own state
+  swapBump();
   treeAt(S.id); // its tree in force (TREEU: the fish's, the sea slugs'), none for the corals
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
-  // the subject, its records and settings: inputs of the views (and again after the hooks' own state); the subject in
-  // force swapped (swapBump: a tree built for it, a record renamed, bump on their own)
-  swapBump();
   SUBJ_HOOKS.forEach(f => f(keep));
   swapBump();
 }
@@ -1867,13 +1914,16 @@ function subjectLoad(S, keep) {
 // SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
 let SUBJ_VISIT = 0;
 // The subject and the tree on screen back in force with no other data written meanwhile (every data bump a swap's):
-// the data version before the visit (dataBack), so the data views kept for it hold. A tree the visit put in force
-// that stays (none before it) or a data write leaves the new version.
+// the data version before the visit (dataBack), so the data views kept for it hold, and the memos the hooks reset put
+// back (memoPut); with no record of the subject on screen written either (the visited subject's own, REC_BY), the state
+// version before it too. A tree the visit put in force that stays (none before it) or a data write leaves the new
+// version.
 function inSubject(id, fn) {
   const S = subjectOf(id),
     was = {S: SUBJ, P, Q, T: TREE_AT};
   if (S === SUBJ) return fn();
-  const m = dataMark();
+  const m = dataMark(),
+    memo = memoGet();
   SUBJ_VISIT++;
   subjectLoad(S, true);
   try {
@@ -1888,7 +1938,7 @@ function inSubject(id, fn) {
     P = was.P;
     Q = was.Q;
     swapBump();
-    if (TREE_AT === was.T) dataBack(m);
+    if (TREE_AT === was.T) memoPut(memo, dataBack(m));
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
     if (typeof drawFillSoon === 'function') drawFillSoon(); // a visit that moved the data version: the draw's data filled again ahead
   }

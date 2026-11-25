@@ -23,7 +23,8 @@
 //   [--syncs K]    signed in (a made-up account), the sync script answered by an in-memory sheet in this process (tests/gas.js:
 //                  no request leaves it, rule D1): after the idle fill, K syncs (sync.js syncPush), each in a window of its own
 //                  with the idle work it leaves: whether the data version moved, the units the draw's data was filled again
-//                  for, the named calls (the row's syncs, a table of its own). The page signs in, syncs at its boot and once
+//                  for, whether the state version moved and the state views computed (STATE_CALCS), the named calls (the
+//                  row's syncs, a table of its own). The page signs in, syncs at its boot and once
 //                  more before the restart (the account made, its first load), so each sync counted loads and merges a saved
 //                  copy and visits the other subjects (app.js inSubject: sync.js syncSummary, mergeSaved). No budget.
 //   [--check]      every read of a kept view computed again and compared (app.js VIEW_CHECK): a difference is a page error,
@@ -132,6 +133,11 @@ const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc',
 const FLOOR = 100;
 // The simulated player of the states, as the study's (docs/reviews/2026-11-24-per-answer-cost.md).
 const PLAYER = {profile: 'lectureRA', seed: 1};
+// --syncs: the computations of the state views (app.js stateView, stateViewBy; docs/spec/model.md "The state version and
+// its views"), counted in each sync's window: a state version lost is one of each (one per unit or class read, a keyed
+// one), made again at their next read.
+const STATE_CALCS = ['bonusCalc', 'poolCalc', 'sciUpCalc', 'shareFreeCalc', 'c1MetCalc', 'metCalc', 'readyCalc', 'cardsCalc', 'imrSaidCalc', 'startPCalc',
+  'cbPlayCalc', 'cbGeneraCalc', 'examOnCalc', 'genScoreCalc', 'lvlNeedCalc', 'headScoreCalc', 'lvTableCalc'];
 // --syncs: the made-up account the page is signed in to (no player's name, rule D2).
 const SYNC_ACCOUNT = {name: 'Answercost Probe', pin: '1234', dirty: true};
 // A fresh in-memory sheet running the sync script (tools/sync/Code.gs) with the repository's data.json and
@@ -284,9 +290,10 @@ function table(rows) {
   return [head, head.map(() => '---'), ...rows.map(line)].map(l => `| ${l.join(' | ')} |`).join('\n');
 }
 // --syncs: one line a state, each sync's window: whether the data version moved, the units the idle fill went through
-// again, the draw's data computed (drawPhotosCalc), the window's named calls and the requests the in-memory sheet answered.
+// again, the draw's data computed (drawPhotosCalc), whether the state version moved, the state views computed
+// (STATE_CALCS), the window's named calls and the requests the in-memory sheet answered.
 function syncTable(rows) {
-  const head = ['State', 'Syncs', 'Data version moved', 'Units filled again', '`drawPhotosCalc`', 'Named calls', 'Requests'],
+  const head = ['State', 'Syncs', 'Data version moved', 'Units filled again', '`drawPhotosCalc`', 'State version moved', 'State views computed', 'Named calls', 'Requests'],
     multi = new Set(rows.map(r => r.seed)).size > 1,
     each = (L, f) => L.map(f).join(' / ');
   return [head, head.map(() => '---')]
@@ -299,6 +306,8 @@ function syncTable(rows) {
           each(r.syncs, s => (s.moved ? 'yes' : 'no')),
           each(r.syncs, s => fmt(s.refill)),
           each(r.syncs, s => fmt(s.drawCalc)),
+          each(r.syncs, s => (s.smoved ? 'yes' : 'no')),
+          each(r.syncs, s => fmt(s.stateCalc)),
           each(r.syncs, s => mil(s.calls)),
           each(r.syncs, s => s.reqs)
         ])
@@ -732,11 +741,12 @@ async function count(browser, base, file, name, o, expect) {
   // --syncs K: K syncs (sync.js syncPush: the load or the copy held, the merge, the save, its reply), each in a window
   // of its own with the idle work it leaves (the draw's data filled again, app.js drawFillSoon), awaited. Per sync:
   // moved, whether the data version (app.js dataNow) moved; refill, the units the idle fill went through again;
-  // drawCalc, the draw's data computed (drawPhotosCalc); calls, the window's named calls; reqs, the requests the
+  // drawCalc, the draw's data computed (drawPhotosCalc); smoved, whether the state version (app.js stateNow) moved;
+  // stateCalc, the state views computed (STATE_CALCS); calls, the window's named calls; reqs, the requests the
   // in-memory sheet answered.
   const syncs = [];
   for (let k = 0; sheet && k < o.syncs; k++) {
-    const at = () => p.evaluate(() => ({v: dataNow(), n: typeof DRAW_FILL === 'object' ? DRAW_FILL.n : 0})),
+    const at = () => p.evaluate(() => ({v: dataNow(), s: stateNow(), n: typeof DRAW_FILL === 'object' ? DRAW_FILL.n : 0})),
       a = await at(),
       r0 = sheet.served;
     await cdp.send('Profiler.enable');
@@ -758,6 +768,8 @@ async function count(browser, base, file, name, o, expect) {
       moved: a.v !== b.v,
       refill: b.n - a.n,
       drawCalc: one.get('drawPhotosCalc@model.js') || 0,
+      smoved: a.s !== b.s,
+      stateCalc: [...one].filter(([f]) => STATE_CALCS.includes(f.split('@')[0])).reduce((t, [, c]) => t + c, 0),
       calls: [...one.values()].reduce((t, c) => t + c, 0),
       reqs: sheet.served - r0,
       top: [...one].sort((x, y) => y[1] - x[1]).slice(0, 12),

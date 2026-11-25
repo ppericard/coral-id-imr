@@ -78,13 +78,32 @@ is never served after it). The limits:
 - One value a view (one Map a keyed view): a data view the visit reads for the visited subject holds the visited
   subject's values afterwards, so the subject on screen's are made again at their next read. A sync's visits read no
   data view (`tools/answercost.js --syncs`: no data view computed in a sync's window).
-- The state version still moves at each visit (the records `P` and the settings `Q` are swapped), so the state views
-  are made again after it, as before.
-- The other memos a visit resets for the subject on screen stay reset: `model.js` `GDIFF` (each unit's difficulty,
-  cleared by its subject hook), the intro map read again (`INTROS`), `quiz.js` `TYPEN` (the typed names).
 
-`model.js`'s subject hook reads the intro map again with `stateBump('rec')`: the intro map is the player's
-(`REC_KEYS`), an input of the state views alone.
+**A visit keeps the state version and the memos too** (REE-300). A visit swaps the records `P` and the settings `Q`
+with the subject and puts back the same objects; the subject hooks read their state again (`model.js`'s reads the
+intro map again with `swapBump('rec')`: a swap of the state version alone, counted in `STATE_SW`). A bump of the
+player's records and settings is counted for the subject whose records it wrote (`stateBump('rec', sid)`, `REC_BY`):
+`store.set` of a record's key for that key's subject (`REC_KEYS`, each key to its subject), any other for the subject
+in force, whose `P` and `Q` the writer holds (the scorer, the merge's refill, a recalculation, a record made), and a
+first-launch record another tab wrote for nobody (`stateNow`). When the visit or the tree lent comes back with the data
+version (above) and every state bump since its start was a swap's or wrote another subject's records, the state views'
+inputs are the ones before it: the state version reads as the one before (`stateNow`: `STATE_V`'s value now an alias,
+`STATE_AS`, of that version, the test written out), so the subject on screen's state views hold. The visited subject's
+writes keep it: a sync's merge, hold and replay of each other subject store its records (`sync.js` `mergeSubject`,
+`holdAdopt`, `replayAdoptS`); `progress.js` `achPending`'s recount writes no record. A write of the subject on screen's
+records meanwhile (its key, a visit back to it), another tab's first-launch record, or any data bump leaves the new
+version.
+
+The memos the subject hooks reset are put back when the data version came back (`app.js` `SUBJ_MEMOS`, `memoGet`,
+`memoPut`, around each visit and tree lent): each unit's difficulty (`model.js` `GDIFF`, when made for the version
+before the visit: `GDV` then the version now, an alias of it), the typed names (`quiz.js` `TYPEN`), and, with the state
+version, the intro map read (`INTROS`). `subjectLoad` swaps first, before anything is read for the visited subject, so
+nothing read on the way is kept under the version a visit puts back.
+
+The on-screen subject's own sync still moves the state version: `mergeSaved` merges the subject on screen in place, and
+its merge stores its first-launch record (`model.js` `startMerge`), its progress (`sync.js` `mergeSubject`) and
+recalculates (`mxRecalc`) at each sync, whatever changed: the state views are made again once a sync, after it, where
+each visit made them again before (`tools/answercost.js --syncs`).
 
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text

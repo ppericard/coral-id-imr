@@ -2695,7 +2695,8 @@ domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     INTROS = null;
-    if (typeof stateBump === 'function') stateBump('rec'); // the intro map read again: the player's, an input of the state views (app.js)
+    // the intro map read again: the player's, an input of the state views (app.js), swapped with the subject (swapBump)
+    if (typeof swapBump === 'function') swapBump('rec');
     HOLDS = Number(store.get(HOLDK(), 0)) || 0;
     CB = cbLoad();
     GDIFF = {};
@@ -2704,6 +2705,17 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     last = null;
     memRecalcAll();
     domRecalcAll();
+  });
+// The subject on screen's memos the hook resets, put back after a visit that came back to them (app.js memoPut): each
+// unit's difficulty with the data version (made for the version before it: GDV then the version now, an alias of it);
+// the intro map read with the state version (none of its records written).
+if (typeof SUBJ_MEMOS !== 'undefined')
+  SUBJ_MEMOS.push({
+    get: () => ({INTROS, GDIFF, GDV, dv: DATA_V}),
+    put: (m, back) => {
+      if (m.GDV === m.dv) ((GDIFF = m.GDIFF), (GDV = DATA_V));
+      if (back.state) INTROS = m.INTROS;
+    }
   });
 // The functions the views read (genScore, introduced, photoAny, imrSaid) are here now: a view made before this file came
 // (app.js stateView) is made again.

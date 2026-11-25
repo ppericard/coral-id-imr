@@ -26,7 +26,7 @@ const ROOT = path.join(__dirname, '..'),
   MODEL = src('model.js'),
   APP = src('app.js');
 const APP_CODE = cut(APP, 'let STATE_V = 0;', 'const store = {', {file: 'app.js'});
-const BUMP = "const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);";
+const BUMP = "const stateBump = (rec, sid) => {\n  STATE_V++;\n  if (rec !== 'rec') return void DATA_V++;";
 const MODEL_CODE = [
   cut(MODEL, 'const isLook = (t, n) =>', '// Known mix-ups', {file: 'model.js'}),
   cut(MODEL, 'function dataSeed(a, b) {', '\n}\n', {through: 1, file: 'model.js'}),
