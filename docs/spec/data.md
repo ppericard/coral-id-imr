@@ -447,4 +447,7 @@ and its `layer` files, one per subject (the `SUBJECTS` key). Today the IMR insta
   common names and sections (`common`, `pdf`, `sec`, `cs`) and the species' `src` of the species the slides name; the
   references of the lecture photos
   (`data.json` `course`, photos marked `imr`); the coral slate's structure beyond each genus's number (the starred
-  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`); and `deploy` (the key in force).
+  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`); and `deploy` (the key in force). The course's
+  words in the code (the IMR course, the IMR lecture, the IMR fish presentation...) are not layer content: they are
+  `core.js` `ORG` fields ([storage.md › The app's name](storage.md#the-apps-name)), and the data's values that hold
+  them (the source lines "IMR Lecture 6, slide …" and "IMR fish presentation, …") stay as they are.

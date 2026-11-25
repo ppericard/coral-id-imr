@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v231 (2026-11-25)
+
+The script's copy of `core.js` writes the course's words from `ORG` (`course`, `lecture`, `lectureRef`, `fishPres`, `list`, `slate`, `benthic`, `trainer`, new fields at today's values) in the subjects' texts, the achievements' descriptions and a fish family's name line and look-alike sources, instead of typing them. Every text is the same as before, byte for byte: nothing the script stores, replays or replies changes, so no rules version and no gate on the script's version. Integrator's call on REE-34, 2026-11-25 (docs/decisions/2026-11-25-org-course-words.md), on Pierre's direction of 2026-11-08 (#737) to separate IMR-owned content from the core app
+
 ## v230 (2026-11-25)
 
 The Events and Pages writer (`events_`) skips a retried event even when its device stayed offline while more than 2000 rows arrived. It still checks an incoming id against the ids of the last 2000 rows of its tab (`EV_WINDOW`), which costs nothing more than before. An id made before that window began (its first 8 base36 characters are its creation time, `Date.now()` in `sync.js` `ev`; an id without them counts as older) makes the request read the rows before the window too, so the tab's whole id column, once. The window's start is the median creation time of its first 200 ids plus an hour, not its first row's time, because rows are appended as they arrive and an old event can arrive late. Before, such a retry was written a second time and counted twice in the visits and page summaries (the integrator's call, REE-293, 2026-11-25). The app is unchanged, so there is no gate, and an older script keeps the old window
