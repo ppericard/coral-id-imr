@@ -372,7 +372,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
       ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${sub(c) ? `<span class="csn">${esc(unameT(c))}<small${SCIQ ? ' class="cnu"' : ''}>${esc(sub(c))}</small></span>` : esc(unameT(c))}</button>`).join('')}</div>`}
-      ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
+      ${set.hint ? `<button type="button" class="linkish" id="hintb">Show the ${esc(hintName())} (hint)</button>` : ''}
       <div id="after"></div>
     </aside></div>`;
   QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
@@ -410,7 +410,12 @@ function question(cur, target, choices, prompt, set, kq) {
     const h = st.lastElementChild;
     if (h && st.scrollWidth > st.clientWidth + 4) st.scrollTo({left: h.offsetLeft - st.offsetLeft, behavior: 'smooth'});
   };
-  if (hb) hb.onclick = showHint;
+  // The player's own tap counts for the hint tip (tipOpened); the reveal after an answer (go) is no use of it.
+  if (hb)
+    hb.onclick = () => {
+      tipOpened('h');
+      showHint();
+    };
   // Keys: 1-4 answer, Enter goes to the next question.
   const keys = e => {
     if (!document.body.contains($v.querySelector('.q'))) return document.removeEventListener('keydown', keys);
@@ -1123,8 +1128,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
   allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
-  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run.
-  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '');
+  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run. The
+  // last argument: a miss on a question that offered the hint and left it closed (unseen), the hint tip's count.
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '', !good && !!unseen);
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
@@ -1851,12 +1857,12 @@ const tipBasics = () => {
   const r = store.get(basicsKey(), {}) || {};
   return !r.last && !Object.keys(r.seen || {}).length;
 };
-function tipAfter(nb, cur, miss, zm, hold, ty = '') {
+function tipAfter(nb, cur, miss, zm, hold, ty = '', hm = false) {
   const raw = store.get(TIPR.KEY, null);
   let st = tipsLoad(raw, false);
   const q0 = st.u.q,
     k0 = st.u.k;
-  st = tipNote(st, Date.now(), ty);
+  st = tipNote(st, Date.now(), ty, hm);
   // Just seeded from the log, this answer included: its own count of the run (the seed ends with this answer already).
   if (!raw && q0 && ty) st = {...st, u: {...st.u, k: ty === 'idk' ? k0 : 0}};
   st = tipRun(st); // after the note: the log holds this answer, so the run it shows now is compared with the counter's
@@ -1869,7 +1875,9 @@ function tipAfter(nb, cur, miss, zm, hold, ty = '') {
     miss,
     zm: !!zm,
     mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0,
-    bx: tipBasics() ? 1 : 0
+    bx: tipBasics() ? 1 : 0,
+    hm,
+    hx: hintWords() ? 1 : 0
   };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
@@ -1927,8 +1935,8 @@ function tipShow(t, st, cur, now = 0) {
     kind: 'tip',
     cls: 'tipcard',
     kick: esc(t.card.kick),
-    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()})),
-    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()}))}</p>`,
+    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords(), key: idWords(), hint: hintWords()})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords(), key: idWords(), hint: hintWords()}))}</p>`,
     primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
     secondary: {text: 'Got it', attr: 'disabled'},
     focus: 'h3',
@@ -1944,6 +1952,10 @@ function tipShow(t, st, cur, now = 0) {
 }
 // The subject's words for the Identify tip (app.js UNITS idtip), null for a subject whose Identify tool is not built.
 const idWords = () => UNITS[SUBJ.id].idtip || null;
+// The subject's words for its question hint (app.js UNITS hint: name, lo), null for a subject that declares none (no hint
+// tip); the hint's button says its name.
+const hintWords = () => UNITS[SUBJ.id].hint || null;
+const hintName = () => (hintWords() || {}).name || 'close-up';
 // A page drawn (app.js route, and SETUP 2 for one drawn before this tier): the Identify tool's page counts as one open
 // (tip i), and Home or My progress may show the tip about it.
 function tipRoute(h) {
@@ -1959,7 +1971,7 @@ function tipOut() {
   clearTimeout(tipOutT);
   tipOutT = 0;
   const ctx = () => (hashNow() || 'home').split('|')[0],
-    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0});
+    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0, hm: false, hx: 0});
   if (!tipDue(tipsLoad(), b(), TIPS, Date.now())) return;
   const at = ctx();
   tipOutT = setTimeout(() => {

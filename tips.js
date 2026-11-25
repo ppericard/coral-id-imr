@@ -16,9 +16,13 @@
 //      choice saved in the key folds in as one, tipsLoad), k the run of typed questions answered "I don't know" here
 //      since the last typed answer that was not one (quiz.js tipAfter through tipNote: a text typed, even a wrong or a
 //      refused one, ends the run; the progress record counts typed questions, never how they were answered; the log's
-//      trailing run folds in, tipsLoad). Seeded once, when the state is first made, from the answers the device still
-//      holds (LOG0 / SYNC.log: their count, their zm flags and the run they end with, tipIdkRun), so a player who has
-//      played here before is not counted from zero; a signed-in device holds only its unsent answers, so it starts low.
+//      trailing run folds in, tipsLoad), h times the corallites hint was opened before an answer (quiz.js question: the
+//      button's own tap, never the reveal after an answer), w misses on a question that offered the hint and left it
+//      closed (quiz.js answer() through tipAfter and tipNote). The log cannot say who opened the hint (an opened one is
+//      one photo among the answer's own), so h and w count from the device on. The others are seeded once, when the state
+//      is first made, from the answers the device still holds (LOG0 / SYNC.log: their count, their zm flags and the run
+//      they end with, tipIdkRun), so a player who has played here before is not counted from zero; a signed-in device
+//      holds only its unsent answers, so it starts low.
 //   s  per tip, the value of u.q at each showing: {zoom: [212, 318]}
 //   v  the visit: {t: time of its last answer, n: answers in it, tip: 1 once a tip showed in it}. A gap of TIPR.GAP (30
 //      minutes, as model.js SESSION.GAP) starts a new one; a reload does not.
@@ -27,16 +31,19 @@
 // for, on the counters (and, for the one whose audience is the player's own record, on b); from, the u.q from which it
 // can first show; now(b), its preferred moment at a break (b: {ctx, miss, zm, mix: the pairs of units the player mixed up
 // TIPR.MIX times or more, counted by quiz.js only while a tip needs it, bx: 1 for a player the basics tip is for,
-// quiz.js tipBasics, ix: 1 for a subject that declares the Identify tip's words, quiz.js idWords}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
+// quiz.js tipBasics, ix: 1 for a subject that declares the Identify tip's words, quiz.js idWords, hm: the answer was a miss
+// on a question that offered the hint and left it closed, hx: 1 for a subject that declares the hint's words, quiz.js
+// hintWords}); wait, how many more questions it waits for that moment before any break will do; max showings ever and every,
 // the questions between two; card (kick, title(o) and body(o), o: {mouse, subj: the SUBJECTS record on screen, basics: the
-// subject's basics words, app.js UNITS basics, key: its Identify tip's words, app.js UNITS idtip}), the text of its card;
+// subject's basics words, app.js UNITS basics, key: its Identify tip's words, app.js UNITS idtip, hint: its hint's words, app.js UNITS hint}), the text of its card;
 // act, its "Show me" action (quiz.js TIP_ACT), or none.
 (function (root) {
   // Global rules: at most one tip a visit, never in its first FLOOR answers of a game (plus, in quiz.js: one card a break,
   // within the prompt spacing, never over another card, the tour or a toast).
   // MIX: how many times a pair must have been mixed up (both ways added, as the My mix-ups view weighs it) to count.
   // IDK: how many typed questions in a row answered "I don't know" make the typed-answers tip's audience.
-  const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10, MIX: 3, IDK: 3};
+  // HINT: how many misses on questions that offered the hint, with the hint never opened, make the hint tip's audience.
+  const TIPR = {KEY: 'reefid-tips', GAP: 30 * 60000, FLOOR: 10, MIX: 3, IDK: 3, HINT: 10};
   const TIPS = [
     {
       // Photo enlargement (in the early logged answers one player enlarged a quiz photo on ~20-25% of questions, the
@@ -203,6 +210,30 @@
         body: o =>
           `A close spelling counts as right: you just retype the ${(o && o.subj && o.subj.one) || 'name'} once to learn its spelling. “I don't know” counts as a miss.`
       }
+    },
+    {
+      // The hint (g): the link under a question's photos that adds a close-up (the corals' corallites). For a player who
+      // missed TIPR.HINT (10) questions that offered it and never opened it (w, h: counted on the device, quiz.js), in a
+      // subject whose UNITS declare the hint's words (b.hx; the other subjects' questions have no hint, so none gets the
+      // tip). The Quiz and the Custom quiz; only at the Next right after another such miss (b.hm: the link was in view
+      // and left closed; wait Infinity: no other break will do, the card names a link the question just answered had);
+      // twice at most, the second 150 questions after the first; last of the seven when several are due. Nothing to open
+      // (no act: Got it only): the link is on the next question that has one. The words are the subject's (o.hint: UNITS
+      // hint: name, lo).
+      id: 'hint',
+      ctx: ['quiz', 'quiz-custom'],
+      target: (u, b) => u.h < 1 && u.w >= TIPR.HINT && !!(b && b.hx),
+      from: 0,
+      now: b => !!b.hm,
+      wait: Infinity,
+      max: 2,
+      every: 150,
+      card: {
+        kick: 'Did you know?',
+        title: o => `Stuck? Show the ${(o && o.hint && o.hint.name) || 'close-up'}`,
+        body: o =>
+          `${o && o.mouse ? 'Click' : 'Tap'} “Show the ${(o && o.hint && o.hint.name) || 'close-up'} (hint)” under the photos before you answer: it adds ${(o && o.hint && o.hint.lo) || 'a closer view, the detail that often tells look-alikes apart'}.`
+      }
     }
   ];
   const num = x => (typeof x === 'number' && isFinite(x) && x >= 0 ? Math.floor(x) : 0);
@@ -215,17 +246,18 @@
       s = o && o.s && typeof o.s === 'object' ? o.s : {},
       v = o && o.v && typeof o.v === 'object' ? o.v : {};
     return {
-      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, ...u}).map(([k, x]) => [k, num(x)])),
+      u: Object.fromEntries(Object.entries({q: 0, z: 0, c: 0, d: 0, m: 0, i: 0, k: 0, h: 0, w: 0, ...u}).map(([k, x]) => [k, num(x)])),
       s: Object.fromEntries(Object.entries(s).map(([k, L]) => [k, Array.isArray(L) ? L.map(num) : []])),
       v: {t: num(v.t), n: num(v.n), tip: v.tip ? 1 : 0}
     };
   }
   // An answer at time t: one more question, and the visit it belongs to. ty: how it was typed, 'idk' for a typed question
   // answered "I don't know" (one more in the run u.k), 'typed' for any other typed answer (the run ends); '' for a question
-  // not typed (the run is as it was).
-  function tipNote(st, t, ty = '') {
+  // not typed (the run is as it was). hm: the answer was a miss on a question that offered the hint and left it closed (one
+  // more in u.w).
+  function tipNote(st, t, ty = '', hm = false) {
     const v = st.v.t && t - st.v.t < TIPR.GAP && t >= st.v.t ? {t, n: st.v.n + 1, tip: st.v.tip} : {t, n: 1, tip: 0};
-    return {...st, u: {...st.u, q: st.u.q + 1, k: ty === 'idk' ? st.u.k + 1 : ty ? 0 : st.u.k}, v};
+    return {...st, u: {...st.u, q: st.u.q + 1, k: ty === 'idk' ? st.u.k + 1 : ty ? 0 : st.u.k, w: st.u.w + (hm ? 1 : 0)}, v};
   }
   // How a logged answer was typed (see tipNote): '' when it was not a typed question (core.js TYPED_RE, the mode's |t), 'idk'
   // when no text was kept (ty '') and none was refused before it (rj), else 'typed'.

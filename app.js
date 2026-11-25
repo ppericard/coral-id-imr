@@ -2570,6 +2570,14 @@ const UNITS = {
       name: 'Coral ID Key',
       lo: 'Tap the growth form and the clues you can see: it ranks the genera that fit, then compares them side by side.'
     },
+    // The words of its question hint, the link under the photos that adds a close-up (quiz.js question, hintb) and the
+    // "Did you know?" tip about it (tips.js hint): name, said in the link ("Show the corallites (hint)") and the card; lo,
+    // what the card says it adds. Declared only by a subject whose questions have one (the fish and the sea slugs show one
+    // view): no words, no tip.
+    hint: {
+      name: 'corallites',
+      lo: 'a close-up of the corallites, the detail that often tells look-alikes apart'
+    },
     // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
     memory: 'views',
     // Its basics module's words (SUBJECTS pages 'basics', basicsWords): mod, its Lab module (proto/basics.js); name; ask,
@@ -3366,8 +3374,9 @@ const BENTHIC_NOTE =
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 // (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.) A view of
-// the state version (stateView): poolCalc computes it.
-const poolCalc = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+// the state version (stateView): poolCalc computes it. Whether a unit has a photo is a view of the data version per unit,
+// read once for the loop (model.js photoAnyFn): nothing is written during it.
+const poolCalc = () => [...slateGenera(), ...bonusList()].filter(typeof photoAnyFn === 'function' ? photoAnyFn() : photoAny);
 const pool = stateView('pool', poolCalc);
 // The plain sentence: one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py), clear for
 // everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before the ID
