@@ -1097,9 +1097,29 @@
         })
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
-    short
-      .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
-      .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
+    // A short form is kept unless it is within the tolerance of another unit's name or short form. The names are read by
+    // length, each key once with the units it names (byLen: length → key → units): a distance is never less than the two
+    // lengths' difference, so only the lengths within the tolerance of the short form's are read (tests/typefast.test.js).
+    const byLen = new Map(),
+      reach = new Map(),
+      lensNear = n => {
+        if (reach.has(n)) return reach.get(n);
+        const ms = [...byLen.keys()].filter(m => Math.abs(m - n) <= TYPE.tol(Math.min(m, n)));
+        reach.set(n, ms);
+        return ms;
+      },
+      clash = s => {
+        for (const m of lensNear(s.k.length))
+          for (const [k, gs] of byLen.get(m)) if ((gs.size > 1 || !gs.has(s.g)) && near(s.k, k)) return true;
+        return false;
+      };
+    [...out, ...short].forEach(o => {
+      if (!byLen.has(o.k.length)) byLen.set(o.k.length, new Map());
+      const L = byLen.get(o.k.length);
+      if (!L.has(o.k)) L.set(o.k, new Set());
+      L.get(o.k).add(o.g);
+    });
+    short.filter(s => !clash(s)).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
     // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
     // scientific name's (a unit of a scientific rank, a family's sciNames: "Zebrasomas" is no plural), which keeps its
     // spelling step.
