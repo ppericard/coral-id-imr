@@ -3610,3 +3610,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     DUELBACK = null;
     session = {ok: 0, n: 0, h: []};
   });
+// The subject on screen's typed names, put back after a visit or a tree lent that came back to the same data (app.js
+// memoPut: the data version back; the memo checks its own key too).
+if (typeof SUBJ_MEMOS !== 'undefined') SUBJ_MEMOS.push({get: () => TYPEN, put: m => (TYPEN = m)});

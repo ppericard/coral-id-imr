@@ -2695,7 +2695,8 @@ domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     INTROS = null;
-    if (typeof stateBump === 'function') stateBump('rec'); // the intro map read again: the player's, an input of the state views (app.js)
+    // the intro map read again: the player's, an input of the state views (app.js), swapped with the subject (swapBump)
+    if (typeof swapBump === 'function') swapBump('rec');
     HOLDS = Number(store.get(HOLDK(), 0)) || 0;
     CB = cbLoad();
     GDIFF = {};
@@ -2704,6 +2705,19 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     last = null;
     memRecalcAll();
     domRecalcAll();
+  });
+// The subject on screen's memos the hook resets, after a visit that came back to the data version (app.js memoPut): each
+// unit's difficulty put back (made for the version before it: GDV then the version now, an alias of it). The intro map
+// is never put back: read again from the device, as before (another tab may have written it, and introAdd writes the
+// whole map back). With the state version kept, it is read at once and compared with the map the views were made from
+// (its text at the visit's start): another text is a write of nobody's known, so the state version moves.
+if (typeof SUBJ_MEMOS !== 'undefined')
+  SUBJ_MEMOS.push({
+    get: () => ({t: INTROS ? JSON.stringify(INTROS) : null, GDIFF, GDV, dv: DATA_V}),
+    put: (m, back) => {
+      if (m.GDV === m.dv) ((GDIFF = m.GDIFF), (GDV = DATA_V));
+      if (back.state && INTROS === null && m.t !== null && JSON.stringify(introMap()) !== m.t) stateBump('rec', null);
+    }
   });
 // The functions the views read (genScore, introduced, photoAny, imrSaid) are here now: a view made before this file came
 // (app.js stateView) is made again.

@@ -219,7 +219,8 @@ subject is a test case, not the definition of the target.
   request is aborted: none reaches the real sheet, rule D1). The page syncs at its boot and once more before the restart
   (the account made, its first load); after the idle fill, K syncs (`syncPush`: the copy held or a load, the merge, the
   save and its reply) are each counted in a window of their own with the fill they leave (asked as the next plan asks
-  it), the row's `syncs`: whether the data version moved, the units filled again, `drawPhotosCalc`, the named calls,
+  it), the row's `syncs`: whether the data version moved, the units filled again, `drawPhotosCalc`, whether the state
+  version moved and the state views computed (`STATE_CALCS`, REE-300), the named calls,
   the requests the sheet answered, the views computed (`calcs`), a table of its own. The history is the one the sheet
   replays from the device's log, which keeps the last 2,000 answers, so the history check is off; no budget. To check a change to the tool or to how the page is started: `--repeat 5`
   on the eighteen states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.

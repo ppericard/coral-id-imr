@@ -36,7 +36,7 @@ const modelCode = model =>
     cut(model, 'const RECENT = ', '\n', {file: 'model.js'})
   ].join('\n');
 const MODEL_CODE = modelCode(MODEL);
-const BUMP = "const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);";
+const BUMP = "const stateBump = (rec, sid) => {\n  STATE_V++;\n  if (rec !== 'rec') return void DATA_V++;";
 const APP_CODE = cut(APP, 'let STATE_V = 0;', 'const store = {', {file: 'app.js'});
 
 // The draw before the data view (model.js photoSet and varOf), verbatim but for the names and the comment lines.

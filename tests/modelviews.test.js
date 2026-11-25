@@ -95,7 +95,7 @@ const NAMES = ['introduced', 'genScore', 'examOn', 'cbPlay', 'cbGenera', 'startP
 // store is the rated world's (no storeWrote): the harness bumps after each write, as the app's store.set does. The
 // page's model.js writers (answeredAt, varRight, mxRecalc) bump through the same stateBump. mutate: a change to app.js's
 // block (the mutation checks below).
-const BUMP = "const stateBump = rec => void (STATE_V++, rec === 'rec' || DATA_V++);";
+const BUMP = "const stateBump = (rec, sid) => {\n  STATE_V++;\n  if (rec !== 'rec') return void DATA_V++;";
 function harness(pl, check, mutate = s => s) {
   const ctx = pl.ctx,
     later = [],
@@ -279,9 +279,9 @@ test('rated-world sea slug runs: the same views, the code before', t => {
 // (1) stateBump moving nothing; (2) stateBump('rec'), the bump of every answer, moving the data version but not the
 // state version. VIEW_CHECK throws, and without it a read differs from the code before.
 const MUTANTS = {
-  'a bump that moves nothing': s => s.replace(BUMP, 'const stateBump = rec => void rec;'),
+  'a bump that moves nothing': s => s.replace(BUMP, "const stateBump = (rec, sid) => {\n  if (rec !== 'rec') return;"),
   'the records’ bump forgets the state version': s =>
-    s.replace(BUMP, "const stateBump = rec => void (rec === 'rec' || STATE_V++, DATA_V++);")
+    s.replace(BUMP, "const stateBump = (rec, sid) => {\n  DATA_V++;\n  if (rec !== 'rec') return void STATE_V++;")
 };
 test('mutations: a broken version bump is caught by the runs, VIEW_CHECK on and off', () => {
   const U = RW.unitsOf('fish');

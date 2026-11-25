@@ -522,12 +522,13 @@ test('the declared names: sync.js SHEETV and model.js OWN_STATS are the keys app
 // records and settings bump the state version alone (stateBump('rec')); every other writer bumps the data version too
 // (stateBump(), no argument): the data, the tree, the subject, the photo statistics, a file loaded. A swap of the subject
 // or the tree in force (subjectLoad, inSubject, treeAt's treePull) bumps both too, counted as a swap (swapBump: app.js
-// dataBack, tests/visitview.test.js).
+// dataBack, tests/visitview.test.js); the intro map read again with the subject (model.js's hook) the state version
+// alone, counted as a swap too (swapBump('rec')).
 test('every declared writer bumps the version, the data version for every input but the player’s records', () => {
   const has = (S, from, to, file, n = 1, rec = false) => {
     const b = block(S, from, to, {through: 1, file}),
-      re = rec === 'swap' ? /swapBump\(\)/g : rec ? /stateBump\('rec'\)/g : /stateBump\(\)/g,
-      what = rec === 'swap' ? 'swapBump()' : rec ? "stateBump('rec')" : 'stateBump()';
+      re = rec === 'swap' ? /swapBump\(\)/g : rec === 'swap rec' ? /swapBump\('rec'\)/g : rec ? /stateBump\('rec'\)/g : /stateBump\(\)/g,
+      what = rec === 'swap' ? 'swapBump()' : rec === 'swap rec' ? "swapBump('rec')" : rec ? "stateBump('rec')" : 'stateBump()';
     assert.ok((b.match(re) || []).length >= n, `${file} ${from.trim()}: ${n} ${what} at least`);
   };
   has(APP, 'const st = n =>', ';\n', 'app.js', 1, true);
@@ -540,12 +541,16 @@ test('every declared writer bumps the version, the data version for every input 
   has(APP, 'function build() {', '\n}\n', 'app.js');
   has(APP, 'function rankPhotos() {', '\n}\n', 'app.js');
   has(APP, "  const rb = document.getElementById('reset');", 'introReset();', 'app.js', 1, true);
-  assert.match(APP, /if \(STATE_KEYS\.has\(k\)\) stateBump\(REC_KEYS\.has\(k\) \? 'rec' : undefined\);/, 'store.set: an input key bumps');
+  assert.match(
+    APP,
+    /if \(STATE_KEYS\.has\(k\)\) stateBump\(REC_KEYS\.has\(k\) \? 'rec' : undefined, REC_KEYS\.get\(k\)\);/,
+    'store.set: an input key bumps, a record for its subject'
+  );
   has(MODEL, 'function mxRecalc(fn, why', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function answeredAt(s, good', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function varRight(n, L) {', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function statsJoin(base = PBASE) {', '\n}\n', 'model.js');
-  has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js', 1, true); // the intro map read again: the player's
+  has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js', 1, 'swap rec'); // the intro map read again: the player's, swapped
   assert.match(MODEL, /\nif \(typeof stateBump === 'function'\) stateBump\(\);\n$/, 'model.js: a bump once loaded');
   has(QUIZ, 'function recordAnswer({', '\n}\n', 'quiz.js', 2, true);
   has(SYNC, 'function replayAdoptS(', '\n}\n', 'sync.js', 1, true);
