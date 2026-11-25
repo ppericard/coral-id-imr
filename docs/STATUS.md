@@ -22,9 +22,6 @@ Night report: last sent 2026-11-25 (06:22 Manila)
   five reasons; an unblock sweep runs about every 90 minutes; a PR that waits only for Pierre yields its lane (W27);
   studies are Study › Decision input or Study › Open inquiry. Agents' briefs repeat W27's stop on findings that
   come back twice on one part. A fresh agent per PR keeps the cost down (REE-244 comment on the night's quota).
-- **2026-11-24 (Manila):** 41 PRs merged (counted from `git log` on main since 2026-11-23 20:00Z, the photo refill and
-  curation commits apart). REE-265 steps 0–5 are merged: the per-answer cost is budgeted on every subject, in CI,
-  deterministic, with the players and the data pinned (#1528, #1531, #1533, #1540, #1549, #1552).
 - **Deploys fail about one run in two** (REE-279): a bounded second attempt merged in #1547. The fish refill that
   reported "exhausted" too early is fixed (#1545, REE-278). The sea slug game cap is lifted (#1544). Pierre's own
   observations always come in, whatever the room (#1534).
@@ -35,8 +32,16 @@ Night report: last sent 2026-11-25 (06:22 Manila)
   calls per answer down to 40–62k, 117k at fish:3000 seed 3, of which ~38k is `core.js` `treeTypeNames`), #1562,
   #1563 (`fifoq.sh`), #1564 and #1566 (v228, REE-38), #1565 (Red Team passes note), #1567 (REE-255 study),
   #1568 (v229, REE-33 fish common names), #1569 (REE-218 note), #1570 (REE-239 note), #1573 (v230, REE-293).
-- **Running:** REE-265's next views (opening checks, ability chain; app.js, model.js, quiz.js, progress.js, sync.js);
-  REE-34 PR 1 (the IMR vocabulary in `ORG`, core lane). Core lane next: REE-39, REE-28, REE-34 PR 2 and 4.
+- **2026-11-25, 10:30 to 16:45 Manila:** merged #1575 (v231, REE-34 PR 1: the course words in `ORG`), #1576 and
+  #1583 (REE-265: no measured state over 100k calls an answer; comebacks now measured in CI), #1577, #1578, #1580,
+  #1582 (REE-294 IMR layer round 3: note, PRs 1a, 1b, 2+3; files byte-identical), #1579 (v232, REE-39 lean answer
+  log, gated), #1581 (v233) and #1585 (v234, REE-28 steps 4 and 9: one replay and board path, equal on the real log),
+  #1584 (REE-295 the difficulty memo follows the data version), #1586 (REE-101 lag table: corals unclear, fish and sea
+  slugs not testable), #1587 (REE-13 tip (g), live).
+- **The answer log is nearly still since 2026-11-22** (3 players since 11-21, no new player since 11-09): most
+  player-count gates need a new RA intake. Data gates measured 2026-11-25: REE-193 and REE-101 met (launched).
+- **Running:** REE-265 `treeTypeNames` per data version (core lane); REE-34 PR 2 (players' pages read `ORG`);
+  REE-13 tip (h); REE-193 Q316 refit. Next: REE-294 PR 4 (Lab citations) after REE-34 PR 2; REE-34 PR 4 (admin).
 - **Waiting for Pierre with a ready PR:** #1554 (REE-31) and #1571 (REE-241, level choice A/B); both yield their lane.
 
 ## Active discussion
@@ -53,7 +58,8 @@ Night report: last sent 2026-11-25 (06:22 Manila)
 ## Next
 
 Every open Linear issue without one of the five reasons (INTEGRATOR "Linear"); the sweep moves the unblocked ones to
-Todo. The core.js / Code.gs lane in order: REE-34 PR 1 (running), REE-39, REE-28, REE-34 PR 2 and 4.
+Todo. The core.js / Code.gs lane: REE-265 `treeTypeNames` (running), then REE-28's next measurable step (step 6
+needs a count of devices with a subject's progress but no answer of it). REE-34 PR 4 (admin) after PR 2.
 
 ## Questions for Pierre
 
@@ -67,7 +73,9 @@ not this file (REE-258). Open items by issue; the question text lives in Linear:
 - REE-275: (a), (d), (e), (f).
 - REE-8 and REE-275: the two review sets waiting for his answers.
 - Asked 2026-11-25 morning: the Scheduled mechanism (REE-218, #1569); data waits as reason 2; REE-217 (P7); the Red
-  Team design C (REE-287, #1565); REE-255 option A; parking REE-239; REE-241 level A or B (#1571).
+  Team design C (REE-287, #1565); REE-255 option A; parking REE-239; REE-241 level A or B (#1571); REE-294 (a)–(d);
+  the counting rule for data gates (data gates count every usable answer, people gates count people); REE-101 (a)/
+  (b)/(c); REE-102 (do fish errors count toward 650?); REE-7 / Q439 (frees REE-9, 67, 68, 69).
 - Rule P7, counted 2026-11-24 23:40 (`tools/judging_fish.py todo`): fish 228 candidates not judged in 32 species (55
   from the fixed refill in 9 species, 173 older); sea slugs 2,579 in 261 species. Both over 100: his OK first.
 
@@ -83,7 +91,7 @@ The questions above.
 
 ## Last stop
 
-2026-11-25 10:30 Manila, morning check-in.
+2026-11-25 16:45 Manila, before the quiet hours; the questions above wait for Pierre's first message after 04:00.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
 [now]: https://linear.app/reef-id/view/0be7e66e-2e7b-4832-9386-1bf6e4f76a59
