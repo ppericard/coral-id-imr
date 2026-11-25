@@ -32,12 +32,18 @@ docs/reviews/ and docs/reference/ (dated records), tools/archive/ and the JSON d
 4. The CSP hashes of the inline scripts of index.html and admin.html (tests/csp.test.js), recomputed.
 5. Prettier (rule W13, the same pinned version) on the JS and CSS files it changed: longer key
    names move line breaks.
+6. The bare organisation words of the static pages (ORG_FILES: index.html, privacy.html, admin.html,
+   tools/og/og.html): the word "IMR" (as a whole word, so not "imr-p12" or "IMR Coral ID sync") becomes ORG.short,
+   and "Institute for Marine Research" becomes ORG.name, HTML-escaped. With today's ORG they are what the pages
+   already say, so nothing changes on screen. The words of the course ("IMR list", "IMR lecture") in pages built by
+   JS are not in this tool's reach: they come from ORG in the JS itself.
 
 A fork run by another organisation: edit ORG in core/keys.js (core.js's part that holds it), run
 python3 tools/sync_core.py --fix (core.js and the sheet script's copy follow), then run this tool with --from "IMR Reef ID" (every earlier
-name it should replace); the storage keys do not depend on the organisation, so nothing else moves.
+name it should replace), --from-short "IMR" (the earlier ORG.short) and --from-name "Institute for Marine Research"
+(the earlier ORG.name); the storage keys do not depend on the organisation, so nothing else moves.
 """
-import argparse, base64, hashlib, json, re, subprocess, sys
+import argparse, base64, hashlib, html, json, re, subprocess, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -51,6 +57,10 @@ OLD_ADMIN = 'Coral ID Admin'  # the admin page's title before the rename
 KEEP_PHRASES = ['IMR Coral ID sync', 'IMR Coral ID – RA progress']
 KEEP_TOKENS = {'imr-photos-v1', 'imr-coral-id'}
 MARK, BEGIN, END = 'rename-app: keep', 'rename-app: keep-begin', 'rename-app: keep-end'
+# Static pages whose bare organisation words (ORG.short, ORG.name) are written from ORG; JS pages read ORG themselves.
+ORG_FILES = ('index.html', 'privacy.html', 'admin.html', 'tools/og/og.html')
+OLD_SHORT = ['IMR']
+OLD_ORG_NAME = ['Institute for Marine Research']
 
 
 def org():
@@ -105,7 +115,33 @@ def rename_token(m, table):
     return n if n else t
 
 
-def rename_text(text, names, app, table):
+def org_words(line, shorts, full_names, o):
+    """The organisation's name and short form, as whole words, written from ORG (HTML-escaped: the files are pages)."""
+    # One left-to-right pass over every earlier and current value, longest first (a page holds the escaped form, a
+    # short form is a whole word). A match that is a current value stays; an earlier one becomes the current one. So a
+    # new value that contains an earlier one ("IMR" in "IMR-UK") is not written twice, and one contained in an earlier
+    # one ("Marine Research" in "Institute for Marine Research") does not hide it: a second run changes nothing.
+    # The app's name is a current value too ("IMR Reef ID" is not an "IMR" to rewrite).
+    what = {}  # matched text -> its replacement
+    for kind, olds, cur in (('name', full_names, o['name']), ('short', shorts, o['short'])):
+        for old in olds:
+            for f in {html.escape(old), old}:
+                what[(kind, f)] = html.escape(cur)
+        for f in {html.escape(cur), cur}:
+            what[(kind, f)] = f
+    for f in {html.escape(o['app']), o['app']}:  # ORG.app is its own field: never rewritten from the organisation's
+        what[('app', f)] = f
+    parts = sorted(what, key=lambda k: -len(k[1]))
+    pat = re.compile('|'.join(('(?<!\\w)%s(?!\\w)' if kind == 'short' else '%s') % re.escape(f) for kind, f in parts))
+    # a text of a name and of a short form can match the same way only if they are equal: the first listed wins
+    look = {}
+    for (kind, f), rep in what.items():
+        look.setdefault(f, rep)
+    return pat.sub(lambda m: look[m.group(0)], line)
+
+
+def rename_text(text, names, app, table, words=None):
+    """`words`, for the pages of ORG_FILES: (earlier short forms, earlier full names, ORG)."""
     out, keep = [], False
     for line in text.splitlines(keepends=True):
         if BEGIN in line:
@@ -124,6 +160,8 @@ def rename_text(text, names, app, table):
             if n != app:
                 line = line.replace(n, app)
         line = line.replace(OLD_ADMIN, app + ' Admin')
+        if words:
+            line = org_words(line, *words)
         line = TOKEN.sub(lambda m: rename_token(m, table), line)
         line = re.sub(r'\b([Aa])n (`?reefid-)', r'\1 \2', line)  # "an imr-coral key" -> "a reefid-sync key"
         for k, p in held.items():
@@ -159,14 +197,18 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--check', action='store_true', help='change nothing; exit 1 if a file needs the rename')
     ap.add_argument('--from', dest='old', action='append', default=[], help='an earlier app name to replace (repeatable)')
+    ap.add_argument('--from-short', dest='old_short', action='append', default=[], help='an earlier ORG.short (repeatable)')
+    ap.add_argument('--from-name', dest='old_org', action='append', default=[], help='an earlier ORG.name (repeatable)')
     a = ap.parse_args()
     o, table = org(), legacy_keys()
     names = sorted(set(OLD_NAMES + a.old), key=len, reverse=True)
+    words = (sorted(set(OLD_SHORT + a.old_short), key=len, reverse=True),
+             sorted(set(OLD_ORG_NAME + a.old_org), key=len, reverse=True), o)
     todo = []
     for f in files():
         p = ROOT / f
         s = p.read_text(encoding='utf-8')
-        t = manifest(s, o) if f == 'manifest.webmanifest' else rename_text(s, names, o['app'], table)
+        t = manifest(s, o) if f == 'manifest.webmanifest' else rename_text(s, names, o['app'], table, words if f in ORG_FILES else None)
         if f in ('index.html', 'admin.html'):
             t = csp(t)
         if t != s:
