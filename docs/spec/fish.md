@@ -12,12 +12,14 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
 ## Files
 
 - `tools/fish_source.json` (hand-maintained, the sources' part; its `_doc` key explains every field): the regional
-  identification keys and the one in force (`keys`, `deploy`), the teaching nodes with their reference mapping, the
-  species list in PDF order with the cheatsheet rank, the circle-3 sources (`sources`) and the retired ids (`retired`).
+  identification keys (`keys`), the teaching nodes with their reference mapping, the species list in PDF order (its
+  `id`, `name` and the other sources' common names), the circle-3 sources (`sources`) and the retired ids (`retired`).
+- `tools/instance.json` `key`: the identification key in force, one of `keys`.
 - The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, IMR tag (`src: imr`), dive-sign
   mark (`sign`), slides (`sl`), cues, look-alike lines and phase lines from the IMR fish presentation, the sub-entries'
-  slides and cues, each species' presentation slide (`sl`), the starter core `start` and the declared look-alike groups
-  `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
+  slides and cues, each species' presentation slide (`sl`), the PDF species' common name, section, pages and cheatsheet
+  rank (`common`, `sec`, `pdf`, `cs`) and the presentation's own species (`src: slides`), the starter core `start` and
+  the declared look-alike groups `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
 - `tools/build_fish.py`, the build, documented at its top: it reads the two, composed by `tools/instance.py`
   `fish_source`, and writes `fish.json`. `tests/fish.test.js` checks its structure.
 - Only derived lists are in the repository, never the PDF or the slides.
@@ -268,9 +270,9 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 
 - `tools/fish_source.json` `keys` holds the keys (`id`, `region` {name, area}, `cite` the full citation, `short` its
   short form, `src`, `groups`: `n`, `title` exact, `pages`, `labels` [label as the key prints it, [WoRMS accepted names
-  it covers], note]) and `deploy` the deployment's region and the key in force: here the index of the 20 identification
-  groups of *Reef Fish Identification – Tropical Pacific*, 2nd ed., which the IMR course follows, transcribed from
-  Pierre's screenshots of its index.
+  it covers], note]); the key in force is `tools/instance.json` `key` (`tools/instance.py` `fish_source` lays it as
+  `deploy.key`): here the index of the 20 identification groups of *Reef Fish Identification – Tropical Pacific*,
+  2nd ed., which the IMR course follows, transcribed from Pierre's screenshots of its index.
 - `build_fish.py` gives each teaching node the group of the first key label met walking up WoRMS from each of its
   references (a subfamily label wins: Parrotfishes over Wrasses) and fails, naming the node, when a node in the game
   (any circle, winks aside) has no group or spans two, unless the source makes it explicit (`keyGroup` {key id: n};
@@ -281,9 +283,9 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 - `fish.json` `key` = the key in force without its labels (`treeGen` `key`, `groups`); the app shows the key's numbers
   and titles, `cite` on the families page and `short` everywhere else (one edit changes both).
 - `python3 tools/build_fish.py --regroup` applies the key to `fish.json` again offline from its own reference tree
-  (after an edit of `keys`, `deploy` or `keyGroup`, or to settle a merge of `fish.json`); `--regroup --check` (run by
-  `tests/fish.test.js`) fails when `fish.json` is not as the key gives it. A region with no key has no group rule
-  (`deploy.key` unset); a key for another region is data only.
+  (after an edit of `keys`, the instance's `key` or `keyGroup`, or to settle a merge of `fish.json`); `--regroup
+  --check` (run by `tests/fish.test.js`) fails when `fish.json` is not as the key gives it. A region with no key has no
+  group rule (`tools/instance.json` `key` unset); a key for another region is data only.
 
 ## Starter core and judged photos
 

@@ -7,17 +7,22 @@ organisation decides (its circles, its declared look-alikes and their words, its
 third layer, the content editor's edits, stays in curation.json and is laid over at load (core.js contentApply), never
 here (rule A1).
 
-tools/instance.json names the instance (id, name), its centre (presence near it: tools/presence.py, rule C8) and its
+tools/instance.json names the instance (id, name), its centre (presence near it: tools/presence.py, rule C8), the
+identification key in force there (key: the deployment's choice, laid by fish_source as deploy.key, rule S3) and its
 layer files, one per subject (SUBJECTS key: fish, coral). Today the IMR instance's, in tools/instances/imr/:
 
 - fish: start (the starter core), look (the declared look-alike groups of families), nodes {teaching node id:
-  {circle, src, sign, sl, cues, look, phase}} (a sub-entry: sl, cues, look, phase) and species {species id: {sl}}.
-  src is the IMR tag ("imr": the entries of the IMR fish presentation), sign: false marks an entry off the
-  presentation's dive-sign list, sl the presentation's slides. fish_source() lays them on tools/fish_source.json, and
-  tools/build_fish.py reads the result. The base never carries them (its src is the other sources': pdf, diver,
-  wink): a node or species of the base with one of them, or a layer node or species the base does not hold, stops the
-  build. A teaching node's names (name, fam), ref and species stay in the base: the IMR names are the entries the tag
-  marks, and an edition without the layer has no IMR tag, slide or cue on its entries.
+  {circle, src, sign, sl, cues, look, phase}} (a sub-entry: sl, cues, look, phase) and species {species id: {common,
+  sec, pdf, cs, src, sl}}. src is the IMR tag ("imr": the entries of the IMR fish presentation), sign: false marks an
+  entry off the presentation's dive-sign list, sl the presentation's slides. A species' pdf (the PDF's pages) marks it
+  as the PDF's, the IMR reference list (the EventMeasure PDF); only then it has the PDF's common name (never
+  corrected), sec (its section) and cs (its rank on the cheatsheet); src: "slides" marks a species only the
+  presentation names. fish_source() lays them on tools/fish_source.json, and tools/build_fish.py reads the result. The
+  base never carries them (its src is the other sources': pdf, diver, wink; a species' common name is the base's unless
+  the layer marks it as the PDF's): a node or species of the base with one of them, or a layer node or species the
+  base does not hold, stops the build. A teaching node's names (name, fam), pdf, ref and species stay in the base: the
+  IMR names are the entries the tag marks, and an edition without the layer has no IMR tag, slide or cue on its
+  entries, and no PDF name, section or rank on its species.
 - coral: imrg (the IMR lecture's groups), gen {genus: {n, ig, imr, mn, sl, rsl, qt}} (its slate number, its lecture
   group, its lecture notes verbatim, its mnemonic, its lecture slides and review slides, its ID tips: the tips of a
   genus with a Coral Finder heading, tl, stay in data.json, condensed from the book) and pairs {"A|B": {src, look}} (the lecture's look-alike pairs: their lsrc line on both genera, and each
@@ -52,8 +57,15 @@ DATA = ROOT / "data.json"
 # presentation's dive-sign list lacks.
 FISH_NODE = ("circle", "src", "sign", "sl", "cues", "look", "phase")
 FISH_SUB = ("sl", "cues", "look", "phase")  # a sub-entry's (a sub-entry takes its entry's circle)
-FISH_SPECIES = ("sl",)  # a species' fields that are the instance's: the slide of the presentation that names it
-FISH_TAG = "imr"  # the one value of src the layer holds
+# A species' fields that are the instance's: the slide of the presentation that names it (sl); the PDF's own fields, only
+# on a species the layer marks as the PDF's by giving its pdf (the PDF's pages): common (the PDF's name for it, never
+# corrected), sec (its section) and cs (its rank on the cheatsheet); and the presentation's mark src: "slides" (a
+# species the presentation names alone, on a species with no PDF page). A species of another source (dauin, wink) keeps
+# its common name, and its src, in the base.
+FISH_SPECIES = ("common", "sec", "pdf", "cs", "src", "sl")
+FISH_PDF = ("common", "sec", "cs")  # the PDF's fields that need the species' pdf
+FISH_TAG = "imr"  # the one value of a node's src the layer holds
+FISH_SPECIES_SRC = "slides"  # the one value of a species' src the layer holds
 FISH_TOP = ("start", "look")
 # A genus's fields that are the instance's, and where they sit in data.json's record: n (its slate number, 0 for a starred
 # genus) after tr, then ig, imr and mn after it; sl (its lecture slides) after lsrc, then qt (its ID tips) and rsl (its
@@ -113,14 +125,18 @@ def write_layer(subject, lay, path=None):
 
 # --- fish ------------------------------------------------------------------------------------------------------------
 
-def fish_compose(base, lay):
+def fish_compose(base, lay, key=None):
     """tools/fish_source.json (base) with the instance's layer laid on: the source tools/build_fish.py reads. Stops when
     the base still carries a field of the layer (an edit made in the old place, say by a merge; a src other than the
-    layer's tag is the base's) or the layer names a node or species the base does not hold."""
+    layer's tags is the base's; a species' common name is the base's unless the layer marks the species as the PDF's) or
+    the layer names a node or species the base does not hold. key: the identification key in force (tools/instance.json
+    key), laid as deploy.key, where tools/build_fish.py key_in_force reads it; the base holds no deploy."""
     src, bad = copy.deepcopy(base), []
     for k in FISH_TOP:
         if k in src:
             bad.append(f"tools/fish_source.json {k}: the instance's (its layer file)")
+    if "deploy" in src:
+        bad.append("tools/fish_source.json deploy: the deployment's (tools/instance.json key)")
     by = {}
     for t in src.get("teach", []):
         by[t["id"]] = (t, FISH_NODE)
@@ -133,7 +149,7 @@ def fish_compose(base, lay):
                 bad.append(f"tools/fish_source.json {n} {k}: the instance's (its layer file)")
     for n, s in sp.items():
         for k in FISH_SPECIES:
-            if k in s:
+            if k in s and k != "common" and not (k == "src" and s[k] != FISH_SPECIES_SRC):
                 bad.append(f"tools/fish_source.json {n} {k}: the instance's (its layer file)")
     for n, x in (lay.get("nodes") or {}).items():
         if n not in by:
@@ -151,23 +167,37 @@ def fish_compose(base, lay):
         if n not in sp:
             bad.append(f"layer species {n}: no species of tools/fish_source.json")
             continue
+        rec = sp[n]
         for k, v in x.items():
             if k not in FISH_SPECIES:
                 bad.append(f"layer species {n} {k}: not a field of the layer ({', '.join(FISH_SPECIES)})")
+            elif k == "src" and (v != FISH_SPECIES_SRC or "src" in rec or "pdf" in x):
+                bad.append(f"layer species {n} src: only {FISH_SPECIES_SRC!r}, on a species with no pdf whose source the "
+                           "base does not name")
+            elif k == "pdf" and "src" in rec:
+                bad.append(f"layer species {n} pdf: a species of the PDF has no src in the base (it has {rec['src']!r})")
+            elif k in FISH_PDF and "pdf" not in x:
+                bad.append(f"layer species {n} {k}: only on a species of the PDF (the layer gives it a pdf)")
+            elif k == "common" and "common" in rec:
+                bad.append(f"layer species {n} common: tools/fish_source.json {n} gives one too")
             else:
-                sp[n][k] = copy.deepcopy(v)
+                rec[k] = copy.deepcopy(v)
     if bad:
         sys.exit("the instance's layer (tools/instance.py):\n  " + "\n  ".join(bad))
     for k in FISH_TOP:
         if k in lay:
             src[k] = copy.deepcopy(lay[k])
+    if key:
+        src["deploy"] = {"key": key}
     return src
 
 
-def fish_source(base_path=None, lay_path=None):
-    """The fish source as the build reads it: tools/fish_source.json (or base_path) with the layer (or lay_path)."""
+def fish_source(base_path=None, lay_path=None, inst_path=None):
+    """The fish source as the build reads it: tools/fish_source.json (or base_path) with the layer (or lay_path) and the
+    key in force of the instance (tools/instance.json, or inst_path)."""
     base = json.loads(Path(base_path or FISH_SOURCE).read_text(encoding="utf-8"))
-    return fish_compose(base, load_layer("fish", lay_path))
+    inst = instance(inst_path) if inst_path else instance()
+    return fish_compose(base, load_layer("fish", lay_path), inst.get("key"))
 
 
 # --- corals ----------------------------------------------------------------------------------------------------------
@@ -314,7 +344,10 @@ def check():
         s = p.read_text(encoding="utf-8")
         if s != layer_dumps(json.loads(s)):
             bad.append(f"{p.relative_to(ROOT)}: not in its layout (instance.py layer_dumps)")
-    fish_source()  # stops on a stale base or an unknown node
+    src = fish_source()  # stops on a stale base or an unknown node
+    key = inst.get("key")
+    if key is not None and key not in [k["id"] for k in src.get("keys", [])]:
+        bad.append(f"tools/instance.json key {key!r}: no such key in tools/fish_source.json keys")
     if bad:
         sys.exit("\n".join(bad))
     print("the instance's layer files: in their layout; the fish source composes")
