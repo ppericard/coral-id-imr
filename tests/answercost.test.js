@@ -29,20 +29,25 @@ const row = (state, over = {}) => ({
 });
 
 test('states are subject:answers, fish, coral or seaslug', () => {
-  assert.deepStrictEqual(A.parseStates('fish:50,coral:3000,seaslug:500'), [
-    {name: 'fish:50', subject: 'fish', answers: 50},
-    {name: 'coral:3000', subject: 'coral', answers: 3000},
-    {name: 'seaslug:500', subject: 'seaslug', answers: 500}
+  assert.deepStrictEqual(A.parseStates('fish:50,coral:3000,seaslug:500,fish:500:back'), [
+    {name: 'fish:50', subject: 'fish', answers: 50, back: false},
+    {name: 'coral:3000', subject: 'coral', answers: 3000, back: false},
+    {name: 'seaslug:500', subject: 'seaslug', answers: 500, back: false},
+    {name: 'fish:500:back', subject: 'fish', answers: 500, back: true}
   ]);
-  for (const bad of ['fish', 'fish:0', 'goby:50', 'sea:50', 'fish:x', 'fish:50:1'])
+  for (const bad of ['fish', 'fish:0', 'goby:50', 'sea:50', 'fish:x', 'fish:50:1', 'fish:50:', 'fish:50:back:back', 'fish:back'])
     assert.throws(() => A.parseStates(bad), /bad state/, bad);
   assert.deepStrictEqual(A.SUBJECTS, ['fish', 'coral', 'seaslug'], 'every subject the app has');
   assert.deepStrictEqual(A.HISTORIES, [50, 500, 3000], 'a short history, a medium one and a long one');
   assert.deepStrictEqual(
     A.parseStates(A.STATES).map(s => s.name),
-    ['fish:50', 'fish:500', 'fish:3000', 'coral:50', 'coral:500', 'coral:3000', 'seaslug:50', 'seaslug:500', 'seaslug:3000'],
-    'the default is every subject at every history'
+    ['fish:50', 'fish:500', 'fish:3000', 'coral:50', 'coral:500', 'coral:3000', 'seaslug:50', 'seaslug:500', 'seaslug:3000'].flatMap(s => [
+      s,
+      s + ':back'
+    ]),
+    'the default is every subject at every history, in the middle of a session and back after a break'
   );
+  assert.ok(A.BACK >= 86400 && A.BACK_MIN >= 2, 'a break of days, and at least two comeback answers counted');
 });
 
 test('the subjects are the app’s own (core.js SUBJECTS), none left out (rule S1)', () => {
@@ -176,6 +181,19 @@ test('the page’s clock is virtual: it stands still between the tool’s ticks,
   assert.match(src, /window\.__tick = ms =>/);
   assert.match(src, /__tick\(4000\), smokeAnswer\(pick\)/, 'a thinking time before the answer');
   assert.match(src, /__tick\(6000\), document\.getElementById\('next'\)/, 'a pause before Next');
+});
+
+test('a comeback state: the clock a break later, no warm-up, only the comeback’s answers counted, each taken alone', () => {
+  const src = read('tools/answercost.js');
+  assert.match(src, /states\[i\]\.back \? \{clock: BACK, warm: 0\} : \{\}/, 'the clock BACK after the last answer, no warm-up');
+  assert.match(
+    src,
+    /back: typeof CB === 'object' && CB\.r > 0, \.\.\.\(window\.__tick/,
+    'an answer in a comeback (rust left), read before the answer'
+  );
+  assert.match(src, /await take\(inBack\)/, 'each answer of a comeback state taken alone, kept only when it was a comeback’s');
+  assert.match(src, /if \(!\(expect && expect\.back\)\) await take\(true\)/, 'a session state taken once, as before');
+  assert.match(src, /n < BACK_MIN/, 'too few comeback answers fail the run');
 });
 
 test('the page boots on a page that draws no question and is at rest before the numbers start from the seed (REE-281)', () => {

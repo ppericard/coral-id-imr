@@ -3374,8 +3374,9 @@ const BENTHIC_NOTE =
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 // (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.) A view of
-// the state version (stateView): poolCalc computes it.
-const poolCalc = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+// the state version (stateView): poolCalc computes it. Whether a unit has a photo is a view of the data version per unit,
+// read once for the loop (model.js photoAnyFn): nothing is written during it.
+const poolCalc = () => [...slateGenera(), ...bonusList()].filter(typeof photoAnyFn === 'function' ? photoAnyFn() : photoAny);
 const pool = stateView('pool', poolCalc);
 // The plain sentence: one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py), clear for
 // everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before the ID
