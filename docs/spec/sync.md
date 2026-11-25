@@ -759,6 +759,16 @@ The app queues events (`ev`, `reefid-evq`) and sends them in batches (`sync.js` 
 `events_` keeps only the kinds it knows (`EVK`: `err`, `photo`, `sync`, `pulse`, `load`, `pages`, `fromhome`) in the
 Events tab, whose admin read (`readEvents`) is the last 3,000 rows. Like every request, never sent from a local copy.
 
+- **An event id is logged once.** Each event carries an id whose first 8 base36 characters are its creation time
+  (`Date.now()`, `sync.js` `ev`). `events_` skips an id already in its tab (Events, or Pages for `pages` events). It
+  reads the Id column of the tab's last 2000 rows (`EV_WINDOW`). When an incoming id was made before the window began
+  (`evIdTime_`, `evWindowTime_`; an id without a time counts as older), the request reads the rows before the window
+  too, so a retry from a device that stayed offline after a lost reply is still skipped however many rows came since.
+  The window began at the median made-time of its first 200 ids plus an hour: rows are appended as they arrive and an
+  old event can arrive late, so the first row's time is no bound. A normal request reads the window only; a tab of 2000
+  rows or fewer is always read whole. The check assumes that most of those 200 rows were written soon after they were
+  made. Answers have their own check over every id (`newIds_`).
+
 - **The one-tap questions and the tips** log as `pulse` events: `r` as text in the Message column and `src` (the item,
   or `tip:<id>`) in the Where column; Detail keeps `r` only for `easy`, `ok`, `hard`, the codes the difficulty items
   use; a row with an empty Where counts as the first item (`PULSE0`). The admin reads them in To do › Errors
