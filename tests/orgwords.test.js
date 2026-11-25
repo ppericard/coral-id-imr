@@ -64,18 +64,12 @@ const hits = text =>
     .map((l, i) => [i + 1, l])
     .filter(([, l]) => WORD.test(code(l)));
 
-const PR4 = "REE-34 PR 4, the admin's pages: their texts from ORG",
+const ENGINE =
+    "analysis.js's labels ('IMR lecture' as a photo source, in the model's terms and tables): the engine runs in a Web Worker and in the Action's Node run (tools/analyses.js), neither of which loads core.js, and the labels are kept in the stored report; to move them the worker and the Action must be handed ORG (the integrator places it)",
   // The Lab's lecture sentences (REE-294; docs/reviews/2026-11-25-imr-layer-round-3.md, question (d): kept as literals).
   CITE = 'a source citation (rule C2): the sentence comes from that lecture, whatever the edition, so it never follows ORG';
 // The lines still to move: [file, how many, the change that moves them].
-const LEFT = [
-  ['admin.js', 45, PR4],
-  ['analysis.js', 5, PR4],
-  ['admin-content.js', 2, PR4],
-  ['admin-coraltree.js', 1, PR4],
-  ['admin-journey.js', 1, PR4],
-  ['admin-nodephotos.js', 1, PR4]
-];
+const LEFT = [['analysis.js', 5, ENGINE]];
 // The lines that stay: [file, a part of the line (unique in it), why]. Not counted in LEFT.
 const KEEP = [
   [GS, "PARENT: 'IMR'", 'the name of the pCloud folder that holds the sheet backups (BACKUP): a place outside the repository'],
@@ -161,9 +155,9 @@ test('ORG words: the guard catches what it is for (planted cases)', () => {
   assert.strictEqual(n("  it's // IMR trainer"), 1);
   // the lists: a file over or under its count, a stale KEEP line, a LEFT file the guard does not read
   const S = f => ({'a.js': "t = 'IMR list';\nu = 'IMR slate';\nfolder = 'IMR';"})[f];
-  assert.deepStrictEqual(check(['a.js'], S, [['a.js', 2, PR4]], [['a.js', "folder = 'IMR'", 'a folder']]), []);
-  assert.match(check(['a.js'], S, [['a.js', 1, PR4]], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /2 line\(s\).*1 listed/);
-  assert.match(check(['a.js'], S, [['a.js', 3, PR4]], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /lower its count/);
-  assert.match(check(['a.js'], S, [['a.js', 3, PR4]], [['a.js', 'gone', 'a folder']]).join('\n'), /KEEP a\.js "gone": 0/);
-  assert.match(check(['a.js'], S, [['b.js', 3, PR4]], []).join('\n'), /LEFT b\.js: not a file/);
+  assert.deepStrictEqual(check(['a.js'], S, [['a.js', 2, 'a change']], [['a.js', "folder = 'IMR'", 'a folder']]), []);
+  assert.match(check(['a.js'], S, [['a.js', 1, 'a change']], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /2 line\(s\).*1 listed/);
+  assert.match(check(['a.js'], S, [['a.js', 3, 'a change']], [['a.js', "folder = 'IMR'", 'a folder']]).join('\n'), /lower its count/);
+  assert.match(check(['a.js'], S, [['a.js', 3, 'a change']], [['a.js', 'gone', 'a folder']]).join('\n'), /KEEP a\.js "gone": 0/);
+  assert.match(check(['a.js'], S, [['b.js', 3, 'a change']], []).join('\n'), /LEFT b\.js: not a file/);
 });
