@@ -65,7 +65,7 @@
         kind: 'bonus',
         kick: 'Every genus of the slate met',
         title: `${L.length} more genera?`,
-        body: `<p>Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>${bonusThumbs(L)}<p class="ulnote">${L.map(x => `<i>${esc(x)}</i>`).join(', ')}</p>`,
+        body: `<p>Not on the ${ORG.short} coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.</p>${bonusThumbs(L)}<p class="ulnote">${L.map(x => `<i>${esc(x)}</i>`).join(', ')}</p>`,
         primary: {text: 'Add them'},
         secondary: {text: 'Not now'},
         esc: 2,

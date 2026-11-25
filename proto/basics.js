@@ -569,7 +569,7 @@
       id: 'forms',
       t: 'Growth forms: the colony’s shape',
       forms: true,
-      say: 'From a distance, start with the colony’s shape. The IMR course uses 7 growth forms: tap one to see examples. One genus can grow in several shapes, so the shape narrows the search but never decides on its own.',
+      say: `From a distance, start with the colony’s shape. The ${ORG.course} uses 7 growth forms: tap one to see examples. One genus can grow in several shapes, so the shape narrows the search but never decides on its own.`,
       check: {
         type: 'form',
         q: 'Which growth form is this colony?'
@@ -807,11 +807,11 @@
           const [fid, name, ex] = FORMS7[k],
             shown = ex.filter(([g, f]) => known(g, f));
           const L = shown.map(([g, f]) => pobj({g, f}));
-          fig.innerHTML = `<div class="bx-forms" role="group" aria-label="The 7 IMR growth forms">${FORMS7.map(
+          fig.innerHTML = `<div class="bx-forms" role="group" aria-label="The 7 ${ORG.short} growth forms">${FORMS7.map(
             ([id, nm], j) => `<button type="button" data-f="${j}" aria-pressed="${j === k}">${formIcon(id)}<span>${esc(nm)}</span></button>`
           ).join(
             ''
-          )}</div><p class="bx-fdef"><b>${esc(name)}</b> ${esc(formDef(fid))} <small>IMR Lecture 6${formSlide(fid) ? ', slide ' + formSlide(fid) : ''}</small></p>
+          )}</div><p class="bx-fdef"><b>${esc(name)}</b> ${esc(formDef(fid))} <small>${ORG.lectureRef}${formSlide(fid) ? ', slide ' + formSlide(fid) : ''}</small></p>
             <div class="bx-fex n${shown.length}">${shown
               .map(
                 ([g, f], j) =>

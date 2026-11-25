@@ -27,7 +27,9 @@ survey's coral list, slate and benthic slate), `trainer` (IMR trainer); a phrase
 ("At IMR or elsewhere"). The core (`core/subjects.js`, `core/achievements.js`, `core/tree.js`) writes its texts from
 them, and so do the players' pages (`app.js`, `learn.js`, `quiz.js`, `progress.js`, `home.js`, `sync.js` and the rest),
 which also derive the prefixes of the data's source lines from `ORG` (`model.js` `isClassic`, `learn.js` `srcTag`); the
-admin's pages and the Lab still write theirs (REE-34). The data's own values (the source lines "IMR Lecture 6, slide …"
+admin's pages still write theirs (REE-34). The Lab (`proto/*.js`) writes the course's words from `ORG` too, but keeps the
+lecture sentences with their citation ("(IMR Lecture 6)") as literals, listed in `tests/orgwords.test.js` `KEEP` (they
+credit that lecture's words, rule C2); the four it repeats from the glossary it reads from `data.json` `terms`. The data's own values (the source lines "IMR Lecture 6, slide …"
 and "IMR fish presentation, …" in `data.json` and `fish.json`) and the identifiers (`imr` fields, `cqByIMR`) keep their words: code derives what it matches from `ORG`.
 `tests/orgwords.test.js` counts the word "IMR" still written in the code outside comments, per file, against the lines
 left to move and the few that stay (the sheet backups' pCloud folder, the rules versions' records)
