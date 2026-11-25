@@ -18,6 +18,30 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', '..'))
 import fit as Q  # noqa: E402
 
 
+def replicate(D, truth, reps, rng, clock):
+    """reps answer sets simulated from truth on design D, each fitted by the Laplace fit, until the clock: per value the
+    truth and the fits' mean and SD; done, the replicates finished; cut, whether the clock stopped it (rule L11)."""
+    res = {k: [] for k in list(D['par']) + list(D['fixed'])}
+    done, cut, y0 = 0, False, D['y']
+    try:
+        for _ in range(reps):
+            D['y'] = Q.simulate(D, truth, rng)
+            F = Q.fit(D, clock, levels=(0.95,))
+            for p in D['par']:
+                res[p].append(F['sd'][p][0])
+            for f in D['fixed']:
+                res[f].append(F['fixed'][f][0])
+            done += 1
+    except Q.Deadline:
+        cut = True
+    finally:
+        D['y'] = y0
+    tv = lambda k: truth['sd'][k] if k in truth['sd'] else truth['beta'][k]  # noqa: E731
+    vals = {k: {'truth': round(tv(k), 2), 'laplace_mean': round(float(np.mean(v)), 2) if v else None,
+                'laplace_sd': round(float(np.std(v)), 2) if v else None} for k, v in res.items()}
+    return {'done': done, 'reps': reps, 'cut': cut, 'values': vals}
+
+
 def main(argv):
     pos = [a for i, a in enumerate(argv) if not a.startswith('--') and (i == 0 or argv[i - 1] != '--seed')]
     if len(pos) != 3:
@@ -34,16 +58,11 @@ def main(argv):
     D = Q.build([r for r in ex['rows'] if r.get('use')])
     truth = {'sd': {p: G[p]['median'] for p in D['par']}, 'beta': {f: G[f]['median'] for f in D['fixed']}}
     rng = np.random.default_rng(seed)
-    res = {k: [] for k in list(D['par']) + list(D['fixed'])}
-    for _ in range(int(pos[2])):
-        D['y'] = Q.simulate(D, truth, rng)
-        F = Q.fit(D, levels=(0.95,))
-        for p in D['par']:
-            res[p].append(F['sd'][p][0])
-        for f in D['fixed']:
-            res[f].append(F['fixed'][f][0])
-    tv = lambda k: truth['sd'][k] if k in truth['sd'] else truth['beta'][k]  # noqa: E731
-    print(json.dumps({k: {'truth': round(tv(k), 2), 'laplace_mean': round(float(np.mean(v)), 2), 'laplace_sd': round(float(np.std(v)), 2)} for k, v in res.items()}))
+    clock = Q.Clock()  # rule L11's 40 minutes, from when the slot is held
+    out = replicate(D, truth, int(pos[2]), rng, clock)
+    if out['cut']:
+        print(f'stopped at the deadline ({Q.BUDGET_MIN} minutes, rule L11) after {out["done"]} of {out["reps"]} replicates; the rest: {Q.CANNOT_TELL}')
+    print(json.dumps(out))
     return 0
 
 

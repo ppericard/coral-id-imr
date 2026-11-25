@@ -296,6 +296,8 @@ def report(F, A1, A2, Fo):
             out[k] = {'verdict': Q.CANNOT_TELL + ' (not converged)'}
         elif Fo is None or k not in Fo:
             out[k] = {'verdict': Q.CANNOT_TELL + ' (prior check not run)'}
+        elif not Fo[k]['converged']:
+            out[k] = {'verdict': Q.CANNOT_TELL + ' (prior check not converged)'}
         elif abs(Fo[k]['median'] - F[k]['median']) > CONVERGE['prior_shift']:
             out[k] = {'verdict': 'prior-driven', 'shift': Fo[k]['median'] - F[k]['median']}
         else:

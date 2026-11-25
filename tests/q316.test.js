@@ -322,6 +322,14 @@ test(
     const [p, [plo, phi]] = o.photo;
     assert.ok(p > 0.4 && p < 0.85 && plo < 0.6 && phi > 0.6, 'photo SD 0.6: ' + JSON.stringify(o.photo));
     assert.ok(Math.abs(o.diag[0] - 1) < 0.05 && o.diag[1] > 1000, 'R-hat and ESS on independent draws: ' + o.diag);
+    const CT = 'the measure cannot tell';
+    assert.deepStrictEqual(o.report, {
+      a: 'pass',
+      b: CT + ' (prior check not converged)',
+      c: 'prior-driven',
+      d: CT + ' (not converged)'
+    });
+    assert.deepStrictEqual(o.crosscheck, [0, true], 'the cross-check stops at its clock (rule L11)');
   }
 );
 

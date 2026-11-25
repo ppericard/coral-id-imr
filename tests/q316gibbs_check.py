@@ -67,11 +67,33 @@ def planted(rng, kind):
     return [sm['median'], sm['ci95']]
 
 
+def report_check():
+    """report(): a value passes only when its chains and the other prior's chain both converged and agree."""
+    sm = lambda med, ok=True: {'median': med, 'ci95': [0, 1], 'converged': ok}  # noqa: E731
+    A = {'values': {k: {'verdict': 'pass'} for k in 'abcd'}}
+    F = {'a': sm(1.0), 'b': sm(1.0), 'c': sm(1.0), 'd': sm(1.0, False)}
+    Fo = {'a': sm(1.05), 'b': sm(1.05, False), 'c': sm(0.8), 'd': sm(1.0)}
+    return {k: v['verdict'] for k, v in G.report(F, A, A, Fo).items()}
+
+
+def crosscheck_deadline():
+    """refit/crosscheck.py stops at its clock (rule L11): a deadline already past, no replicate done."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tools', 'studies', 'q316', 'refit'))
+    import crosscheck as X  # noqa: E402
+
+    rng = np.random.default_rng(3)
+    D = Q.build(small_rows(rng, 120))
+    truth = Q.truth_rated(D, 'fish')
+    out = X.replicate(D, truth, 3, rng, Q.Clock(deadline=1.0))
+    return [out['done'], out['cut']]
+
+
 def main():
     rng = np.random.default_rng(11)
     x = rng.normal(size=(2, 2000))
     print(json.dumps({'pg': pg_check(rng), 'joint': joint_check(rng), 'gen': planted(rng, 'gen'), 'photo': planted(rng, 'photo'),
-                      'diag': [G.split_rhat(list(x)), G.ess(x[0])], 'chain': G.CHAIN, 'prior': G.PRIOR, 'converge': G.CONVERGE}))
+                      'diag': [G.split_rhat(list(x)), G.ess(x[0])], 'report': report_check(), 'crosscheck': crosscheck_deadline(),
+                      'chain': G.CHAIN, 'prior': G.PRIOR, 'converge': G.CONVERGE}))
 
 
 if __name__ == '__main__':

@@ -147,7 +147,8 @@ PR's, declared here before any real run.
 - **Converged**: on the real answers, an SD whose split R-hat is above 1.1, or whose effective sample size (both
   chains) is under 100, is "the measure cannot tell".
 - **The prior's weight**: the real answers sampled again (one chain) under a half-normal prior of scale 0.5; a median
-  that moves by more than 0.1 is reported "prior-driven", not as a value.
+  that moves by more than 0.1 is reported "prior-driven", not as a value; when that chain has not converged (ESS under
+  100), "the measure cannot tell" (added after Codex's review of #1588; no real result changed by it).
 - **The clock**: its own 40 minutes per run (rule L11), one subject per run, from when the machine slot is held; past
   it the run stops and the rest is "the measure cannot tell".
 
