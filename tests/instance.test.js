@@ -14,6 +14,7 @@ const INST = read('tools/instance.json'),
   BASE = read('tools/fish_source.json'),
   FL = read(INST.layer.fish),
   CL = read(INST.layer.coral),
+  CO = read(INST.layer.course),
   RAW = read('data.json');
 const clone = o => JSON.parse(JSON.stringify(o));
 const run = (args, opts = {}) => {
@@ -42,7 +43,7 @@ const regroup = (layer, base) =>
 test('tools/instance.json names the instance (id, name), its centre and a layer file per subject', () => {
   assert.strictEqual(INST.id, 'imr');
   assert.ok(INST.name && INST.centre && INST.centre.radiusKm > 0);
-  assert.deepStrictEqual(Object.keys(INST.layer).sort(), ['coral', 'fish']);
+  assert.deepStrictEqual(Object.keys(INST.layer).sort(), ['coral', 'course', 'fish']);
   Object.values(INST.layer).forEach(p => assert.ok(fs.existsSync(path.join(ROOT, p)), p));
   const r = run(['tools/instance.py', '--check']);
   assert.strictEqual(r.status, 0, r.out);
@@ -549,7 +550,7 @@ test('coral: the layer holds imrg, each genus’s n, ig, imr, mn, slides and ID 
     if (RAW.gen[g].sl) keys.push('sl', 'qt', ...(RAW.gen[g].rsl ? ['rsl'] : []));
     assert.deepStrictEqual(Object.keys(x), keys, g);
   });
-  assert.deepStrictEqual(Object.keys(CL).sort(), ['_doc', 'gen', 'imrg', 'pairs']);
+  assert.deepStrictEqual(Object.keys(CL).sort(), ['_doc', 'gen', 'imrg', 'pairs', 'slate']);
   assert.strictEqual(CL.imrg.length, 11);
   const out = JSON.parse(
     py(`from instance import coral_strip, coral_compose, load_layer
@@ -741,4 +742,175 @@ try:
 except SystemExit as e:
     print(e)`);
   assert.match(tips, /^False\n.*qt of Merulina: their ID tips come from the Coral Finder \(tl\)/);
+});
+
+test('coral: the layer declares the IMR slate as the core computes it (data.json gen in the games’ order, then BENTHIC); a difference is found', () => {
+  const {slateOf, BENTHIC} = require('../core.js');
+  assert.deepStrictEqual(Object.keys(CL.slate), ['order', 'benthic']);
+  assert.deepStrictEqual([...CL.slate.order, ...CL.slate.benthic], slateOf(RAW), 'the slate the core teaches');
+  assert.deepStrictEqual(CL.slate.benthic, BENTHIC);
+  assert.deepStrictEqual(CL.slate.order, Object.keys(RAW.gen));
+  assert.deepStrictEqual(
+    CL.slate.order.map(g => CL.gen[g].n),
+    [...CL.slate.order.keys()].map(i => (i < 34 ? i + 1 : 0)),
+    'numbered 1 to 34, then the five starred genera'
+  );
+  const out = JSON.parse(
+    py(`from instance import slate_problems, load_layer
+from datajson import load
+from genera import lists
+d, lay = load(), load_layer('coral')
+ben = lists()[0]
+def mut(f):
+    l, dd = json.loads(json.dumps(lay)), json.loads(json.dumps(d))
+    f(l, dd)
+    return slate_problems(dd, l, ben)
+print(json.dumps([
+  slate_problems(d, lay, ben),
+  slate_problems(d, {}, ben),
+  mut(lambda l, dd: l['slate']['order'].reverse()),
+  mut(lambda l, dd: l['slate'].__setitem__('benthic', ['Millepora', 'Isopora'])),
+  mut(lambda l, dd: dd['gen'].pop('Halomitra')),
+  mut(lambda l, dd: l['gen']['Acropora'].__setitem__('n', 7)),
+  mut(lambda l, dd: dd['x']['gen'].pop('Millepora')),
+  mut(lambda l, dd: l['slate'].pop('benthic')),
+]))`)
+  );
+  const [same, none, reversed, benthic, lost, numbers, noX, shape] = out;
+  assert.deepStrictEqual(
+    [same, none],
+    [[], []],
+    'the slate as declared agrees with data.json and the core; a layer with none declares nothing'
+  );
+  assert.match(reversed.join(), /slate order: the layer's differs from data\.json gen at 1 /);
+  assert.match(benthic.join(), /slate benthic: the layer's \['Millepora', 'Isopora'\] differs from the core's BENTHIC \['Millepora'\]/);
+  assert.match(lost.join(), /slate order: .*39 and 38 genera/);
+  assert.match(numbers.join(), /not 1, 2, … in order, then the starred/);
+  assert.match(noX.join(), /slate benthic Millepora: not a genus of data\.json x gen/);
+  assert.match(shape.join(), /has \['order'\], not order and benthic/);
+  // datajson --check runs it.
+  const r = run(['tools/datajson.py', '--check']);
+  assert.strictEqual(r.status, 0, r.out);
+});
+
+test('course: the layer holds the lecture’s photo records (course and its cmp record); data.json is the sources plus the layer, byte for byte', () => {
+  assert.deepStrictEqual(Object.keys(CO), ['_doc', 'course', 'cmp']);
+  assert.deepStrictEqual(
+    [Object.keys(CO.course).length, Object.values(CO.course).flat().length, CO.cmp.length],
+    [34, 118, 1],
+    '[genera, records, the lecture’s cmp record]'
+  );
+  assert.strictEqual(JSON.stringify(CO.course), JSON.stringify(RAW.course), 'the same records, genera, fields and order');
+  assert.strictEqual(JSON.stringify(CO.cmp), JSON.stringify(RAW.cmp.filter(r => r.imr === true)));
+  [...Object.values(CO.course).flat(), ...CO.cmp].forEach(r => {
+    assert.strictEqual(r.imr, true, r.f);
+    assert.match(r.f, /^imrl?-/, r.f);
+  });
+  const out = JSON.parse(
+    py(`from instance import course_strip, course_compose, course_differs, course_problems, load_layer
+from datajson import dumps, load
+s = open('data.json', encoding='utf-8').read()
+d, lay = load(), load_layer('course')
+bare = course_strip(d)
+other = json.loads(json.dumps(lay)); other['course']['Acropora'][0]['slide'] = 99
+edition = course_compose(bare, {})
+bad = json.loads(json.dumps(lay)); bad['extra'] = 1; bad['course']['Acropora'][0].pop('imr'); bad['cmp'][0].pop('imr')
+print(json.dumps([
+  'course' in bare or any(r.get('imr') for r in bare.get('cmp', [])),
+  dumps(course_compose(bare, lay)) == s,
+  dumps(course_compose(bare, other)) == s,
+  dumps(course_compose(d, lay)) == s,
+  [edition['course'], edition.get('cmp')],
+  list(d) == list(course_compose(bare, lay)),
+  [course_differs(d, lay), course_differs(d, other), course_differs(bare, lay)],
+  course_problems(lay),
+  course_problems(bad),
+]))`)
+  );
+  assert.deepStrictEqual(
+    out.slice(0, 7),
+    [false, true, false, true, [{}, []], true, [[], ['course'], ['course', 'cmp']]],
+    '[the sources hold none of it, sources + layer = data.json, another layer differs, data.json + layer = data.json, an edition without the layer has no lecture photo, the top-level keys keep their order, what differs]'
+  );
+  assert.deepStrictEqual(out[7], []);
+  assert.strictEqual(out[8].length, 3, out[8].join('; '));
+  assert.match(out[8].join('; '), /extra: not a key of the course layer/);
+  assert.match(out[8].join('; '), /course Acropora \S+: not a lecture photo/);
+  assert.match(out[8].join('; '), /cmp imrl-p8_i2: not a lecture photo/);
+  const r = run(['tools/datajson.py', '--check']);
+  assert.strictEqual(r.status, 0, r.out);
+  assert.match(r.out, /data\.json layout OK, as its layers give it/);
+  assert.strictEqual(run(['tools/instance.py', '--check']).status, 0);
+});
+
+test('course: datajson.dump() is the one writer of the layer file and data.json; load() lays the layer on; the real files are untouched', () => {
+  const real = ['tools/instances/imr/course.json', 'data.json'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8'));
+  const out = JSON.parse(
+    py(`import contextlib, io, os, shutil, tempfile, types
+from pathlib import Path
+import instance, datajson
+sys.modules['tree_section'] = types.SimpleNamespace(write=lambda s: None)
+tmp = tempfile.mkdtemp()
+lp, dp = Path(tmp) / 'course.json', os.path.join(tmp, 'data.json')
+shutil.copy('tools/instances/imr/course.json', lp)
+shutil.copy('data.json', dp)
+real = instance.layer_path
+instance.layer_path = lambda subject, inst=None: lp if subject == 'course' else real(subject, inst)
+datajson.PATH = dp
+lay = lambda: json.loads(lp.read_text(encoding='utf-8'))
+dat = lambda: json.load(open(dp, encoding='utf-8'))
+text = lambda p: open(p, encoding='utf-8').read()
+lay0, dat0 = text(lp), text(dp)
+out = []
+# Nothing changed: both files come back byte for byte.
+datajson.dump(datajson.load(dp), dp)
+out.append([text(lp) == lay0, text(dp) == dat0])
+# A tool edits a record and the lecture's cmp record: both files have it, the layer file stays in its layout.
+d = datajson.load(dp)
+d['course']['Acropora'][0]['v'] = 'medium'
+d['cmp'][0]['cap'] = 'a new caption'
+datajson.dump(d, dp)
+out.append([lay()['course']['Acropora'][0]['v'], dat()['course']['Acropora'][0]['v'], lay()['cmp'][0]['cap'], dat()['cmp'][0]['cap'], text(lp) == instance.layer_dumps(lay())])
+# The layer file edited by hand: load() reads it, says that data.json differs, and a dump brings data.json to it.
+L = lay()
+L['course']['Acropora'][1]['slide'] = 99
+instance.write_layer('course', L, lp)
+err = io.StringIO()
+with contextlib.redirect_stderr(err):
+    d = datajson.load(dp)
+out.append([d['course']['Acropora'][1]['slide'], 'data.json course differ' in err.getvalue()])
+datajson.dump(d, dp)
+out.append([dat()['course']['Acropora'][1]['slide'], text(lp) == instance.layer_dumps(lay())])
+# A cmp record that is not the lecture's stays in data.json, after the lecture's.
+d = datajson.load(dp)
+d['cmp'].append({'f': 'sources-cmp', 'g': ['Acropora', 'Pocillopora']})
+datajson.dump(d, dp)
+out.append([[r['f'] for r in lay()['cmp']], [r['f'] for r in dat()['cmp']], [r['f'] for r in datajson.load(dp)['cmp']]])
+# A record dropped, a genus moved to the end (the order is bytes): the layer follows.
+d = datajson.load(dp)
+d['course']['Acropora'].pop(0)
+new = next(g for g in d['gen'] if g not in d['course'])
+d['course'][new] = d['course'].pop('Acropora')
+datajson.dump(d, dp)
+out.append([new, list(lay()['course'])[-1], list(dat()['course'])[-1], len(lay()['course'][new])])
+# Data that does not say (no course, no cmp) gets the layer's.
+d = datajson.load(dp)
+del d['course'], d['cmp']
+datajson.dump(d, dp)
+out.append([len(dat()['course']), [r['f'] for r in dat()['cmp']]])
+print(json.dumps(out))`)
+  );
+  assert.deepStrictEqual(out[0], [true, true], 'unchanged, byte for byte');
+  assert.deepStrictEqual(out[1], ['medium', 'medium', 'a new caption', 'a new caption', true]);
+  assert.deepStrictEqual(out[2], [99, true]);
+  assert.deepStrictEqual(out[3], [99, true]);
+  assert.deepStrictEqual(out[4], [['imrl-p8_i2'], ['imrl-p8_i2', 'sources-cmp'], ['imrl-p8_i2', 'sources-cmp']]);
+  assert.strictEqual(out[5][0] in RAW.course, false);
+  assert.deepStrictEqual(out[5], [out[5][0], out[5][0], out[5][0], RAW.course.Acropora.length - 1]);
+  assert.deepStrictEqual(out[6], [34, ['imrl-p8_i2']]);
+  assert.deepStrictEqual(
+    ['tools/instances/imr/course.json', 'data.json'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')),
+    real,
+    'the sandbox never touches the real files'
+  );
 });

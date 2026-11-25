@@ -1,7 +1,7 @@
 """Puts the Corals of the World originals of the IMR lecture photos into the records (ROADMAP "IMR lecture photos never
 upscaled; the Corals of the World captures replaced by their originals", Pierre, 2026-11-18, "C12 A+D").
 
-For each photo of tools/imr_frames.json (the lecture photos traced to Corals of the World, tools/imr_sources.json), on its
+For each photo of tools/imr_frames.json (the lecture photos traced to Corals of the World, tools/instances/imr/imr_sources.json), on its
 `course` record in data.json and in data/excluded.json (a photo Pierre excluded keeps it, as tools/apply_imr_sources.py does):
   src  the original picture's address on coralsoftheworld.org (an online original: the photo now lives on R2 only, its
        files made by tools/fetch_imr_originals.py, and when R2 fails the app reads the original from there);
@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import photos  # noqa: E402
 from apply_imr_sources import records  # noqa: E402
 
-SRC = os.path.join(ROOT, 'tools', 'imr_sources.json')
+SRC = os.path.join(ROOT, 'tools', 'instances', 'imr', 'imr_sources.json')
 FRAMES = os.path.join(ROOT, 'tools', 'imr_frames.json')
 GONE = os.path.join(ROOT, 'data/excluded.json')
 

@@ -103,7 +103,7 @@ photo is never shown (rule P6: written by `tools/apply_skeletons.py` from `judgi
 `applyCuration` drops it from every list, as an excluded photo).
 
 **IMR lecture photos** (`course`) carry `imr: true`, `slide` and `v`, their view. Once traced to their original source
-(`tools/imr_sources.json`, written by
+(`tools/instances/imr/imr_sources.json`, written by
 `tools/apply_imr_sources.py` on `course` and on the course records archived in `data/excluded.json`, so that a Restore brings
 one back credited; `--check` runs in the tests), a lecture photo has `a` "<photographer> / Corals of the World" and
 **`pg`**, the page that states that credit: the credit's link (`app.js` `credit`, `lectCredit`, `photoSrc`, the genus
@@ -400,7 +400,8 @@ The built files are the sources plus one instance's layer, resolved at build
 and step 5); the content editor's edits are the third layer, in `curation.json` `content`, laid over at load
 ([content.md](content.md)), never at build. `tools/instance.json` names the instance (`id` `imr`, `name`), its `centre`,
 the identification `key` in force there (the deployment's choice, not the organisation's content: rule S3) and its
-`layer` files, one per subject (the `SUBJECTS` key). Today the IMR instance's, in `tools/instances/imr/`:
+`layer` files, one per subject (the `SUBJECTS` key) and one for the lecture's photo references (`course`). Today the IMR
+instance's, in `tools/instances/imr/`:
 
 - **`fish.json`**: `start` (the starter core), `look` (the declared look-alike groups of families), `nodes` {teaching
   node or sub-entry id: `circle`, `src`, `sign`, `name`, `fam` and `pdf` (nodes only; a sub-entry has `name`), `sl`,
@@ -455,18 +456,37 @@ the identification `key` in force there (the deployment's choice, not the organi
   genera without a `tl` heading** (36): the three whose tips come from the Coral Finder (Merulina, Cyphastrea,
   Halomitra, `tl` set) keep theirs in `data.json`, and the layer giving `qt` to one of them stops the build. The
   scripts that edit those fields (`tools/apply_imr_corrections.py`, `tools/apply_review_slides.py`,
-  `tools/apply_favites.py`, `tools/apply_id_tips.py`) write the layer file.
-- **Checks** (`tests/instance.test.js`): `fish.json` and `data.json` byte for byte as the two layers give them:
+  `tools/apply_favites.py`, `tools/apply_id_tips.py`) write the layer file. `slate` {`order`, `benthic`} declares the
+  IMR slate: the genera of `data.json` `gen` in the order the games teach them (numbered 1 to 34, then the five starred
+  genera, `n` 0) and the genera of `data.json` `x` that the core adds (`core/photos.js` `BENTHIC`: Millepora), which is
+  what `slateOf` returns. Nothing reads it at run time, and `data.json` does not carry it: `python3 tools/datajson.py
+  --check` fails when `data.json` `gen` or the core's `BENTHIC` differ from it (`tools/instance.py` `slate_problems`).
+  The slate as data the core reads is not built: it would change a format the core, the sheet script and the tools follow.
+- **`course.json`**: `course` {genus: [photo record]} and `cmp` [record], the references of the IMR lecture's photos:
+  `data.json` `course` (118 records over 34 genera, each `imr: true`, with `slide` and `v`, and the credit `a` and `pg`
+  once traced) and the lecture's `cmp` record (`imr: true`). The photos stay in `img/` and on R2, and the records stay in
+  `data.json` where the core, the app, the admin and the tools read them. The layer file is where they are edited, through
+  the tools that have always written `data.json`: `tools/datajson.py` `dump()` writes the `course` and the lecture's `cmp`
+  records it is given to the layer file and `data.json` gets the same (so about fifteen `tools/apply_*.py` and the other
+  writers do not change), `load()` lays the layer on what it reads (an edit of the layer file is seen at once; a
+  difference from `data.json`'s copy is said on stderr, and the layer wins), and the rewrite and `--check` give
+  `data.json` as the layer says. Data with no `course`, or no `cmp`, is data that does not say: the layer's records stay.
+  A `cmp` record without `imr: true` is the sources' and stays in `data.json` alone, after the lecture's. An edition
+  without the layer (`course_compose` of the sources with no layer) has an empty `course` and no lecture comparison: no
+  lecture strip on the genus sheet, smaller game pools, and Pierre's choices that name a lecture photo (a dozen
+  ids in `curation.json`) have nothing to apply to: every path of `core/curation.js` skips an id it does not know, and the admin
+  lists such choices apart (`missing()`), never losing them (rule A1; `tests/coursecuration.test.js`).
+  `tools/instances/imr/imr_sources.json` (where each lecture photo was found online, with the sites' terms) lives beside it.
+- **Checks** (`tests/instance.test.js`): `fish.json` and `data.json` byte for byte as the layers give them:
   `build_fish.py --regroup --check` (the layer's fish fields taken off `fish.json` and laid again), and `data.json` with
-  the layer's fields taken off and laid again; a changed layer fails both. The tools that read the circles (the agents'
+  the layers' fields taken off and laid again (`python3 tools/datajson.py --check`); a changed layer fails both. The tools that read the circles (the agents'
   photo tools, `tools/fish_inforce.py`) and the players' copy (`tools/curplay.py`) read `fish.json` and
   `curation.json`, never the source, so they read the composed result.
 - **Not in the layer yet** (easy to move later): the fish teaching tree (ids, sub-entry ids, order) and its WoRMS
   mapping (`ref`, `not`), which identify the entries and place every species (the layer holds fields of an entry the
-  base names, never an entry; the mapping is ours); the
-  references of the lecture photos
-  (`data.json` `course`, photos marked `imr`); and the coral slate's structure beyond each genus's number (the starred
-  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`). The course's
+  base names, never an entry; the mapping is ours); the lecture photos' own file that only an IMR edition loads (the
+  records stay in `data.json`, laid from `course.json`); and the coral slate as data the core reads (the starred
+  genera's rule, Millepora, the bonus genera, `app.js` `slateGenera()`: declared and checked above, not read). The course's
   words in the code (the IMR course, the IMR lecture, the IMR fish presentation...) are not layer content: they are
   `core.js` `ORG` fields ([storage.md › The app's name](storage.md#the-apps-name)), and the data's values that hold
   them (the source lines "IMR Lecture 6, slide …" and "IMR fish presentation, …") stay as they are.

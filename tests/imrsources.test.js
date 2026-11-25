@@ -1,5 +1,5 @@
 require('./slot.js').testGuard();
-// tools/imr_sources.json records where each IMR lecture photo was found online (ROADMAP "Trace IMR lecture photos to
+// tools/instances/imr/imr_sources.json records where each IMR lecture photo was found online (ROADMAP "Trace IMR lecture photos to
 // their original source"; study docs/reviews/2026-11-15-imr-lecture-photo-sources-study.md). Each record must name a
 // lecture photo the data files know, and never give an author or a licence without the page that states it.
 const test = require('node:test'),
@@ -9,7 +9,7 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   {rotNorm} = require('../autosort.js'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-const S = read('tools/imr_sources.json'),
+const S = read('tools/instances/imr/imr_sources.json'),
   D = read('data.json'),
   X = read('data/excluded.json'),
   CUR = read('curation.json');
@@ -75,6 +75,21 @@ test('course records: a traced lecture photo credits its photographer and links 
   assert.strictEqual(n, want, 'every traced photo credited, in play or archived');
   // the file as the tool writes it
   require('child_process').execFileSync('python3', ['tools/apply_imr_sources.py', '--check'], {cwd: ROOT});
+});
+
+// The course records are the IMR instance's course layer (tools/instances/imr/course.json), where apply_imr_sources.py writes the
+// credits through datajson.dump(); data.json carries the same records.
+test('course records: the credits are in the course layer file, and data.json carries the same records', () => {
+  const L = read(read('tools/instance.json').layer.course);
+  assert.deepStrictEqual(L.course, D.course);
+  const by = Object.fromEntries(
+    Object.values(L.course)
+      .flat()
+      .map(p => [p.f, p])
+  );
+  const traced = Object.entries(S.photos).filter(([f, r]) => r.found === 'original' && by[f]);
+  assert.ok(traced.length > 0);
+  traced.forEach(([f, r]) => assert.strictEqual(by[f].pg, r.source.page, f));
 });
 
 // The Corals of the World originals (ROADMAP "IMR lecture photos never upscaled; the Corals of the World captures replaced
