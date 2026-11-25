@@ -1,7 +1,7 @@
 """Makes the Corals of the World originals of the IMR lecture photos (ROADMAP "IMR lecture photos never upscaled; the
 Corals of the World captures replaced by their originals", Pierre, 2026-11-18, "C12 A+D").
 
-The 86 lecture photos traced to Corals of the World (tools/imr_sources.json, found "original") are screenshots of that
+The 86 lecture photos traced to Corals of the World (tools/instances/imr/imr_sources.json, found "original") are screenshots of that
 site's pictures. Each original is downloaded once from the species page's picture (source.image), cut and turned as the
 lecture framed it (tools/imr_frames.json: cr, ro; rule: the crop first, then the turn, tools/photos.py turn), and written in
 the four sizes (tools/photos.py save) under the same file name, so curation and the players' records keep their key.
@@ -28,7 +28,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 import photos  # noqa: E402
 
-SRC = os.path.join(ROOT, 'tools', 'imr_sources.json')
+SRC = os.path.join(ROOT, 'tools', 'instances', 'imr', 'imr_sources.json')
 FRAMES = os.path.join(ROOT, 'tools', 'imr_frames.json')
 CUR = os.path.join(ROOT, 'curation.json')
 HOST = 'www.coralsoftheworld.org'
@@ -46,7 +46,7 @@ def plan():
     for f in sorted(F):
         s = (S.get(f) or {}).get('source')
         if not s or S[f].get('found') != 'original':
-            raise SystemExit(f'{f}: in tools/imr_frames.json but not traced to an original in tools/imr_sources.json')
+            raise SystemExit(f'{f}: in tools/imr_frames.json but not traced to an original in tools/instances/imr/imr_sources.json')
         u = urllib.parse.urlsplit(s['image'])
         if u.scheme != 'https' or u.hostname != HOST:
             raise SystemExit(f"{f}: not a {HOST} picture address: {s['image']}")

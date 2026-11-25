@@ -12,7 +12,10 @@ written with `tools/datajson.py`.
 
 - **`datajson.py`**: the one writer of `data.json` (`load()`, `dump(d, path)`, one genus per line:
   [data.md › Layout](data.md#layout)). Run alone it rewrites the file in
-  that layout with the instance's coral layer laid on; `--check` is the PR check (the layout and the layers).
+  that layout with the instance's coral and course layers laid on; `--check` is the PR check (the layout, the layers and
+  the slate the coral layer declares against `data.json` and the core's `BENTHIC`). `dump()` is also where the lecture's photo
+  records (`course` and its `cmp` record) reach their layer file, `tools/instances/imr/course.json`, so the tools that
+  write `data.json` do not change ([data.md › The instance's layer](data.md#the-instances-layer)).
 - **`tree_section.py`**: the builds' generic `tree` section (Pierre, 2026-11-13, Q339-Q341): each subject's Key and WoRMS
   classifications as `data/<subject id>-tree.json`, built from its sources (`fish.json`, `seaslug.json`, or `data.json` and
   `data/names.json`) by one module with one adapter per data shape (`SUBJECTS`), written by the tools that write the sources
@@ -338,7 +341,7 @@ subject is a test case, not the definition of the target.
   recorded in the Philippines only, rule C6), Favites `sum` and size class `s3`, *F. magnistellata* in the slide 65 line,
   `spell` for Diploastreidae. Its header lists what was checked (iNaturalist counts, Corals of the World, WoRMS).
 - **`apply_imr_forms.py`**: the IMR growth-form definitions into `forms.json`.
-- **`imr_sources.json`**: where each IMR lecture photo in `img/` was found online
+- **`imr_sources.json`** (in `tools/instances/imr/`, with the IMR layer): where each IMR lecture photo in `img/` was found online
   ([study](../reviews/2026-11-15-imr-lecture-photo-sources-study.md)): per photo the deck's file name, `found`
   (`original`, `copy-only`, `none`), the source page and picture, the species and place it is captioned with, the
   photographer and the site's terms, the copies; `searched` says what was searched.

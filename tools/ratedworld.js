@@ -144,6 +144,7 @@ function coralUnits() {
     ctx.__f.applyForms(x, CUR);
     C.applySlots(x, CUR, {picks, autoq});
   }
+  C.starAfter(d); // app.js build: the units each ★ genus opens after (model.js openPick reads GX(n).after), last
   return (DCACHE = {d, GX, imrFormsOf: ctx.__f.imrFormsOf});
 }
 // A subject's units in one shape: slate (the slate in order), extra (the units of its opt-in set: the fish scientific

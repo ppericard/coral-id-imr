@@ -178,6 +178,9 @@ test('L5: an addition first, so a withdrawal it makes safe applies; two devicesâ
   );
   assert.deepStrictEqual(C.starRefs(A, 'Halomitra'), ['Fungia']);
   assert.ok(C.lectureGroup(A, 'Halomitra') > 0);
+  // the opening follows the pairs in force: the build's field (core.js starAfter, app.js build) is written from them
+  assert.deepStrictEqual(C.starAfter(structuredClone(A)).gen.Halomitra.after, ['Fungia']);
+  assert.deepStrictEqual(C.starAfter(structuredClone(D)).gen.Halomitra.after, ['Herpolitha']);
   // a starred genus with two references in its group: either withdrawal alone applies, both together keep one
   const n = STARS.find(s => C.starRefs(D, s).length >= 2),
     [r1, r2] = C.starRefs(D, n),

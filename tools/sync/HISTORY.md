@@ -16,6 +16,10 @@ the next newer entry; for v7 to v34 that is 2026-11-04, "at the latest" (v35 was
 numbers have no entry and never had one (v41, v43, v72, v73, v75, v78, v82: left unused, or taken by a branch that
 merged under another number). `## earlier` is the one entry from before the numbering.
 
+## v233 (2026-11-25)
+
+The copy of core.js follows the app's ★ rule as data (one-engine audit step 4, REE-28; rule S1, Pierre, 2026-11-19): `starAfter` writes on each starred coral genus the surveyed genera it opens after (`after`), and the opening reads that field on any subject's unit (`afterWaits`, in place of `starWaits`, which read the corals' file). The script calls neither: its behaviour is unchanged (its embedded copy of core.js only)
+
 ## v232 (2026-11-25)
 
 The admin's readAnswers with `lean` sends the answer log as `lean` in place of `rows` (`core.js` `rowsPack`): column by column, each column in the shortest of a few spellings (a dictionary of the ids, units and modes, the times as differences, the photos and choices word by word, the numbers scaled to whole ones, the scoring record one column per key, the mostly empty columns as gaps), about half the bytes of the rows (42% raw, 55% gzipped on a made-up log of 7,700 answers; 41% and 50% at 23,100), and the admin reads it back into exactly the rows it stands for (`rowsUnpack`). A request without `lean` (`tools/analyses.js`, an older admin) gets `rows` as before; no stored data, column or other reply changes. Pierre, 2026-11-19: the admin takes longer and longer to open on his phone, the answer log the largest wait (REE-39; docs/decisions/2026-11-25-lean-answer-log.md)

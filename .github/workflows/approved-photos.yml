@@ -114,7 +114,7 @@ jobs:
       - name: Prepare the commit
         shell: bash
         run: |
-          git add data.json data/cand.json data/excluded.json fish-game.json fish-photos.json data/fish-cand.json tools/fish_refs.json data/seaslug-cand.json seaslug.json seaslug-game.json img
+          git add data.json tools/instances/imr/course.json data/cand.json data/excluded.json fish-game.json fish-photos.json data/fish-cand.json tools/fish_refs.json data/seaslug-cand.json seaslug.json seaslug-game.json img
           mkdir -p "$RUNNER_TEMP/change"
           git rev-parse HEAD > "$RUNNER_TEMP/change/base"
           git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
@@ -154,7 +154,7 @@ jobs:
         shell: bash
         env:
           CHANGE: ${{ runner.temp }}/change
-          ALLOWED: '^(data\.json|data/cand\.json|data/excluded\.json|fish-game\.json|fish-photos\.json|data/fish-cand\.json|tools/fish_refs\.json|data/seaslug-cand\.json|seaslug\.json|seaslug-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
+          ALLOWED: '^(data\.json|tools/instances/imr/course\.json|data/cand\.json|data/excluded\.json|fish-game\.json|fish-photos\.json|data/fish-cand\.json|tools/fish_refs\.json|data/seaslug-cand\.json|seaslug\.json|seaslug-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }

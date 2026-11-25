@@ -968,8 +968,9 @@ const matesLeft = n => groupMates(n).filter(m => !introduced(m) && mayOpen(m));
 // 2. otherwise a new group or lone unit, drawn with the weight below on the group's means (genusDiff, cm), then its
 //    member by the same weight. The first cards (introStart, first: true) are drawn unit by unit, no partner first.
 // The weight: the easiest first, softly (OPEN.T, as far as easyTrust allows), and the most common near Dauin
-// (commonFactor). A ★ genus waits while a genus its card compares it to is in the list and not met (core.js starWaits),
-// partners included; should every genus left wait, they all open.
+// (commonFactor). A unit waits while a unit its record says it opens after (`after`: a ★ genus's references, written by
+// the corals' build, core.js starAfter) is in the list and not met (core.js afterWaits), partners included; should every
+// unit left wait, they all open.
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
 const easyWeights = (gd, cm) => {
   const lo = Math.min(...gd),
@@ -1006,7 +1007,7 @@ function openPick(fresh, list = fresh, met = introduced, {first: firstCards = fa
     const tagged = fresh.filter(n => (GX(n) || {}).imrName);
     if (tagged.length) fresh = tagged;
   }
-  const free = n => !starWaits(DATA, n, list, met),
+  const free = n => !afterWaits(GX(n), list, met),
     ok = fresh.filter(free);
   if (ok.length) fresh = ok;
   if (firstCards) return easyDraw(fresh);
@@ -1277,7 +1278,7 @@ const introLeft = () => slateCore().filter(n => !introduced(n));
 const mayOpen = n => !(typeof openShut === 'function' && openShut(n)) && (U => !U.gate || U.gate(n))(unitsNow());
 // One progression path for every game (docs/LEARNING.md "One progression path for every game"): the genera this player
 // has unlocked, met on the path (a card, an answer, Open all) and ready (introReady), among those in play. The photo
-// quiz opens genera one at a time (its cards, the ★ rule: core.js starWaits); every other game draws from these only and
+// quiz opens genera one at a time (its cards, the ★ rule: core.js afterWaits); every other game draws from these only and
 // opens none, so the ★ rule holds there by construction.
 const unlocked = (list = pool()) => list.filter(introReadyFn());
 // via: where the player opened them ('card' the first cards, 'progress' My progress; 'offer' in an older record, the

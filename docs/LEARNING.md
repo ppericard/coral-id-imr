@@ -442,8 +442,11 @@ without cm counts as the median.
 ### Starred genera after their reference
 
 A ★ genus (a look-alike on the slate that the IMR surveys do not track: rule L5) opens only once the surveyed genera its
-card compares it to are met (`core.js` `starWaits`, `starRefs`, from data.json `look`); its card names them ("★
-look-alike of …", `model.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
+card compares it to are met (`core.js` `starRefs`, from data.json `look`); its card names them ("★
+look-alike of …", `model.js` `starNote`). The corals' build writes them on the genus's record as data (`after`:
+`core.js` `starAfter`, in `app.js` `build`), and the opening reads that field on any subject's unit (`core.js`
+`afterWaits`, `model.js` `openPick`): a fish or sea slug unit has none, so the rule names no subject (rule S1). Should
+every unit left wait, they all open, so nothing is blocked for good.
 
 ### Confusion groups
 
