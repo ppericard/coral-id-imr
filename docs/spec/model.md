@@ -108,7 +108,21 @@ The data views:
 - the units of a level's list by parent (`app.js` `kidsOf`, `kidsCalc`) and, for `sciPlay`, each parent's units in
   its species order (`sciKids`, `sciKidsCalc`): `spPlay` and `sciPlay` read them;
 - the sets' units with a kind of name and a species (`progress.js` `achNamed`, `achNamedCalc`), which `achBoth`
-  counts at Advanced.
+  counts at Advanced;
+- each unit's part of a pair's confusion prior (`model.js` `confUnit`, `confUnitCalc`: its declared and data
+  look-alikes and its family) and its growth forms (`formsOf`): `pooledConf` reads them, where it read both records and
+  computed both units' forms for every pair;
+- the choice labels (`model.js` `choiceKeyFn`), per unit and per IMR answer: a species named by its common name is
+  labelled with the player's first common name (`app.js` `treeGenera` `name`, `cnFirst`), so the answer (`imrNow`,
+  read once) is in the key and each key's label is computed under it. Only a subject that names its species by their
+  common names (`SUBJECTS` names `cn`) reads the answer.
+
+A keyed view has a read for a loop with nothing written during it (`app.js` `keyView` `fn`, as `introducedFn`): the
+version is read once, then a value kept in it is a lookup; any other read goes through the view (with `VIEW_CHECK` on,
+every read). `distractors` reads each unit's class (`rankKindFn`), label (`choiceKeyFn`), pooled confusion
+(`pooledConfFn`) and forms that way; `openFresh`, `levelTop`, `quiz.js` `planFind`, `typeMatch` and `typeKind` read the
+classes that way. `quiz.js` `planPhoto` hands the wrong choices the units met read once (`knownNow`, through
+`introducedFn`) at their call: `distractors` and `customChoices` write nothing.
 
 A tool or a smoke that writes one of these inputs by hand (the photo statistics, the calibration's constants, the
 subject's calibration) bumps after it with no argument (`stateBump()`): `tools/learnsim.js` (`--calib`, the made-up
@@ -136,6 +150,9 @@ each kept entry against the functions it keeps after every write, and fails the 
 bump alone; it also checks `kidsOf`, `sciKids` and `achNamed` against the code before them and fails a change of their
 data under the player's bump alone; `tests/lvlnext.test.js` compares `spPlay` and `sciPlay`, and
 `tests/levelview.test.js` the achievements' counts, with the code before them over many states.
+`tests/choiceview.test.js` compares the pooled confusion, the labels, the classes and the wrong choices with the code
+before them on made-up units, with the records, the IMR answer, the pooled answers and the units' records written
+between reads, and fails a record, a unit's forms, a name or a class changed under the player's bump alone.
 
 ## Which unit next
 

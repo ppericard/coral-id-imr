@@ -73,9 +73,11 @@ const typeNames = () => {
 // rk: the class of the unit asked (app.js kindRank: its rank and its kind of name): a typed answer is read among the
 // names of that class only (a fish scientific genus, Chromis, against the genera; the IMR sub-entry Chromis names the
 // Damselfish entry on an entry question; a species' scientific name against the scientific names, never a common name).
+// Each name's class read through one read of the data version (model.js rankKindFn; kindRank where it is not loaded).
 const typeMatch = (text, rk = '') => {
+  const kr = typeof rankKindFn === 'function' ? rankKindFn() : kindRank;
   const m = typeMatchIn(
-    typeNames().filter(o => kindRank(o.g) === rk),
+    typeNames().filter(o => kr(o.g) === rk),
     text,
     UNITS[SUBJ.id].norm
   );
@@ -101,9 +103,10 @@ const typeKind = (text, rk) => {
   if (!x) return '';
   // The species by their scientific names stay out: the name index already says what a species' name is (identical
   // nudges whether their level is on or off).
+  const kr = typeof rankKindFn === 'function' ? rankKindFn() : kindRank; // as typeMatch
   return typeElse(
     text,
-    typeNames().filter(o => kindRank(o.g) !== rk && kindOf(o.g) !== 'sci'),
+    typeNames().filter(o => kr(o.g) !== rk && kindOf(o.g) !== 'sci'),
     {...x, rank: g => rankOf(g) || unitRankOf(SUBJ), own: g => (GX(g) || {}).imrName},
     U.norm
   );
@@ -2906,7 +2909,8 @@ const findRank = n => !rankOf(n) || rankOf(n) === 'species';
 function planFind(cur, t, list, ease = 0, sel = null) {
   const tiles = UNITS[SUBJ.id].tiles;
   if (!findRank(t) || !introReady(t) || !tiles(t).length) return null;
-  const others = list.filter(n => n !== t && rankKind(n) === rankKind(t) && introReady(n) && tiles(n).length);
+  const kr = rankKindFn(),
+    others = list.filter(n => n !== t && kr(n) === kr(t) && introReady(n) && tiles(n).length);
   if (others.length < 3 || !(Math.random() < FIND.P)) return null;
   const tile = p => !!p.xc,
     // The mimicry class's decoy (mimDecoys), when t is the unit of the species a pair resembles: its tile is a photo of the
@@ -2989,6 +2993,11 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     lvl = false;
   const ready = n => cards.includes(n) || introReady(n),
     known = n => cards.includes(n) || introduced(n),
+    // known for a loop with nothing written during it: the units met read once (model.js introducedFn).
+    knownNow = () => {
+      const f = typeof introducedFn === 'function' ? introducedFn() : introduced;
+      return n => cards.includes(n) || f(n);
+    },
     met = list.filter(ready),
     warmL = start || !cbIn(cur) ? null : comebackOf(met),
     warm = !!warmL,
@@ -3052,11 +3061,13 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // little later (else its name would be a choice on the question behind the card). The custom quiz: from its
     // selection first, topped up under 4 from the other genera unlocked only (customChoices; one progression path, rule
     // L4: never a locked genus, a ★ one included, as a choice).
+    // known read once for the wrong choices (knownNow): customChoices and distractors write nothing, so the units met do
+    // not change between this read and its last use.
     ch = shuffle([
       t,
       ...(sel
-        ? customChoices(t, sel, unlocked(play), traps, known)
-        : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known))
+        ? customChoices(t, sel, unlocked(play), traps, knownNow())
+        : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, knownNow()))
     ]),
     // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
     // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a

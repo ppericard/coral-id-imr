@@ -74,6 +74,9 @@ const WATCH = [
   // dataNow for a data view), and the photo draw's data, the parents' lists and the named species (data views)
   'dataNow', 'metCalc', 'introducedCalc', 'genScoreCalc', 'examOnCalc', 'cbPlayCalc', 'cbGeneraCalc', 'startPCalc', 'imrSaidCalc', 'lvlAllCalc', 'lvlNeedCalc',
   'lookRevCalc', 'rankClassesCalc', 'kindRankCalc', 'setMapCalc', 'drawPhotosCalc', 'kidsCalc', 'sciKidsCalc', 'achNamedCalc', 'achBoth', 'varOf', 'calSd', 'calBonus', 'setBonus', 'nAnswers', 'refLevel', 'varKindOf',
+  // the wrong choices' reads: each unit's part of a pair's prior (confUnitCalc; its forms counted as imrFormsOf), the labels
+  // (choiceKey, labelKey), the classes (rankKind)
+  'confUnitCalc', 'pooledConf', 'confScore', 'choiceKey', 'labelKey', 'rankKind', 'imrFormsOf',
   'introduced', 'closed', 'asked', 'askedOpen', 'introReady', 'introMap', 'mayOpen', 'treeGate', 'treeC3', 'photoAny', 'GX',
   'headScore', 'headPct', 'progPct', 'treeScore', 'pctOf', 'rustNow', 'recallAt', 'stability', 'genusDiff', 'photoDiff', 'photoSet',
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',
