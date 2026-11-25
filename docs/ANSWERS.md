@@ -2114,3 +2114,35 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   nudibranches dans le jeu : le supprimer, comme pour les poissons ?»: «oui». Lifts the game cap of 12 a species of Q377
   (2026-11-15, 16:08), which stays for the rest (circles, start 6, 20 candidates). Applied: #1544,
   docs/decisions/2026-11-24-seaslug-no-game-cap.md.
+
+## 2026-11-25
+
+- **06:24, the night's narrow work (REE-244).** «Ok, donc en fait, t'as pas vraiment beaucoup travaillé cette nuit.
+  Qu'est-ce qui fait que tu t'es arrêté et que tu as fortement limité ton travail […] il y a un problème à nouveau dans
+  notre manière de travailler, à aller chercher dans le backlog des trucs que tu pouvais faire? Parce que là, tu aurais
+  eu plein de boulot à faire.» On the diagnosis: «Oui, le diagnostic me paraît bien, mais effectivement, là, ça mérite
+  un une vraie issue, parce que, en fait, c'est un problème qui revient […] sauf s'il y a une issue existante qui existe
+  déjà, et dans ce cas-là, on vient rajouter le contexte de cette nuit à cette issue.» Applied: Linear REE-244 comment
+  (2026-11-25).
+- **06:30-06:35, Linear organised for the agents.** «Mais sauf que là, on n'est pas dans une équipe humaine […] Moi, je
+  lis quasiment pas le linéaire. Et en fait, c'est les agents qui lisent le linéaire et qui l'utilisent pour
+  s'organiser. Donc, tu dis le to-do, c'est l'engagement. Mais en fait, les agents devraient s'engager à juste tout
+  faire.» «Mon interface principale c'est l'app […] et puis c'est les agents avec qui je discute, donc typiquement toi,
+  l'intégrateur.» On a regular pass: «il faut qu'il y ait une action relativement régulière, peut-être, je sais pas,
+  toutes les 2 heures ou toutes les 1h30 […] qui permettent de vérifier et de basculer des issues en prêtes à être
+  lancées, parce que justement les développements récents ont permis de débloquer.» To «par défaut, toute issue
+  ouverte est à faire […] quatre raisons» and the sweep wording: «oui pour les deux»; to the wording shown: «ok».
+  Applied: docs/INTEGRATOR.md "Linear", tools/checkin.md steps 3-4.
+- **06:37-06:47, two kinds of study.** «il y a des issues qui ne dépendent pas forcément complètement de l'équipe de
+  développement et de l'intégrateur, mais plutôt d'agents qui réfléchissent à la conception […] elles peuvent pas être
+  fermées juste parce que y a un agent qui est passé dessus […] Il y a des issues et des tâches qui méritent des
+  réflexions poussées, éventuellement même des réflexions croisées entre plusieurs agents et plusieurs modèles.» On
+  the label: «study, en fait, c'est quelque chose qui est très large comme mot […] est-ce qu'il ne faut pas spécifier
+  ces labels en les rendant un peu plus longs et en faisant des sous-catégories?» To the group Study with Decision
+  input and Open inquiry: «ok». On who runs it: «Ou pas forcément, mais en tout cas elle doit être traité
+  différemment». On launching: «Sauf si on a décidé à l'avance de qui le traitait et que tu couvre au moins une partie
+  de ces agents. Du coup elle peut être lancé et traité partiellement. Jamais complètement conclue». Applied: Linear
+  labels Study › Decision input and Study › Open inquiry; docs/INTEGRATOR.md "Linear" (reason 5, two kinds of study).
+- **06:43-06:46, a PR that waits for Pierre yields the lane.** On whether a PR blocks the rest by function or by
+  method: «c'est pas la même chose en termes de blocage». To «une PR qui attend ta réponse cède la voie»: «oui !!!!!!»;
+  to launching REE-38 at once: «ok»; to the W27 wording shown: «ok». Applied: docs/rules/ship.md W27.
