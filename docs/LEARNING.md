@@ -936,16 +936,19 @@ cen, the offset plus 0.3 × (family mean − ease); unc, the offset plus 0.3 × 
 - **Primary: not clear** (fish, cen, 10 seeds: 16 of 50 pairs up, p 0.38).
 - **Held** in every cell: true knowledge, units met at 300, the share under ease 4 before Open Water, families at
   Advanced.
-- **Breached, not declared** (fish, cen): the expert's units at Open Water at 300 (27.7 → 25.3, at 5 and 10 seeds,
-  spread over families of every mean ease); the casual diver's longest plateau (52 → 64 at 10 seeds). At 5 seeds the
-  beginner's E rose (−0.356 → −0.323, the under-claim shrinking), unclear at 10.
-- **Breached** (sea slugs, cen, 10 seeds): the first unit at Open Water, beginner 56 → 78 and casual diver 54 → 77
-  answers (both shorter at 5 seeds: a heavy-tailed measure), lectureRA's plateau 47 → 59; units at Open Water down 1 to
-  2 for every profile (unclear). E moved down (more under-claim), not up as declared.
+- **Breached, not declared** (a breach at either look stands; the seeds 1-5 of the two looks are the same runs):
+  - fish, cen: the expert's units at Open Water at 300 (27.7 → 25.3 at 10 seeds, 27.8 → 24.8 at 5; spread over
+    families of every mean ease); the casual diver's longest plateau (52 → 64, 10 seeds); the beginner's E at 300
+    (−0.356 → −0.323 at 5 seeds, the under-claim shrinking; unclear at 10);
+  - sea slugs, cen: the first unit at Open Water, beginner 56 → 78 and casual diver 54 → 77 answers at 10 seeds (the
+    seeds 6-10 turn the 5-seed −13 and −9 round: a heavy-tailed measure), lectureRA 23 → 36 at 5 seeds; the lectureRA's
+    plateau (47 → 59, 10 seeds); the expert's units at Open Water at 300 (21.4 → 19.2, 5 seeds). Units at Open Water
+    down 1 to 2 for every profile at 10 seeds (unclear). E moved down (more under-claim), not up as declared.
 - **The sea slugs' level, apart** (exploratory, added after seeing the breaches: a third arm with the change's ranking
-  and main's overall level, 5 seeds): the lectureRA's later first Open Water (+13) and the strong RA's units at Open
-  Water (−2.6) come with the level; the ranking alone breached the strong RA's units met at 300 (−2.6) and plateau
-  in one world and held or was unclear elsewhere.
+  and main's overall level, the same 10 seeds on cen): main → that arm (the ranking alone) breached nothing, four
+  cells unclear; that arm → the change (the level alone) breached the beginner's and the casual diver's first Open
+  Water (+27, +26) and the lectureRA's plateau (+14). At 5 seeds on unc the ranking alone breached the casual diver's
+  units met at 300 (−2.4).
 - **The rated world** (fish, `--app own`, normal photos, 3,000 answers, GitHub runners, one profile a check): its
   judged ease is drawn from each photo's own deviation around its unit, so every family's mean ease sits near 3 and
   the change barely moves it; a no-harm check. 10 seeds: every guardrail held for the beginner; unclear cells for the
