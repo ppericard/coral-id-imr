@@ -841,6 +841,111 @@ test('v19 events: anonymous error reports and one-tap answers, logged once, capp
   assert.strictEqual(s.post({dev: 'flood00001', events: many(1)}).error, 'busy');
 });
 
+// An event's id starts with its creation time (sync.js ev). The ids are checked against the tab's last 2000 rows; an id
+// made before the window began reads the rows before it too, so a retry that arrives after the window moved on is
+// still skipped, and an old id that is new is still written. A normal request reads the window only.
+for (const [tab, kind] of [
+  ['Events', 'err'],
+  ['Pages', 'pages']
+]) {
+  test(`${tab} duplicate check: a window of 2000 rows, the whole id column only for an id made before the window began`, () => {
+    const s = loadCodeGs(),
+      STEP = 60000,
+      T0 = Math.floor(Date.now() / STEP) * STEP - 40 * 86400000,
+      N = 2100;
+    const mk = (ms, tail) => ({
+      id: ms.toString(36) + tail,
+      t: new Date(ms).toISOString(),
+      k: kind,
+      msg: 'm',
+      pg: 'quiz',
+      vi: 'visit0001',
+      na: 1,
+      r: {home: [1, 5]},
+      g: {}
+    });
+    const at = i => T0 + i * STEP;
+    s.post({dev: 'dev0000001', events: [mk(at(0), 'prim')]});
+    const sh = s.sheets[tab];
+    // A tab of N rows, one a minute: the window (last 2000) starts at row 102, rows 2..101 are outside it.
+    sh.rows.length = 1;
+    for (let i = 0; i < N; i++) sh.rows.push([new Date(at(i)), 'dev0000001', kind, '', '', '', '', '', '', mk(at(i), 'seed').id]);
+    const seeded = i => mk(at(i), 'seed');
+    // The ids of the rows a request read, as ranges of the Id column.
+    const reads = [],
+      getRange = sh.getRange;
+    sh.getRange = (r, c, nr = 1, nc = 1) => (c === 10 && reads.push(nr), getRange(r, c, nr, nc));
+    const ids = () => sh.rows.slice(1).map(r => r[9]);
+    const send = (events, dev = 'dev0000002') => ((reads.length = 0), assert.strictEqual(s.post({dev, events}).ok, true));
+    const count = id => ids().filter(x => x === id).length;
+    const fresh = mk(at(N + 5), 'new1'),
+      oldNew = mk(at(7) + 1, 'old1'); // made inside the first 100 minutes: before the window's oldest row
+
+    // A new event, and a retry of one inside the window: the window only, nothing read beyond 2000 rows.
+    send([fresh, seeded(500), seeded(1000)]);
+    assert.deepStrictEqual(reads, [2000], 'one read, of the window');
+    assert.strictEqual(count(fresh.id), 1, 'the new event is written');
+    assert.strictEqual(count(seeded(500).id), 1, 'a retry inside the window is skipped');
+    assert.strictEqual(count(seeded(1000).id), 1);
+    assert.strictEqual(sh.getLastRow() - 1, N + 1);
+
+    // A retry older than the window that is a duplicate: skipped, found by the read of the rows before the window.
+    send([seeded(5)]);
+    assert.deepStrictEqual(reads, [2000, N + 1 - 2000], 'the window, then the rows before it');
+    assert.strictEqual(count(seeded(5).id), 1, 'an old duplicate is skipped');
+    assert.strictEqual(sh.getLastRow() - 1, N + 1);
+
+    // An old id that is new: written.
+    send([oldNew]);
+    assert.strictEqual(count(oldNew.id), 1, 'an old id that was never seen is written');
+    assert.strictEqual(sh.getLastRow() - 1, N + 2);
+    send([oldNew]);
+    assert.strictEqual(count(oldNew.id), 1, 'and skipped when it comes again');
+
+    // A mixed batch: a new event, a window duplicate, an old duplicate, an old new id, the same ones again.
+    const old2 = mk(at(1) + 2, 'old2'),
+      fresh2 = mk(at(N + 9), 'new2');
+    send([fresh2, seeded(900), seeded(2), old2]);
+    assert.strictEqual(count(fresh2.id), 1);
+    assert.strictEqual(count(old2.id), 1);
+    assert.strictEqual(count(seeded(900).id), 1);
+    assert.strictEqual(count(seeded(2).id), 1);
+    assert.strictEqual(sh.getLastRow() - 1, N + 4, 'only the two new ids were written');
+    send([fresh2, seeded(900), seeded(2), old2]);
+    assert.strictEqual(sh.getLastRow() - 1, N + 4, 'the same batch again writes nothing');
+
+    // A short id carries no time: it reads the whole column.
+    send([{...mk(at(N + 11), 'x'), id: 'e1'}]);
+    assert.deepStrictEqual(reads, [2000, N + 4 - 2000]);
+    assert.strictEqual(count('e1'), 1);
+    send([{...mk(at(N + 11), 'x'), id: 'e1'}]);
+    assert.strictEqual(count('e1'), 1);
+
+    // Rows come in as they arrive, not as they were made: an old event written late can sit at the window's start. Its
+    // time is no bound for the rows before it, so a retry of an old row is still skipped.
+    const late = sh.rows.findIndex(r => r[9] === oldNew.id) + 1; // the row number of the old id written late
+    for (let j = 0; sh.getLastRow() - 1 < late + 1998; j++)
+      sh.rows.push([new Date(at(N + 20 + j)), 'dev0000001', kind, '', '', '', '', '', '', mk(at(N + 20 + j), 'seed').id]);
+    assert.strictEqual(sh.getLastRow() - 1 - 1998, late, 'the late row is the first of the window');
+    send([seeded(500)]);
+    assert.strictEqual(count(seeded(500).id), 1, 'a retry of an old row, with a late row opening the window, is skipped');
+    send([oldNew]);
+    assert.strictEqual(count(oldNew.id), 1, 'and the late row itself');
+  });
+}
+
+test('Events duplicate check: a tab shorter than the window is checked whole, whatever the ids', () => {
+  const s = loadCodeGs(),
+    ev = id => ({id, t: '2026-11-02T00:00:00Z', k: 'err', msg: 'x'});
+  s.post({dev: 'dev0000001', events: [ev('a1'), ev('b2')]});
+  s.post({dev: 'dev0000001', events: [ev('a1'), ev('c3')]});
+  assert.deepStrictEqual(
+    s.sheets.Events.rows.slice(1).map(r => r[9]),
+    ['a1', 'b2', 'c3'],
+    'a tab shorter than the window is read whole, whatever the ids'
+  );
+});
+
 // The one-tap question's bank (core.js PULSEQ) needs no sheet change: the item id rides in src (Where column) and the
 // answer's code in r (Message column), both kept as text; Detail keeps r only for easy / ok / hard. What the admin reads back (readEvents) is what the app sent, for every item and code of the bank.
 test('v19 events carry the one-tap bank: item id in Where, answer code in Message, as they came', () => {
