@@ -188,7 +188,8 @@ PUSH_WAY_OUT = (
     "Refused by the project's Bash guard (tools/guard_bash.py; REE-346, REE-345): %s. A command line with a git push is "
     'allowed only as exactly `git push [-q] [-u] origin <branch>`, `git push [-q] [-u] origin HEAD:refs/heads/<branch>` or '
     '`git push [-q] [-u] origin <branch>:refs/heads/<branch>`, alone or after `cd <path> && `, with <branch> a literal '
-    'claude/..., codex/..., train/... or ccr-... name. main and release are moved only by the merge train '
+    'claude/..., codex/..., train/... or ccr-... name; write the git command literally, with no variable, substitution, '
+    'glob or brace in it. main and release are moved only by the merge train '
     '(python3 tools/train.py), which pushes from its own process. Do not work around this refusal with another shell form, '
     'wrapper or tool: if you need another push, say so in your report.'
 )
@@ -289,11 +290,29 @@ def push_aliases(cwd):
     return names
 
 
+MESSAGE_FLAG = re.compile(r'-[A-Za-z]*m|--message|-F|--file')  # its value is text: `git commit -m "$(cat <<EOF ...)"`
+
+
+def expands_in_git(cmd):
+    """True when a simple command that runs git has a word the shell expands, wherever it stands: a `$` expansion, a
+    backtick, `$(`, or an unquoted glob or brace. It may name the subcommand (`SUB=push; git "$SUB" ...`), so the line is
+    read as a push. Not: the value of -m or -F, and a commit message that is a text-only heredoc (`$(cat <<'EOF' ...)`)."""
+    for k, w in enumerate(cmd):
+        if w.dynamic:
+            subs = substitutions(w.text)
+            text_only = len(subs) == 1 and w.text == '$(%s)' % subs[0] and TEXT_HEREDOC.fullmatch(subs[0]) is not None
+            if not text_only and not (k and MESSAGE_FLAG.fullmatch(cmd[k - 1].text)):
+                return True
+        elif not w.quoted and re.search(r'[*?\[{]', w.text):
+            return True
+    return False
+
+
 def mentions_push(command, cwd=None):
     """True when the line may run a git push: `push` or `send-pack` is a word (quotes removed) of any simple command,
-    beside a `git` word or a word the shell expands; or a git alias for a push, or `git` followed by a word the shell
-    expands. Text inside one quoted word (a commit message, a grep pattern) is not. Generous: an `eval` or an alias
-    definition in the line counts a push named inside a quoted word too."""
+    beside a `git` word or a word the shell expands; or a git alias for a push, or a git command with a word the shell
+    expands anywhere in it. Text inside one quoted word (a commit message, a grep pattern) is not. Generous: an `eval` or
+    an alias definition in the line counts a push named inside a quoted word too."""
     cmds = shell_commands(command)
     words = [w for cmd in cmds for w in cmd]
     texts = [w.text for w in words]
@@ -303,7 +322,7 @@ def mentions_push(command, cwd=None):
         return False
     if any(t in ('push', 'send-pack') for t in texts):
         return True
-    if any(isgit(a) and b.dynamic for cmd in cmds for a, b in zip(cmd, cmd[1:])):  # `git $SUB`
+    if any(expands_in_git(cmd) for cmd in cmds if any(isgit(w) for w in cmd)):  # `git -C . "$SUB" origin HEAD:main`
         return True
     if PUSH_WORD.search(joined) and ('eval' in texts or re.search(r'(?<![\w-])alias\.', joined) is not None):
         return True

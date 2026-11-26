@@ -175,6 +175,11 @@ const PUSH_NOT_A_PUSH = [
   'git commit -m "never git push origin main"',
   'git commit -m "$(cat <<\'EOF\'\nDo not git push origin main\nEOF\n)"',
   'git commit -qm "$(git rev-parse HEAD)"',
+  'git commit -m "$(git rev-parse HEAD)"',
+  'git commit -am "$(date)" --no-verify',
+  'git commit -q -m "$(cat <<EOF\nTitle\n\nBody\nEOF\n)"',
+  'git log --grep "a*" -n 3',
+  'git log origin/main..HEAD --oneline',
   'grep -n "git push origin main" docs/INTEGRATOR.md',
   // other git commands that mention main
   'git status',
@@ -264,10 +269,25 @@ const PUSH_REFUSED = [
   'echo "$(git push origin main)"',
   'echo `git push origin main`',
   'python3 tools/train.py 1626 1625; git push origin main',
+  // round 3: a subcommand (or anything) the shell expands, in any position of a git command
+  'SUB=push; git -C . "$SUB" origin HEAD:main',
+  'git "$SUB" origin main',
+  'git -C "$D" $S origin main',
+  'git -c x=y "$S" origin main',
+  'git -C . $(echo push) origin main',
+  'git -C . `echo push` origin main',
+  'git {push,x} origin main',
+  'git pu* origin main',
+  'git -C . pus? origin main',
+  'git p[u]sh origin main',
+  'git log -- "$X"',
+  'git commit -m x -- tools/*.py',
   // over-refusals accepted: a word `push` beside a git word is read as a push
   'echo git push origin claude/x',
   'git log --grep push',
-  'git config alias.p push'
+  'git config alias.p push',
+  'git log "$X"',
+  'git add *.js'
 ];
 
 test('lets exactly the allowed push forms through, and every line that runs no push', () => {
