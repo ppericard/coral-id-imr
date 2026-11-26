@@ -2193,3 +2193,13 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   personnes spécifiques […] Est-ce que ça reste compatible avec l'idée des ACL». On the study: «Une vrai étude de
   conception», global best practices with options. To two Audit columns Before and After: «Ok». Applied: the design
   study of REE-31 (launched 2026-11-26); #1554 held for it; REE-303 (the dropped option).
+- **08:51-09:26, Fable 5.2 and Astra as second views.** «Je me demande s'il ne faudrait pas ajouter Fable en High, à
+  utiliser avec parcimonie, pour les études de conception complexes ou les réflexions autour de problèmes complexes ou
+  de refactoring». On briefs written as goals, not steps: «oui!!!». On a Fable study run beside Opus: «ok. Bonne
+  idée!». After the comparison: «Fable en plus d'Opus pour les réflexions complexe et choix couteux. A lancer soit en
+  parallèle dès le début parce qu'on a identifié la difficulté, ou a posteriori en complément si on trouve que ça
+  mérite un second regard». On Astra: «on pourrait même demander aussi un avis à Astra comme second regard non?»; he
+  does not read Linear («Rappel que je ne lis quasiment jamais Linear moi même»); on the prompt: «ça pourrait être les
+  deux. Le prompt dans le ticket pour ne pas l'oublier, et l'intégrateur qui me le recopie dans le chat ou dans un
+  fichier au moment où il y en a besoin, avec le contexte». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
+  suis familier, pas un exemple à suivre absolument». Applied: docs/INTEGRATOR.md model table and its two paragraphs.

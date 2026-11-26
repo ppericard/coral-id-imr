@@ -125,6 +125,15 @@ row above, and each launch says why in its description. Its brief states the goa
 constraints and the expected output, never the steps or the outline: it chooses how to search (Anthropic: prompts
 written for earlier models are often too prescriptive for it). Effort `high`; `xhigh` only where a gain is measured.
 
+**Astra, a view from another model family** (Pierre, 2026-11-26): for the same choices, more sparingly, since Pierre
+launches it himself from ChatGPT or Codex. The integrator writes a self-contained brief, same style, with a ready-to-
+paste prompt, and keeps it on the Linear issue (Waits on › Pierre (action)). It copies the prompt to Pierre in the chat,
+or as a file when long, when it is needed, with a line of context. Astra files its report in the Drive Reef_ID folder
+or a `codex/` PR and signs it on the issue. Either a full blind pass or a cross check of the Claude reports, read
+without their authors (sources checked, the strongest counter-argument, up to three missed risks). The integrator
+compares the reports with their authors hidden, since it is Claude ([red team note](reviews/2026-11-25-red-team-passes.md)),
+and shows Pierre where they agree and differ; he settles the differences.
+
 Each launch names one level, never a range (in Claude Code a launch without one runs at the session's level on the
 session's model, and at the model's own default, `medium` for all four, on another). Where no row fits: Opus 5.5 at
 medium, Anthropic's starting point. A task that failed for want of thoroughness (stopped early, skipped a check, missed
