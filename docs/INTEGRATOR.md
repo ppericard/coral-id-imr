@@ -129,7 +129,10 @@ written for earlier models are often too prescriptive for it). Effort `high`; `x
 launches it himself from ChatGPT or Codex. The integrator writes a self-contained brief, same style, with a ready-to-
 paste prompt, and keeps it on the Linear issue (Waits on › Pierre (action)). It copies the prompt to Pierre in the chat,
 or as a file when long, when it is needed, with a line of context. Astra files its report in the Drive Reef_ID folder
-or a `codex/` PR and signs it on the issue. One prompt, one agent, two phases in turn: first its own blind study, then
+or a `codex/` PR and signs it on the issue. Astra starts from nothing, so every prompt opens with: the Linear issue's
+link and Project Home's, read through its Linear plugin, not the web; and closes with where and under what title to
+write the answer (a Drive doc with no model named). Its plugin cannot read comments, so the integrator first puts what
+the reviewer needs from them into the issue description, in a collapsible "comments, summarised" section. One prompt, one agent, two phases in turn: first its own blind study, then
 a cross check of every Claude report on the question (sources checked, the strongest counter-argument, up to three
 missed risks), which the integrator puts in the Drive folder beforehand as anonymous copies ("study A", "study B"). The integrator
 compares the reports with their authors hidden, since it is Claude ([red team note](reviews/2026-11-25-red-team-passes.md)),
