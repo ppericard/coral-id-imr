@@ -168,6 +168,14 @@ checked: this study did not read the Deploy log (rule W11). The new step starts 
 leaves them.
 1. Each group whose Rights cell is not empty gets a role with exactly those rights. The `r:owner`, `r:editor`,
    `r:trainer` groups give the roles Manager, Curator and Trainer; any other group gives "<group name> rights".
+   A group whose cell holds `grant` but is not exactly Manager's rights (a supported setup today:
+   `tests/accountrights.test.js` builds Helpers and Granters) would break question 4's rule that only the built-in
+   Manager role holds `grant`. Such a group gets two things, so that nobody gains or loses a right: a role with its
+   other rights, and a **legacy role** holding `grant` (plus nothing else), marked as migrated: shown locked on the
+   Roles page, never editable, only removable, and never offered for a new assignment. Question 4's rule applies to
+   every role made after the migration. On the live sheet today only the Managers group holds `grant`, with exactly
+   Manager's rights (counts read 2026-11-26), so no legacy role is expected; the rule is there for the setups the
+   tests build.
 2. Each such group gets one Assignment of its role at the scope its cell holds (the instance, or #1554's subject).
 3. Memberships and their code hashes stay as they are. The Rights cells stay written, read by nothing, as the Roles
    tab's old rows are.
