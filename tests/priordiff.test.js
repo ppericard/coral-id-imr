@@ -272,6 +272,11 @@ test('treeEaseMids and treePrior: a photo’s prior centred on its unit’s mean
   );
   assert.ok(Math.abs(r[1].d - (0.4 - 0.5 * ce)) < 1e-9, 'ease 5 in a genus whose mean is 4.5: half a point below its unit');
   assert.deepStrictEqual(r[2], {'f:A': 3, 'g:A1': 4, 'g:A2': 2}, 'a photo out of play (removed, Not this) left out of the mean');
+  // A unit the editor took out of the file in force: not in R.gen, its photos still filed under it in R.ph (the file as
+  // built): centred on those.
+  const R2 = {gen: R.gen, ph: {k: {entry: 'f:Out'}, l: {entry: 'f:Out'}, a: {entry: 'g:A1'}}},
+    r2 = run(`this.r = treeEaseMids(${JSON.stringify(R2)}, f => (${JSON.stringify({...ease, k: 5, l: 2})})[f] || null);`);
+  assert.deepStrictEqual(r2, {'f:A': 11 / 3, 'g:A1': 4.5, 'g:A2': 2, 'f:Out': 3.5}, 'a unit out of the file in force');
 });
 
 test('priorHnum: the caption line names the ease and says in its title what it lacked', () => {

@@ -9488,22 +9488,34 @@ function treePrior(S, ease, own, unit, mid) {
 // The centre of the judged ease in each unit of registry R (model.js easeMid): {unit: the mean ease in force (easeOf) of
 // its own photos in play} (R.gen: each unit's photos, a family's and its genus's alike). The registry keeps every photo a
 // report may name, removed or sent elsewhere too, so inPlay(f) keeps the game's pool only, as the app's mean is taken
-// (fuData play: the photos in play, the reserve among them). A unit with no judged photo in play has none.
+// (fuData play: the photos in play, the reserve among them). A unit with no judged photo in play has none. R.gen is the
+// file in force's units and R.ph the file as built's photos: a unit the editor took out of the file in force is centred
+// on the photos R.ph files under it.
 function treeEaseMids(R, easeOf, inPlay = () => true) {
-  const mids = {};
-  Object.entries((R && R.gen) || {}).forEach(([u, g]) => {
-    const E = [
-      ...new Set(
+  const mids = {},
+    mean = fs => {
+      const E = [...new Set(fs)]
+        .filter(f => f && inPlay(f))
+        .map(easeOf)
+        .filter(e => e > 0);
+      return E.length ? E.reduce((t, e) => t + e, 0) / E.length : null;
+    },
+    put = (u, m) => m !== null && (mids[u] = m);
+  Object.entries((R && R.gen) || {}).forEach(([u, g]) =>
+    put(
+      u,
+      mean(
         Object.values((g && g.views) || {})
           .flat()
           .map(p => p && p.f)
       )
-    ]
-      .filter(f => f && inPlay(f))
-      .map(easeOf)
-      .filter(e => e > 0);
-    if (E.length) mids[u] = E.reduce((t, e) => t + e, 0) / E.length;
-  });
+    )
+  );
+  const left = {};
+  Object.entries((R && R.ph) || {}).forEach(
+    ([f, p]) => p && p.entry && !(p.entry in ((R && R.gen) || {})) && (left[p.entry] = left[p.entry] || []).push(f)
+  );
+  Object.entries(left).forEach(([u, fs]) => put(u, mean(fs)));
   return mids;
 }
 // Its caption line: the prior as a reading, with the ease it comes from (the same shape as Health's reading line).
