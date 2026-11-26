@@ -18,9 +18,10 @@ prompts the app shows around a game, some of them kept with the progress, are in
   from it, serves the photo statistics, the leaderboard and the admin's reads, and updates itself from GitHub.
 - **Accounts**: a name and a 4-digit code, no Google account. The code only prevents accidental overwrites: it is not a
   password (SECURITY.md).
-- **A local copy never talks to the sheet**: on `localhost`, `file:` or a webdriver browser the app never signs in,
-  saves or sends (`app.js` `LOCAL`, `sheetFetch`, unless a test sets `window.SHEET_STUB`), so tests never reach the real
-  sheet (rule D1).
+- **A local copy never talks to the sheet**: only the deployed site does (`app.js` `SHEET_SITE`); on any other address,
+  `file:` or a webdriver browser the app asks it nothing, the photo statistics, leaderboards and achievements' shares
+  included (`app.js` `LOCAL`; every request through `sheetFetch`, unless a test sets `window.SHEET_STUB`), so tests
+  never reach the real sheet (rule D1, `tests/sheetoff.test.js`).
 
 ### Version gates and the floor
 

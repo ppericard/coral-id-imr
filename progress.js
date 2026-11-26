@@ -573,7 +573,7 @@ const loadBoard = (S = boardSubj()) => {
     first = S === board0();
   if (!boardP[k] || Date.now() - (boardAt[k] || 0) > 60000) {
     boardAt[k] = Date.now();
-    boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
+    boardP[k] = sheetFetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
       .then(j => (boardOk(j, first, S) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
@@ -1264,7 +1264,7 @@ const loadAchs = () => {
   if (!achsP || Date.now() - achsAt > 300000) {
     achsAt = Date.now();
     // Kept on this device like the leaderboard (BOARD_C): drawn at once, refreshed when the fresh counts arrive.
-    achsP = fetch(SYNC_URL + '?achs=1')
+    achsP = sheetFetch(SYNC_URL + '?achs=1')
       .then(r => r.json())
       .then(j => (j && j.ok && j.counts ? j : null))
       .catch(() => null)
