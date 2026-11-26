@@ -1894,6 +1894,21 @@ async function quizAndProgress(b, base, errs) {
       // question. The answer's record put back after.
       const Pj = JSON.stringify(P),
         cb = () => ((CB.r = 0), (CB.f = 0));
+      // The photo the draw serves here is the draw's choice: a juvenile, sex or colour phase, or a mimic would bring its
+      // own card first at this break (quiz.js mimArm, phaseArm: the first card armed wins), as the app means. Those
+      // cards are marked shown for this check (every phase kind, every mimicry pair of the units in play), then put back.
+      const phK = ['juvenile', 'phase'].map(k => subjDev(SUBJ.id, PHASEC.KEY + k)),
+        mimK = subjDev(SUBJ.id, MIMC.KEY),
+        cards0 = [...phK, mimK].map(k => [k, store.get(k, null)]),
+        pairs = {};
+      slateGenera().forEach(n =>
+        ((GX(n).views || {}).wide || []).forEach(p => {
+          const m = mimOf(n, p);
+          if (m) pairs[m.pair.id] = Date.now();
+        })
+      );
+      phK.forEach(k => store.set(k, Date.now()));
+      store.set(mimK, {...(store.get(mimK, null) || {}), ...pairs});
       closeCards();
       quizPhoto();
       closeCards();
@@ -1922,7 +1937,11 @@ async function quizAndProgress(b, base, errs) {
       );
       if (nx) nx.click();
       const d = document.querySelectorAll('.unlock.allmet');
-      ok(d.length === 1 && document.querySelectorAll('.unlock').length === 1, 'all met: Next brings the card, alone');
+      ok(
+        d.length === 1 && document.querySelectorAll('.unlock').length === 1,
+        'all met: Next brings the card, alone ' +
+          JSON.stringify([t, [...document.querySelectorAll('.unlock')].map(x => x.className + ': ' + x.textContent.slice(0, 60))])
+      );
       if (d[0]) {
         const g = d[0].querySelector('[data-b]');
         g.disabled = false;
@@ -1933,6 +1952,7 @@ async function quizAndProgress(b, base, errs) {
         'all met: Got it goes on to the next question, marked seen'
       );
       localStorage.removeItem(amKey('c3'));
+      cards0.forEach(([k, v]) => store.set(k, v));
       Object.keys(P).forEach(n => delete P[n]);
       faDrop(P);
       stateBump();
