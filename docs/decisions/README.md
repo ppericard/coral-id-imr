@@ -67,6 +67,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 | 2026-11-25 | [The ★ rule read from the unit's own record, for every subject](2026-11-25-star-rule-as-unit-field.md) | #1581 |
 | 2026-11-25 | ["Did you know?" tip (g): the corallites hint, for the player who never opens it after many misses](2026-11-25-tip-g-corallites-hint.md) | #1587 |
 | 2026-11-25 | ["Did you know?" tip (h): the keyboard keys, for the desktop player who always clicks](2026-11-25-tip-h-keyboard-keys.md) | #1590 |
+| 2026-11-26 | ["Not now" always gets a when; Scheduled is a date; a trigger must be sure to come](2026-11-26-not-now-gets-a-when.md) | #1609 |
 | 2026-11-24 | [Pierre's own observations come in whatever the room, for every subject](2026-11-24-own-observations-everywhere.md) | #1534 |
 | 2026-11-24 | [The sea slugs take the fish's strong-blur cap: a strongly blurred photo is at most 2](2026-11-24-sea-slug-blur-cap-as-the-fish.md) | #1532 |
 | 2026-11-24 | [The sea slugs take the fish's softened caps: a partial animal and a head-on or rear view at most 4, the typical look shared](2026-11-24-sea-slug-caps-as-the-fish.md) | #1524 |

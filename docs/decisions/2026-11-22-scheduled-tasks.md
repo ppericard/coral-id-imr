@@ -2,6 +2,8 @@
 
 Date: 2026-11-22. PR: #1453. Rules or docs touched: docs/INTEGRATOR.md "Linear".
 
+Changed by: [2026-11-26, "Not now" always gets a when](2026-11-26-not-now-gets-a-when.md) (Scheduled is a date only).
+
 ## Context
 
 Renewing the admin's GitHub token before the end of January kept showing in the task lists and reports Pierre reads,

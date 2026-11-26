@@ -450,7 +450,7 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   not work). A lane held by a PR that waits for Pierre is raised to him the same working day. A "Next" list in STATUS
   is never a substitute for launching. Launch agents from the main checkout: an agent starts in the integrator's
   current directory, and one started inside a PR's worktree takes it over.
-- **"Not now" always gets a when** (Pierre, 2026-11-26): a "not now" from Pierre means not at this moment, never
+- **"Not now" always gets a when** (Pierre, 2026-11-26; [decision](decisions/2026-11-26-not-now-gets-a-when.md)): a "not now" from Pierre means not at this moment, never
   "later, without a date". The integrator asks when: an hour, a day, a week, a month, several months; the issue gets
   that date (Scheduled). An event that is not a date becomes a blocked-by relation to the issue of that event, or
   Waits on › External with a date to check again, and only if it is sure to come: a date, or a prerequisite that will
