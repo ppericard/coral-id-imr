@@ -2408,6 +2408,24 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   REE-287, REE-284, REE-283, REE-285, REE-286.
 - **17:54, the handover (REE-312).** «Ca sera pour le prochain agent. Donc pas toi. Donc sans ton contexte ni ton
   transcript. Donc la passation a intérêt d'être propre.» Applied: Linear REE-312, docs/STATUS.md.
+- **17:55, the Drive Reef_ID folder (REE-313).** «C'est le bordel ce dossier Reef ID dans le Drive. Ca mérite une issue
+  d'organisation». Applied: Linear REE-313 (an inventory and a filing proposal first, nothing trashed).
+- **~17:58-18:00, work kept only in the scratchpad (REE-314).** Reading the handover message, on the two question
+  dossiers kept about 10 hours in the session scratchpad only (~17:58): «ça c'est un gros problème de travail!!!!». On
+  Drive copies of material that could live in Linear (18:00): «Pourquoi tu créés des documents GDrive qui pourraient
+  être dans Linear?» Applied: Linear REE-314 (the remedy is decided with REE-297); study B's part 1 and the day's Astra
+  prompts became comments on REE-297 and REE-310, and their two Drive copies were trashed.
+- **18:01-18:03, reread the transcript after a compaction (REE-315).** On an answer rebuilt from the compaction
+  summary (18:01): «Relis ton transcrit des dernières 20 min ça sera plus simple...»; then (18:03): «ça se note. En vrai
+  il faudrait presque que tu relises systématiquement les dernières 30 min de ton transcrit après compaction...». A
+  suggestion («presque»), not a decided rule: the mechanism goes back to him as a trial. Applied: Linear REE-315.
+- **18:26-18:29, a handover gives the start order (REE-316).** (18:26) «Et le prochain intégrateur sait par quels
+  tickets il doit commencer ?»; once REE-312 had its section 0, numbered (about 18:27): «Et 313, 314, 315?»; (18:28) «Le
+  fait de ne pas donner un ordre pour l'agent suivant est un problème de travail». To the integrator's proposal of
+  18:28 (STATUS "Next" becomes a numbered list of issues with a reason per line, checked by tests/docs.test.js, and
+  INTEGRATOR's handover step says so) (18:29): «Bonne idée». Applied: Linear REE-312 section 0 (REE-313, REE-314 and
+  REE-315 placed in it), REE-316; docs/STATUS.md "Next", docs/INTEGRATOR.md "Habits" and "Where open work sits",
+  tests/docs.test.js.
 - **17:37-17:49, how an Astra prompt is written (REE-297).** «Dans les prompts pour Astra il faut aussi toujours lier
   le Linear. Parce que je les fait démarrer de rien»; «Pour astra il faut leur dire de passer par leur plugin et pas
   par le web pour Linear... A noter pour la prochaine fois»; «Tu leur as pas dit où ils devaient écrire.....»; «A
