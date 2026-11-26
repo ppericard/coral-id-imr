@@ -2357,3 +2357,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   comparisons opened as a new event kind joined to the answers by device (a sheet column change, asked and allowed).
   REE-6: «ok» to deleting the 2 unused objects listed and nothing else. Applied: Linear REE-194, REE-261, REE-226,
   REE-41, REE-6.
+- **17:37-17:49, how an Astra prompt is written (REE-297).** «Dans les prompts pour Astra il faut aussi toujours lier
+  le Linear. Parce que je les fait démarrer de rien»; «Pour astra il faut leur dire de passer par leur plugin et pas
+  par le web pour Linear... A noter pour la prochaine fois»; «Tu leur as pas dit où ils devaient écrire.....»; «A
+  modifier pour le futur aussi». Seen the same evening: Astra's Linear plugin reads descriptions but not comments.
+  Applied: docs/INTEGRATOR.md, the Astra paragraph (the links to start from, the plugin, a "comments, summarised"
+  section in the description, where and under what title to write).
