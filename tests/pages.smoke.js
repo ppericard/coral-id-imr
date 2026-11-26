@@ -3291,6 +3291,10 @@ async function tipsCheck(b, base) {
   // player, whom the basics tip is for), s, the tips shown (default: the basics tip's two showings used, so only the tip
   // under test is in play), basics and ach, the Coral basics record and the achievements (default none), v, the visit
   // (default: open, 12 answers, no tip yet). The player has opened the Coral ID Key (u.i 1) unless u says otherwise.
+  // x.toasts false: no achievement toast on this page (achPop does nothing), for a check that names the one Next a tip must
+  // take. An achievement the decisive answer earns (Explorer at the 10th genus met, Look-alike slayer on a duel won)
+  // rightly holds the tip (never over a toast: checked with the zoom tip), so that Next would bring none, by the draw's
+  // luck (REE-301). The steps clear a toast left from before the answer; this one comes with the answer itself.
   const open = async (w, h, u, at = '#practice/quiz', intro = false, x = {}) => {
     // x.touch: a touch screen (no hover, a coarse pointer), as a phone or a tablet reports itself.
     const c = await b.newContext({
@@ -3327,6 +3331,7 @@ async function tipsCheck(b, base) {
     p.on('pageerror', e => errs.push(String(e)));
     await p.goto(base + at);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    if (x.toasts === false) await p.evaluate(() => (achPop = () => {}));
     return [c, p, errs];
   };
   // One question answered (wrong unless right), toasts and genus cards closed as a player would; then Next, unless
@@ -3889,7 +3894,10 @@ async function tipsCheck(b, base) {
       return null;
     };
     {
-      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0], hint: [0, 0]}});
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {
+        s: {basics: [0, 0], hint: [0, 0]},
+        toasts: false
+      });
       await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
       const up = [];
       for (let i = 0; i < 3; i++) up.push(await typedStep(p, ''));
@@ -3942,7 +3950,10 @@ async function tipsCheck(b, base) {
       await c.close();
     }
     {
-      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0], hint: [0, 0]}});
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {
+        s: {basics: [0, 0], hint: [0, 0]},
+        toasts: false
+      });
       await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
       // Two "I don't know", a wrong text, two more: the text ended the run, so no tip and a run of 2 ...
       const seq = ['', '', 'text', '', ''],
@@ -4014,7 +4025,8 @@ async function tipsCheck(b, base) {
     };
     {
       const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, w: 9}, '#practice/quiz', false, {
-        s: {basics: [0, 0], typed: [0, 0]}
+        s: {basics: [0, 0], typed: [0, 0]},
+        toasts: false
       });
       let shown = null,
         rightUp = 0;
@@ -4136,7 +4148,8 @@ async function tipsCheck(b, base) {
     };
     {
       const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 29}, '#practice/quiz', false, {
-        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]}
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]},
+        toasts: false
       });
       // The device shows the key marks, as the CSS does for a keyboard and a mouse.
       const kbd = await p.evaluate(() => [
