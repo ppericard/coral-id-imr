@@ -55,7 +55,11 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
   subject quickly.
 - **An interruption to ask a question is not a stop**: answer, then carry on.
 - **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then,
-  right after the sweep, with its result (2026-11-26; [tools/checkin.md](../tools/checkin.md) step 5).
+  right after the sweep, with its result (2026-11-26; [tools/checkin.md](../tools/checkin.md) step 5). Its "Next" is
+  the start order for whoever integrates next: a numbered list of Linear issues, one reason per line after " — ", the
+  snapshot dated; the dated handover issue keeps the longer reasons (Pierre, 2026-11-26 18:28: «Le fait de ne pas
+  donner un ordre pour l'agent suivant est un problème de travail»; 18:29, to this form: «Bonne idée»; REE-316).
+  `tests/docs.test.js` fails on a "Next" with no numbered issue or an item without its reason.
 - **"Choices I made" is filtered before it is passed on**: what is easy to correct afterwards ships as the integrator's
   call.
 - **A rule credited to Pierre quotes his words**; a paraphrase says "integrator's reading". A decision of his is never
@@ -412,7 +416,8 @@ Never copied here, so it cannot go stale:
   transferred yet keep their [ROADMAP.md](ROADMAP.md) rows (Pierre, 2026-11-08: first everything that speeds up
   development, then the rest).
 - **Where the next task comes from: the tracker, not STATUS** (Pierre, 2026-11-20 16:44, then of the ROADMAP; Linear
-  since 2026-11-21). STATUS "Next" points to the tracker. At every check-in, and whenever agents finish, go through the Todo
+  since 2026-11-21). STATUS "Next" points to the tracker: the start order as numbered Linear issues, a reason on each
+  line ("Habits", REE-316). At every check-in, and whenever agents finish, go through the Todo
   issues (and the rows not transferred) and launch every one that is decided (his words, or an integrator's call) and
   blocked by no open PR's file (rule W27).
 - **Why something is as it is**: the rule's *Source* line, then [decisions/](decisions/README.md), then the LEARNING.md
@@ -452,8 +457,9 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 
 - **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
   opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
-  2026-11-23, REE-219); a new issue for every problem discussed and not solved (Pierre, 2026-11-26, REE-229 P5: «ok»;
-  an idea not decided yet takes label Idea); an issue's description holds
+  2026-11-23, REE-219); a problem or idea discussed and not solved gets an issue (Pierre, 2026-11-22 06:09: «il faut
+  au minimum l'écrire quelque part, peut-être sous la forme d'une issue … même si elles sont pas résolues de suite»;
+  REE-229 P5, 2026-11-26 14:14: «ok»; an idea not decided yet takes label Idea); an issue's description holds
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
   detail in its collapsible "Agent notes". Its skeleton, the executor line, the signed comments and an assignee a
   connector set to Pierre: [the brief](../tools/agent-brief.md#in-linear).
