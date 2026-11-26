@@ -177,9 +177,10 @@ instead of new duel/opening knobs, LEARNING.md).
 
 **What a simulation decides, and what it does not.** The simulated learner is our own model, not fitted to real
 players. A simulation decides on the mechanics of the rules (what follows from the rules alone), on bugs and extreme
-cases, on the equivalence of two implementations of one rule, and on rough starting values before any data exists,
-labelled as hypotheses. It does not decide on how real people learn, hesitate, forget or stay motivated, nor on a signal
-the simulator does not model, nor on a difference inside its own uncertainty. Then the logic of the feature, the real
+cases, and on the equivalence of two implementations of one rule. It does not decide on a value (a starting value is
+the logic's or Pierre's choice, labelled so, until the real log can judge), nor on how real people learn, hesitate,
+forget or stay motivated, nor on a signal the simulator does not model, nor on a difference inside its own
+uncertainty. Then the logic of the feature, the real
 answer log (rule L12) and use by real players, when the change can be reverted, decide.
 
 **Checks follow the question, not the size of the change.** The PR names its question in one line:
