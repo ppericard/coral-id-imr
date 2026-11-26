@@ -71,7 +71,8 @@ function engine() {
   return ctx.module.exports;
 }
 function photoDiffOf(S) {
-  const c = vm.createContext({SUBJ: S, calibOf: C.calibOf, PGD: {}, PSTAT: {}, PTM: {}, ptimeOff: C.ptimeOff});
+  // GX: no unit records here, so model.js easeMid centres a judged prior on the scale's middle, as when this study ran.
+  const c = vm.createContext({SUBJ: S, calibOf: C.calibOf, PGD: {}, PSTAT: {}, PTM: {}, ptimeOff: C.ptimeOff, GX: () => undefined});
   const src = fs.readFileSync(path.join(ROOT, 'model.js'), 'utf8');
   vm.runInContext(block(src, 'const PDIFF = {', '\n}\n', {through: 1, file: 'model.js'}) + '\nthis.photoDiff = photoDiff;', c);
   return c;

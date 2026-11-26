@@ -1,0 +1,43 @@
+# REE-241 simulation, declared before running (2026-11-25 ~07:10 Manila)
+
+The files beside this one (aggregates only, no player): `cmp_<subject>_<truth>.txt` the 5-seed app-world comparisons,
+`cmp10_<subject>.txt` the 10-seed second look on cen (`tools/learncmp.js` output); `replay.txt` the real-log replay
+(`replay.py`, raw, adapt and center); `order_<subject>_offsets-<yes|no>.txt` the exact opening orders, main against the
+change, with and without the sheet's offsets (`openorder.js`, 500 sequences each, then `ordercmp.py`). The commit in a comparison's first line is the tools' (learnsim's own checkout);
+the main arm was origin/main a2bdfb22 served with `--root`, the change the branch. The rated world's reports are in the
+learncheck workflow runs 45506062968-45506079884 (10 seeds) and 45509664525-45509676258 (20 seeds).
+
+Level 2 (rule L11): the change moves the opening order (what players see broadly) and every judged photo's prior.
+
+Worlds and sizes
+- App world (tools/learnsim.js), fish and sea slugs, each subject's default profiles x 5 seeds x 300 questions, both
+  arms on the same seeds; main served with --root (a checkout of origin/main a2bdfb22), the change from the branch.
+  --stats: the sheet's own ratings for the subject (?stats=1&s=<subject>, read once read-only, saved outside the repo),
+  the same file for both arms. The learner's truth fixed for both arms (--truth), two worlds built by
+  tools/studies/ree241/truth.py: cen (Q457 holds: offset + 0.3 x (family mean ease - ease)) and unc (main's prior holds:
+  offset + 0.3 x (3 - ease)).
+- Rated world (tools/ratedworld.js), fish, --app own, 10 seeds x 3,000 answers, normal photos. Its judged ease is drawn
+  from each photo's own deviation around its unit, so every family's mean ease is near 3 there: expected nearly blind
+  to the change; a no-harm check. Sea slugs: the rated world has none.
+- Exact table, no learner: tools/studies/ree241/openorder.js, the opening sequence openPick gives a fresh player
+  ("I'm new"), 2,000 sequences, with the sheet's offsets and with none, both arms, both subjects.
+
+Primary (one): app world, fish, truth cen, unitsOW@300, up. One look.
+Costs declared before running:
+- Sea slugs: the photo-weighted mean ease is 3.58, so the change rates their units about 0.17 logit harder on average
+  (main's priors averaged that much easier than the sheet's offsets): fewer units met (met@100, met@300) and the bar's
+  E on the over side may move up. Accepted bound: the table's margins (met -2 units or -5%; E over side +0.03).
+- Fish: mean ease 2.89, an average shift of 0.03 logit: no guardrail expected to move.
+- Truth unc (moved below)
+
+Added ~08:05 Manila, after the first look (5 seeds), before any further run:
+- Step up (rule L11, one step): the app world, truth cen, both subjects, 10 seeds x 300, looks 2 (bounds at 95%,
+  primary at 0.025). A first-look breach stands whatever the second look says. Cells still unclear at 10: "the measure
+  cannot tell". The rated world: the profiles with an unclear cell at 10 seeds run at 20 (looks 2), GitHub runners.
+- Exploratory, added after seeing the sea slug breaches: a third sea slug arm "lvl" = the change plus a constant
+  (3 - the subject's photo-weighted mean ease 3.58) x 0.3 on every judged prior, so the family ranking is the change's
+  and the overall level is main's. Change against lvl isolates the level shift; lvl against main isolates the reorder.
+  Same seeds, 5 x 300, both truths. Not a verdict.
+
+- Truth unc: the change is expected to do worse there (the direction follows whichever truth holds); reported, not a
+  verdict. The real log (L12 replay, REE-85 study) points to cen.

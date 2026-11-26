@@ -209,7 +209,9 @@ The data views:
 Each unit's difficulty (`model.js` `genusDiff`, memo `GDIFF`) is kept for the data version too, read from `DATA_V`
 directly (`GDV`, no storage check: its inputs, the statistics joined and the units built, are written in this tab). So a
 tree's new photos (`app.js` `treeBuild`, `treePull`) make it again, as the statistics, a new curation and a subject
-switch do. Where `model.js` runs without `app.js` (the tools, the unit tests), the memo is cleared by hand.
+switch do. Where `model.js` runs without `app.js` (the tools, the unit tests), the memo is cleared by hand. Each unit's
+mean judged ease (`model.js` `easeMid`, memo `EMID` per unit record, `EMV`) follows the data version the same way;
+without `app.js` a data build, which makes the records again, makes it again.
 
 A keyed view has a read for a loop with nothing written during it (`app.js` `keyView` `fn`, as `introducedFn`): the
 version is read once, then a value kept in it is a lookup; any other read goes through the view (with `VIEW_CHECK` on,
@@ -372,7 +374,8 @@ counts as +0.5 harder (`SINGLE`). The other views show after the answer.
 **Photo difficulty** `photoDiff()`: the sheet's hierarchical photo Elo (`?stats=1`, all players, cached in
 `reefid-photo-stats` with the sheet's `v`): a photo's rating is its unit's offset plus its own residual (`core.js`
 `GENUS_K`), shrunk towards the unit's offset (`?stats=1` `gd`, `model.js` `PGD`) by `PDIFF.W` = 5 answers; a photo
-nobody has answered is its unit's offset (with a fish photo's judged ease), 0 before the first reply. It is the
+nobody has answered is its unit's offset (with a judged photo's ease, centred on its unit's mean ease: `easeMid`;
+docs/decisions/2026-11-26-judged-ease-within-unit.md), 0 before the first reply. It is the
 difficulty of a photo met for the first time (LEARNING.md "Hierarchical photo Elo").
 
 **Online calibration** (`CAL`, `calBonus` in `model.js`): a photo with few answers from all the players (the `?stats=1`

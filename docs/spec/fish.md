@@ -310,8 +310,9 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   and the cards show it too. The app ranks them again on `model.js` `photoDiff` (`app.js` `rankPhotos`, at load and with
   each new photo statistics reply), so the players' ratings take over once fish answers are logged. `model.js` reads `e`
   in `photoDiff` (the prior), in the `RARE` cap (`rareCap`: until a unit reaches Open Water, its photos under ease 4,
-  or its `RARE.FEW` easiest when it has fewer, make at most `RARE.SHARE` of the photos drawn) and in `easyTrust`
-  ([LEARNING.md](../LEARNING.md) "Fish: the starter core and judged photos").
+  or its `RARE.FEW` easiest when it has fewer, make at most `RARE.SHARE` of the photos drawn)
+  ([LEARNING.md](../LEARNING.md) "Fish: the starter core and judged photos"). The prior is centred on its unit's mean
+  ease (`easeMid`), so `e` never ranks units ("The judged ease, within its unit").
 
 ## Covers
 
