@@ -232,7 +232,7 @@ subject is a test case, not the definition of the target.
   a difference a page error that fails the run; no budget), **`--syncs K` (signed in, REE-298)**: the page signs in to a
   made-up account (`Answercost Probe`, its answer log the state's, as `sync.js` `signIn` leaves a new account) and the
   sync script answers from an in-memory sheet in the tool's process (`tests/gas.js` through `tests/syncpage.js`: the
-  page is a local copy, `app.js` `LOCAL`, so its signed-in requests go to `window.SHEET_STUB` alone, and every other
+  page is a local copy, `app.js` `LOCAL`, so its requests to the sheet go to `window.SHEET_STUB` alone, and every other
   request is aborted: none reaches the real sheet, rule D1). The page syncs at its boot and once more before the restart
   (the account made, its first load); after the idle fill, K syncs (`syncPush`: the copy held or a load, the merge, the
   save and its reply) are each counted in a window of their own with the fill they leave (asked as the next plan asks

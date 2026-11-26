@@ -97,13 +97,13 @@ document.addEventListener('visibilitychange', () => {
 });
 // It also tells the sheet (Code.gs behind_) the app's version, this device's anonymous id (devId, as its events) and the
 // minutes this page has been open (up): a device left on a replaced version is logged as 'old' with its id, so the admin
-// can find whose it is. Never from a local copy (LOCAL: a test, a developer; rule D1): without a device id the sheet
-// logs nothing.
+// can find whose it is. A local copy (LOCAL: a test, a developer, a review; rule D1) never reads them from the sheet:
+// sheetFetch answers it from a test's SHEET_STUB, else refuses, and the kept copy (if any) stays.
 function loadStats() {
   if (!SYNC_URL || !DATA) return;
   statsAt = Date.now();
   const me = LOCAL ? '' : `&dev=${devId()}&up=${Math.round(performance.now() / 60000)}`;
-  fetch(`${SYNC_URL}?stats=1&av=${appVer()}${me}`)
+  sheetFetch(`${SYNC_URL}?stats=1&av=${appVer()}${me}`)
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
@@ -136,7 +136,7 @@ const ownStatsAt = {};
 function loadOwnStats(S = SUBJ) {
   if (!SYNC_URL || !S || !S.stats || sheetV() < S.stats) return;
   ownStatsAt[S.id] = Date.now();
-  fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
+  sheetFetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
     .then(r => r.json())
     .then(j => {
       if (!j || !j.ok || !j.photos || j.s !== S.id || !(Number(j.v) >= S.stats)) return;
@@ -1206,7 +1206,7 @@ function sendReports() {
   if (!SYNC_URL || LOCAL || !L.length || navigator.onLine === false) return;
   const {batch, reports} = repBatch(L, repImgPend),
     first = batch;
-  fetch(SYNC_URL, {
+  sheetFetch(SYNC_URL, {
     method: 'POST',
     body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', ...(first[0].ra ? {racct: first[0].ra} : {}), reports})
   })
@@ -1497,7 +1497,7 @@ function sendAnon() {
     ),
     who = anonId(); // the anonymous player the send is for
   anonBusy = true;
-  fetch(SYNC_URL, {
+  sheetFetch(SYNC_URL, {
     method: 'POST',
     keepalive: true,
     // pt: the oldest answer of the whole queue (pendingFrom), as answers left in it after a lost reply may be logged already.
@@ -1617,7 +1617,7 @@ function sendEvents() {
   const {batch, who} = evBatch();
   if (!batch.length) return;
   evBusy = true;
-  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...who})})
+  sheetFetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...who})})
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
