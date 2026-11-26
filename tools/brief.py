@@ -61,6 +61,29 @@ def left():
     return max(0.3, DEADLINE - (time.monotonic() - START))
 
 
+# --- Outside PRs (REE-346 mitigation (a)4, the integrator, 2026-11-27) -------------------------------------------------------
+# Anyone can open a PR on a public repository, and the integrator who reads this brief holds the merge queue: a title an
+# outsider wrote is text to act on. A PR by anyone but the repository owner or a known agent identity is `[outside]`; its
+# number and author login are printed, never its title. tools/night.py holds the same rule (these scripts stand alone).
+AGENT_LOGINS = ('chatgpt-codex-connector[bot]', 'claude[bot]', 'github-actions[bot]')
+INSIDE = {REPO.split('/')[0].lower(), *AGENT_LOGINS}
+
+
+def outside(login):
+    """True when a PR's author is neither the repository owner nor a known agent identity (nobody known: outside)."""
+    return (login or '').lower() not in INSIDE
+
+
+def pr_line(p, short):
+    """One open PR's entry: `#N title [checks, age, ...]`; short: `#N checks, needs-pierre`. An outside PR's title is
+    replaced by `[outside] by <login>`, the login cut to the characters GitHub allows."""
+    who = '[outside] by %s' % (re.sub(r'[^A-Za-z0-9\[\]-]', '', p.get('author') or '')[:40] or '?') if p.get('outside') else None
+    if short:
+        return '#%d %s%s%s' % (p['n'], who + ' ' if who else '', p['checks'], ', needs-pierre' if p['pierre'] else '')
+    tags = [p['checks'], p['age']] + (['needs-pierre'] if p['pierre'] else []) + (['draft'] if p['draft'] else [])
+    return '  #%d %s [%s]' % (p['n'], who or p['title'][:70], ', '.join(t for t in tags if t))
+
+
 # --- Rule 0 window -------------------------------------------------------------------------------------------------------
 # AGENTS.md Rule 0: after 17:30 Manila the integrator asks Pierre nothing until his first message after 04:00; everything
 # else goes on. The time alone cannot tell whether he has written yet: from 04:00 the line says so, and the integrator
@@ -166,10 +189,13 @@ def prs(pool):
     out = []
     for p in gh('repos/%s/pulls?state=open&per_page=50' % REPO):
         labels = [l['name'] for l in p.get('labels', [])]
+        login = (p.get('user') or {}).get('login')
         out.append(
             {
                 'n': p['number'],
-                'title': p['title'],
+                'title': None if outside(login) else p['title'],  # an outsider's title is never kept (REE-346)
+                'author': login,
+                'outside': outside(login),
                 'ref': p['head']['ref'],
                 'sha': p['head']['sha'],
                 'age': age(p['created_at']),
@@ -761,13 +787,11 @@ def brief(short, at):
             c, e = result(p['checks'])
             p['checks'] = c or ('checks ?' if e else '')
         if short:
-            bits = ['#%d %s%s' % (p['n'], p['checks'], ', needs-pierre' if p['pierre'] else '') for p in pr_list]
+            bits = [pr_line(p, True) for p in pr_list]
             lines.append('PRs: %d open%s' % (len(pr_list), (': ' + '; '.join(bits)) if bits else ''))
         else:
             lines.append('Open PRs: %d' % len(pr_list))
-            for p in pr_list:
-                tags = [p['checks'], p['age']] + (['needs-pierre'] if p['pierre'] else []) + (['draft'] if p['draft'] else [])
-                lines.append('  #%d %s [%s]' % (p['n'], p['title'][:70], ', '.join(t for t in tags if t)))
+            lines += [pr_line(p, False) for p in pr_list]
         if strays is None:
             lines.append('Branches without a PR: not checked (%s).' % stray_err)
         else:

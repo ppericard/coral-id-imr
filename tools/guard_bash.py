@@ -12,12 +12,17 @@ decision with its reason. Text inside quotes is not read as a command (a commit 
 running main's reviewed copy of a project tool through `git show origin/main:tools/X.py | python3 -I -` stays allowed.
 The hook gives main's copy of this file with `python3 -I -c` (no file: it must work so), fetching main where the
 checkout has no origin/main ref and refusing every command if it cannot (tests/hooks.test.js). Inside the script, any
-error lets the command through: the guard never blocks work by failing.
+error lets the command through: the guard never blocks work by failing. One exception, the push rule below, fails closed.
+
+It also refuses a `git push` whose destination is `main` or `release`, in any form (REE-346, REE-345; the integrator,
+2026-11-27): see "A push to main or release" below.
 
   python3 tools/guard_bash.py --check 'python3 -c "print(1)"'   # prints the reason, exit 1; allowed: nothing, exit 0
 """
 import json
+import os
 import re
+import subprocess
 import sys
 
 # Quoted text is blanked before matching: a heredoc marker or a pattern inside quotes is data, not a command.
@@ -156,12 +161,329 @@ def inner_reason(inner):
     return None
 
 
+# --- A push to main or release (REE-346 mitigation (a)5, REE-345; the integrator, 2026-11-27) -------------------------------
+# main and release feed the sheet script's auto-update, the hourly Analyses job and the Pages deploy, so a push credential
+# that reaches them reaches player data (REE-346). Only the merge train moves them, and tools/train.py pushes from its own
+# process (`git push` through subprocess, never through this shell): a `python3 tools/train.py ...` command contains no
+# push, so it needs no exception here, and a push chained after it is still read as a push. The rule fails closed: a
+# destination this guard cannot read (a variable, a pattern, an alias, a git it cannot query) is refused.
+PROTECTED = ('main', 'release')
+PUSH_WAY_OUT = (
+    "Refused by the project's Bash guard (tools/guard_bash.py; REE-346, REE-345): %s. main and release are moved only by "
+    'the merge train (python3 tools/train.py), which pushes from its own process. Push your own branch with its name '
+    'written out (git push -u origin HEAD, or git push origin HEAD:claude/<name>), never through a variable, a pattern or '
+    'an alias. Do not work around this refusal with another shell form, wrapper or tool: if main or release must move, '
+    'say so in your report.'
+)
+WRAPPERS = {'env', 'command', 'exec', 'time', 'sudo', 'nohup', 'nice', 'builtin', 'xargs', 'then', 'do', 'else', '{', '!'}
+WRAPPER_ARG = {'-u', '-n', '-C', '-g', '-I', '-P', '-L', '-s', '-E', '-d', '-S', '-a'}  # wrapper options that take a value
+GIT_ARG = {'-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path', '--config-env', '--super-prefix', '--attr-source'}
+PUSH_ARG = {'-o', '--push-option', '--repo', '--receive-pack', '--exec'}
+REDIRECT = re.compile(r'\d*(?:&>>?|>>?&?|<<?<?)')
+# Subcommands git runs itself: an alias cannot shadow them, so the configuration is read for any other word only.
+GIT_BUILTINS = set(
+    'add am apply archive bisect blame branch bundle cat-file check-ref-format checkout cherry cherry-pick clean clone commit '
+    'commit-tree config count-objects describe diff diff-tree difftool fetch for-each-ref format-patch fsck gc grep hash-object '
+    'help init log ls-files ls-remote ls-tree maintenance merge merge-base mergetool mktree mv name-rev notes pull range-diff '
+    'read-tree rebase reflog remote repack reset restore rev-list rev-parse revert rm shortlog show show-ref sparse-checkout '
+    'stash status submodule switch symbolic-ref tag update-ref var verify-commit version whatchanged worktree write-tree'.split()
+)
+
+
+class Word(tuple):
+    """One shell word: (text with its quotes removed, dynamic, quoted). Dynamic: a `$` or a backtick outside single quotes,
+    so the value is not in the text."""
+    __slots__ = ()
+    text = property(lambda w: w[0])
+    dynamic = property(lambda w: w[1])
+    quoted = property(lambda w: w[2])
+
+
+class Unreadable(Exception):
+    """A push whose destination this guard cannot establish: refused."""
+
+
+def shell_commands(s):
+    """The simple commands of a shell line as lists of Words: split on ; & | newline and brackets outside quotes."""
+    cmds, words, buf = [], [], None  # buf: [text pieces, dynamic, quoted] of the word being read
+    i, n = 0, len(s)
+
+    def flush():
+        nonlocal buf
+        if buf is not None:
+            words.append(Word((''.join(buf[0]), buf[1], buf[2])))
+            buf = None
+
+    def endcmd():
+        nonlocal words
+        flush()
+        if words:
+            cmds.append(words)
+            words = []
+
+    while i < n:
+        c = s[i]
+        if c in ' \t':
+            flush()
+            i += 1
+        elif c in ';&|\n()':
+            endcmd()
+            i += 1
+        elif c == '#' and buf is None:
+            j = s.find('\n', i)
+            i = n if j < 0 else j
+        else:
+            if buf is None:
+                buf = [[], False, False]
+            if c == '\\':
+                if s[i + 1:i + 2] != '\n':
+                    buf[0].append(s[i + 1:i + 2])
+                    buf[2] = True
+                i += 2
+            elif c == "'":
+                j = skip_single(s, i)
+                buf[0].append(s[i + 1:j - 1])
+                buf[2] = True
+                i = j
+            elif c == '"':
+                j = skip_double(s, i + 1)
+                body = s[i + 1:j - 1]
+                buf[0].append(re.sub(r'\\([\\"$`])', r'\1', body))
+                buf[1] = buf[1] or '$' in body or '`' in body
+                buf[2] = True
+                i = j
+            elif s.startswith('$(', i):
+                j = skip_command(s, i + 2)
+                buf[0].append(s[i:j])
+                buf[1] = True
+                i = j
+            elif c == '`':
+                j = skip_backtick(s, i)
+                buf[0].append(s[i:j])
+                buf[1] = True
+                i = j
+            else:
+                buf[0].append(c)
+                buf[1] = buf[1] or c == '$'
+                i += 1
+    endcmd()
+    return cmds
+
+
+def branch_of(ref):
+    """The branch a destination names: `refs/heads/main`, `heads/main` and `main` are one."""
+    r = re.sub(r'/+', '/', ref)
+    r = r[5:] if r.startswith('refs/') else r
+    return r[6:] if r.startswith('heads/') else r
+
+
+def run_git(gitopts, cwd, *args):
+    """Stdout of a git query in the command's own repository; Unreadable when it fails."""
+    if cwd is None:
+        raise Unreadable('the directory the push runs in is not known here (a `cd` to a variable)')
+    try:
+        r = subprocess.run(['git'] + gitopts + list(args), cwd=cwd, capture_output=True, text=True, timeout=5)
+    except Exception as e:
+        raise Unreadable('git could not be queried (%s)' % type(e).__name__)
+    if r.returncode not in (0, 1):
+        raise Unreadable('git could not be queried (exit %d)' % r.returncode)
+    return r.stdout if r.returncode == 0 else ''
+
+
+def read_config(gitopts, cwd):
+    out = []
+    for line in run_git(gitopts, cwd, 'config', '--list').split('\n'):
+        k, eq, v = line.partition('=')
+        if eq:
+            out.append((k.lower(), v))
+    return out
+
+
+def last(cfg, key):
+    vals = [v for k, v in cfg if k == key]
+    return vals[-1] if vals else None
+
+
+def current_branch(gitopts, cwd):
+    return run_git(gitopts, cwd, 'symbolic-ref', '--short', '-q', 'HEAD').strip() or None
+
+
+def refspec_reason(spec, gitopts, cwd):
+    """Why a refspec's destination is refused, or None."""
+    spec = spec.lstrip('+')
+    if spec == ':':
+        return 'a bare `:` refspec pushes every branch that exists on both sides, main and release included'
+    dst = spec.partition(':')[2] if ':' in spec else spec
+    if re.search(r'[$`*?\[{\\]', dst):
+        raise Unreadable('the destination %r is a variable, a substitution or a pattern, so it may be main or release' % dst)
+    if dst in ('HEAD', '@'):
+        dst = current_branch(gitopts, cwd) or ''
+    b = branch_of(dst)
+    return 'it pushes to %s' % b if b in PROTECTED else None
+
+
+def bare_push_reason(remote, gitopts, cwd):
+    """A push with no refspec goes where the configuration says: the current branch, the branch it tracks, a remote's
+    configured refspecs, or every matching branch."""
+    cur = current_branch(gitopts, cwd)
+    if cur in PROTECTED:
+        return 'the current branch is %s' % cur
+    cfg = read_config(gitopts, cwd)
+    default = (last(cfg, 'push.default') or 'simple').lower()
+    if default == 'matching':
+        return 'push.default=matching pushes every branch that exists on both sides, main and release included'
+    merge = last(cfg, 'branch.%s.merge' % cur.lower()) if cur else None
+    if merge and default in ('simple', 'upstream', 'tracking') and branch_of(merge) in PROTECTED:
+        return 'branch %s tracks %s, and a push with no destination goes there (git push -u origin HEAD names its own)' % (
+            cur, branch_of(merge))
+    if not remote and cur:
+        remote = last(cfg, 'branch.%s.pushremote' % cur.lower()) or last(cfg, 'branch.%s.remote' % cur.lower())
+    remote = remote or last(cfg, 'remote.pushdefault') or 'origin'
+    for k, v in cfg:
+        if k == 'remote.%s.push' % remote.lower():
+            why = refspec_reason(v, gitopts, cwd)
+            if why:
+                return 'the remote %s is configured to push there (%s)' % (remote, why)
+    return None
+
+
+def push_args_reason(args, gitopts, cwd, via_xargs):
+    """Why `git push ARGS` (the words after `push`) is refused, or None."""
+    positional, repo_opt, tags_only, k = [], False, False, 0
+    while k < len(args):
+        a = args[k].text
+        name = a.split('=')[0]
+        if a == '--':
+            positional += args[k + 1:]
+            break
+        if a.startswith('--'):
+            if (len(name) >= 3 and '--mirror'.startswith(name)) or (len(name) >= 4 and '--all'.startswith(name)):
+                return '--all and --mirror push every branch, main and release included'
+            tags_only = tags_only or name == '--tags'
+            if name in PUSH_ARG:
+                repo_opt = repo_opt or name == '--repo'
+                k += 0 if '=' in a else 1
+        elif a.startswith('-') and len(a) > 1:
+            k += 1 if a[1:].endswith('o') else 0  # -o <push-option>
+        else:
+            positional.append(args[k])
+        k += 1
+    if via_xargs:
+        return 'a push run through xargs takes its destination from standard input'
+    remote, specs = (None, positional) if repo_opt else ((positional[0].text if positional else None), positional[1:])
+    if not specs:
+        return None if tags_only else bare_push_reason(remote, gitopts, cwd)
+    k = 0
+    while k < len(specs):
+        if specs[k].text == 'tag' and k + 1 < len(specs):  # `git push origin tag v1`: a tag, not a branch
+            k += 2
+            continue
+        why = refspec_reason(specs[k].text, gitopts, cwd)
+        if why:
+            return why
+        k += 1
+    return None
+
+
+def without_redirects(words):
+    out, skip = [], False
+    for w in words:
+        m = None if w.quoted else REDIRECT.match(w.text)
+        if skip:
+            skip = False
+        elif m:
+            skip = m.end() == len(w.text)  # `>` `file` are two words; `>file` is one
+        else:
+            out.append(w)
+    return out
+
+
+def push_in(words, cwd, depth):
+    """Why one simple command is a refused push, or None; with the directory the next command runs in."""
+    words = without_redirects(words)
+    i, via_xargs = 0, False
+    while i < len(words):
+        t, base = words[i].text, words[i].text.rsplit('/', 1)[-1]
+        if re.fullmatch(r'[A-Za-z_]\w*=.*', t):
+            i += 1
+        elif t in ('cd', 'pushd'):
+            rest = [w for w in words[i + 1:] if w.quoted or not w.text.startswith('-')]
+            if rest and not rest[0].dynamic and rest[0].text:
+                cwd = os.path.normpath(os.path.join(cwd, os.path.expanduser(rest[0].text))) if cwd else None
+            else:
+                cwd = None
+            return None, cwd
+        elif t == 'eval' and depth < 4:
+            return push_reason(' '.join(w.text for w in words[i + 1:]), cwd, depth + 1), cwd
+        elif base in WRAPPERS:
+            via_xargs = via_xargs or base == 'xargs'
+            i += 1
+            while i < len(words) and words[i].text.startswith('-') and not words[i].quoted:
+                i += 2 if words[i].text in WRAPPER_ARG else 1
+        else:
+            break
+    if i >= len(words):
+        return None, cwd
+    head = words[i]
+    if head.dynamic:
+        pushes = any(w.text in ('push', 'send-pack') for w in words[i + 1:])
+        return ('a command named by a variable or a substitution may be a push to main or release' if pushes else None), cwd
+    if head.text.rsplit('/', 1)[-1] != 'git':
+        return None, cwd
+    gitopts, run_cwd, j = [], cwd, i + 1
+    while j < len(words) and words[j].text.startswith('-') and not words[j].quoted:
+        o = words[j].text
+        if o in GIT_ARG and j + 1 < len(words):
+            if o == '-C':
+                run_cwd = None if words[j + 1].dynamic or run_cwd is None else os.path.normpath(os.path.join(run_cwd, words[j + 1].text))
+            elif o in ('-c', '--git-dir', '--work-tree'):
+                gitopts += [o, words[j + 1].text]
+            j += 2
+        else:
+            if o.startswith(('--git-dir=', '--work-tree=')):
+                gitopts.append(o)
+            j += 1
+    if j >= len(words):
+        return None, cwd
+    sub = words[j].text
+    if sub in ('push', 'send-pack'):
+        return push_args_reason(words[j + 1:], gitopts, run_cwd, via_xargs), cwd
+    if words[j].dynamic:
+        return 'a git subcommand named by a variable or a substitution may be a push to main or release', cwd
+    if sub not in GIT_BUILTINS:
+        alias = last(read_config(gitopts, run_cwd), 'alias.' + sub.lower())
+        if alias and re.search(r'push|send-pack', alias):
+            return 'the git alias %r runs a push' % sub, cwd
+    return None, cwd
+
+
+def push_reason(command, cwd, depth=0):
+    """Why the command contains a push to main or release (any form), or None."""
+    try:
+        for words in shell_commands(command):
+            why, cwd = push_in(words, cwd, depth)
+            if why:
+                return PUSH_WAY_OUT % why
+    except Unreadable as e:
+        return PUSH_WAY_OUT % ('this push cannot be checked here: %s' % e)
+    except Exception:  # a bug in this rule: refuse only what mentions a push
+        if re.search(r'push|send-pack', command):
+            return PUSH_WAY_OUT % 'this command could not be read and mentions a push'
+    return None
+
+
+CWD = None  # the directory the hooked command runs in (the event's `cwd`); None: this process's
+
+
 def reason(command):
     """Why the command is refused, or None."""
     for inner in substitutions(command or ''):
         why = inner_reason(inner)
         if why:
             return why
+    why = push_reason(command or '', CWD or os.getcwd())
+    if why:
+        return why
     text = REVIEWED.sub(' ', QUOTED.sub(' Q ', command or ''))
     for pat, what in PATTERNS:
         if pat.search(text):
@@ -179,8 +501,10 @@ def main():
         data = json.load(sys.stdin)
         if data.get('tool_name') != 'Bash':
             return 0
+        global CWD
+        CWD = data.get('cwd') if isinstance(data.get('cwd'), str) else None
         why = reason((data.get('tool_input') or {}).get('command', ''))
-    except Exception:  # never block work because the guard failed
+    except Exception:  # never block work because the guard failed (push_reason fails closed inside reason)
         return 0
     if why:
         print(json.dumps({'hookSpecificOutput': {'hookEventName': 'PreToolUse', 'permissionDecision': 'deny', 'permissionDecisionReason': why}}))

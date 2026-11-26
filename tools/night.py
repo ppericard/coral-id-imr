@@ -74,9 +74,30 @@ def checks_state(runs):
     return 'FAILING %d/%d' % (len(bad), len(runs)) if bad else 'green'
 
 
+# REE-346 mitigation (a)4 (the integrator, 2026-11-27): anyone can open a PR on a public repository, and the integrator who
+# reads this report holds the merge queue. A PR by anyone but the repository owner or a known agent identity is shown as
+# `[outside] by <login>`, never with its title. tools/brief.py holds the same rule (these scripts stand alone).
+AGENT_LOGINS = ('chatgpt-codex-connector[bot]', 'claude[bot]', 'github-actions[bot]')
+INSIDE = {REPO.split('/')[0].lower(), *AGENT_LOGINS}
+
+
+def outside(login):
+    """True when a PR's author is neither the repository owner nor a known agent identity (nobody known: outside)."""
+    return (login or '').lower() not in INSIDE
+
+
+def shown(entry, limit):
+    """A PR entry's title, or `[outside] by <login>` for an outside author. A snapshot saved before authors were
+    recorded has no `author` key: its titles stay."""
+    if 'author' not in entry or not outside(entry['author']):
+        return entry['title'][:limit]
+    return '[outside] by %s' % (re.sub(r'[^A-Za-z0-9\[\]-]', '', entry['author'] or '')[:40] or '?')
+
+
 def report(snap):
-    """The report's lines from a snapshot: {start, end, merged: [{n, title, agent_min}], trains: [{branch, conclusion,
-    failed}], opened: [{n, title, why}], queue: [str] | None, prs: {n: state}}."""
+    """The report's lines from a snapshot: {start, end, merged: [{n, title, author, agent_min}], trains: [{branch,
+    conclusion, failed}], opened: [{n, title, author, why}], queue: [str] | None, prs: {n: state}}. An outside author's
+    title is not kept in the snapshot (`title` None)."""
     start, end = datetime.fromisoformat(snap['start']), datetime.fromisoformat(snap['end'])
     out = ['Night %s → %s (Manila)' % (start.strftime('%a %d %b %H:%M'), end.strftime('%a %d %b %H:%M'))]
     merged, opened, trains = snap['merged'], snap['opened'], snap['trains']
@@ -85,13 +106,13 @@ def report(snap):
     out.append('Merged: %d PR%s%s' % (len(merged), '' if len(merged) == 1 else 's', total))
     for m in merged:
         t = hours(m['agent_min']) if m.get('agent_min') is not None else 'agent time not measured'
-        out.append('  #%s %s (%s)' % (m['n'], m['title'][:80], t))
+        out.append('  #%s %s (%s)' % (m['n'], shown(m, 80), t))
     red = [t for t in trains if t['conclusion'] not in ('success', None)]
     out.append('Trains: %d run, %d red%s' % (len(trains), len(red), ''.join(
         '\n  %s: %s' % (t['branch'], ', '.join(t.get('failed') or [t['conclusion']])) for t in red)))
     out.append('Opened and still open: %d' % len(opened))
     for o in opened:
-        out.append('  #%s %s: %s' % (o['n'], o['title'][:70], o['why']))
+        out.append('  #%s %s: %s' % (o['n'], shown(o, 70), o['why']))
     q = snap.get('queue')
     if q is None:
         out.append('Night queue: none written in docs/STATUS.md ("## Night queue", written at 17:30)')
@@ -147,7 +168,9 @@ def snapshot(now):
     base = 'repos/%s' % REPO
     # Closed PRs newest-updated first, until one updated before the night (a merge updates the PR).
     closed = gh_all('%s/pulls?state=closed&sort=updated&direction=desc&per_page=100' % base, stop=lambda p: parse(p['updated_at']) < s)
-    merged = [{'n': p['number'], 'title': p['title']} for p in closed if inside(p.get('merged_at'))]
+    login = lambda p: (p.get('user') or {}).get('login')  # noqa: E731
+    merged = [{'n': p['number'], 'title': None if outside(login(p)) else p['title'], 'author': login(p)}
+              for p in closed if inside(p.get('merged_at'))]
     open_prs = gh_all('%s/pulls?state=open&per_page=100' % base)
     span = '%s..%s' % (s.strftime('%Y-%m-%dT%H:%M:%SZ'), e.strftime('%Y-%m-%dT%H:%M:%SZ'))
     runs = gh_all('%s/actions/runs?created=%s&per_page=100' % (base, span), key='workflow_runs')
@@ -163,7 +186,8 @@ def snapshot(now):
         prs[str(p['number'])] = 'open, ' + ', '.join(held + [states[p['number']]])
     for p in closed:
         prs.setdefault(str(p['number']), 'merged' if p.get('merged_at') else 'closed unmerged')
-    opened = [{'n': p['number'], 'title': p['title'], 'why': prs[str(p['number'])][len('open, '):]}
+    opened = [{'n': p['number'], 'title': None if outside(login(p)) else p['title'], 'author': login(p),
+               'why': prs[str(p['number'])][len('open, '):]}
               for p in open_prs if inside(p.get('created_at'))]
     trains = {}
     for r in sorted(runs, key=lambda r: r['id']):
