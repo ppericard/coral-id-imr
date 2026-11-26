@@ -9,10 +9,12 @@ workflow, its triggers, the build at deploy, the health check and the recovery o
 ## Running locally
 
 `python3 -m http.server 8000` at the repository root, then <http://localhost:8000> (`admin.html` for the back-office;
-without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the real public curation). A local copy
-(`localhost`, `file:` or a webdriver browser) never signs in, saves or sends to the sheet (`app.js` `LOCAL`,
-`sheetFetch`: "local copy: the sheet is off" unless a test sets `window.SHEET_STUB`); only the photo statistics
-(`sync.js`, a plain read) and the R2 photos reach live services.
+without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the real public curation). Only the deployed
+site (`app.js` `SHEET_SITE`, the address in `index.html` `og:url`) talks to the sheet. Any other copy (`localhost`, an
+address on the network, `file:`, a fork, a webdriver browser anywhere) is a local copy that never asks it anything,
+statistics and leaderboards included (`app.js` `LOCAL`, `sheetFetch`: "local copy: the sheet is off" unless a test sets
+`window.SHEET_STUB`); only the R2 photos reach a live service. The admin page has its own sheet calls: use
+`admin.html?demo` locally.
 
 ## Deploying
 

@@ -473,13 +473,14 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     // drawn it: shown() now waits, bounded, for the fetch asked and the board drawn (no longer "Loading…"), then reads it.
     await p.waitForFunction(() => HAVE >= 4, null, {timeout: 30000});
     const sb = await p.evaluate(async () => {
-      const f0 = window.fetch,
+      const s0 = window.SHEET_STUB,
         asked = [],
         sv0 = store.get(SHEETV, 0);
       await Promise.all(Object.values(boardP));
       Object.keys(boardP).forEach(k => delete boardP[k]);
       Object.keys(boardAt).forEach(k => delete boardAt[k]);
-      window.fetch = u => {
+      // The sheet's reply (app.js sheetFetch answered by SHEET_STUB in memory, rule D1).
+      window.SHEET_STUB = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=seaslug/.test(u) ? [['Slug P', 41, 0.7]] : [['Coral P', 90, 1.1]];
         return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: store.get(SHEETV, 0)})));
@@ -506,7 +507,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         const units = inSubject('coral', () => rpUnits(subjectOf('seaslug')));
         return {before, live0, rp0, asked0, after, asked, live1: boardLive(SUBJ), units: !!units && !!units['g:Chromodoris']};
       } finally {
-        window.fetch = f0;
+        window.SHEET_STUB = s0;
         store.set(SHEETV, sv0);
       }
     });
