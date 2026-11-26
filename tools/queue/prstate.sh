@@ -22,7 +22,26 @@ for n in "$@"; do
   # "completed" for the head it is about to train, so unread comments leave "?" (REE-232)
   sec="? $sha"
   if [ $iok = 1 ]; then sec=$(python3 -I "$Q/secreview.py" "$sha" "$d/issue.json" 2>/dev/null | head -1); fi
-  codex=$(jq -rs --arg short "$short" '(add // []) | [.[]|select(.user.login=="chatgpt-codex-connector[bot]" and .user.type=="Bot")|select(.body|test($short))|.body|capture("Codex Review: (?<v>[^\\n]*)").v // "summary"]|last // "none"' "$d/issue.json" 2>/dev/null || echo none)
+  # Codex's receipt on the head: its "Codex Review: ..." line; "summary" for its comment on the head without one (a
+  # findings summary); "none". Codex may signal a clean review only through its summary's review-state marker and a 👍
+  # (REE-344): with no receipt line ("summary" or "none"), the latest marker of the Codex bot is the clean receipt only
+  # when its code review is completed for this full head, has_any_findings and has_unresolved_findings both false.
+  # Anything else (another commit, findings true or null, running, unreadable, the marker twice) keeps today's value,
+  # which nightq.sh skips. The marker's braces can come HTML-escaped, as secreview.py reads them.
+  codex=$(jq -rs --arg short "$short" --arg sha "$sha" --arg clean "Didn't find any major issues (codex-review-state:v1)" '
+    def unesc: gsub("&#(?<n>[0-9]+);"; [.n|tonumber]|implode) | gsub("&quot;"; "\"") | gsub("&lt;"; "<") | gsub("&gt;"; ">") | gsub("&amp;"; "&");
+    def clean($sha): (.body // "" | unesc) as $b
+      | [$b|match("<!--\\s*codex-review-state:v1\\s+(\\{[\\s\\S]*?\\})\\s*-->"; "g")] as $m
+      | if ($m|length) != 1 or ($b|indices("codex-review-state:v1")|length) != 1 then false
+        else ($m[0].captures[0].string|fromjson|.code_review) as $r
+          | ($r|type) == "object" and $r.status == "completed" and $r.commit_sha == $sha
+            and $r.has_any_findings == false and $r.has_unresolved_findings == false end;
+    (add // []) | [.[]|select(.user.login=="chatgpt-codex-connector[bot]" and .user.type=="Bot")] as $bot
+    | ([$bot[]|select(.body|test($short))|.body|capture("Codex Review: (?<v>[^\\n]*)").v // "summary"]|last // "none") as $text
+    | if $text == "summary" or $text == "none" then
+        (try ([$bot[]|select(.body // "" | contains("codex-review-state:v1"))]|sort_by(.updated_at // .created_at // "")|last|clean($sha)) catch false) as $ok
+        | if $ok == true then $clean else $text end
+      else $text end' "$d/issue.json" 2>/dev/null || echo none)
   gh api --paginate "$R/pulls/$n/comments?per_page=100" > "$d/review.json" 2>/dev/null || ok=0
   rc=$(jq -rs --arg sha "$sha" '(add // []) | [.[]|select(.commit_id==$sha)]|length' "$d/review.json" 2>/dev/null || echo "?")
   gh api $R/pulls/$n/ccr/review_threads > "$d/threads.json" 2>/dev/null || ok=0
