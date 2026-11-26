@@ -95,6 +95,7 @@ reasons and tests (rule S1).
 | Fish, sea slugs, subjects or units | [Subjects](docs/rules/subjects.md) |
 | Sheet, shared core, sync or progress | [Sheet](docs/rules/sheet.md), including D1–D5 |
 | Tests, version stamps, data.json or shipping | [Ship](docs/rules/ship.md), especially W12–W19 |
+| Commissioning an independent review of ReefID | [Independent reviews](docs/reference/independent-reviews.md) (W8) |
 
 ## Review guidelines
 
