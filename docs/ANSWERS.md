@@ -2408,3 +2408,9 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   REE-287, REE-284, REE-283, REE-285, REE-286.
 - **17:54, the handover (REE-312).** «Ca sera pour le prochain agent. Donc pas toi. Donc sans ton contexte ni ton
   transcript. Donc la passation a intérêt d'être propre.» Applied: Linear REE-312, docs/STATUS.md.
+- **17:37-17:49, how an Astra prompt is written (REE-297).** «Dans les prompts pour Astra il faut aussi toujours lier
+  le Linear. Parce que je les fait démarrer de rien»; «Pour astra il faut leur dire de passer par leur plugin et pas
+  par le web pour Linear... A noter pour la prochaine fois»; «Tu leur as pas dit où ils devaient écrire.....»; «A
+  modifier pour le futur aussi». Seen the same evening: Astra's Linear plugin reads descriptions but not comments.
+  Applied: docs/INTEGRATOR.md, the Astra paragraph (the links to start from, the plugin, a "comments, summarised"
+  section in the description, where and under what title to write).
