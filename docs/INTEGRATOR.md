@@ -329,8 +329,9 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
 - **CI waits**: poll a PR with a small loop (head sha → check-runs → Codex state), not with chained sleeps; the
   machine runs heavy tests through `node tests/slot.js --name X -- <cmd>` (one at a time; sims at 1 worker, chunks ≤ 20
   min). The container restarted 3 times on 11-06 (never memory).
-- **Learning changes** need rule L11-L12 checks (learnsim before/after, 4 profiles × 5 seeds) or Codex flags them; fish
-  has no real-log replay yet (say what was measured instead).
+- **Learning changes** name their question (rule L11): a regression check always; a simulation only for a mechanics
+  question; effects and values go to the real log (rule L12). Where the log cannot judge yet, a Data issue carries the
+  check, its gate proposed in the issue; fish has no real-log replay yet (say what was measured instead).
 - **Assigning a version on top of main** (2026-11-20): bring main in, then take **only** main's line 1 and `const
   VERSION` (and main's HISTORY.md) before `--assign`; never check out main's whole `Code.gs`: that wiped #1285's code
   once (its tests caught it). When another PR merges first with the same number, the stale one is put back to

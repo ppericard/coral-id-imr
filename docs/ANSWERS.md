@@ -2225,3 +2225,15 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   pose problème. Oui, ok». On "Add all": «plus il va y avoir de joueurs plus ce bouton sera dangereux. Je propose
   qu'on le redesigne autour des bétas exclusivement», «Et avec confirmation». Applied:
   docs/decisions/2026-11-26-roles-groups-assignments.md; REE-305.
+- **11:51, when to simulate: the checks follow the question (S1 to S5, #1614).** «ok» to each of the study's five
+  questions, every time to the recommended option: S1 (A), the check follows the question (a regression check always,
+  a mechanics simulation only when it is failure-sized and would change what is built, no effect simulation; effects and
+  values go to the logic, his choice and the real log); S2, L12 without learnsim for every change, a Data issue
+  carrying the check where the real log cannot judge yet; S3, only a failure-sized mechanics result, a real-log reading
+  against the change or a cost players will feel go to him; S4, each Data issue sets its own gate, proposed by the
+  integrator, REE-304's form as the fallback; S5, supersedes Q188 (2026-11-06) and L11's levels (2026-11-08) for
+  effects and values, keeping the 40-minute cap, level 3 behind his go and the regression smokes. His 2026-11-21
+  caution («il faut pas non plus l'inverser complètement et le transformer plus qu'en garde-fou») stays. Applied:
+  rules/learning.md L10-L12, rules/README.md index, INTEGRATOR.md "Learning changes", AGENTS.md "Review guidelines",
+  LEARNING.md "Validating a learning change", FISH_PATH.md "Checks before release",
+  docs/decisions/2026-11-26-checks-follow-the-question.md (#1616).

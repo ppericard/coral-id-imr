@@ -1789,13 +1789,14 @@ and clear, with the players as the unit it is wide, reaches both sides of 0, and
 
 ## Validating a learning change (rule L11)
 
-A change to what players see or learn is checked in proportion to its possible effect, in simulated worlds where the
-truth is known, and on the real answer log (rule L12, "Real-answer replay"). Rule L11 (`docs/rules/learning.md`) states
-the requirements; this section is the method behind them: the levels, the two worlds, the profiles, the measures, the
-margins and the commands.
+A change to what players see or learn is checked by the question it asks (rule L11, `docs/rules/learning.md`): the unit
+tests and the CI smokes always; a simulation only for a mechanics question; effects and values by the real answer log
+(rule L12, "Real-answer replay"). This section is the method for the rare mechanics run that needs a measure, in
+simulated worlds where the truth is known: the run sizes, the two worlds, the profiles, the measures, the margins and
+the commands.
 
-**Levels.** The PR declares its level with one line of why; the integrator checks it and may raise it; in doubt, the
-higher one. Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12).
+**Run sizes (the levels).** A run is sized by what its question touches; the PR says why. A run that rule L11 allows
+reads the table below, and its figures stay the minimum; a change the table's level 0 describes needs no simulation.
 
 | Level | The change | App world | Rated world |
 | --- | --- | --- | --- |
@@ -1811,7 +1812,8 @@ cannot tell", never a level 3 by itself.
 **The cap.** Every check has a hard cap of 40 minutes of compute, at every level; when an agent reaches it, it stops
 and returns what it has. Level 3 never runs on this machine: only with Pierre's explicit go, on GitHub runners ("On a
 GitHub runner" below), with its duration announced first. An unclear result is reported as "the measure cannot tell",
-never escalated automatically. A guardrail breached, or a cost not declared, goes to Pierre.
+never escalated automatically. A breach goes to Pierre only when it is failure-sized (rule L11), otherwise it is
+reported in the PR.
 
 The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js` in both worlds; Pierre, Q405 and Q415):
 
@@ -1844,7 +1846,7 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
   the mark in its report and compares the complete pairs only. A cut result that is clear stands; one short of the level's
   seeds is "the measure cannot tell", never read as no effect. A run cut before any job finished still writes its
   `--out`, with the cut and no runs, and exits 3.
-- **Level 2's figures stay the minimum** (rule L11): the defaults are not lowered to fit. When they do not fit in 40
+- **Level 2's figures stay the minimum** for a run rule L11 allows: the defaults are not lowered to fit. When they do not fit in 40
   minutes, the check is split or its worlds narrowed to the ones the change touches, never shortened below them.
 - **Level 3** (more than 20 seeds, or more than 10,000 answers in the rated world: level 2's ceilings above) **refuses to
   run** unless `--pierre-go "Q number or message, date"` (the reference of his go) is given **and**
@@ -1867,8 +1869,8 @@ looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (
 - The primary is tested pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact
   up to 20 pairs, else 100,000 draws from a fixed seed); only if that passes, per profile under Holm.
 - A guardrail ("Guardrails and margins" below) is held when the one-sided 90% bound of the paired difference stays
-  inside its margin; unclear goes one step up within the cap, then is reported "the measure cannot tell"; breached,
-  or a cost not declared, goes to Pierre.
+  inside its margin; unclear goes one step up within the cap, then is reported "the measure cannot tell"; a breach
+  goes to Pierre only when it is failure-sized (rule L11), otherwise it is reported in the PR.
 - Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
   9% of cells with no effect).
 - On real data (rule L12) the inference is per player, never per answer. A multifactor design (profile × parameter ×
