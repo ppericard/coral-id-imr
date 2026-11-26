@@ -2237,3 +2237,7 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   rules/learning.md L10-L12, rules/README.md index, INTEGRATOR.md "Learning changes", AGENTS.md "Review guidelines",
   LEARNING.md "Validating a learning change", FISH_PATH.md "Checks before release",
   docs/decisions/2026-11-26-checks-follow-the-question.md (#1616).
+- **13:25-13:26, fish families named in English (rule W1).** On "castagnoles, grondeurs ; archers" in the chat: «Les
+  familles de poissons il faut vraiment que tu prennes l'habitude de les nommer en anglais, parce que c'est comme ça
+  que je les connais. Mon niveau de noms communs en français est malheureusement limité ^^»; on where to record it:
+  «Dans les règles». Applied: docs/rules/ship.md W1, docs/rules/README.md, AGENTS.md "Working with Pierre".
