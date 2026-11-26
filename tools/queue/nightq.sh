@@ -104,10 +104,13 @@ for n in "$@"; do
     log "#$n: SKIPPED (train dry run refused): $out"
     continue
   fi
-  if out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py --sha "$cur" "$n" 2>&1); then
+  # TRAIN_EVIDENCE: each pushed train's per-obligation reuse evidence, one JSON line (tools/train_reuse.py, REE-121 (a))
+  if out=$(TRAIN_EVIDENCE="$QUEUE_DIR/train-evidence.jsonl" TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py --sha "$cur" "$n" 2>&1); then
     log "#$n train: $(echo "$out" | tail -4 | tr '\n' ' ')"
   else
     log "#$n train stopped: $out"
   fi
+  # the train's one-line reuse audit, and in shadow mode whether the train agreed, whatever the outcome
+  echo "$out" | grep -E '^Reuse (audit|shadow)' | while IFS= read -r l; do log "#$n $l"; done
 done
 log "queue done"

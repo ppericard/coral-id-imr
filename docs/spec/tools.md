@@ -75,9 +75,19 @@ written with `tools/datajson.py`.
   code runs), checks the heads and base again before pushing `train/<UTC time>` and waits for Checks and Smokes.
   It lists the jobs that must succeed from the train's own workflow files (`smoke (…)` jobs only unless the whole diff
   is docs, `smoke_scope.py`) and refuses a train where one was skipped or missing (rule W12).
+  For one PR, `train_reuse.py` then drops from that list what the PR's own CI proved on the identical tree.
   It squash-merges each PR at its tested head in order (stopping if `main` moved) and compares `main`'s tree with
   the train's. The queue gives both runs `--sha FULL_SHA` for one PR, so a moved head must pass its own gates
   before it can train. `gh api` GET and PUT only, no force-push. See `tests/train.test.js` (a stand-in `gh`, a bare origin).
+- **`train_reuse.py`**: same-tree reuse of a PR's CI on its train (rule W26; Pierre, 2026-11-26, REE-121 (a)). For a
+  one-PR train it proves, obligation by obligation, that the PR head's latest Checks run (all three jobs) and its
+  `answer cost` job ran on GitHub's merge of that same head into the same `main` commit, with the train's tree: run
+  and jobs successful at attempt 1, `pull_request` event, this repository, at most a day old, the workflow file the
+  base's, no job reading its event, and the "Tested commit" annotation each job writes read back through the API
+  (parents and tree). The versions check's train mode is the build's `sheet_version.py --check --main`. Anything not
+  proven runs. `TRAIN_REUSE`: `shadow` (default) logs a "Reuse audit" line and runs everything, `on` names the branch
+  `train/<time>-reuse-checks` / `-reuse-cost` so the jobs' `if:` skips them, `off` is the rollback. The browser
+  matrix is never reused. The queue logs the audit line and appends each train's evidence to `train-evidence.jsonl`.
 - **`smoke_scope.py`**: whether a Smokes run needs the browser matrix (rule W12), in its `browser scope` job. On a train
   push it walks the "Train: …" merges down to the base, checks the base is on `main` and classifies every path of the
   diff (`--no-renames`: deletions and both sides of a rename) against `DOCS`, the PR `paths-ignore` list read with
