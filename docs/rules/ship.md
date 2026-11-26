@@ -9,8 +9,10 @@ mode" (the merge contract). The index of every rule is in [README.md](README.md#
 
 **Everything produced is in English** (UI, docs, data, code, commit messages, PRs, artifact titles); **only the chat with
 Pierre is in French**: he writes in French, often dictated (expect speech-to-text slips), so reply in French. In French,
-Pierre is "tu", never "vous"; call him Pierre.
-*Why:* IMR is an English-speaking workplace. *Source:* Pierre, by 2026-11-01; "tu", 2026-11-05.
+Pierre is "tu", never "vous"; call him Pierre. Even in French, name fish families by their English common names (Sea
+chubs, Grunters, Archerfishes), never a French translation.
+*Why:* IMR is an English-speaking workplace; he knows the fish families by their English names. *Source:* Pierre, by
+2026-11-01; "tu", 2026-11-05; fish families, 2026-11-26.
 
 ### W3
 
