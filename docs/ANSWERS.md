@@ -2333,3 +2333,27 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   (c) C8's PDF read as the instance's reference list: «oui». REE-61: Cycloseris / Lithophyllon, a one-sided line from
   the sourced side: «ok»; Acropora / Cyphastrea, where two sources disagree: «Besoin de remonter le problème à un expert
   de IMR». Applied: Linear REE-294, REE-61 (the question for an IMR expert, sent by him).
+- **15:05-16:59, the refactor's effort is no argument (rule W3); REE-294 (b) decided; version history.** On the first
+  wording of the rule ("At this stage of development"): «ça va mal vieillir.....». To the wording tied to the alpha
+  phase: «ok» (16:59). REE-294 (b), the lecture photos' references in their own file in the IMR layer, traced photos
+  included: «ok» (16:59). On the rule: «Et du coup il nous faut un vrai suivi de version pour l'app (ce qu'on n'a pas
+  vraiment à l'heure actuelle...)». Applied: docs/rules/ship.md W3,
+  docs/decisions/2026-11-26-refactor-effort-no-argument.md, Linear REE-294, REE-311. (REE-294 (a) and (c) and REE-61
+  (1) and (2), 15:05, are in the entry above.)
+- **15:08-16:49, feedback for the IMR trainers (REE-310).** The request (15:08): «Les formateurs de IMR seraient très
+  intéressés par des feedbacks sur leur cours, sur la base de tout le travail qu'on a pu faire, des sources externes, et
+  des données dont on dispose. Il faudrait essayer de lister toutes les erreurs ou potentielles contradictions entre IMR
+  et ce qu'on sait/pense savoir.» 15:09: «Ou évolutions et modifications à suggérer». 15:10: «Est-ce que tu peux lancer
+  cette étude maintenant stp? Avec Opus High seulement». 16:12, a section for the five main points and a much simpler,
+  more readable document. 16:35-16:37, corals and fish apart, each on its own as the trainers differ: «Dans chaque
+  matière. Pas les mêmes formateurs»; sea slugs removed: «on peut dégager la partie sur les limaces de mer. Ya pas de
+  cours IMR sur ça». 16:49, on the revised document: «Oui c'est bon». Applied: Linear REE-310 (done; sending it to the
+  trainers is his action).
+- **16:55-16:59, the question session's other answers.** REE-194: the identifier of the three Dipsastraea photos is
+  thamnasteroid, «Oui c'est lui», so the single-identifier rule stays; the batch review screen for the 9 fish photos
+  and the 11 nearly everyone misses: «ok». REE-261: «ok», "delete, keep answers" is kept as built (#1354), on rule D7.
+  REE-226: «C'est pas pour l'admin, c'est pour un futur role de curator (à définir)»; a default global list of pairs,
+  and a curator may change the pairs shown in their instance. REE-41: «oui» to logging the sheets viewed and
+  comparisons opened as a new event kind joined to the answers by device (a sheet column change, asked and allowed).
+  REE-6: «ok» to deleting the 2 unused objects listed and nothing else. Applied: Linear REE-194, REE-261, REE-226,
+  REE-41, REE-6.
