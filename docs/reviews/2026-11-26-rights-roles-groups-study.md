@@ -87,7 +87,7 @@ Sources read for this section (public pages, fetched 2026-11-26, rule C7). Claim
 | **The last admin** | Classroom: "You cannot remove the primary teacher from a class". Moodle: the primary administrator "cannot be removed from the site administrator role". GitLab proposes a modal: a sole owner "must assign a new owner before leaving". GitHub, Google and Entra recommend at least two (GitHub: "at least two people"; Google: "more than one super administrator account") | Refuse the last removal, as Pierre asks. None of the pages read offers a force path; Pierre's force is ours, made safe by the audit and the token |
 | **Break glass** | Entra recommends "two cloud-only emergency access accounts" for when "all other administrators are accidentally locked out". Google super admin cannot be given to a group | Our break glass is the admin token: it passes every right and can change the script |
 | **Role explosion** | OWASP: RBAC can suffer "role explosion"; it is "poorly suited" to multi-tenant use cases | Scopes on assignments avoid one role per subject. Instances get their own sheet later (Q343) |
-| **Audit** | OWASP: "if logging related to access control is not properly set-up, such authorization violations may go undetected" | Every change has its row; Before and After make each row readable alone |
+| **Audit** | OWASP: "if logging related to access control is not properly set-up, such authorization violations may go undetected". The product pages read did not cover their audit logs | Every change has its row; Before and After make each row readable alone |
 
 Linear and iNaturalist are the small-app end. Linear has fixed workspace roles (Owner, Admin, Member, Guest) and team
 owners; its page names no custom roles. iNaturalist's projects have fixed admins, managers and curators. Both show
@@ -119,8 +119,17 @@ rows (Q408, answer 6). #1554 adds one audited write for every rights change (`ri
 | **Groups page** | Rights chips | Rights chips with subjects | Role chips: "Trainer: fish, sea slugs" | Relations list |
 | **Direct roles** | No: a group of one | No: a group of one | Yes: an `Assignments` row with the account's code hash | Yes |
 | **List of subjects** | No | Yes | Yes | Yes |
-| **Meets the 11-26 points** | 1 of 6 | 3 of 6 | 6 of 6 | 6 of 6, at a cost |
-| **Cost** (beside the guardrails and Audit PRs) | 0 | One sheet M and one admin M | One sheet L and one admin L | Two sheet L, one admin L, and a new mental model |
+| **Migration (W3)** | None | None: old cells stay valid, the grammar only grows | One `ONCE_` step: each Rights cell becomes a role and an assignment (below) | One step: every membership, right and admin row becomes a tuple; the largest rewrite |
+| **Security** | As today: hash binding, `grant` gate, token root | Same; a preset applied to a group with members is refused, as a first right is | Same, plus the hash on direct rows; a role edit is a mass grant (gated, below) | Same in principle; harder to review, every rule is data |
+| **D4 (old apps)** | Nothing new | Admin gated on the version that takes subject lists | Admin's new pages gated on the version; an old page's `groupEdit rights` refused | Every admin rights view gated; no player app reads rights |
+| **Pierre sees** | Rights chips on a group; one person needs a group of one | The same, with subject ticks; a Roles page that copies presets | Roles page, role chips on groups, roles on the player's bar | Lines of "who, relation, what" |
+| **For** | Built, reviewed, no cost | Cheap; no new tab | His three pages; the common pattern; one role edit reaches every holder | Most general: could hold cohort trainers and follow rights too |
+| **Against** | No Roles page, no direct roles, one subject | Presets drift from the groups made from them; direct roles faked by groups of one | Two new tabs, one more migration | Far beyond a pilot; opaque to Pierre; reopens Q408 (6) and Q448 |
+| **Cost** (beside the guardrails and Audit PRs, which fit every option) | 0 | One sheet M and one admin M | One sheet L and one admin L | Two sheet L, one admin L |
+
+What each option gives of the 11-26 points: the Audit columns and the guardrails fit all four. The instance reaching
+its subjects is #1554's, so all four have it. A Roles page that sets rights for every holder, and direct roles, only
+C and D give. A list of subjects: B, C and D.
 
 ### Option C in detail
 
@@ -153,7 +162,10 @@ subject list covers its subjects only.
 - A merge drops what the merged name held directly and its memberships of groups holding roles (Q408, answer 7); the
   merge warning lists them (`mergePlan_`).
 
-**Migration (rule W3, one `ONCE_` step, nothing lost).**
+**Migration (rule W3, one `ONCE_` step, nothing lost).** It runs after the earlier rights migration (`rightsNow_`),
+whose code is still between `rights-migration` markers on `main`. Whether that one has run on the live sheet was not
+checked: this study did not read the Deploy log (rule W11). The new step starts from the Rights cells as that one
+leaves them.
 1. Each group whose Rights cell is not empty gets a role with exactly those rights. The `r:owner`, `r:editor`,
    `r:trainer` groups give the roles Manager, Curator and Trainer; any other group gives "<group name> rights".
 2. Each such group gets one Assignment of its role at the scope its cell holds (the instance, or #1554's subject).
@@ -174,6 +186,11 @@ Nobody's rights change. Every player sees what they saw.
   Question 4 keeps `grant` in the built-in Manager role only.
 - **Old cached admin pages.** After the migration, the script refuses a `groupEdit` that carries `rights` (`moved`), so
   an old page cannot write the retired column without anyone noticing.
+
+**Each cohort's trainers (Q448, REE-37).** Unchanged under C. Q408 (5) and Q448 (A) stand: one Trainer role gives
+the capacity, and each cohort lists its trainers as lines in the Groups tab, edited with `grant`. C does not reopen
+them. It could later hold a cohort's trainers as assignments at a cohort scope; that would be a new question, not
+asked here.
 
 **Compatibility (rule D4).** No player app reads a right today; a live game asks the script. The admin page's Roles
 page, the role chips and the direct roles turn on only when the script reports the version that has them (as
@@ -266,8 +283,10 @@ from the groups. D does more than this app needs.
 
 **#1554: merge it as it is**, once Pierre OKs the calls still open (question 8). Its one audited write is what every
 option builds on, and its tests trace every write. Its subject scope is the narrower half of what he now asks; option
-C's migration reads it. Drop its planned follow-up (a subject picker on the Groups page): plan PR 4 replaces it. Rework
-or closing would cost a review round for nothing C does not replace anyway.
+C's migration reads it. Drop its planned follow-up (a subject picker on the Groups page): plan PR 4 replaces it.
+Reworking it first would cost a review round on `Code.gs`, and PR 3 replaces its one-scope rule anyway. The cost of
+merging as is: its `rights <before> > <after>` rows enter the Audit history until PR 1 retires the row type. Few
+rights change in that window, and the rows stay readable.
 
 **The PRs, in order.** `Code.gs` PRs go one at a time (rule W27). Agent time from `python3 tools/effort.py --estimate`:
 
@@ -275,12 +294,12 @@ or closing would cost a review round for nothing C does not replace anyway.
 | --- | --- | --- | --- |
 | 0 | #1554, as it is | ready | none left |
 | 1 | Audit Before and After columns; `rightsWrite_` fills them; the row type of #1554 retired | sheet M | median 27 min, 24-45 min (#1346, #1349, #1566, #1573, #1585) |
-| 2 | The guardrails: the counts under the lock, `last`, `force`, the Alerts line, on today's groups | sheet M | median 27 min, 24-45 min (#1346, #1349, #1566, #1573, #1585) |
+| 2 | The guardrails on today's groups: the counts under the lock, `last`, `force`, the Alerts line; and in the admin, the warning and the typed REMOVE (today an unknown answer shows only "Not done (last)", `admin.js` `rightsErr`) | sheet+admin M | median 73 min, 49-82 min (#1385, #1414, #1474, #1566, #1568) |
 | 3 | Roles and assignments in the script: two tabs, `can_`, subject lists, the migration, the gates | sheet L | median 3.7 h, 1.9-4.3 h (#1354, #1357, #1414, #1474, #1509) |
-| 4 | Admin: the Roles page, role chips on Groups, direct roles on the player's bar, the force dialog | admin L | median 3.6 h, 28 min-12.4 h (#1330, #1336, #1393, #1435, #1582) |
+| 4 | Admin: the Roles page, role chips on Groups, direct roles on the player's bar | admin L | median 3.6 h, 28 min-12.4 h (#1330, #1336, #1393, #1435, #1582) |
 | 5 | The rule on additive rights, ROADMAP, SECURITY, a decision record | docs S | median 8 min, 5 min-1.5 h (#1327, #1453, #1501, #1555, #1599) |
 
-Total, the sum of the medians: about 8 agent hours, most of it PRs 3 and 4 (#1354, #1330). PRs 1 and 2 are useful in
+Total, the sum of the medians: about 9 agent hours, most of it PRs 3 and 4 (#1354, #1330). PRs 1 and 2 are useful in
 any option and can go right after #1554. PR 3 waits for questions 1-5 (a data format and a migration: costly to undo).
 REE-37 (each cohort's trainer lines, Q448) then builds on PR 3; REE-65 (rights in the load reply) after it.
 
@@ -316,5 +335,7 @@ Numbered for this study only. Each has options and a recommendation. Questions 1
    instance holds in each subject (call 3, yes); a list of subjects replaces "one scope per group" (call 2, superseded
    by C, kept until PR 3); the Audit columns replace the `rights a > b` row (call 6, superseded by PR 1). Call 1 is
    question 3 here. Left: deleting a group that carries rights asks `grant` (call 4), and a removal takes the
-   account's rights away first, so a failed Audit row stops it (call 5). *Recommendation: OK to both, and merge #1554
-   as it is.*
+   account's rights away first, so a failed Audit row stops it (call 5). Then, for #1554 itself: (a) merge it as it
+   is; (b) rework it first, keeping only the one audited write (no subject scope, no `rights a > b` row); (c) close
+   it and fold the audited write into PR 3. *Recommendation: OK to calls 4 and 5, and (a)*: it is green and reviewed,
+   every option needs it, and the `rights a > b` rows written before PR 1 stay as readable history.
