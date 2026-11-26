@@ -1045,6 +1045,39 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   one `pCloud backup:` line to the `Deploy log` tab (the file name and size, or the reason; never the token).
   `tests/backup.test.js`.
 
+### Restore rehearsal
+
+`node --test tests/restore.test.js` (under a second, part of the fast tier) rehearses a restore on local doubles only
+(REE-337; no disposable Apps Script project or sheet until Pierre answers REE-100 point B): synthetic accounts, never a
+real backup or the production sheet (rules D1, D2).
+
+1. **The cohort.** Accounts saved through `doPost` on the in-memory sheet (`tests/gas.js`), two devices and a device not
+   signed in; Roles rows from before the groups, then the one-shot migrations (`once_`); a cohort group with its board
+   and a group carrying the players right; the admin list; revocations (a Managers membership, an admin grant, a
+   Curators membership), a hidden board, a player left out of the statistics, an admin delete that keeps the answers and
+   a self-delete; a progress of 50,000 characters.
+2. **The snapshot.** `xlsx_`, the file `backup_` uploads, and what the sheet answered then (every value, the answer ids,
+   each account's rights, the groups, the anonymous ids). Then, on the live sheet, a self-delete, a revocation, a save
+   that moves a revision on and a new account.
+3. **The restore.** The file read back as an import is assumed to read it (shared strings as text, `t="b"`, the date
+   style as a time in the new spreadsheet's zone; not checked against Google, rule W11) into a fresh script whose Script
+   Properties hold only what is carried: `ANON_SALT`, the `ONCE_<name>` marks and `ROLES_SEED` (any non-empty value: the
+   script only tests that they are set).
+4. **Checked.** Every tab and value back, dates to the millisecond; the answer ids of the snapshot and no other; the
+   anonymous ids, every account's rights and every group as at the snapshot; deleted accounts answered `gone`, their
+   names in no tab but `Removed`; the hidden board and the left-out player as they were; `once_` changes nothing; a
+   returning device answered `stale` logs its queue once, and a resend adds nothing.
+
+The tests named `GAP` pin what the rehearsal found unsafe today, so a fix changes them on purpose: a delete or a
+revocation made after the snapshot is undone; a revision number is reused, so a device that saved after the snapshot
+overwrites a newer save without merging; without the `ONCE_` marks every group loses its rights until `autoUpdate`
+runs the one-shots, and the rights migration then writes back a Managers membership revoked long before; without
+`ROLES_SEED` the admin page's first read gives the admin account back the rights it had left; without the old
+`ANON_SALT` every anonymous id changes and a player left out of the statistics counts again; a spreadsheet whose time
+zone is not Manila moves every date. Recovery point: the last weekly backup, at most 7 days; answers confirmed after it
+are lost, as the devices drop them from their queue once the sheet confirms them. Recovery time: not measurable here
+(the import, the redeploy and the app's `SYNC_URL` change are outside the double; about 30 ms locally for this cohort).
+
 ## Versioning and deploy
 
 - **Versions.** Every change to the script gets the next `VERSION` (line 1 says it and its date, the constant holds it),
