@@ -474,9 +474,10 @@ function unzip_(z){ return Utilities.ungzip(Utilities.newBlob(Utilities.base64De
 // Appends new answers to the Answers tab, skipping ids already anywhere in it (a resend after a lost reply).
 // The answers of a send the Answers tab does not have yet (by id): what the flood caps count (a device sending again
 // what it already sent must not use up its quota). The ids read once are handed to logAnswers_. An id met twice in the
-// same send counts once (newIds_), and a send with no answer reads nothing.
+// same send counts once (newIds_), and a send with no answer reads nothing. An entry whose id the tab never takes
+// (core.js logIdOk, as logAnswers_ checks it) is not fresh: never logged, never counted.
 function freshAnswers_(answers){
-  const L = (Array.isArray(answers) ? answers : []).filter(a => a && a.id);
+  const L = (Array.isArray(answers) ? answers : []).filter(a => a && CORE_.logIdOk(a.id));
   if (!L.length) return {seen: null, fresh: []};
   const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), n = sh ? sh.getLastRow() - 1 : 0;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
@@ -503,7 +504,7 @@ function logAnswers_(name, answers, seen0, dev){
   if (!seen0 && n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // the Timings tab
   // A unit may be a family (f:Damselfishes) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a
   // duel's mode; still a letter first, so nothing can start a formula.
-  const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z0-9: ]*$/;
+  const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, CH = /^[A-Za-z0-9: ]*$/;
   // Species shown also takes a species with no name yet by its label, a number after "sp. " (Goniobranchus sp. 5,
   // tools/seaslug_informal.json): a digit only in that number (1 to 3 digits, ending its name), nowhere else; still a
   // letter first, so nothing can start a formula.
@@ -515,7 +516,8 @@ function logAnswers_(name, answers, seen0, dev){
   // CV: a content version as core.js contentVersion makes it ('c' and a hash53, 16 characters at most), else
   // blank: a longer text or anything but a text is never cut or read into one.
   const CV = /^c[a-z0-9]{1,15}$/;
-  const rows = newIds_(answers.filter(a => a && a.id && ID.test(String(a.id))), seen).slice(0, 2000)
+  // An id of a-z and 0-9 only (core.js logIdOk): the device keeps an entry with another one queued (sync.js logAcked).
+  const rows = newIds_(answers.filter(a => a && CORE_.logIdOk(a.id)), seen).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
       sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '']; });  // Photo answered checked as Photos
   if (!rows.length) return;
@@ -715,11 +717,18 @@ function dataJson_(){
   return {gen: out, slate: slate.length ? slate : null, scale: scale.length ? scale : null};
 }
 // An Answers row as a replay row (core.js replayProgress): [player, time ms, shown, answered, right, mode, photos, e, th,
-// new photos, choices, null, seconds, null ... null, scoring at 22]; blank numbers are null. The seconds (at 12, as in
-// readAnswers rows) weigh a right answer's ability steps (core.js rtWeight); the scoring record (at core.js LOG_SC, null
-// without) has the replay score the answer with what the app scored it with (core.js scoreAnswer).
+// new photos, choices, null, seconds, null ... null, scoring at 22, null, Id at 24]; blank numbers are null. The seconds
+// (at 12, as in readAnswers rows) weigh a right answer's ability steps (core.js rtWeight); the scoring record (at core.js
+// LOG_SC, null without) has the replay score the answer with what the app scored it with (core.js scoreAnswer); the
+// answer's id (at core.js LOG_RID) has it count once (core.js replayProgress, REE-351).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
-const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL])];
+const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL]), ...new Array(CORE_.LOG_RID - CORE_.LOG_SC - 1).fill(null), String(r[7] || '')];
+// A player's Answers rows with each id once (REE-351): the first row of an id in the tab's order is kept, a later one
+// left out (a tab that holds an id twice: a hand edit, a restore; the intake never writes one, newIds_); a row with no id
+// is kept. Every replay reads a player's rows through it (rplMine_, boardRpl_, boardWarm_), so its answers, its ids and
+// its row count n (the Replayed tab's identity, rplFresh_) count an answer once; a cache made over a repeated id is made
+// again. A tab with each id once reads the same.
+const onceById_ = rs => { const got = new Set(); return rs.filter(r => { const k = String(r[7] || ''); if (!k) return true; if (got.has(k)) return false; got.add(k); return true; }); };
 // start: the player's first-launch answer in that subject (core.js startKey, reefid-sync-<subject>-start): the replay
 // steps the ability with the prior it says, as the app does (core.js startPriorAt).
 // sid: the subject replayed. One path for every subject (rule S1): its own rows (subjRows_), units (subjGen_), variant
@@ -776,10 +785,11 @@ function stMain_(q){
 // The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one, and
 // the structure stamp it was made under after a ~ when it is not '' (so a row without one reads the same).
 const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
-// The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
+// The player's rows of the subject replayed since their reset (the Answers tab as read once per request), each id once
+// (onceById_).
 function rplMine_(key, since, sid){
   const who = lc_(key);
-  return subjRows_(sid).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
+  return onceById_(subjRows_(sid).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since));
 }
 // A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for an old floored one); null when broken.
 function rplRead_(row){
@@ -2899,7 +2909,7 @@ function boardRpl_(S, warm){
       if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in kept)) kept[k] = {at: i + 2, r: r}; });
     }
     const since = resetOf_(d, sid), start = startOf_(d, sid), sinceKey = rplSince_(since, start, st || ''),
-      rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
+      rows = onceById_((mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since)), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
     return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) || st ? sinceKey : since, rows: rows, n: rows.length,
       row: c ? c.r : null, rec: prev && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o) : null};
@@ -3919,7 +3929,7 @@ function replayedAll_(users, dcol){
     if (!P || typeof P !== 'object') return;
     // Under the structure stamp in force (the Replayed tab's cache identity, rplSince_, as replay_ keys it)
     const since = resetOf_(data), start = startOf_(data), fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stM),
-      rows = (mine[k] || []).filter(r => (new Date(r[1]).getTime() || 0) > since).map(r => rowOf_(k, r)), n = rows.length, c = cached[k];
+      rows = onceById_((mine[k] || []).filter(r => (new Date(r[1]).getTime() || 0) > since)).map(r => rowOf_(k, r)), n = rows.length, c = cached[k];
     let rec = null;
     if (c && Number(c.r[1]) === CORE_.RV && Number(c.r[2]) === n && String(c.r[3]) === sinceKey) {
       try { rec = JSON.parse(c.r.slice(5).map(String).join('') || '{}'); } catch (e) { rec = null; }
@@ -5699,6 +5709,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // The scoring record (scoreRec; column Scoring, W) at index LOG_SC in the sheet's readAnswers rows,
   // its Answers tab rows and the replay rows (Code.gs rowOf_, logRow) alike.
   const LOG_SC = 22;
+  // An answer's id (its attempt id, answerId; column Id) at index LOG_RID of a replay row (logRow, Code.gs rowOf_), past
+  // the readAnswers rows' last column, so a row read for the admin or a study carries none: the replay counts an id
+  // once (replayProgress, REE-351).
+  const LOG_RID = 24;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
   // A surprise card's answer (quiz.js winkShow), logged like every other answer and never counted: mode WINK_MODE in the
@@ -11176,7 +11190,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
-  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
+  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (logIdOk).
   // Enough random characters that two answers of one millisecond never meet (the sheet would skip the second as a
   // resend). rnd: the random bytes (tests); else crypto.getRandomValues, else Math.random (a runtime without crypto,
   // never a browser the app runs in).
@@ -11185,6 +11199,12 @@ const CORE_ = (function () { const module = {exports: {}};
     const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
       b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
     return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
+  }
+  // Whether the sheet logs an answer of this id (Code.gs logAnswers_, freshAnswers_): one with an id of a-z and 0-9 only,
+  // as answerId makes it. A save's or an anonymous send's acknowledgement (log) covers only these: an entry with another
+  // id, or none, is never logged, so it stays in the device's queue (sync.js logAcked, REE-351).
+  function logIdOk(id) {
+    return !!id && /^[a-z0-9]+$/.test(String(id));
   }
   // The content version of an answer (docs/spec/sync.md "The Answers tab", Content version): a short id of the content
   // its subject's units were built from on this device, so analyses and replays can tell which content an answer saw.
@@ -11435,12 +11455,23 @@ const CORE_ = (function () { const module = {exports: {}};
       String(x || '')
         .split(/\s+/)
         .filter(Boolean);
+    // Each answer once (REE-351): a row that carries its answer id (LOG_RID: logRow, Code.gs rowOf_) counts only the
+    // first time that player's rows meet the id, in time order; a log that holds an id twice (a hand edit, a restore)
+    // counts it once. A row without one (the admin's readAnswers rows, a study's) counts as it comes.
+    const aids = Object.create(null),
+      aidOf = r => (typeof r[LOG_RID] === 'string' ? r[LOG_RID] : '');
     rows
       .filter(r => r && r[0] && r[2])
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
         if (own(since, id) && !(r[1] > own(since, id))) return;
+        const aid = aidOf(r);
+        if (aid) {
+          const met = (aids[id] = aids[id] || new Set());
+          if (met.has(aid)) return;
+          met.add(aid);
+        }
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -11539,7 +11570,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
   // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
   // The seconds rt at index 12 and the scoring record sc at LOG_SC (22), as in the sheet's readAnswers rows (11, their
-  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null).
+  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null), and the answer's id at LOG_RID (24), as
+  // the tab keeps it (its first 20 characters), so the replay counts it once.
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -11555,7 +11587,9 @@ const CORE_ = (function () { const module = {exports: {}};
     null,
     typeof a.rt === 'number' ? a.rt : null,
     ...new Array(LOG_SC - 13).fill(null),
-    scoreRec(a.sc)
+    scoreRec(a.sc),
+    ...new Array(LOG_RID - LOG_SC - 1).fill(null),
+    a.id ? String(a.id).slice(0, 20) : ''
   ];
   // A player's progress as the app holds it after the replay (docs/LEARNING.md "Full replay", What the replay gives and
   // what the device keeps; rule D9). rep: replayProgress's player; saved: the player's reefid-sync-coral-progress (the
@@ -12382,6 +12416,7 @@ const CORE_ = (function () { const module = {exports: {}};
     CV_SHEET,
     logOut,
     answerId,
+    logIdOk,
     contentVersion,
     curPart,
     CUR_SHARED,
@@ -12559,6 +12594,7 @@ const CORE_ = (function () { const module = {exports: {}};
     rvVars,
     LOG_SUBJ,
     LOG_SC,
+    LOG_RID,
     ansSubject,
     rowSubject,
     WINK_MODE,

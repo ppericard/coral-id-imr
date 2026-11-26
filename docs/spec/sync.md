@@ -29,7 +29,9 @@ A feature that needs sheet script version N turns on only when the script's repl
 `const X_SHEET = N` in the app's code. Gates stop at `core.js` `SHEET_FLOOR`, a script version already confirmed live:
 it is set only to a version merged at least three days before, never to the build's `VERSION`, because Pages deploys
 before the script updates itself. `sync.js` `sheetV` reads the script's version as at least the floor, also before any
-reply, so a new device or an offline first launch plays today's rules. Every gate at or below the floor is deleted with
+reply, so a new device or an offline first launch plays today's rules. Answers are never sent trimmed for want of a
+version (REE-351): a save reads it from the load before it, and an anonymous send holds a batch with a field the floor
+trims until a reply has said one ([answer.md](answer.md)). Every gate at or below the floor is deleted with
 its old branch: `tests/gates.test.js` lists the gates and fails on one at or below the floor, or on a floor above
 `VERSION`; `tools/sheet_version.py` never moves the floor. A gate this file names (`PA_SHEET`, `CV_SHEET`, `STRUCT_SHEET`,
 `PAIRS_SHEET`, `VIEWPORT_SHEET`, `LIVEGAME_SHEET`) is one of those still above it.
@@ -387,7 +389,8 @@ also pulls and merges, without writing, on start-up, when it comes back to the s
 online, so progress made on another device shows up without answering a question first. Each send carries `at`, the
 sheet revision it merged against; if another device wrote in between, the sheet answers `stale` (the answers still
 logged) and the app pulls, merges and sends again (at most twice). The app keeps unsent answers (2,000 at most) until
-the sheet confirms `log: true`.
+the sheet confirms `log: true`, which covers only the answers whose id the sheet takes (`core.js` `logIdOk`): one it
+refuses stays queued for at most 3 sends, then leaves with an Events line ([answer.md](answer.md), REE-351).
 
 ### Lighter saves on slow lines
 
