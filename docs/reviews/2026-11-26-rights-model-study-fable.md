@@ -204,6 +204,8 @@ through which line: the answer to "why can P3 do this?".
    membership is under that hash.
 4. Yes if one of them has a role that includes the right, and covers `where`: the whole instance covers each subject;
    a list covers the subjects it names and nothing else.
+5. Kept from today's `can_`: the admin account holds `grant` at every scope, whatever its assignments cover, so it
+   can always appoint a replacement (section 5); none of its other rights widen.
 
 A removal takes effect at the next request, as now. An unknown role, right or subject gives nothing and is logged.
 
@@ -286,7 +288,8 @@ The marks of today stay in the Action: `(self)`, `(account removed)`, `(migratio
 writes its row without the names: a name is free text, and the tab holds ids only.
 
 **Why a row per account.** It is what makes the columns worth having: "what could P3 do on 2026-12-01?" is the After
-of P3's last row before that date, read by a filter, with no replay. It costs one row per person touched; the rights
+of P3's last effective-rights row before that date (`rights`, `join`/`leave` and `snapshot (migration)` rows with a
+successful Result), read by a filter, with no replay; assignment rows and guard rows are left out of that lookup. It costs one row per person touched; the rights
 population is 8 today.
 
 **Never without its row.** Kept from #1554: a rights change whose audit row cannot be written answers an error, and
