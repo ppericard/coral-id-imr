@@ -54,15 +54,15 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 - **Pierre's follow-ups go to the running agent** with `SendMessage`, not to a new agent: he corrects the shape of a
   subject quickly.
 - **An interruption to ask a question is not a stop**: answer, then carry on.
-- **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then.
+- **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then,
+  right after the sweep, with its result (2026-11-26; [tools/checkin.md](../tools/checkin.md) step 5).
 - **"Choices I made" is filtered before it is passed on**: what is easy to correct afterwards ships as the integrator's
   call.
 - **A rule credited to Pierre quotes his words**; a paraphrase says "integrator's reading". A decision of his is never
   stretched to a new point (the IMR names on screen did not cover the photo credit, which keeps the iNaturalist name).
-- **Every brief** lets agents use every useful source and forbids sending the project's data out (photo addresses,
-  names, the sheet's data, image searches with our photos). It says that a refused command is reported, never worked
-  around (another tool, `subprocess`, another shell form), and names the routes: no wrapper script, no Monitor, no
-  split names; files are edited with the Edit tool.
+- **Every launch prompt** says "Read tools/agent-brief.md; task: REE-N, its Agent notes" and adds only the task. The
+  [brief](../tools/agent-brief.md) holds what was retyped at each launch and what an outside executor needs too; a line
+  every agent needs goes into it, not into a prompt.
 - **A PR is called ready only after counting its check runs**: right after a push only a few exist, all green. The
   Codex summary can say "running" long after its receipt "Reviewed commit: `<head>`" landed: the receipt on the head
   counts.
@@ -154,9 +154,9 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
   resolution, one species) before looking, and judge the species under target first. A photo in doubt is looked at
   in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
-- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
-  runs out, take the next decided Linear issues (Todo), or ROADMAP rows not transferred yet, the agents can move alone;
-  never invent a study to fill the time.
+- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; the work is every open
+  issue without one of the five reasons ([Linear](#linear), 2026-11-25), whatever its column; never invent a study to
+  fill the time.
 - **A large judging or boxing pass is measured first, without asking him** (Pierre, 2026-11-20 06:42-06:44: «Il faut
   faire des tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; «Je ne devrais pas
   devoir te le suggérer»): a bench of 50-100 items, lighter configurations beside the strongest model, the threshold
@@ -168,7 +168,8 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   answers where a strong model's calibration was found off (fish photo ease, 2026-11-19).
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
-- **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question.
+- **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question; attach
+  those that support a decision to the issue or PR (no player names, rule D2).
 - **Merge continuously**; keep few PRs open. He dislikes a long open list.
 - **Never ask him to click** anything the integrator can do: resolving Codex threads, marking PRs ready, retargeting,
   dispatching a workflow (`gh api -X POST …/actions/workflows/approved-photos.yml/dispatches -f ref=main`).
@@ -177,12 +178,12 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   integrator's to judge: undoing an agent's own mistake in a checkout is the integrator's job, done at once; only a
   step it may not take itself goes to him, as a yes/no question, never as a command.
 - **Rule 0** (AGENTS.md, one sentence): after 17:30 Manila, ask him nothing until his first message after 04:00;
-  questions wait in STATUS. It protects his time, not the agents' (Pierre, 2026-11-20 05:31-05:33): the work goes on
+  questions wait in Linear's Decisions for Pierre view. It protects his time, not the agents' (Pierre, 2026-11-20 05:31-05:33): the work goes on
   at every hour, and nothing stops at 04:00. A session restart kills the queue and the background waits, so a
   check-in at most an hour apart, night and day, re-starts them (`tools/queue/`).
-- **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
-  The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
-  2026-11-18: no morning report); the [session-start summary of reports and events](#integrator-startup) stands.
+- **No morning report task**: the daily 04:31 morning-report scheduled task stays disabled (Q202) and is not
+  re-enabled (Pierre closed it on 2026-11-18: no morning report); the
+  [session-start summary of reports and events](#integrator-startup) stands.
 
 ## Questions and corrections
 
@@ -335,7 +336,7 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   restart (an idle session's container is reclaimed) kills it and every agent: run the wave as a tracked background
   task, and an hourly check-in (`send_later`) restarts whatever stopped.
 - **A "decided" backlog item is checked against Pierre's words before launch** (2026-11-20): three items launched from
-  STATUS's list that morning were already built, the integrator's own prose, or a "plus tard". The agent's brief says
+  STATUS's list that morning were already built, the integrator's own prose, or a "plus tard". The brief tells the agent
   to stop and report when his words, verbatim and dated, do not settle what players see.
 - **A reference doc PR goes first** (2026-11-21): the backlog inventory (#1326) conflicted with the ROADMAP at every
   merge and was put back at the end of the queue each time, so for a day the integrator worked without it. Pierre,
@@ -350,12 +351,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   before its agent's tests). A second worktree on the same branch (`git checkout -B` elsewhere) leaves the first with a
   stale index that the queue reads as "local changes": confirm the files equal an older commit of the branch, then
   restore them or remove that worktree.
-- **Resolve a thread only after its fix is pushed** (2026-11-20, #1313): an agent that resolves first lets the queue
-  merge the head without the fix. Every brief says so.
 - **The main checkout must sit on `main`**: `train.py` runs from it, and an agent once left it detached on an old
   commit, so the trains ran an old `train.py`. `git checkout main && git pull` before starting a wave.
 - **Shared scratch scripts get overwritten**: an agent rewrote the integrator's push helper for its own branch. Keep
-  queue tooling in `tools/queue/` (#1315) and tell agents not to edit the integrator's scratch files.
+  queue tooling in `tools/queue/` (#1315); the brief tells agents to leave the integrator's scratch files alone.
 - **A Codex receipt with findings is its answer**: `prstate.sh` labels it `summary`; waiting for a clean receipt on
   that head only loses time (30 minutes a PR on 11-20); the queue now moves on after 3 minutes.
 - **Screenshots with real photos**: the container reaches the R2 host through its proxy (`curl`), but Playwright's
@@ -424,22 +423,24 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 | Kind | Home |
 | --- | --- |
 | Tasks and their state | Linear (team REE) |
-| Questions for Pierre | Linear issues labelled Decision for Pierre (the Decisions view), still asked in the chat in French |
+| Questions for Pierre | Linear issues labelled Decision for Pierre (the Decisions view); asked in the chat in French, and written on its issue the same turn |
 | Substantial studies, cross-cutting explanations | Drive Reef_ID, linked both ways with their Linear issue |
 | Code, specs, code-coupled studies, decisions | This repo (GitHub) |
-| Conversation | The integrator's chat: never the only copy of anything another collaborator needs |
+| Conversation | The integrator's chat or a session scratchpad: never the only copy of anything another collaborator needs |
 
 - **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
   opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
   2026-11-23, REE-219); a new issue (label Idea) for every idea discussed and not built; an issue's description holds
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
-  detail in its collapsible "Agent notes".
+  detail in its collapsible "Agent notes". Its skeleton, the executor line, the signed comments and an assignee a
+  connector set to Pierre: [the brief](../tools/agent-brief.md#in-linear).
 - **Every open issue is to be done unless it carries a reason not to be** (Pierre, 2026-11-25, REE-244; earlier
   form 2026-11-21 in ANSWERS). Linear is organised for the agents; Pierre works from the app and the chat. The five
   reasons:
   1. a choice of Pierre's (label Decision for Pierre, asked in the chat in French);
-  2. a checkable condition: a blocked-by relation to an issue or a PR, or a Scheduled date. A free-text "after X" is
-     not one;
+  2. a checkable condition: a blocked-by relation to an issue or a PR, a Scheduled date, or one label of the group
+     Waits on with its condition stated (Data: a "Gate: <measure> ≥ N (measured <date>: x)" line; Pierre (action):
+     the action named; External: who, and when to check again). A free-text "after X" or a bare label is not one;
   3. an idea not decided yet (Idea: building it is a new requirement, his OK first);
   4. Parked by him;
   5. a Study › Open inquiry with no pass assigned to an agent the integrator can launch.
@@ -460,8 +461,8 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
     never concludes it. It closes only when Pierre has decided what to do with the synthesis.
 - **Pierre never enters tickets**, relays a subagent's result or approves ordinary bookkeeping. Subagents report; the
   integrator updates Linear, unless the brief tells the subagent to.
-- **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first, still asked in
-  the chat in French ([AGENTS.md, Working with Pierre](../AGENTS.md#working-with-pierre)). The issue holds its context.
+- **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first
+  ([AGENTS.md, Working with Pierre](../AGENTS.md#working-with-pierre)). The issue holds its context.
   Blocked, Study, Idea, Waiting and Parked as named. **Scheduled** (Pierre, 2026-11-22;
   [decision](decisions/2026-11-22-scheduled-tasks.md)): a task
   that only needs to come back on a date or a named trigger goes to Backlog with this label, its due date (or its

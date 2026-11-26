@@ -2052,9 +2052,9 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : SYNC.err === 'reserved' ? 'Sign out, then sign in with another name.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
-        ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}…</span>
+        ? `<p class="sline"><span class="sdot wait"></span><span>Saving for ${ORG.short} as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}…</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`
-        : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}${when ? ` · ${when}` : ''}</span>
+        : `<p class="sline"><span class="sdot"></span><span>Saved for ${ORG.short} as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}${when ? ` · ${when}` : ''}</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`;
     box.querySelector('#snow').onclick = () => {
       msg('Sending…');
@@ -2102,7 +2102,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
   // welcome (the point is no two players with one name), said in the label itself.
   const tail = name => (/\s/.test(name) ? 'add more of your surname' : `add your surname's initial (${name} B.)`);
   const form = (name = '', pin = '', hint = '') => {
-    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device. Learning on your own? Sign in too, to keep your progress on all your devices.</p>
+    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at ${ORG.short}? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device. Learning on your own? Sign in too, to keep your progress on all your devices.</p>
     <form class="sform"><label>Your name or nickname <input name="n" required maxlength="40" autocomplete="name" placeholder="First name + initial"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>

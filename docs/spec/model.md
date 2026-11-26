@@ -61,6 +61,65 @@ subject's `progress`, `quiz`, `intro`, `intro-offer` and `start` (`REC_KEYS`), a
 wrote. Every other bump moves both: the data and the tree in force, the subject, the sheet's version, the photo
 statistics, a file loaded. A bump with no argument moves both, so a writer not sorted makes the data views again too.
 
+**A visit keeps the data version** (REE-298). A signed-in player's sync visits the other subjects at each save and each
+pull (`sync.js` `syncSummary`, `mergeSaved`; at the boot, `progress.js` `achPending`), and lends another tree for a
+while (`app.js` `treeWith`, `sync.js` `boardUnits`, `stsAsk`). A swap of the subject or the tree in force
+(`subjectLoad`, `inSubject`'s return, `treeAt`'s `treePull`) bumps both versions like any other writer (`swapBump`), so
+the views read meanwhile are the visited one's, and is counted apart (`DATA_SW`). When the visit ends with the subject
+and the tree in force back as they were and every data bump since its start was a swap (`dataMark`, `dataBack`), the
+data views' inputs are the ones before it: the data version then reads as the one before (`dataNow`: `DATA_V`'s value
+now is an alias, `DATA_AS`, of that version; the test written out, so a view's read makes no named call), so the subject on screen's data views kept for it hold, and the draw's
+data is not filled again. Any other data bump meanwhile keeps the new version: a tree built on the way (a visited tree
+not built yet or stale, `treeBuild`), the statistics, the sheet's version, new data, a stored text another tab changed
+(`stateNow`); so does a tree the visit leaves in force (from the corals with no tree in force before). `DATA_V` only
+goes up and an alias names an older version, so a version once left is never read again (a view read during the visit
+is never served after it). The limits:
+
+- One value a view (one Map a keyed view): a data view the visit reads for the visited subject holds the visited
+  subject's values afterwards, so the subject on screen's are made again at their next read. A sync's visits read no
+  data view (`tools/answercost.js --syncs`: no data view computed in a sync's window).
+
+**A visit keeps the state version and the memos too** (REE-300). A visit swaps the records `P` and the settings `Q`
+with the subject and puts back the same objects; the subject hooks read their state again (`model.js`'s reads the
+intro map again with `swapBump('rec')`: a swap of the state version alone, counted in `STATE_SW`). A bump of the
+player's records and settings is counted for the subject whose records it wrote (`stateBump('rec', sid)`, `REC_BY`):
+`store.set` of a record's key for that key's subject (`REC_KEYS`, each key to its subject), any other for the subject
+in force, whose `P` and `Q` the writer holds (the scorer, the merge's refill, a recalculation, a record made), and a
+first-launch record another tab wrote for nobody (`stateNow`). When the visit or the tree lent comes back with the data
+version (above) and every state bump since its start was a swap's or wrote another subject's records, the state views'
+inputs are the ones before it: the state version reads as the one before (`stateNow`: `STATE_V`'s value now an alias,
+`STATE_AS`, of that version, the test written out), so the subject on screen's state views hold. The visited subject's
+writes keep it: a sync's merge, hold and replay of each other subject store its records (`sync.js` `mergeSubject`,
+`holdAdopt`, `replayAdoptS`); `progress.js` `achPending`'s recount writes no record. A write of the subject on screen's
+records meanwhile (its key, a visit back to it), another tab's first-launch record, or any data bump leaves the new
+version.
+
+The memos the subject hooks reset are put back when the data version came back (`app.js` `SUBJ_MEMOS`, `memoGet`,
+`memoPut`, around each visit and tree lent): each unit's difficulty (`model.js` `GDIFF`, when made for the version
+before the visit: `GDV` then the version now, an alias of it) and the typed names (`quiz.js` `TYPEN`). The intro map is
+never put back: the hook's reset leaves it to be read again from the device, as before a visit kept anything, so
+another tab's write of it is seen (and `introAdd`, which writes the whole map back, never writes a map from before the
+visit over that tab's entries). With the state version kept, it is read at the visit's return and compared with the map
+the subject on screen's views were made from (its text at the visit's start): another text is a write of nobody's
+known (`stateBump('rec', null)`), so the state version moves. A map not read since its last reset (no text at the
+start) was read by no view kept: it is left to be read when asked.
+
+The invariant the state version's alias rests on, that no state view reads another subject's records, is checked by
+`tests/seaslug.smoke.js` (part 2): each other subject visited and written as a merge writes it, the state version
+kept, every state view read against a computation now (`VIEW_CHECK`), then made again with the stored keys it reads
+recorded, none another subject's.
+
+Two things still make the subject on screen's state views again at each sync (`tools/answercost.js --syncs`: its units
+met and header pill once a sync with the corals on screen, twice with the fish or the sea slugs, where each visit made
+them again before):
+
+- its own merge, outside any visit (`mergeSaved` merges the subject on screen in place), stores its first-launch record
+  (`model.js` `startMerge`) and its progress (`sync.js` `mergeSubject`) and recalculates (`mxRecalc`) at each sync,
+  whatever changed: the state version moves;
+- one value a view, as for the data views: the merge of another subject redraws the pill inside its visit
+  (`mergeSubject`'s `prog()`), which computes the visited subject's header and units met, so the subject on screen's
+  are made again at the next read though the version came back.
+
 The other keys an answer writes (its queue, the comeback, the pending question, the achievements) are no input. The
 sheet's version and the first-launch records are read from storage at every use (`sync.js` `keptBy`): their stored text
 is compared at the first read of a view in a task (`stateNow`), so another tab's write bumps the version at the next
@@ -79,7 +138,17 @@ version: it reads only the data inputs, so the player's answers do not make it a
   `setAuto`, per set: `sciOpen`, `spPlay`, `sciPlay` once a version for the three views that read them);
 - the units met (`model.js` `introduced`, `metCalc`): one Set a version, made from the only units that can be met (a
   record's key or an intro map entry), so a read is one lookup; a loop with nothing written during it reads the view
-  once (`introducedFn`: the sets' units in play, a level's need, the wrong choices);
+  once (`introducedFn`: the sets' units in play, a level's need, the wrong choices, the openings' candidates in
+  `planPhoto` and `introStart`, the rank share, the achievements' bonus count, `progress.js` `unlockN`);
+- the units ready to be asked (`model.js` `introReady`, `readyCalc`): one Map a version over the same units, each
+  one's part (`readyPart`): ready, or the mark on the answer clock from which it is (its card's gap), a unit absent
+  being neither met nor ready. The clock itself (`tally`) is read at each read for a unit that waits, never kept: it
+  follows the answer count, no input, and its first read after an answer may write the comeback's record. A loop reads
+  the view once (`introReadyFn`: `unlocked`, the rank share's weights, `planPhoto`'s units met);
+- the genera opened on a card, each with its mark (`model.js` `cardsNow`, `cardsCalc`), in the intro map's order:
+  `openRecent` (the opening's pace) keeps those inside its window on the clock;
+- circle 2's condition (`app.js` `c1Met`, `c1MetCalc`: every circle-1 unit asked since its card, and met), which
+  `treeGate` reads for each circle-2 unit;
 - each unit's bar and exam entry (`model.js` `genScore`, `genScoreCalc`; `examOn`, `examOnCalc`), per unit;
 - the comeback's units (`model.js` `cbPlay`, `cbGenera`), the start's level (`startP`, read once per unit by
   `ability`) and whether the player said they are at IMR (`imrSaid`, read once per name shown);
@@ -104,11 +173,50 @@ The data views:
   `setBonus`), whether it is a reference-level photo (`refLevel`), its variant kind and its mimicry entry. `photoSet`
   reads it once per draw and `varOf` takes its kinds; the player's part of a weight (the target, the memory, the
   variants' ramps, the window of recent photos) is computed at each draw. The inputs include the subject's calibration
-  and the calibration set (`app.js` `build` bumps after it is read);
+  and the calibration set (`app.js` `build` bumps after it is read). The reads that are the same for every photo of the
+  unit are made once for it (`calU`, `photoDiffOf`: its offset, the subject's ease, the time term of a photo with none;
+  `setFiles`), and each photo's answers (`nAnswers`) once for its three factors, passed to `photoDiff`, `calSd`,
+  `calBonus` and `setBonus`. **It is filled ahead in idle time** (`app.js` `drawFillSoon`, `drawFillStep`), so the
+  answer that draws a unit finds it ready: about ten calls a photo, a fish family's thousands of photos otherwise on
+  that answer. For the units in play (`pool`, those met first), in slices of at most `DRAW_FILL.CAP` photos that end
+  with the idle period (`requestIdleCallback`; without it, a slice every 50 ms), each slice reading the view itself, so
+  the values are the draw's. It is asked after the boot's first plan, after each plan (`quiz.js` `planNext`), after a
+  visit to another subject (`inSubject`: nothing to fill when the visit kept the data version) and when the photo statistics arrive
+  (`rankPhotos`); a data version already filled asks nothing, and a slice makes its queue again when the version moved.
+  A unit not filled yet (one that came into play later in the version) is filled by its draw, as before;
 - the units of a level's list by parent (`app.js` `kidsOf`, `kidsCalc`) and, for `sciPlay`, each parent's units in
   its species order (`sciKids`, `sciKidsCalc`): `spPlay` and `sciPlay` read them;
 - the sets' units with a kind of name and a species (`progress.js` `achNamed`, `achNamedCalc`), which `achBoth`
-  counts at Advanced.
+  counts at Advanced;
+- each unit's part of a pair's confusion prior (`model.js` `confUnit`, `confUnitCalc`: its declared and data
+  look-alikes and its family) and its growth forms (`formsOf`): `pooledConf` reads them, where it read both records and
+  computed both units' forms for every pair;
+- each unit's part of a pair's group score (`model.js` `groupUnit`, `groupUnitCalc`: its declared look-alikes as
+  `declaredOf` gives them, its data look-alikes and its family) and its growth forms (`formsOf`): `groupsOfRank` reads
+  them once for its loop (`groupPairFn`), where every pair of a rank read both records and computed both units' forms,
+  tens of thousands of pairs whenever the units in play or the pooled stats change. Only the pairs that may be an edge of
+  the groups are scored up front (`groupPairFn` `pairs`): the declared and data look-alikes and the pairs the pooled
+  stats count, since without a pooled count a pair scores its prior and only a look-alike's reaches `CONF.TRAP`; any
+  other pair is scored when the average linkage reads it. Every pair is scored when that does not hold (a unit with no
+  record, a name twice, a lower prior at `CONF.TRAP`);
+- whether a unit has a game photo to show (`model.js` `photoAnyBy`, `photoAny`): the units in play (`app.js`
+  `poolCalc`) read it once for their loop (`photoAnyFn`), where they asked `photoAny` of every unit at every answer;
+- the choice labels (`model.js` `choiceKeyFn`), per unit and per IMR answer: a species named by its common name is
+  labelled with the player's first common name (`app.js` `treeGenera` `name`, `cnFirst`), so the answer (`imrNow`,
+  read once) is in the key and each key's label is computed under it. Only a subject that names its species by their
+  common names (`SUBJECTS` names `cn`) reads the answer.
+
+Each unit's difficulty (`model.js` `genusDiff`, memo `GDIFF`) is kept for the data version too, read from `DATA_V`
+directly (`GDV`, no storage check: its inputs, the statistics joined and the units built, are written in this tab). So a
+tree's new photos (`app.js` `treeBuild`, `treePull`) make it again, as the statistics, a new curation and a subject
+switch do. Where `model.js` runs without `app.js` (the tools, the unit tests), the memo is cleared by hand.
+
+A keyed view has a read for a loop with nothing written during it (`app.js` `keyView` `fn`, as `introducedFn`): the
+version is read once, then a value kept in it is a lookup; any other read goes through the view (with `VIEW_CHECK` on,
+every read). `distractors` reads each unit's class (`rankKindFn`), label (`choiceKeyFn`), pooled confusion
+(`pooledConfFn`) and forms that way; `openFresh`, `levelTop`, `quiz.js` `planFind`, `typeMatch` and `typeKind` read the
+classes that way. `quiz.js` `planPhoto` hands the wrong choices the units met read once (`knownNow`, through
+`introducedFn`) at their call: `distractors` and `customChoices` write nothing.
 
 A tool or a smoke that writes one of these inputs by hand (the photo statistics, the calibration's constants, the
 subject's calibration) bumps after it with no argument (`stateBump()`): `tools/learnsim.js` (`--calib`, the made-up
@@ -120,8 +228,9 @@ rated world, a unit test: no `stateView`), each value is computed where it is re
 through `tests/facheck.js`), every read of a kept view computes it again and compares, order included (a list, a Set
 or a Map item by item, a plain object key by key down to its leaves), and a `stateNow` that trusts its task's
 comparison compares the stored texts again; a difference throws, and again in a task of its own. The units met are
-checked value by value: each `introduced` read against `introducedCalc` (`model.js` `metCheck`), so a record a smoke
-writes by hand for a key no read asks about is no difference. A smoke that writes `P` or the intro map by hand
+checked value by value: each `introduced` read against `introducedCalc` (`model.js` `metCheck`), and each
+`introReady` read's part against `readyPart` (`readyCheck`), so a record a smoke writes by hand for a key no read asks
+about is no difference. A smoke that writes `P` or the intro map by hand
 bumps after it (`stateBump('rec')`), as the app's writers do.
 `tests/stateview.test.js` compares the units in play, the rank classes, each unit's set and class with the code before
 them over rated-world runs and made-up states, and checks that every declared writer bumps the right versions;
@@ -136,6 +245,17 @@ each kept entry against the functions it keeps after every write, and fails the 
 bump alone; it also checks `kidsOf`, `sciKids` and `achNamed` against the code before them and fails a change of their
 data under the player's bump alone; `tests/lvlnext.test.js` compares `spPlay` and `sciPlay`, and
 `tests/levelview.test.js` the achievements' counts, with the code before them over many states.
+`tests/choiceview.test.js` compares the pooled confusion, the labels, the classes and the wrong choices with the code
+before them on made-up units, with the records, the IMR answer, the pooled answers and the units' records written
+between reads, and fails a record, a unit's forms, a name or a class changed under the player's bump alone.
+`tests/openview.test.js` compares the units ready, the cards' window, circle 2's gate, the units met in the openings'
+loops and the comeback's rust (`rustNow`) with the code before them on made-up records and intro maps, the clock and
+the time moving between reads, and fails the intro map or a record changed with no bump. `tests/poolview.test.js`
+compares the units in play with the code before `photoAny`'s view, with the slate, the bonus units and the units' photos
+written between reads, and fails a photo refused under the player's bump alone; `tests/groupview.test.js` compares every
+pair's group score, its declared test and the groups with the code before them, with the pooled stats and the units'
+look-alikes, families and forms written between reads, and fails a unit's look-alikes changed under the player's bump
+alone.
 
 ## Which unit next
 
@@ -165,8 +285,8 @@ there are no coded tracks; the player's own answers set the pace.
   card planned before the miss is planned again.
 - Easier questions while the opening hold is on (`holdEase`): the photos and the format aim `h − INTRO.HOLD` logits
   lower, on every question but an exam, the Duel tab's too (`quiz.js` `planDuel`).
-- A starred unit opens only once its references are met ([front-end.md](front-end.md#shared-helpers-appjs),
-  `starWaits`).
+- A unit opens only once the units its record says it opens after are met (`after`: a starred genus's references,
+  [front-end.md](front-end.md#shared-helpers-appjs); `core.js` `afterWaits`, read for every subject).
 - The draw is simulated by `tests/profiles.smoke.js`, the learning outcomes over many seeds by `tools/learnsim.js`.
 
 **First-meeting cards, Open all and back to one at a time** (`model.js` `INTRO`, `introAdd`, `introduced`, `introReady`,
@@ -357,7 +477,10 @@ ability step ([sync.md › Answer time and enlargement](sync.md#answer-time-and-
 LEARNING.md "Comeback after a break". `model.js` `rustNow` (run when a question is planned or answered) starts a new
 visit after `SESSION.GAP` = 30 minutes without an answer: the next `COMEBACK.FLOOR` = 10 answers open no unit (`noOpen()`
 blocks the cards in `planPhoto`, the open-all and bonus genera offers in `quizPhoto`; bonus genera, once on, open by
-cards like slate genera). From the FSRS recall per unit (`recallAt`, `stability`) it adds the gap's rust (`rustOf`); a
+cards like slate genera). From the FSRS recall per unit (`recallAt`, `stability`) it adds the gap's rust (`rustOf`,
+summed by `rustAdd`, each unit's stability read once for its two times) at a new visit and during a comeback, the only
+times the sum is read; between them it sums nothing (`rustSkip` still makes the `genusDiff` values the sum would read,
+so the memo holds what the sum would leave in it; the values follow the data version either way). A
 comeback runs while that is above 0 (`comebackOf`: units answered right, the surest half first, then the most rusted;
 the usual choices, `trapsFor`; photos aimed at ability + ln R through `photoSet(n, skip, shift)`; no card, duel or exam;
 `q.warm`, and `q.cb`, the unit's recall) and ends by a CUSUM on its answers (`comebackStep`, with the opening hold's

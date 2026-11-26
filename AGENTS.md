@@ -14,7 +14,8 @@ HTML/CSS/JS app, used mostly on phones. ReefRecall is separate. See [README.md](
   substantial shared studies. GitHub holds code and code-coupled docs and evidence. Discuss in chat and carry
   useful conclusions back to the existing issue or document, with their scope and uncertainty.
 - When taking over integration, start with [Integrator startup](docs/INTEGRATOR.md#integrator-startup) and
-  [STATUS.md](docs/STATUS.md). For a bounded contribution, follow the assigned scope and consult STATUS if the
+  [STATUS.md](docs/STATUS.md). For a bounded contribution, follow the assigned scope and
+  [CONTRIBUTING.md](CONTRIBUTING.md#contributing-from-outside-the-integrator-session), and consult STATUS if the
   handoff affects it. Run `python3 tools/brief.py --short` explicitly when you need live orientation and the hook
   did not run. The brief reports GitHub and sheet version signals, and points to Linear for work state.
 
@@ -24,7 +25,8 @@ HTML/CSS/JS app, used mostly on phones. ReefRecall is separate. See [README.md](
 > after 04:00; everything else goes on as normal, agents included.**
 
 Use `python3 tools/brief.py --time` or Manila time (`TZ=Asia/Manila date`) if the hook did not print it. Questions,
-reviews or files that call for his answer wait in STATUS.
+reviews or files that call for his answer wait in Linear's Decisions for Pierre view, which holds the truth. STATUS
+only summarises them for the next session and may be incomplete.
 
 ## Working mode: the integrator and the merge contract (Pierre, 2026-11-05)
 

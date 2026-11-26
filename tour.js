@@ -63,7 +63,7 @@
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
-      d: `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${TAP} to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.`
+      d: `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${TAP} to see every genus of the ${ORG.slate}: the coral genera ${ORG.short} records on its reef surveys, plus a few look-alikes.`
     },
     help: {
       k: 'help',

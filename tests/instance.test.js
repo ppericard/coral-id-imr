@@ -14,6 +14,7 @@ const INST = read('tools/instance.json'),
   BASE = read('tools/fish_source.json'),
   FL = read(INST.layer.fish),
   CL = read(INST.layer.coral),
+  CO = read(INST.layer.course),
   RAW = read('data.json');
 const clone = o => JSON.parse(JSON.stringify(o));
 const run = (args, opts = {}) => {
@@ -42,7 +43,7 @@ const regroup = (layer, base) =>
 test('tools/instance.json names the instance (id, name), its centre and a layer file per subject', () => {
   assert.strictEqual(INST.id, 'imr');
   assert.ok(INST.name && INST.centre && INST.centre.radiusKm > 0);
-  assert.deepStrictEqual(Object.keys(INST.layer).sort(), ['coral', 'fish']);
+  assert.deepStrictEqual(Object.keys(INST.layer).sort(), ['coral', 'course', 'fish']);
   Object.values(INST.layer).forEach(p => assert.ok(fs.existsSync(path.join(ROOT, p)), p));
   const r = run(['tools/instance.py', '--check']);
   assert.strictEqual(r.status, 0, r.out);
@@ -148,7 +149,9 @@ test('fish: the presentation’s slides, the IMR tag and the dive-sign mark are 
     BASE.species.map(s => s.id).filter(id => id in FL.species),
     'the layer’s species are the base’s, in its order'
   );
-  Object.values(FL.species).forEach(x => assert.deepStrictEqual(Object.keys(x), ['sl']));
+  Object.values(FL.species).forEach(x =>
+    Object.keys(x).forEach(k => assert.ok(['common', 'sec', 'pdf', 'cs', 'src', 'sl'].includes(k), k))
+  );
   const withSl = Object.entries(FL.nodes).filter(([, x]) => x.sl);
   assert.ok(withSl.length >= 27 && withSl.every(([, x]) => x.sl.every(n => Number.isInteger(n) && n > 0)), 'slide numbers');
   // fish.json carries them as the build writes them, species included.
@@ -161,7 +164,318 @@ test('fish: the presentation’s slides, the IMR tag and the dive-sign mark are 
     [t, ...(t.sub || [])].forEach(u => assert.deepStrictEqual(u.sl, by.get(u.id).sl, `${u.id} sl`));
   });
   F.species.forEach(s => assert.strictEqual(s.sl, sp.get(s.id).sl, `${s.id} sl`));
-  assert.strictEqual(F.species.filter(s => s.sl).length, Object.keys(FL.species).length);
+  assert.strictEqual(F.species.filter(s => s.sl).length, Object.values(FL.species).filter(x => x.sl).length);
+});
+
+// The PDF's species fields (the IMR reference list, the EventMeasure PDF) and the presentation's own species mark are the
+// layer's: the base keeps the common names of the species of the other sources (dauin, wink, slides).
+test('fish: the PDF’s species fields (common name, section, pages, cheatsheet rank) and src slides are the layer’s; the deployment’s key is instance.json’s', () => {
+  const PDF = BASE.species.filter(s => (FL.species[s.id] || {}).pdf);
+  assert.strictEqual(PDF.length, 366, 'the species the PDF lists: the layer gives them their pages');
+  BASE.species.forEach(s => {
+    ['sec', 'pdf', 'cs', 'sl'].forEach(k => assert.ok(!(k in s), `${s.id} ${k} in the base`));
+    assert.ok(!('src' in s) || ['dauin', 'wink'].includes(s.src), `${s.id}: base src ${s.src}`);
+    assert.strictEqual('common' in s, !PDF.includes(s), `${s.id}: the base keeps the common name of a species off the PDF only`);
+  });
+  PDF.forEach(s => {
+    const x = FL.species[s.id];
+    assert.ok(x && x.pdf && x.sec && x.common, `${s.id}: its PDF fields in the layer`);
+    assert.deepStrictEqual(
+      Object.keys(x).filter(k => k !== 'sl'),
+      x.cs ? ['common', 'sec', 'pdf', 'cs'] : ['common', 'sec', 'pdf'],
+      s.id
+    );
+  });
+  const ranked = Object.entries(FL.species).filter(([, x]) => x.cs);
+  assert.strictEqual(ranked.length, 24, 'the 24 species of the cheatsheet');
+  assert.deepStrictEqual(
+    ranked.map(([, x]) => x.cs).sort((a, b) => a - b),
+    Array.from({length: 24}, (_, i) => i + 1)
+  );
+  const slides = Object.entries(FL.species).filter(([, x]) => x.src);
+  assert.deepStrictEqual(
+    slides.map(([id, x]) => [id, x.src, 'pdf' in x]),
+    [
+      ['s367', 'slides', false],
+      ['s368', 'slides', false]
+    ]
+  );
+  Object.entries(FL.species).forEach(([id, x]) => assert.ok(x.pdf || x.src || x.sl, `${id}: a layer species gives something`));
+  // fish.json carries them as the build writes them (the composed source, read by key).
+  const src = JSON.parse(run(['tools/instance.py', '--fish-source']).out),
+    sp = new Map(src.species.map(s => [s.id, s]));
+  F.species.forEach(s => {
+    const b = sp.get(s.id);
+    assert.strictEqual(s.common, b.common || '', `${s.id} common`);
+    ['src', 'sec', 'pdf', 'cs', 'sl'].forEach(k => assert.strictEqual(s[k], b[k], `${s.id} ${k}`));
+  });
+  assert.strictEqual(F.species.filter(s => s.pdf).length, 366);
+  // The deployment's key is tools/instance.json's, laid as deploy.key; its region (read by nothing) is gone.
+  assert.ok(!('deploy' in BASE) && typeof INST.key === 'string' && !('region' in INST));
+  assert.deepStrictEqual(src.deploy, {key: INST.key});
+  assert.ok(
+    BASE.keys.some(k => k.id === INST.key),
+    'the key in force is one of the source’s keys'
+  );
+});
+
+test('fish: a changed PDF field or species mark of the layer no longer gives fish.json, a changed list stops the offline modes; a base or layer out of place stops the build', () => {
+  const t = "is not as key .* gives it, with the instance's layer";
+  const list =
+    /the IMR list changed in the instance's layer \(pdf, cs, src\): run the full build \(python3 tools\/build_fish\.py\)\n\s+s\d+ [^\n]*: (pdf|cs|src) /;
+  // The common name, the section and the slides' mark are laid again offline: a change shows as a difference.
+  const common = clone(FL);
+  common.species.s001.common = 'Another butterflyfish';
+  assert.match(regroup(common).out, new RegExp(t));
+  const sec = clone(FL);
+  sec.species.s002.sec = 'POMACANTHIDAE';
+  assert.match(regroup(sec).out, new RegExp(t));
+  const mark = clone(FL);
+  delete mark.species.s367.src;
+  assert.match(regroup(mark).out, new RegExp(t));
+  const sl = clone(FL);
+  delete sl.species.s057.sl;
+  assert.match(regroup(sl).out, new RegExp(t));
+  // The list (pdf) confirms a species near Dauin and the cheatsheet (cs) ranks it: the full build, never the offline modes.
+  const pdf = clone(FL);
+  pdf.species.s002.pdf = '7';
+  assert.match(regroup(pdf).out, list);
+  const drop = clone(FL);
+  delete drop.species.s044.cs;
+  assert.match(regroup(drop).out, list);
+  const rank = clone(FL);
+  rank.species.s045.cs = 40;
+  assert.match(regroup(rank).out, list);
+  // The base holds none of them (an edit made in the old place, a merge); its common name is its own only off the list.
+  for (const [k, v] of [
+    ['sec', 'CHAETODONTIDAE'],
+    ['pdf', '6'],
+    ['cs', 3],
+    ['src', 'slides']
+  ]) {
+    const stale = clone(BASE);
+    stale.species[0][k] = v;
+    assert.match(regroup(null, stale).out, new RegExp(`tools/fish_source\\.json s001 ${k}: the instance's`), k);
+  }
+  const twice = clone(BASE);
+  twice.species[0].common = 'a second name';
+  assert.match(
+    regroup(null, twice).out,
+    /layer species s001 pdf: the common name of a species of the PDF is the layer's, tools\/fish_source\.json s001 gives one too/
+  );
+  const own = BASE.species.find(s => s.src === 'dauin');
+  // The base's own src (dauin, wink) is not laid again offline, as before; the layer's slides is, and a change of it that
+  // moves who needs near (a species fish.json has as dauin) stops the modes.
+  const wink = clone(BASE);
+  wink.species.find(s => s.id === own.id).src = 'wink';
+  assert.strictEqual(regroup(null, wink).status, 0, 'the base’s dauin or wink is the base’s: fish.json keeps its own');
+  const was = clone(BASE),
+    now = clone(FL);
+  delete was.species.find(s => s.id === own.id).src;
+  now.species[own.id] = {src: 'slides'};
+  assert.match(regroup(now, was).out, list);
+  const layerCommon = clone(FL);
+  layerCommon.species[own.id] = {common: 'x'};
+  assert.match(regroup(layerCommon).out, new RegExp(`layer species ${own.id} common: only on a species of the PDF`));
+  // The layer's own rules: the PDF's fields only with the pdf, the mark slides only on a species with no pdf and no other source.
+  const lone = clone(FL);
+  delete lone.species.s001.pdf;
+  assert.match(
+    regroup(lone).out,
+    /layer species s001 common: only on a species of the PDF[^]*layer species s001 sec: only on a species of the PDF/
+  );
+  const both = clone(FL);
+  both.species.s001.src = 'slides';
+  assert.match(regroup(both).out, /layer species s001 src: only 'slides', on a species with no pdf/);
+  const other = clone(FL);
+  other.species.s367.src = 'pdf';
+  assert.match(regroup(other).out, /layer species s367 src: only 'slides'/);
+  const sourced = clone(FL);
+  sourced.species[own.id] = {pdf: '3'};
+  assert.match(
+    regroup(sourced).out,
+    new RegExp(`layer species ${own.id} pdf: a species of the PDF has no src in the base \\(it has 'dauin'\\)`)
+  );
+  const twoSrc = clone(FL);
+  twoSrc.species[own.id] = {src: 'slides'};
+  assert.match(regroup(twoSrc).out, new RegExp(`layer species ${own.id} src: only 'slides'`));
+  // An edition without the layer has no PDF name, section, pages or rank on its species, and the other sources keep their name.
+  const bare = JSON.parse(
+    py(`from instance import fish_compose
+print(json.dumps(fish_compose(json.load(open('tools/fish_source.json', encoding='utf-8')), {})))`)
+  );
+  assert.ok(bare.species.every(s => !('sec' in s) && !('pdf' in s) && !('cs' in s) && !(s.src === 'slides')));
+  assert.strictEqual(bare.species.filter(s => !('common' in s)).length, 366, 'the species of the PDF have no common name');
+  assert.ok(!('deploy' in bare), 'the key in force is the instance’s, not the layer’s');
+});
+
+// The IMR names and family spellings of the entries the layer tags, their sub-entries' names, and every entry's PDF
+// sections are the layer's; the WoRMS mapping (ref, not) and the tree stay in the base.
+test('fish: the IMR names, family spellings and PDF sections are the layer’s; the base keeps the tree and the WoRMS mapping', () => {
+  const tagged = BASE.teach.filter(t => (FL.nodes[t.id] || {}).src === 'imr'),
+    others = BASE.teach.filter(t => !tagged.includes(t));
+  assert.strictEqual(tagged.length, 27, 'the 27 entries of the IMR presentation');
+  tagged.forEach(t => {
+    assert.ok(!('name' in t) && !('fam' in t), `${t.id}: name and fam in the base`);
+    (t.sub || []).forEach(u => assert.ok(!('name' in u), `${u.id} name in the base`));
+  });
+  others.forEach(t => assert.ok(t.name && t.fam, `${t.id}: the base keeps the name and family of an entry that is not IMR's`));
+  BASE.teach.forEach(t => assert.ok(!('pdf' in t) && t.ref && t.ref.length, `${t.id}: no pdf in the base, its ref there`));
+  // The layer holds them: name and fam on the 27 only, their sub-entries' names, a pdf on every entry that has a section.
+  Object.entries(FL.nodes).forEach(([id, x]) => {
+    if ('name' in x || 'fam' in x)
+      assert.ok(
+        tagged.some(t => t.id === id || (t.sub || []).some(u => u.id === id)),
+        `${id}: name of an entry that is not IMR's`
+      );
+    if ('fam' in x || 'pdf' in x)
+      assert.ok(
+        BASE.teach.some(t => t.id === id),
+        `${id}: fam or pdf on a sub-entry`
+      );
+  });
+  tagged.forEach(t => {
+    const x = FL.nodes[t.id];
+    assert.ok(x.name && x.fam && x.pdf && x.pdf.length, `${t.id}: name, fam and pdf in the layer`);
+    (t.sub || []).forEach(u => assert.ok(FL.nodes[u.id].name, `${u.id}: its name in the layer`));
+    assert.deepStrictEqual(
+      Object.keys(x).filter(k => ['circle', 'src', 'sign', 'name', 'fam', 'pdf', 'sl'].includes(k)),
+      ['circle', 'src', ...(x.sign === false ? ['sign'] : []), 'name', 'fam', 'pdf', 'sl'],
+      `${t.id}: the layer's order`
+    );
+  });
+  assert.strictEqual(Object.values(FL.nodes).filter(x => 'pdf' in x).length, 43, 'the entries with a section in the PDF');
+  assert.strictEqual(Object.values(FL.nodes).filter(x => 'name' in x).length, 27 + 7, 'the 27 entries and their 7 sub-entries');
+  // fish.json writes them as the composed source gives them (name, fam, and wfam when WoRMS holds other families).
+  const src = JSON.parse(run(['tools/instance.py', '--fish-source']).out),
+    by = new Map(src.teach.flatMap(t => [t, ...(t.sub || [])]).map(t => [t.id, t]));
+  F.teach.forEach(t => {
+    assert.strictEqual(t.name, by.get(t.id).name, `${t.id} name`);
+    assert.strictEqual(t.fam, by.get(t.id).fam, `${t.id} fam`);
+    (t.sub || []).forEach(u => assert.strictEqual(u.name, by.get(u.id).name, `${u.id} name`));
+  });
+  assert.ok(
+    F.teach.some(t => t.wfam),
+    'a family IMR spells otherwise than WoRMS keeps its WoRMS families (wfam)'
+  );
+  assert.deepStrictEqual(by.get('t42').pdf, ['MURAENIDAE'], 'an entry of another source with a section: its pdf from the layer');
+});
+
+test('fish: a changed name, family spelling or PDF section of the layer no longer gives fish.json; a base or layer out of place stops the build', () => {
+  const t = "is not as key .* gives it, with the instance's layer";
+  // A name or family is laid again offline, with the WoRMS families it differs from (wfam): a change shows as a difference.
+  const name = clone(FL);
+  name.nodes.t01.name = 'Damsel';
+  assert.match(regroup(name).out, new RegExp(t));
+  const sub = clone(FL);
+  sub.nodes.t01a.name = 'Chromis damsels';
+  assert.match(regroup(sub).out, new RegExp(t));
+  // A genus name taken from a sub-entry's name (tools/fish_genus_names.json, from imr) needs that name: the build stops.
+  const genus = clone(FL);
+  genus.nodes.t01d.name = 'Clownfish';
+  assert.match(regroup(genus).out, /g:Amphiprion: no IMR sub-entry Anemonefishes for it/);
+  const fam = clone(FL);
+  fam.nodes.t13.fam = 'Epinephelidae';
+  assert.match(regroup(fam).out, new RegExp(t));
+  const same = clone(FL);
+  same.nodes.t02.fam = 'Pomacanthidae';
+  assert.match(regroup(same).out, new RegExp(t));
+  // The tag says "IMR's entry": a tagged entry the layer gives no name, no fam, or a sub-entry no name stops the build,
+  // so the fallback (the family's label in the key) is never written as IMR's name.
+  const bare = clone(FL);
+  delete bare.nodes.t01.name;
+  delete bare.nodes.t01.fam;
+  delete bare.nodes.t01a.name;
+  const r = regroup(bare);
+  assert.match(r.out, /layer node t01 name: an entry the layer tags \('imr'\) has IMR's name/);
+  assert.match(r.out, /layer node t01 fam: an entry the layer tags/);
+  assert.match(r.out, /layer node t01a name: a sub-entry of an entry the layer tags/);
+  assert.doesNotMatch(r.out, /Traceback/);
+  // An entry no layer tags (t05 above, with its tag, name and fam taken off) falls back, as node_names does below.
+  // The base holds none of them: an edit made in the old place (a merge), even where the layer gives no name.
+  for (const [id, k, v] of [
+    ['t01', 'name', 'Damselfish'],
+    ['t01', 'fam', 'Pomacentridae'],
+    ['t42', 'pdf', ['MURAENIDAE']],
+    ['t28', 'pdf', ['SPHYRAENIDAE']]
+  ]) {
+    const stale = clone(BASE);
+    stale.teach.find(x => x.id === id)[k] = v;
+    assert.match(regroup(null, stale).out, new RegExp(`tools/fish_source\\.json ${id} ${k}: the instance's`), `${id} ${k}`);
+  }
+  const stalesub = clone(BASE);
+  stalesub.teach[0].sub[0].name = 'Chromis';
+  assert.match(regroup(null, stalesub).out, /tools\/fish_source\.json t01a name: the instance's/);
+  const omitted = clone(FL);
+  delete omitted.nodes.t05.name;
+  const given = clone(BASE);
+  given.teach.find(x => x.id === 't05').name = 'Moorish Idol';
+  assert.match(regroup(omitted, given).out, /tools\/fish_source\.json t05 name: the instance's/);
+  // The names of an entry that is not IMR's are the base's: the layer cannot give them.
+  const other = clone(FL);
+  other.nodes.t28.name = 'Barracudas';
+  other.nodes.t28.fam = 'Sphyraenidae';
+  assert.match(
+    regroup(other).out,
+    /layer node t28 name: only on an entry the layer tags[^]*layer node t28 fam: only on an entry the layer tags/
+  );
+  const orphan = clone(BASE),
+    lone = clone(FL);
+  orphan.teach.find(x => x.id === 't28').sub = [{id: 't28a', name: 'Sphyraena', ref: ['Sphyraena']}];
+  lone.nodes.t28a = {name: 'Sphyraena'};
+  assert.match(regroup(lone, orphan).out, /layer node t28a name: only on an entry the layer tags/);
+  const subFam = clone(FL);
+  subFam.nodes.t01a.fam = 'Pomacentridae';
+  assert.match(regroup(subFam).out, /layer node t01a fam: not a field of the layer/);
+  // An edition without the layer: no IMR name on the entries the tag marks, the others keep theirs, no section list.
+  const barec = JSON.parse(
+    py(`from instance import fish_compose
+print(json.dumps(fish_compose(json.load(open('tools/fish_source.json', encoding='utf-8')), {})))`)
+  );
+  const imr = new Set(Object.keys(FL.nodes).filter(id => FL.nodes[id].src === 'imr'));
+  barec.teach.forEach(u => {
+    assert.strictEqual('name' in u, !imr.has(u.id), `${u.id}: a name unless IMR's`);
+    assert.strictEqual('fam' in u, !imr.has(u.id), `${u.id}: a fam unless IMR's`);
+    assert.ok(!('pdf' in u), `${u.id} pdf`);
+    (u.sub || []).forEach(s => assert.strictEqual('name' in s, !imr.has(u.id), `${s.id}: a name unless its entry is IMR's`));
+  });
+});
+
+test('fish: an entry with no IMR name takes its family’s label in the key in force, a sub-entry its first reference’s name', () => {
+  // node_names (tools/build_fish.py) on fish.json's own reference tree: what the full build and the offline modes write.
+  const got = JSON.parse(
+    py(`import build_fish as b
+o = json.load(open('fish.json', encoding='utf-8'))
+base = json.load(open('tools/fish_source.json', encoding='utf-8'))
+key = b.key_in_force({'deploy': {'key': json.load(open('tools/instance.json'))['key']}, 'keys': base['keys']})
+tree = {int(a): n for a, n in o['ref'].items()}
+out = {}
+for t in o['teach']:
+    out[t['id']] = b.node_names({}, t['ref'], key, tree, True)
+    for u in t.get('sub', []):
+        out[u['id']] = b.node_names({}, u['ref'], key, tree, False)
+nokey = {t['id']: b.node_names({}, t['ref'], None, tree, True) for t in o['teach'] if t['id'] in ('t01', 't13')}
+own = b.node_names({'name': 'X', 'fam': 'Y'}, o['teach'][0]['ref'], key, tree, True)
+print(json.dumps([out, nokey, own]))`)
+  );
+  const [out, nokey, own] = got;
+  assert.deepStrictEqual(out.t01, ['Damselfishes', 'Pomacentridae', null], 'the label of the key, the WoRMS family');
+  assert.deepStrictEqual(out.t08[0], 'Parrotfishes', 'a subfamily label wins over its family’s');
+  assert.deepStrictEqual(out.t13, ['Groupers', null, null], 'three WoRMS families: no fam of its own');
+  assert.deepStrictEqual(out.t01d, ['Amphiprion', null, null], 'a sub-entry: its first reference’s name');
+  assert.deepStrictEqual(nokey.t01, ['Pomacentridae', 'Pomacentridae', null], 'a region with no key: the WoRMS family');
+  assert.strictEqual(nokey.t13[0], 'Epinephelidae', 'several families: the first reference’s name');
+  assert.deepStrictEqual(own, ['X', 'Y', ['Pomacentridae']], 'the source’s own name and fam, and the WoRMS families when they differ');
+  F.teach.forEach(t => assert.ok(out[t.id][0], `${t.id} has a name`));
+});
+
+test('fish: the key in force is the instance’s: composed as deploy.key, none without it', () => {
+  const key = JSON.parse(
+    py(`from instance import fish_compose
+b = json.load(open('tools/fish_source.json', encoding='utf-8'))
+print(json.dumps([fish_compose(b, {}, 'k').get('deploy'), fish_compose(b, {}).get('deploy')]))`)
+  );
+  assert.deepStrictEqual(key, [{key: 'k'}, null]);
 });
 
 test('fish: a changed slide, tag or mark of the layer no longer gives fish.json; a base or layer out of place stops the build', () => {
@@ -176,11 +490,14 @@ test('fish: a changed slide, tag or mark of the layer no longer gives fish.json;
   species.species.s001.sl = 11;
   assert.match(regroup(species).out, new RegExp(t));
   const nospecies = clone(FL);
-  delete nospecies.species.s057;
+  delete nospecies.species.s057.sl;
   assert.match(regroup(nospecies).out, new RegExp(t));
   const tag = clone(FL);
-  delete tag.nodes.t05.src;
+  ['src', 'name', 'fam'].forEach(k => delete tag.nodes.t05[k]);
   assert.match(regroup(tag).out, new RegExp(t));
+  const names = clone(FL);
+  delete names.nodes.t05.src;
+  assert.match(regroup(names).out, /layer node t05 name: only on an entry the layer tags/);
   const mark = clone(FL);
   delete mark.nodes.t04.sign;
   assert.match(regroup(mark).out, new RegExp(t));
@@ -214,8 +531,8 @@ test('fish: a changed slide, tag or mark of the layer no longer gives fish.json;
   ghost.species.s999 = {sl: 3};
   assert.match(regroup(ghost).out, /layer species s999: no species/);
   const field = clone(FL);
-  field.species.s001.common = 'x';
-  assert.match(regroup(field).out, /layer species s001 common: not a field of the layer \(sl\)/);
+  field.species.s001.name = 'x';
+  assert.match(regroup(field).out, /layer species s001 name: not a field of the layer \(common, sec, pdf, cs, src, sl\)/);
   // An edition without the layer has no IMR tag, slide or mark on its entries and no slide on its species.
   const bare = JSON.parse(
     py(`from instance import fish_compose
@@ -233,7 +550,7 @@ test('coral: the layer holds imrg, each genus’s n, ig, imr, mn, slides and ID 
     if (RAW.gen[g].sl) keys.push('sl', 'qt', ...(RAW.gen[g].rsl ? ['rsl'] : []));
     assert.deepStrictEqual(Object.keys(x), keys, g);
   });
-  assert.deepStrictEqual(Object.keys(CL).sort(), ['_doc', 'gen', 'imrg', 'pairs']);
+  assert.deepStrictEqual(Object.keys(CL).sort(), ['_doc', 'gen', 'imrg', 'pairs', 'slate']);
   assert.strictEqual(CL.imrg.length, 11);
   const out = JSON.parse(
     py(`from instance import coral_strip, coral_compose, load_layer
@@ -425,4 +742,191 @@ try:
 except SystemExit as e:
     print(e)`);
   assert.match(tips, /^False\n.*qt of Merulina: their ID tips come from the Coral Finder \(tl\)/);
+});
+
+test('coral: the layer declares the IMR slate as the core computes it (data.json gen in the games’ order, then BENTHIC); a difference is found', () => {
+  const {slateOf, BENTHIC} = require('../core.js');
+  assert.deepStrictEqual(Object.keys(CL.slate), ['order', 'benthic']);
+  assert.deepStrictEqual([...CL.slate.order, ...CL.slate.benthic], slateOf(RAW), 'the slate the core teaches');
+  assert.deepStrictEqual(CL.slate.benthic, BENTHIC);
+  assert.deepStrictEqual(CL.slate.order, Object.keys(RAW.gen));
+  assert.deepStrictEqual(
+    CL.slate.order.map(g => CL.gen[g].n),
+    [...CL.slate.order.keys()].map(i => (i < 34 ? i + 1 : 0)),
+    'numbered 1 to 34, then the five starred genera'
+  );
+  const out = JSON.parse(
+    py(`from instance import slate_problems, load_layer
+from datajson import load
+from genera import lists
+d, lay = load(), load_layer('coral')
+ben = lists()[0]
+def mut(f):
+    l, dd = json.loads(json.dumps(lay)), json.loads(json.dumps(d))
+    f(l, dd)
+    return slate_problems(dd, l, ben)
+print(json.dumps([
+  slate_problems(d, lay, ben),
+  slate_problems(d, {}, ben),
+  mut(lambda l, dd: l['slate']['order'].reverse()),
+  mut(lambda l, dd: l['slate'].__setitem__('benthic', ['Millepora', 'Isopora'])),
+  mut(lambda l, dd: dd['gen'].pop('Halomitra')),
+  mut(lambda l, dd: l['gen']['Acropora'].__setitem__('n', 7)),
+  mut(lambda l, dd: dd['x']['gen'].pop('Millepora')),
+  mut(lambda l, dd: l['slate'].pop('benthic')),
+]))`)
+  );
+  const [same, none, reversed, benthic, lost, numbers, noX, shape] = out;
+  assert.deepStrictEqual(
+    [same, none],
+    [[], []],
+    'the slate as declared agrees with data.json and the core; a layer with none declares nothing'
+  );
+  assert.match(reversed.join(), /slate order: the layer's differs from data\.json gen at 1 /);
+  assert.match(benthic.join(), /slate benthic: the layer's \['Millepora', 'Isopora'\] differs from the core's BENTHIC \['Millepora'\]/);
+  assert.match(lost.join(), /slate order: .*39 and 38 genera/);
+  assert.match(numbers.join(), /not 1, 2, … in order, then the starred/);
+  assert.match(noX.join(), /slate benthic Millepora: not a genus of data\.json x gen/);
+  assert.match(shape.join(), /has \['order'\], not order and benthic/);
+  // datajson --check runs it.
+  const r = run(['tools/datajson.py', '--check']);
+  assert.strictEqual(r.status, 0, r.out);
+});
+
+test('course: the layer holds the lecture’s photo records (course and its cmp record); data.json is the sources plus the layer, byte for byte', () => {
+  assert.deepStrictEqual(Object.keys(CO), ['_doc', 'course', 'cmp']);
+  assert.deepStrictEqual(
+    [Object.keys(CO.course).length, Object.values(CO.course).flat().length, CO.cmp.length],
+    [34, 118, 1],
+    '[genera, records, the lecture’s cmp record]'
+  );
+  assert.strictEqual(JSON.stringify(CO.course), JSON.stringify(RAW.course), 'the same records, genera, fields and order');
+  assert.strictEqual(JSON.stringify(CO.cmp), JSON.stringify(RAW.cmp.filter(r => r.imr === true)));
+  [...Object.values(CO.course).flat(), ...CO.cmp].forEach(r => {
+    assert.strictEqual(r.imr, true, r.f);
+    assert.match(r.f, /^imrl?-/, r.f);
+  });
+  const out = JSON.parse(
+    py(`from instance import course_strip, course_compose, course_differs, course_problems, load_layer
+from datajson import dumps, load
+s = open('data.json', encoding='utf-8').read()
+d, lay = load(), load_layer('course')
+bare = course_strip(d)
+other = json.loads(json.dumps(lay)); other['course']['Acropora'][0]['slide'] = 99
+edition = course_compose(bare, {})
+bad = json.loads(json.dumps(lay)); bad['extra'] = 1; bad['course']['Acropora'][0].pop('imr'); bad['cmp'][0].pop('imr')
+print(json.dumps([
+  'course' in bare or any(r.get('imr') for r in bare.get('cmp', [])),
+  dumps(course_compose(bare, lay)) == s,
+  dumps(course_compose(bare, other)) == s,
+  dumps(course_compose(d, lay)) == s,
+  [edition['course'], edition.get('cmp')],
+  list(d) == list(course_compose(bare, lay)),
+  [course_differs(d, lay), course_differs(d, other), course_differs(bare, lay)],
+  course_problems(lay),
+  course_problems(bad),
+]))`)
+  );
+  assert.deepStrictEqual(
+    out.slice(0, 7),
+    [false, true, false, true, [{}, []], true, [[], ['course'], ['course', 'cmp']]],
+    '[the sources hold none of it, sources + layer = data.json, another layer differs, data.json + layer = data.json, an edition without the layer has no lecture photo, the top-level keys keep their order, what differs]'
+  );
+  assert.deepStrictEqual(out[7], []);
+  assert.strictEqual(out[8].length, 3, out[8].join('; '));
+  assert.match(out[8].join('; '), /extra: not a key of the course layer/);
+  assert.match(out[8].join('; '), /course Acropora \S+: not a lecture photo/);
+  assert.match(out[8].join('; '), /cmp imrl-p8_i2: not a lecture photo/);
+  const r = run(['tools/datajson.py', '--check']);
+  assert.strictEqual(r.status, 0, r.out);
+  assert.match(r.out, /data\.json layout OK, as its layers give it/);
+  assert.strictEqual(run(['tools/instance.py', '--check']).status, 0);
+});
+
+test('course: datajson.dump() is the one writer of the layer file and data.json; load() lays the layer on; the real files are untouched', () => {
+  const real = ['tools/instances/imr/course.json', 'data.json'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8'));
+  const out = JSON.parse(
+    py(`import contextlib, io, os, shutil, tempfile, types
+from pathlib import Path
+import instance, datajson
+sys.modules['tree_section'] = types.SimpleNamespace(write=lambda s: None)
+tmp = tempfile.mkdtemp()
+lp, dp = Path(tmp) / 'course.json', os.path.join(tmp, 'data.json')
+shutil.copy('tools/instances/imr/course.json', lp)
+shutil.copy('data.json', dp)
+real = instance.layer_path
+instance.layer_path = lambda subject, inst=None: lp if subject == 'course' else real(subject, inst)
+datajson.PATH = dp
+lay = lambda: json.loads(lp.read_text(encoding='utf-8'))
+dat = lambda: json.load(open(dp, encoding='utf-8'))
+text = lambda p: open(p, encoding='utf-8').read()
+lay0, dat0 = text(lp), text(dp)
+out = []
+# Nothing changed: both files come back byte for byte.
+datajson.dump(datajson.load(dp), dp)
+out.append([text(lp) == lay0, text(dp) == dat0])
+# A tool edits a record and the lecture's cmp record: both files have it, the layer file stays in its layout.
+d = datajson.load(dp)
+d['course']['Acropora'][0]['v'] = 'medium'
+d['cmp'][0]['cap'] = 'a new caption'
+datajson.dump(d, dp)
+out.append([lay()['course']['Acropora'][0]['v'], dat()['course']['Acropora'][0]['v'], lay()['cmp'][0]['cap'], dat()['cmp'][0]['cap'], text(lp) == instance.layer_dumps(lay())])
+# The layer file edited by hand: load() reads it, says that data.json differs, and a dump brings data.json to it.
+L = lay()
+L['course']['Acropora'][1]['slide'] = 99
+instance.write_layer('course', L, lp)
+err = io.StringIO()
+with contextlib.redirect_stderr(err):
+    d = datajson.load(dp)
+out.append([d['course']['Acropora'][1]['slide'], 'data.json course differ' in err.getvalue()])
+datajson.dump(d, dp)
+out.append([dat()['course']['Acropora'][1]['slide'], text(lp) == instance.layer_dumps(lay())])
+# A tool that reads data.json itself (json.load), leaves the records alone and changes something else: an edit of the layer
+# file made since (and not laid yet) stays; one that changes a record gives it to the layer file.
+L = lay()
+L['course']['Acropora'][1]['slide'] = 77
+instance.write_layer('course', L, lp)
+raw = dat()
+raw['tips'][0] = 'Another first tip'
+datajson.dump(raw, dp)
+out.append([lay()['course']['Acropora'][1]['slide'], dat()['course']['Acropora'][1]['slide'], dat()['tips'][0]])
+raw = dat()
+raw['course']['Acropora'][1]['slide'] = 78
+datajson.dump(raw, dp)
+out.append([lay()['course']['Acropora'][1]['slide'], dat()['course']['Acropora'][1]['slide']])
+# A cmp record that is not the lecture's stays in data.json, after the lecture's.
+d = datajson.load(dp)
+d['cmp'].append({'f': 'sources-cmp', 'g': ['Acropora', 'Pocillopora']})
+datajson.dump(d, dp)
+out.append([[r['f'] for r in lay()['cmp']], [r['f'] for r in dat()['cmp']], [r['f'] for r in datajson.load(dp)['cmp']]])
+# A record dropped, a genus moved to the end (the order is bytes): the layer follows.
+d = datajson.load(dp)
+d['course']['Acropora'].pop(0)
+new = next(g for g in d['gen'] if g not in d['course'])
+d['course'][new] = d['course'].pop('Acropora')
+datajson.dump(d, dp)
+out.append([new, list(lay()['course'])[-1], list(dat()['course'])[-1], len(lay()['course'][new])])
+# Data that does not say (no course, no cmp) gets the layer's.
+d = datajson.load(dp)
+del d['course'], d['cmp']
+datajson.dump(d, dp)
+out.append([len(dat()['course']), [r['f'] for r in dat()['cmp']]])
+shutil.rmtree(tmp)
+print(json.dumps(out))`)
+  );
+  assert.deepStrictEqual(out[0], [true, true], 'unchanged, byte for byte');
+  assert.deepStrictEqual(out[1], ['medium', 'medium', 'a new caption', 'a new caption', true]);
+  assert.deepStrictEqual(out[2], [99, true]);
+  assert.deepStrictEqual(out[3], [99, true]);
+  assert.deepStrictEqual(out[4], [77, 77, 'Another first tip'], 'a tool that left the records alone kept the layer’s edit');
+  assert.deepStrictEqual(out[5], [78, 78], 'a tool that changed one gave it to the layer file');
+  assert.deepStrictEqual(out[6], [['imrl-p8_i2'], ['imrl-p8_i2', 'sources-cmp'], ['imrl-p8_i2', 'sources-cmp']]);
+  assert.strictEqual(out[7][0] in RAW.course, false);
+  assert.deepStrictEqual(out[7], [out[7][0], out[7][0], out[7][0], RAW.course.Acropora.length - 1]);
+  assert.deepStrictEqual(out[8], [34, ['imrl-p8_i2']]);
+  assert.deepStrictEqual(
+    ['tools/instances/imr/course.json', 'data.json'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')),
+    real,
+    'the sandbox never touches the real files'
+  );
 });

@@ -179,8 +179,9 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   without explanations (`resetHelp()`).
 - `shownGroup()`: places a starred genus in the lecture group of its look-alikes (display only; `core.js`
   `lectureGroup`). `starNote()` names a starred genus's references on its card ("★ look-alike of …": `core.js`
-  `starRefs`, the surveyed look-alikes in that group); the opening of genera reads the same references (`starWaits`,
-  `model.js` `weighted`: a ★ genus opens only once they are met; LEARNING.md "Starred genera after their reference").
+  `starRefs`, the surveyed look-alikes in that group); the opening of genera reads the same references, which `build()`
+  writes on the genus's record as `after` (`core.js` `starAfter`; `model.js` `openPick`, `core.js` `afterWaits`: a ★
+  genus opens only once they are met; LEARNING.md "Starred genera after their reference").
 - `GX(n)`: a genus looked up in both the IMR genera (`DATA.gen`) and the extra Dauin genera (`DATA.x.gen`: the Coral ID
   Key, their sheets, Millepora and the bonus genera in games).
 - **Game genera, defined once** (`core.js`; no genus-specific case in code): `BENTHIC` = `['Millepora']`, `BONUS` (the
@@ -212,6 +213,10 @@ the four Practice tabs (Quiz, Custom quiz, Duels, Memory) fit 360 px without scr
   and follows it on resize. `fitTiles` honours `data-minw` (the phone progress wall: the names stay readable, the wall
   may scroll).
 - `IS_ADMIN`: true in Pierre's admin browser (the token vault present); gates Pierre-only controls.
+- The full-size photo viewer (`zoom.js`, tier 1, right after `app.js`): `lb` (the `#lightbox` element), `lbClose` (the
+  open viewer's close), `VIEW_LABEL`, `ZOOMI` (the enlarge mark), `ZHINT_KEY` and `zoom(list, i, opts)`. At load it
+  registers one listener, `popstate` (Back closes the open viewer); the viewer's own `keydown` listener is added each
+  time one opens. No other script listens to `popstate` (`tests/tiers.test.js` checks it).
 - The ID tips and their sources (`idtips.js`, tier 1, after `gloss.js`): `tipsList` (the short ID tips, or the
   summary), `notesList` (the lecture notes of the genus sheet), `tipsText`, the content editor's sources (`esrcHtml`,
   `esrcTag`, `critRef`; rule C2), `altName` (a name's other spelling), and the Learn list's `listCard`, `tipsHead` and

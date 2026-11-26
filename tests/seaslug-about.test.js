@@ -18,7 +18,8 @@ const ROOT = path.join(__dirname, '..'),
 // A subject's `about` entry as app.js writes it: the object literal after "about:", evaluated.
 const aboutOf = who =>
   vm.runInNewContext(
-    '(' + block(app, `    about: {\n      who: '${who}',`, '\n    },\n', {file: 'app.js'}).replace(/^ {4}about: /, '') + '\n    })'
+    '(' + block(app, `    about: {\n      who: '${who}',`, '\n    },\n', {file: 'app.js'}).replace(/^ {4}about: /, '') + '\n    })',
+    {ORG: require('../core.js').ORG}
   );
 const SEA = aboutOf('sea slug genera'),
   FISHES = aboutOf('reef fish families');
@@ -35,7 +36,7 @@ function page(subjects) {
       $v: out,
       subjMine: () => subjects.map(s => ({id: s.id})),
       UNITS: Object.fromEntries(subjects.map(s => [s.id, {about: s.about, get: {f: () => Promise.resolve(s.f)}}])),
-      ORG: {app: 'Reef ID', name: 'Institute', short: 'IMR'},
+      ORG: require('../core.js').ORG, // the organisation's words, as the page reads them (every field, the course's too)
       esc: s => String(s).replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[ch]),
       safeUrl: u => (/^https:\/\//.test(u) ? u : '#'),
       hr: k => '#' + k

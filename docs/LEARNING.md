@@ -431,8 +431,9 @@ One estimate of a unit's difficulty everywhere (`model.js` `genusDiff`: the draw
 stability, the opening's order, the bar's population): the sheet's genus offset (`?stats=1` `gd`, the hierarchical photo
 Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), plus, for a unit with judged photos, the
 mean of their judged-ease priors, centred on its family's mean ease: 0 for a family, so the ease never ranks one
-family against another ("The judged ease, within a family"). Adding or curating out a photo never moves it; 0 before
-the sheet's first reply.
+family against another ("The judged ease, within a family"). Adding or curating out a photo never moves the offset; it
+moves a unit's judged-ease mean (the fish, the sea slugs), and the value, kept for the data version, follows the photos
+in force. 0 before the sheet's first reply.
 
 ### Common first
 
@@ -444,8 +445,11 @@ without cm counts as the median.
 ### Starred genera after their reference
 
 A ★ genus (a look-alike on the slate that the IMR surveys do not track: rule L5) opens only once the surveyed genera its
-card compares it to are met (`core.js` `starWaits`, `starRefs`, from data.json `look`); its card names them ("★
-look-alike of …", `model.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
+card compares it to are met (`core.js` `starRefs`, from data.json `look`); its card names them ("★
+look-alike of …", `model.js` `starNote`). The corals' build writes them on the genus's record as data (`after`:
+`core.js` `starAfter`, in `app.js` `build`), and the opening reads that field on any subject's unit (`core.js`
+`afterWaits`, `model.js` `openPick`): a fish or sea slug unit has none, so the rule names no subject (rule S1). Should
+every unit left wait, they all open, so nothing is blocked for good.
 
 ### Confusion groups
 
@@ -1315,7 +1319,10 @@ difficulty split into rank, family, genus, species and photo components, is in R
 offline fit on the real log and the replay of the step-2 candidates (2026-11-21) are in
 [reviews/2026-11-21-q316-offline-fit.md](reviews/2026-11-21-q316-offline-fit.md): the coral genus SD and the fish family
 SD measured (about 0.8 logits each), the photo, the fish genus and species and Q136's τ not estimable yet; whether the
-shared chain predicts the fish answers better or worse than today: the measure cannot tell.
+shared chain predicts the fish answers better or worse than today: the measure cannot tell. Its refit on 1,042 more
+answers with a Gibbs sampler for the small clusters (2026-11-25,
+[reviews/2026-11-25-q316-refit.md](reviews/2026-11-25-q316-refit.md)): on the corals, Q136's τ (about 0.9) and the genus
+SD (about 0.9) measured, the photo SD large (about 1.1-1.2) but resting on the prior; nothing measurable for the fish.
 
 ### The photo's time term
 

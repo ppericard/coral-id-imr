@@ -16,7 +16,7 @@ const ROOT = path.join(__dirname, '..'),
 
 function load() {
   const added = [],
-    ctx = {LAB: {add: p => added.push(p)}};
+    ctx = {ORG: require('../core.js').ORG, LAB: {add: p => added.push(p)}};
   vm.runInNewContext(read('proto/fishkey.js') + '\nthis.FISHKEY = FISHKEY;', ctx);
   return {K: ctx.FISHKEY, tool: added[0]};
 }

@@ -101,12 +101,10 @@ They live in the admin since 2026-11-05 (Pierre: he settles most of them himself
 - **Taxonomy reference: the fish section of `tools/taxonomy.json`**: [REE-107](https://linear.app/reef-id/issue/REE-107)
 - **Growth form + quality guesses for auto-refilled candidates**: [REE-108](https://linear.app/reef-id/issue/REE-108)
 - **Near-duplicate / redundancy suggestions among IMR + Pierre photos**: [REE-74](https://linear.app/reef-id/issue/REE-74)
-- **Tour leftovers from the new-player walkthrough**: [REE-49](https://linear.app/reef-id/issue/REE-49)
 - **Paliform-lobe photos in Corallite anatomy**: [REE-109](https://linear.app/reef-id/issue/REE-109)
 - **Full replay, what is left**: [REE-138](https://linear.app/reef-id/issue/REE-138)
 - **Fish progress replayed from the answer log**: [REE-59](https://linear.app/reef-id/issue/REE-59)
 - **Domain and repository rename, with a migration for players**: [REE-110](https://linear.app/reef-id/issue/REE-110)
-- **Separate IMR-owned content from the core app**: [REE-34](https://linear.app/reef-id/issue/REE-34)
 - **Sea slugs without a species name**: [REE-111](https://linear.app/reef-id/issue/REE-111)
 - **Sea slug achievements, after the first version**: [REE-32](https://linear.app/reef-id/issue/REE-32)
 

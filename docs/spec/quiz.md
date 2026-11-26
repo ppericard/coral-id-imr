@@ -26,6 +26,11 @@ differences and their reasons (sources, and those left to fix: [the modes audit]
   `confTerm`).
 - **The corallites hint** is a photo seen when answering only if the player opened it: `go` reads that before the
   feedback reveals it, so a hint left closed is out of the row's `ph`, named in `sc.h`, and not in the feedback montage.
+  The link says the subject's word (`UNITS` `hint`); the player's tap on it and their misses with it left closed are
+  counted on the device for [the hint tip](cards.md#did-you-know-tips).
+- **Keys**: on a device with a mouse the numbered answers show their number (`<kbd>`) and **1** to **4** pick one; Next
+  takes Enter (the focus is on it). How each answer was picked, a number key or a real mouse click, is counted on the
+  device for [the keyboard tip](cards.md#did-you-know-tips).
 - **Live** (`live`): its own points, apart from the leaderboards. An answer on a unit the student has not unlocked
   counts and keeps the unit closed until its card (rule L4; `model.js` `introLive`).
 - **Surprise card** (`wink`): counts nowhere.

@@ -26,6 +26,7 @@ function pairs(GX) {
     uname: n => n,
     glossAll: L => L,
     tipsLabel: g => g.tl || 'ID tips (IMR)',
+    ORG: C.ORG,
     esc: s => String(s)
   };
   vm.createContext(ctx);
@@ -109,7 +110,8 @@ const F = json('seaslug.json'),
     treeScoreTree: C.treeScoreTree,
     treeSpUnits: C.treeSpUnits,
     treeGenSets: C.treeGenSets,
-    rankWeights: C.rankWeights
+    rankWeights: C.rankWeights,
+    ORG: C.ORG
   };
 vm.createContext(ctx);
 vm.runInContext(

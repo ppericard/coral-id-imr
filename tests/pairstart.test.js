@@ -23,7 +23,7 @@ const F = json('fish.json'),
 
 // The game: treeGenera over treeGen (the photos in play), and confPrior with isLook, dataSeed and imrFormsOf as the app
 // has them (no curation: the content overlay is not read by the admin's registry either).
-const ctx = {DOM: {EX: 0.9}, CONF: C.CONF, DATA: {key: [], course: {}, gen: {}}};
+const ctx = {DOM: {EX: 0.9}, CONF: C.CONF, DATA: {key: [], course: {}, gen: {}}, ORG: C.ORG};
 ['easyCover', 'treeScoreTree', 'treeSpUnits', 'treeGenSets', 'rankWeights'].forEach(k => (ctx[k] = C[k]));
 vm.createContext(ctx);
 vm.runInContext(

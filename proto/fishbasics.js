@@ -239,7 +239,7 @@
       say: 'The families the app teaches in this group.'
     }));
 
-  const DECK = 'IMR fish presentation (Lecture 10)';
+  const DECK = `${ORG.fishPres} (Lecture 10)`;
   // The public references that fill what the slides' text does not define, named on screen (rules C1, C2).
   const GLOS = 'fishIDER glossary (CSIRO, fishider.org/en/glossary)';
   const FINREF = 'Wikipedia, “Fish fin” (en.wikipedia.org)';
@@ -328,7 +328,7 @@
       pick: 'The identification groups',
       get say() {
         const k = TREEU && TREEU.key;
-        return `Fish books sort the reef fish into groups, mostly by body shape. These are the groups of ${k ? k.short : 'the identification key'}, the book the IMR course follows. Tap a group to see its families.`;
+        return `Fish books sort the reef fish into groups, mostly by body shape. These are the groups of ${k ? k.short : 'the identification key'}, the book the ${ORG.course} follows. Tap a group to see its families.`;
       },
       get src() {
         const k = TREEU && TREEU.key;
@@ -429,7 +429,7 @@
           name: 'Heart-shaped',
           icon: tailIcon('heart'),
           fig: () => tailSvg('heart'),
-          say: 'The IMR course’s heart-shaped tail: two rounded lobes with a notch between them, a good clue to Dascyllus.',
+          say: `The ${ORG.course}’s heart-shaped tail: two rounded lobes with a notch between them, a good clue to Dascyllus.`,
           eg: 'Dascyllus.'
         }
       ],
@@ -520,7 +520,7 @@
       term: 'Scalpel',
       all: true,
       pick: 'Key features',
-      say: 'Some families carry one feature that settles it. Five that the IMR course points to.',
+      say: `Some families carry one feature that settles it. Five that the ${ORG.course} points to.`,
       src: DECK,
       views: [
         {

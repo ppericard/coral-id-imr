@@ -2,7 +2,27 @@
   // static files (index.html, admin.html, privacy.html, manifest.webmanifest, tools/og/og.html, README.md, the docs) are
   // rewritten from it by tools/rename_app.py. The storage keys never depend on it (KEYS), so a fork renames the app
   // without moving any player's data.
-  const ORG = {short: 'IMR', name: 'Institute for Marine Research', app: 'IMR Reef ID', appShort: 'Reef ID'};
+  // The words of the organisation's course, as the players and the admin meet them, each a whole name without its
+  // article (code writes "the " + ORG.course): course, the course; lecture, the coral lecture as a source (its notes,
+  // groups, photos); lectureRef, the lecture as a reference names it (the data's lsrc lines start with it); fishPres,
+  // the fish presentation (the fish families' look-alike lines start with it); list, slate and benthic, the survey's
+  // coral list, its slate and its benthic slate; trainer, who teaches the course. A phrase not listed builds on ORG.short
+  // ("At " + ORG.short + " or elsewhere"). The data's own values and the identifiers keep their words
+  // (docs/decisions/2026-11-25-org-course-words.md). Flat, quoted values only: tools/rename_app.py reads this literal.
+  const ORG = {
+    short: 'IMR',
+    name: 'Institute for Marine Research',
+    app: 'IMR Reef ID',
+    appShort: 'Reef ID',
+    course: 'IMR course',
+    lecture: 'IMR lecture',
+    lectureRef: 'IMR Lecture 6',
+    fishPres: 'IMR fish presentation',
+    list: 'IMR list',
+    slate: 'IMR slate',
+    benthic: 'IMR benthic slate',
+    trainer: 'IMR trainer'
+  };
   // Storage keys (localStorage, sessionStorage): one app-wide prefix that names the app without the organisation, and is
   // distinct from other apps on the shared origin ppericard.github.io.
   //   reefid-<name>        stays on this device (sign-in record, caches, queues, the admin, the Lab);

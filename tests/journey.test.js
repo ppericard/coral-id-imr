@@ -270,7 +270,7 @@ test('jUtcText: the offset in words', () => {
 });
 
 // The opt-in choices in a player's saved quiz settings (app.js bonusSet, openNo), as the Journey lists them.
-const {jOptin} = new Function(cut('// joptin: begin', '// joptin: end') + '\nreturn {jOptin};')();
+const {jOptin} = new Function('ORG', cut('// joptin: begin', '// joptin: end') + '\nreturn {jOptin};')(C.ORG);
 
 test('jOptin: the fish opt-in choices of a saved copy: on, declined, never offered', () => {
   const FISH = C.subjectOf('fish'),

@@ -52,8 +52,8 @@ its scope, later amendments and whether it still applies; a decision that settle
 again; on incomplete or contradictory evidence, say what is unsure, leave that point open and go on with the work
 already allowed.
 - **Questions, the details** (AGENTS.md "Working with Pierre"): keep open decisions in Linear's Decisions for Pierre
-  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, park what must wait
-  in STATUS, using the existing issue link when available. Past numbers stay as they are. When asking, include enough
+  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, they wait there too;
+  STATUS only lists them by issue and may be incomplete. Past numbers stay as they are. When asking, include enough
   context for Pierre to place the question.
 *Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19; a hit as
 evidence, 2026-11-21 (#1361).
@@ -220,7 +220,9 @@ scratchpad that no longer exists), but write it with `from datajson import dump`
 within a line, so two edits to different genera merge cleanly. Candidates waiting live in `data/cand.json`, admin only: read
 both with `load_all()`, write with `dump_all()`, which keeps in `data.json` only the candidates `curation.json` names.
 After a hand edit, `python3 tools/datajson.py` puts the file back in that layout; the PR check (`--check`) fails
-otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
+otherwise. The IMR instance's fields are its layer's: edit them in `tools/instances/imr/` (the lecture's photo records
+`course` and `cmp` through any tool that writes `data.json`, which `dump()` writes to `course.json` too), never by hand
+in `data.json`, where the layer wins ([data.md](../spec/data.md#the-instances-layer)). Prefer a small, re-runnable `tools/apply_*.py` script that documents the change.
 *Source:* repository practice, by 2026-11-01; subject-neutral wording, 2026-11-06.
 
 ### W17

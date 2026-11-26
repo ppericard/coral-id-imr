@@ -88,7 +88,7 @@ test('index.html loader: a script that failed 4 times offers Try again, never go
 
 test('a script of the quiz’s tier needs no name that only a later tier declares, unless it asks typeof first', () => {
   const {scripts} = tiers();
-  const pre = ['core.js', 'app.js', 'gloss.js', 'idtips.js', 'install.js', 'sync.js', 'home-art.js', 'home.js', 'tour.js'];
+  const pre = ['core.js', 'app.js', 'zoom.js', 'gloss.js', 'idtips.js', 'install.js', 'sync.js', 'home-art.js', 'home.js', 'tour.js'];
   assert.ok(
     pre.every(f => new RegExp(`href="${reEsc(f)}\\?v=\\d+" as="script" data-tier="1"`).test(HTML)),
     'tier 1 as listed'
@@ -128,6 +128,28 @@ test('app.js pageTier: each page’s tier holds the script that draws it', () =>
   for (const h of ['lab', 'lab-idkey', 'idkey', 'pairs', 'basics']) assert.strictEqual(pageTier(h), scripts['proto/lab.js'], h);
 });
 
+// The viewer (zoom.js) adds one listener at load: popstate, so Back closes the open viewer. It is the only popstate
+// listener of the app's scripts and zoom.js loads right after app.js, so no other listener of that type has an order to
+// keep; the viewer's keydown listener is added when a viewer opens, after every listener added at load.
+test('zoom.js: tier 1 right after app.js, one popstate listener (the only one) and no other listener added at load', () => {
+  const order = [...HTML.matchAll(/<link\b[^>]*\bhref="([^"?]+)[^"]*"[^>]*data-tier="1"/g)].map(m => m[1]);
+  assert.strictEqual(order[order.indexOf('app.js') + 1], 'zoom.js', 'zoom.js is the script after app.js: ' + order.join(', '));
+  const {scripts} = tiers();
+  const own = d => fs.readdirSync(path.join(ROOT, d)).filter(f => /\.js$/.test(f) && !/^admin/.test(f));
+  const files = [...new Set(['index.html', ...own('.'), ...own('proto').map(f => 'proto/' + f), ...Object.keys(scripts)])];
+  const listeners = [];
+  for (const f of files)
+    for (const m of read(f).matchAll(/\baddEventListener\(\s*['"]popstate['"]|\bonpopstate\b/g)) listeners.push(f + ':' + m[0]);
+  assert.strictEqual(listeners.length, 1, 'popstate listeners: ' + listeners.join(', '));
+  assert.ok(listeners[0].startsWith('zoom.js:'), listeners[0]);
+  const top = read('zoom.js')
+    .split('\n')
+    .filter(l => /^(addEventListener|document\.addEventListener|window\.addEventListener|\w+\.on\w+\s*=)/.test(l));
+  assert.strictEqual(top.length, 1, 'zoom.js adds one listener at load: ' + top.join(' | '));
+  assert.ok(/^addEventListener\('popstate'/.test(top[0]), top[0]);
+  assert.ok(!/popstate/.test(read('app.js').replace(/\/\/.*$/gm, '')), 'app.js no longer listens to popstate');
+});
+
 // The class names and ids the pages before tier 5 draw (index.html and the scripts of tiers 1-3): those in a class="…" or
 // id="…" attribute (a template's ${…} parts left out), and those a script adds or looks up by name.
 function mainMarkup() {
@@ -136,6 +158,7 @@ function mainMarkup() {
     'index.html',
     'core.js',
     'app.js',
+    'zoom.js',
     'gloss.js',
     'idtips.js',
     'install.js',
@@ -222,6 +245,7 @@ test('model.js look-alike helpers on the real data: pairs, classic pairs, mix-up
     GX: n => DATA.gen[n] || (DATA.x && DATA.x.gen[n]),
     lectureGroup: core.lectureGroup,
     starRefs: core.starRefs,
+    ORG: core.ORG,
     esc: s => String(s)
   };
   vm.createContext(ctx);

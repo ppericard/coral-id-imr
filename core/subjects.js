@@ -239,7 +239,7 @@
       // several: the report dialog's reason for a photo with more than one of them in frame (sync.js REP_WHY, "Several corals").
       several: 'corals',
       card: 'genus',
-      lecture: 'the IMR coral lecture',
+      lecture: `the ${ORG.short} coral lecture`,
       pv: '',
       hash: '',
       zoom: 'the corallites, the detail that often tells look-alikes apart',
@@ -283,11 +283,11 @@
             {k: 'plain', n: 'Plain words', t: 'text'},
             {k: 'qt', n: 'ID tips', t: 'list'},
             {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
-            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'imr', n: `${ORG.lecture} notes`, t: 'list', imr: 1, keep: 1},
             {k: 'sum', n: 'Summary', t: 'text', keep: 1},
             {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
             {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
-            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'check', n: `To check with an ${ORG.trainer}`, t: 'text'},
             {k: 'info', n: 'Other sources', t: 'list'}
           ]
         }
@@ -303,16 +303,18 @@
       },
       // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
       // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
-      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
-      replayed: {gen: d => genLooks(d)},
+      // It stays the subject of the sheet's unprefixed rv and replay (replay), never one of replayedSubjects. tab: the
+      // sheet's tab of its replay records (Code.gs rplTab_), named before there was another subject; the others' take
+      // "Replayed <name>".
+      replayed: {gen: d => genLooks(d), tab: 'Replayed'},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
         q: 'How well do you know corals?',
         opts: {
           new: ['I’m new to corals', 'Start from scratch: the app shows you the basics first.'],
-          imr: ['I had the IMR coral course', 'You have met the genera in the IMR lecture.'],
-          know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
+          imr: [`I had the ${ORG.short} coral course`, `You have met the genera in the ${ORG.lecture}.`],
+          know: ['I know corals well', `At ${ORG.short} or elsewhere: you can already name many genera.`]
         }
       },
       // The admin's part (one subject switch for the whole admin, its address prefix the subject's hash): cur, its part
@@ -327,7 +329,7 @@
         pages: null,
         todo: ['rule', 'sa', 'poor', 'sug'],
         origins: [
-          ['imr', 'IMR lecture', 'IMR'],
+          ['imr', ORG.lecture, ORG.short],
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
@@ -347,7 +349,7 @@
       what: 'Fish',
       several: 'fish species',
       card: 'fish',
-      lecture: 'the IMR fish presentation',
+      lecture: `the ${ORG.fishPres}`,
       pv: 'fish.',
       hash: 'fish/',
       zoom: 'the markings and the fins',
@@ -466,7 +468,7 @@
         q: 'How well do you know reef fish?',
         opts: {
           new: ['I’m new to reef fish', 'Start from scratch: the basics first, then a few easy families.'],
-          imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
+          imr: [`I’m at ${ORG.short} (Research Assistant programme)`, `You are learning the ${ORG.short} survey families.`],
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }
       },
@@ -484,7 +486,7 @@
         // circles: the words the admin's Tree names each circle in, beside its number (admin-content.js circleLab): the
         // players' own, "the IMR course's families", "the family that opens right after the IMR course's" and "the
         // families beyond the IMR course" (docs/spec/fish.md "Circles"). A circle with no words is its number alone.
-        circles: {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'},
+        circles: {1: ORG.course, 2: 'After the course', 3: 'Beyond the course'},
         // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
         // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
         tags: treeRubric('fish', 'fish', {

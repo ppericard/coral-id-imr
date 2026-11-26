@@ -123,7 +123,7 @@ jobs:
       - name: Install Playwright and terser (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
-          npm install --no-save --no-audit --no-fund playwright@1.65.1 terser@5.51.2
+          npm install --no-save --no-audit --no-fund playwright@1.65.1 terser@5.51.4
           npx playwright install chromium
       - name: ${{ matrix.what }}
         env:
@@ -131,13 +131,13 @@ jobs:
           SMOKE_W: ${{ matrix.w }}
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/${{ matrix.smoke }}.smoke.js
   # The work of one answer, on every subject at three histories (REE-265 step 0, REE-274; docs/spec/tools.md "Per-answer
-  # cost"): fish, corals and sea slugs at 50, 500 and 3,000 answers, counted by tools/answercost.js on saved players and held to
-  # tools/answercost-budget.json. A count over its ceiling fails this job and names the count (an OVER BUDGET line and an
+  # cost"): fish, corals and sea slugs at 50, 500 and 3,000 answers, each in the middle of a session and back after a break
+  # (a comeback), counted by tools/answercost.js on saved players and held to tools/answercost-budget.json. A count over its ceiling fails this job and names the count (an OVER BUDGET line and an
   # error annotation). Its own job, side by side with the smokes and needing none of them: the counts are not part of the
   # agents' local checks (Pierre, 2026-11-24 14:06: a minute or two a check, times the checks, times the agents, climbs
   # fast), and the job must end before the longest smoke does (its time is in the PR that added it; each run's summary
   # holds the table of every state). The saved players are made afresh in the job (three runs of learnsim, one a
-  # subject, side by side, then the nine counts three at a time: about 3 minutes on a quiet 4-core machine), so each run
+  # subject, side by side, then the eighteen counts three at a time: about 4 minutes on a quiet 4-core machine), so each run
   # counts the app as it is, with nothing kept between runs. If that ever outgrows the smokes, keep them in the Actions
   # cache under a key of tools/learnprof.js (docs/spec/tools.md "Per-answer cost"). Playwright as the smokes have it.
   answercost:
@@ -157,5 +157,5 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
           npm install --no-save --no-audit --no-fund playwright@1.65.1
           npx playwright install chromium
-      - name: Work of one answer against the budget (fish, corals, sea slugs; 50, 500 and 3,000 answers)
+      - name: Work of one answer against the budget (fish, corals, sea slugs; 50, 500 and 3,000 answers; in a session and back)
         run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tools/answercost.js --budget tools/answercost-budget.json

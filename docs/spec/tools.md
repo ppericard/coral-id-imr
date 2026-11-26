@@ -12,7 +12,10 @@ written with `tools/datajson.py`.
 
 - **`datajson.py`**: the one writer of `data.json` (`load()`, `dump(d, path)`, one genus per line:
   [data.md › Layout](data.md#layout)). Run alone it rewrites the file in
-  that layout with the instance's coral layer laid on; `--check` is the PR check (the layout and the layers).
+  that layout with the instance's coral and course layers laid on; `--check` is the PR check (the layout, the layers and
+  the slate the coral layer declares against `data.json` and the core's `BENTHIC`). `dump()` is also where the lecture's photo
+  records (`course` and its `cmp` record) reach their layer file, `tools/instances/imr/course.json`, so the tools that
+  write `data.json` do not change ([data.md › The instance's layer](data.md#the-instances-layer)).
 - **`tree_section.py`**: the builds' generic `tree` section (Pierre, 2026-11-13, Q339-Q341): each subject's Key and WoRMS
   classifications as `data/<subject id>-tree.json`, built from its sources (`fish.json`, `seaslug.json`, or `data.json` and
   `data/names.json`) by one module with one adapter per data shape (`SUBJECTS`), written by the tools that write the sources
@@ -153,12 +156,22 @@ sujets, pas juste les poissons. On optimise l'app, pas un sujet en particulier»
 short history, a medium one and a long one (fish, corals and sea slugs at 50, 500 and 3,000 answers), and the heaviest
 subject is a test case, not the definition of the target.
 
-- **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out, in Chromium, and counts how
+- **`answercost.js`**: plays a few answers on a simulated player's saved state, signed out (signed in with `--syncs`, below), in Chromium, and counts how
   many times each named function of the app runs per answer (V8's precise coverage) and the characters
   `localStorage` reads and writes (at its `getItem` and `setItem`, so the kept queues' direct writes count too). Work counts, not timings: they do not move with the machine's load, so a ceiling can
   fail a check. The page's `Math.random` is seeded and its clock starts 30 s after the state's last answer (a player in
-  the middle of a session: after a gap of 30 minutes or more the app starts a comeback, which draws from fewer units and
-  costs less; `--clock 14400` is the study's condition). **A count is repeatable** (REE-281): the clock is virtual
+  the middle of a session; `--clock 14400` is the study's condition). **Each state is also counted back after a break**
+  (`subject:answers:back`): the clock starts 30 days (`BACK`) after the state's last answer, so the first question starts
+  a new visit and a comeback (`model.js` `rustNow`: the rust is summed again at every answer of it, `rustAdd`), no
+  warm-up is played (the visit's first answer is the comeback's first; a session state's two warm-up answers are left
+  out), and only the answers given in the comeback (rust left, `CB.r`) are counted. **Every answer is taken alone**, in
+  a session as in a comeback (the coverage and the storage counters read and started over after each answer, which
+  leaves the totals as they were): the row's `each` keeps each answer's calls, `eachTop` each answer's 12 heaviest
+  functions, `peakCalls` the heaviest answer, `peakAt` which answer it was and `peakTop` its 30 heaviest functions, and
+  the table shows it ("Heaviest answer"); `--repeat` compares the heaviest answer too, so a build that lands on one
+  answer (once a page load, or once the units in play change) is seen and budgeted, not only its share of the average. After a short
+  history the comeback ends within a few answers (corals and sea slugs at 50 answers: 3), and fewer than `BACK_MIN` (2)
+  fails the run. **A count is repeatable** (REE-281): the clock is virtual
   (`Date` and `performance.now` stand still between the tool's ticks: 4 s of thinking and 6 s of pause an answer), the random
   numbers start over from the seed at each tick, every photo is the same 1 x 1 picture served at once, the **page boots on About
   and is at rest before the quiz opens** (the script tiers come in as they load, and a `route()` of theirs
@@ -170,16 +183,26 @@ subject is a test case, not the definition of the target.
   draws no question; the tool waits for every tier set up (`HAVE`), the Lab files loaded (`LAB.pending`), the planned
   questions' photos and the idle tasks, fails
   naming the page's state when a question, a window of photos or a bar is still there, then drops the plans, starts the
-  numbers from the seed and opens the quiz), and the data (every
+  numbers from the seed and opens the quiz), the draw's data is filled in idle time before the count (below), and the data (every
   `.json` file the page asks for) is the pinned tree's, as the players are, while the code is the tree under test's. So
   neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the photos
   (a Candidate photos commit changes `seaslug-game.json` and `data/cand.json` on main with no change of code) moves a
   count; the seed alone changes the questions drawn. Before this, the same `fish:50` and seed counted 133,183 calls an
-  answer twice and 183,144 the third time (on one commit), which failed a merge train. A change that needs newer data (a
+  answer twice and 183,144 the third time (on one commit), which failed a merge train. **The draw's data filled in idle
+  time is counted apart** (`app.js` `drawFillSoon`): held since the boot by `DRAW_FILL_HOLD`, let go once the quiz is
+  open and awaited (`drawFillDone`) in a window of its own, the row's `fill` (the units its slices went through, their
+  named calls and `top` functions; the table's "Filled idle" column). Its calls are in no answer's count, as a player's
+  answers find it done once the quiz has been open a moment; a fill still running inside an answer's window would move
+  between answers with the machine's speed. Not before the quiz opens: its first `route()` applies a rebuild pending
+  since the boot (`CUR_NEW`: a fetched curation that differs from the page's copy, another reserve id, the script's
+  structure version; then `build`), which moves the data version and drops every data view (the fish 3,000-answer
+  states do). `fillIn` counts the units
+  filled idle within each answer counted (the data version moved during the count): their calls are that answer's, and
+  the column names them. A change that needs newer data (a
   field the code now reads) moves the pin. The run fails, naming the state, when the page loaded another
   subject than the state's, holds a history far from the state's, played under three quarters of its answers or raised a
-  page error. Options: `--states fish:50,coral:500,seaslug:3000` (subject `fish`, `coral` or `seaslug`, then the answers; the
-  default is the nine states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed 1,2,3` (each state
+  page error. Options: `--states fish:50,coral:500,seaslug:3000:back` (subject `fish`, `coral` or `seaslug`, then the answers,
+  then `:back` for the comeback; the default is the eighteen states of the budget), `--dump A.json,B.json` (states made earlier), `--n`, `--warm`, `--seed 1,2,3` (each state
   counted once a seed), `--clock`, `--out FILE`, `--budget FILE` (exit 1 when a count passes its ceiling, naming the state and the count),
   `--write-budget FILE [--margin 1.25] [--also A.json,B.json]` (the largest counts of this run and of earlier `--out`
   files, times the margin, as the ceilings of the states measured only), `--regen`, `--par N` (N states made or counted
@@ -188,8 +211,19 @@ subject is a test case, not the definition of the target.
   part; it also writes the page's state at the restart), `--data-now` (the tree's own data, to see what a refill changes),
   `--repeat N` (each state and seed counted N times; exit 1, naming the run, when the questions asked (`asked`) differ or
   the calls an answer differ by more than 0.1% or the storage counts by more than 5%; `--out` keeps every run and
-  `--write-budget` takes the largest). To check a change to the tool or to how the page is started: `--repeat 5`
-  on the nine states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.
+  `--write-budget` takes the largest), `--check` (`VIEW_CHECK` on: every read of a kept view computed again and compared,
+  a difference a page error that fails the run; no budget), **`--syncs K` (signed in, REE-298)**: the page signs in to a
+  made-up account (`Answercost Probe`, its answer log the state's, as `sync.js` `signIn` leaves a new account) and the
+  sync script answers from an in-memory sheet in the tool's process (`tests/gas.js` through `tests/syncpage.js`: the
+  page is a local copy, `app.js` `LOCAL`, so its signed-in requests go to `window.SHEET_STUB` alone, and every other
+  request is aborted: none reaches the real sheet, rule D1). The page syncs at its boot and once more before the restart
+  (the account made, its first load); after the idle fill, K syncs (`syncPush`: the copy held or a load, the merge, the
+  save and its reply) are each counted in a window of their own with the fill they leave (asked as the next plan asks
+  it), the row's `syncs`: whether the data version moved, the units filled again, `drawPhotosCalc`, whether the state
+  version moved and the state views computed (`STATE_CALCS`, REE-300), the named calls,
+  the requests the sheet answered, the views computed (`calcs`), a table of its own. The history is the one the sheet
+  replays from the device's log, which keeps the last 2,000 answers, so the history check is off; no budget. To check a change to the tool or to how the page is started: `--repeat 5`
+  on the eighteen states and seeds 1 to 3, unloaded and with `--throttle 4` or a few CPU-bound processes beside it.
   A state is made once by `learnsim.js --dump` (profile `lectureRA`, seed 1; the fish and the sea slugs answer yes to the
   card that offers a part of the slate by choice, the corals meet none) and kept in `REEFID_ANSWERCOST_CACHE`, by default
   `reefid-answercost` in the temporary directory. The missing states of a subject are made by one run to the longest of
@@ -203,7 +237,8 @@ subject is a test case, not the definition of the target.
   players again and setting every ceiling again, in a PR of its own. The sea slugs are played through the same fish engine
   (`learnsim.js --subject seaslug`: each profile's fish part, `tools/learnprof.js` `ENGINE`, rule S1). It takes the machine
   slot (rule W24).
-- **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the storage read and written, and
+- **`answercost-budget.json`**: the ceilings, per state, of the total calls per answer, the calls of the heaviest
+  answer (`peakCalls`), the storage read and written, and
   the functions that grew with the state (`introduced`, `scoreOf`, `faOf`, `lvStepCalc`, `bonusCalc`, `lvlNext`,
   `treeScore`, `achSnap`, `sheetV`; `bonusCalc` is the units in play computed and `lvStepCalc` a unit's level computed,
   once per version of the state: `app.js` `bonusList` and `model.js` `lvTable` are views whose readers V8 cannot name,
@@ -218,12 +253,14 @@ subject is a test case, not the definition of the target.
   count over its ceiling fails that job and names the state and the count (an `OVER BUDGET` line and an error
   annotation), and the job's summary holds the table of every state's calls per answer. A pull request that changes only
   docs skips it with the smokes; a merge train runs it. The job makes the saved players afresh each run, on the
-  pinned version of the app (three `learnsim` runs, one a subject, side by side, then the nine counts three at a time),
+  pinned version of the app (three `learnsim` runs, one a subject, side by side, then the eighteen counts three at a
+  time; the comeback states read the same saved players),
   and keeps nothing between runs. If its time ever passes the longest smoke's (the job's time is in each run, and in the
   PR that added it), the next step is the Actions cache for the players, under a key of the pin and
   `tools/learnprof.js`; a cache made on a branch is read by that branch only, so a merge train would need it made on main.
-- **By hand, for an agent working on speed** (the nine states: about 2 minutes 15 s to make on a quiet machine, once, then
-  about 2 minutes to count, 40 s with `--par 3`; much longer when the machine is loaded or the slot is taken):
+- **By hand, for an agent working on speed** (the nine saved players: about 2 minutes 15 s to make on a quiet machine,
+  once, then the eighteen states about 3 minutes to count, 1 minute 30 s with `--par 3`; much longer when the machine is
+  loaded or the slot is taken):
   `SMOKE_SLOTS=1 node tests/slot.js --name answercost -- node tools/answercost.js --budget tools/answercost-budget.json`,
   or `--states fish:500,seaslug:500` for the states a change touches.
 
@@ -235,6 +272,10 @@ subject is a test case, not the definition of the target.
   ms and most rows read, the trend over time, and the quota lines (6 min an execution, 90 min of triggers a day). Pure
   functions exported for `tests/timings.test.js`.
 - **`analyses.js`**: the admin's Analyses report ([analyses.md › Where it computes](analyses.md#where-it-computes)).
+- **`ansize.js`**: the admin's answer-log read measured, plain against lean ([sync.md › The lean answer log](sync.md#the-lean-answer-log)):
+  `node tools/ansize.js` (made-up logs of 7,700 and 23,100 answers, `tests/anslog.js`, through the script on the tests'
+  stub; `--n N` other sizes) or `--in answers.json` (a saved plain readAnswers reply): the bytes, raw and gzipped, the
+  times to pack, write and read back, the rows checked equal.
 
 ## Coral content
 
@@ -326,7 +367,7 @@ subject is a test case, not the definition of the target.
   recorded in the Philippines only, rule C6), Favites `sum` and size class `s3`, *F. magnistellata* in the slide 65 line,
   `spell` for Diploastreidae. Its header lists what was checked (iNaturalist counts, Corals of the World, WoRMS).
 - **`apply_imr_forms.py`**: the IMR growth-form definitions into `forms.json`.
-- **`imr_sources.json`**: where each IMR lecture photo in `img/` was found online
+- **`imr_sources.json`** (in `tools/instances/imr/`, with the IMR layer): where each IMR lecture photo in `img/` was found online
   ([study](../reviews/2026-11-15-imr-lecture-photo-sources-study.md)): per photo the deck's file name, `found`
   (`original`, `copy-only`, `none`), the source page and picture, the species and place it is captioned with, the
   photographer and the site's terms, the copies; `searched` says what was searched.

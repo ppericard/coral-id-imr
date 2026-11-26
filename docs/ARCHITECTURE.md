@@ -47,7 +47,7 @@ photos and its format from the player's own answers; the feedback after an answe
 the ⚙ Settings; and the service worker that serves it offline and brings each new version in.
 
 **Main files.** `index.html` (the inline tier loader, the ⚙ panel), `app.css`, `home.css`; `app.js` (routing, `build()`,
-the shared helpers, Settings), `gloss.js` (the glossary words and their popup), `idtips.js` (the ID tips, their sources and the Learn list card), `install.js` (the install card), `core.js` (the engine shared with the admin and the sheet script:
+the shared helpers, Settings), `zoom.js` (the full-size photo viewer), `gloss.js` (the glossary words and their popup), `idtips.js` (the ID tips, their sources and the Learn list card), `install.js` (the install card), `core.js` (the engine shared with the admin and the sheet script:
 `SUBJECTS`, `routeOut` / `routeIn`, `scoreAnswer`, the achievement lists; written in its parts, `core/*.js`, which
 `tools/sync_core.py` joins into the one `core.js` the pages load), `model.js` (the learning model), `quiz.js`
 (the games, typed questions, the feedback sheet), `learn.js` (the Learn pages), `progress.js` (My progress,
@@ -86,8 +86,9 @@ the Lab and the basics modules; [spec/service-worker.md](spec/service-worker.md)
   [front-end.md › Settings](spec/front-end.md#settings--indexhtml-and-appjs).
 - **Learning model** (`model.js`): [model.md](spec/model.md).
   - **The state version and its views** (`app.js` `STATE_V`, `stateView`, `VIEW_CHECK`: the units in play, the units
-    met, the bars, the exam entries, the tree's score and the levels computed once per version of the state; `DATA_V`,
-    `dataView`: the rank classes, the look-alike index and the photo draw's data per unit once per version of the data):
+    met and ready, the bars, the exam entries, the tree's score and the levels computed once per version of the state; `DATA_V`,
+    `dataView`: the rank classes, the look-alike index, the photo draw's data per unit, whether a unit has a photo and
+    each unit's part of the confusion groups' pair scores once per version of the data):
     [model.md](spec/model.md#the-state-version-and-its-views).
   - **Comeback after a break**: [model.md](spec/model.md#comeback-after-a-break).
   - **First-meeting cards, Open all genera and back to one at a time**: [model.md › Which unit next](spec/model.md#which-unit-next).
@@ -161,7 +162,8 @@ records, Identify, the switch, the sync per subject, who sees a subject, the sub
 
 <!-- rename-app: keep-begin -->
 **What it is.** The app's name (**The app's name**: IMR Reef ID, from `core.js` `ORG`, applied to the static files by
-**`tools/rename_app.py`**, with the organisation's bare words in the static pages), the names of what it keeps on a device (**Storage keys**: `reefid-sync-*` travel with the
+**`tools/rename_app.py`**, with the organisation's bare words in the static pages; the course's words, `ORG.course`,
+`ORG.lecture` and the others, written by the JS from `ORG`, `tests/orgwords.test.js` counting what is left), the names of what it keeps on a device (**Storage keys**: `reefid-sync-*` travel with the
 player, `reefid-*` stay on the device, `core.js` `KEYS`) and of its caches (**Caches**: `reefid-shell-vN`,
 `reefid-admin-files`, `imr-photos-v1`), and the moves of data written under older names (**Migration on a device**,
 **The Coral ID Key rename**, **The URL refonte's data move**, **Migration in the sheet**).

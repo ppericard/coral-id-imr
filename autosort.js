@@ -1026,7 +1026,7 @@
   function treeUnitsOf(J) {
     J = J || {};
     const sp = Object.fromEntries((J.species || []).map(x => [x.id, x])),
-      tag = x => (x == null || x === false ? '' : typeof x === 'string' ? x : x === true ? 'IMR' : x.name || 'IMR'),
+      tag = x => (x == null || x === false ? '' : typeof x === 'string' ? x : x === true ? C.ORG.short : x.name || C.ORG.short),
       GL = Array.isArray(J.genera) ? J.genera : Object.entries(J.genera || {}).map(([id, g]) => ({id, ...g})),
       G = Object.fromEntries(GL.map(g => [g.id, g])),
       gOf = s => (sp[s] && (sp[s].genus || 'g:' + String(sp[s].name || '').split(' ')[0])) || 'g:?',
@@ -1273,7 +1273,7 @@
         if (!(b in at) || b === u.id) return;
         const k = C.contentPairKey(u.id, b);
         P[k] = P[k] || {k, A: at[u.id] <= at[b] ? u.id : b, B: at[u.id] <= at[b] ? b : u.id, cues: []};
-        if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w, (u.lsrc || {})[b] || 'IMR course']);
+        if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w, (u.lsrc || {})[b] || C.ORG.course]);
       })
     );
     return Object.values(P).sort((x, y) => at[x.A] - at[y.A] || at[x.B] - at[y.B]);

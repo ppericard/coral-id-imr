@@ -35,7 +35,7 @@ PARTS_DIR = 'core'
 # core.js's parts, in order (core/<name>): each a run of whole statements of the one function's body.
 PARTS = [
     'keys.js',  # the app's name (ORG) and the storage keys: their prefixes, the names before the rename, their migration
-    'delta.js',  # lighter saves: a player's data as a delta and its checksum (dataDelta, dataPatch, dataSum, hash53)
+    'delta.js',  # lighter saves: a player's data as a delta and its checksum (dataDelta, dataPatch, dataSum, hash53); the lean answer log (rowsPack, rowsUnpack)
     'subjects.js',  # the subject registry (SUBJECTS, FISH_RENAMED) and what reads it
     'tree.js',  # the tree subjects' build (treeGen and its helpers), genera by name, renamed unit ids
     'content.js',  # the content editor's edits, the structure (circles, look-alike pairs)

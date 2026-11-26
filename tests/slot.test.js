@@ -449,6 +449,7 @@ test('every Playwright launch in tests/ and tools/ takes the slot; the heavy too
       'fish_judge',
       'fetch_approved',
       'studies/q316/fit',
+      'studies/q316/gibbs',
       'studies/q316/run'
     ]
   };

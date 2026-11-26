@@ -14,7 +14,7 @@ const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 // proto/fishbasics.js in a vm: BASICS.add receives the module's content C; the page's helpers are stubs.
-function load() {
+function load(org = C.ORG) {
   const added = [],
     esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const GXS = {
@@ -23,6 +23,7 @@ function load() {
     'f:C': {name: 'Gamma', group: 3}
   };
   const ctx = {
+    ORG: org,
     BASICS: {add: m => added.push(m)},
     esc,
     shuffle: a => [...a].reverse(),
@@ -137,6 +138,35 @@ test('Fish basics: every view draws, every check works, every word leads to a st
   const o = M.official('Heart-shaped tail');
   assert.ok(o && /^IMR fish presentation/.test(o[2]) && o[1] === 'Heart shaped caudal fins');
   assert.strictEqual(M.official('Pointed tail'), null, 'no IMR line invented for a word the slides do not define');
+});
+
+// The course's words are ORG's (rule W21, REE-294): the IMR edition says what it said, and another organisation's own words
+// replace them.
+test('Fish basics: the course’s words come from ORG, as they read for IMR', () => {
+  const words = org => {
+    const M = load(org),
+      step = id => M.steps.find(s => s.id === id);
+    return {
+      deck: step('features').src,
+      features: step('features').say,
+      heart: step('tails').views.find(v => v.id === 'heart').say,
+      groups: step('groups').say
+    };
+  };
+  assert.deepStrictEqual(words(C.ORG), {
+    deck: 'IMR fish presentation (Lecture 10)',
+    features: 'Some families carry one feature that settles it. Five that the IMR course points to.',
+    heart: 'The IMR course’s heart-shaped tail: two rounded lobes with a notch between them, a good clue to Dascyllus.',
+    groups:
+      'Fish books sort the reef fish into groups, mostly by body shape. These are the groups of Allen et al. 2015, the book the IMR course follows. Tap a group to see its families.'
+  });
+  const F = words({...C.ORG, fishPres: 'ZZ presentation', course: 'ZZ course'});
+  assert.strictEqual(F.deck, 'ZZ presentation (Lecture 10)');
+  assert.ok(
+    Object.values(F).every(t => !/IMR/.test(t)),
+    JSON.stringify(F)
+  );
+  assert.match(F.heart, /^The ZZ course’s heart-shaped tail/);
 });
 
 test('Fish basics: the groups are the key’s, from the data, never numbered in the code', () => {

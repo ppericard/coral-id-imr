@@ -364,7 +364,8 @@ test("the sheet's variant table is the app's: every unit's, and the groups left,
       treeScoreTree: C.treeScoreTree,
       treeSpUnits: C.treeSpUnits,
       treeGenSets: C.treeGenSets,
-      rankWeights: C.rankWeights
+      rankWeights: C.rankWeights,
+      ORG: C.ORG
     };
   vm.createContext(ctx);
   const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
@@ -555,7 +556,8 @@ test('the phase card shows its lines under their recorded source, else IMR', () 
         credit: () => 'c',
         cardShow: o => ((body = o.body), (T.title = o.title), {querySelectorAll: () => []}),
         setTimeout: () => {},
-        TIP: {WAIT: 0}
+        TIP: {WAIT: 0},
+        ORG: C.ORG
       };
       new Function(...Object.keys(stubs), fn + '\nreturn phaseShow;')(...Object.values(stubs))({p, k: 'phase'}, 'u');
       return body;

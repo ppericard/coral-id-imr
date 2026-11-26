@@ -178,6 +178,9 @@ test('L5: an addition first, so a withdrawal it makes safe applies; two devices�
   );
   assert.deepStrictEqual(C.starRefs(A, 'Halomitra'), ['Fungia']);
   assert.ok(C.lectureGroup(A, 'Halomitra') > 0);
+  // the opening follows the pairs in force: the build's field (core.js starAfter, app.js build) is written from them
+  assert.deepStrictEqual(C.starAfter(structuredClone(A)).gen.Halomitra.after, ['Fungia']);
+  assert.deepStrictEqual(C.starAfter(structuredClone(D)).gen.Halomitra.after, ['Herpolitha']);
   // a starred genus with two references in its group: either withdrawal alone applies, both together keep one
   const n = STARS.find(s => C.starRefs(D, s).length >= 2),
     [r1, r2] = C.starRefs(D, n),
@@ -447,7 +450,8 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
     credit: () => '',
     againLeft: () => false,
     fbLine: () => '', // the sheet's one line (quiz.js fbLine; tests/fbsheet.test.js)
-    taxonLine: () => ''
+    taxonLine: () => '',
+    ORG: C.ORG
   };
   vm.createContext(ctx);
   vm.runInContext(
@@ -456,7 +460,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
       'const gloss = x => esc(x), glossAll = L => L.map(esc);',
       block(APP, 'const GX = n =>', '\n', {file: 'app.js'}),
       block(IDTIPS, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'idtips.js'}),
-      block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
+      block(APP, 'const tipsLabel = g =>', '`ID tips (${ORG.short})`);\n', {through: 1, file: 'app.js'}),
       block(APP, 'const tipsEdited = g =>', '\n', {file: 'app.js'}),
       block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),
       block(LEARN, 'const esrcOf = (r, k) =>', 'const treeNote', {file: 'learn.js'}),
@@ -501,7 +505,7 @@ test('C2: an edited coral slot shows its own source, never the Coral Finder’s 
   assert.strictEqual(ctx.tipsLabel(A.gen.Merulina), ctx.tipsLabel(D.gen.Merulina));
   assert.strictEqual(ctx.tipsLabel(A.gen.Halomitra), 'ID tips');
   assert.match(ctx.tipsList(A.gen.Halomitra), /<p class="note esrc">Source: A made-up Halomitra source<\/p>/);
-  assert.match(LEARN, /<h3>\$\{g\.tl \|\| 'ID tips \(IMR\)'\}/, 'the sheet heading follows tl');
+  assert.match(LEARN, /<h3>\$\{g\.tl \|\| `ID tips \(\$\{ORG\.short\}\)`\}/, 'the sheet heading follows tl');
   // a summary shown as the tips (no tips of its own) with its source
   assert.strictEqual(ctx.tipsList({sum: 'S', esrc: {sum: {t: 'Src'}}}), '<p class="keyid">S <small class="esrc">(Src)</small></p>');
   // the Look-alikes deck's line: the edited line's source, from whichever side holds it

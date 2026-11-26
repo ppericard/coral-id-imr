@@ -247,7 +247,7 @@
   // genus records with the pairs in force (sheetFile): the base's less those withdrawn (a withdrawal the ★ rule holds
   // stays), plus every pair he added, whatever its source (its row says when the public page does not show it). The same
   // order and the same test as the page players see (learn.js classics).
-  const CLASSIC = /^(IMR|Coral Finder p)/;
+  const isClassicSrc = s => String(s).startsWith(C.ORG.short) || String(s).startsWith('Coral Finder p');
   // The pairs the sources compare in so many words, in the genus records G (a map by name: gen and x.gen merged), each
   // {k, A, B, src}: the IMR lecture's (lsrc "IMR Lecture 6...") and the Coral Finder text's ("Coral Finder p. ..."), the
   // IMR ones first, then by the slate's order. B, when given, is the base's records: a pair G holds that B does not is
@@ -266,14 +266,14 @@
           k = b ? C.contentPairKey(a, b) : '';
         if (!k || !G[b] || b === a || seen.has(k)) return;
         const s = src(a, b),
-          ok = CLASSIC.test(s),
+          ok = isClassicSrc(s),
           add = !!B && !has(B, a, b);
         if (!ok && !add) return;
         seen.add(k);
         out.push({k, A: k.split('|')[0], B: k.split('|')[1], src: s, ...(add ? {added: true, deck: ok} : {})});
       })
     );
-    const tier = p => (/^IMR/.test(p.src) ? 0 : 1);
+    const tier = p => (String(p.src).startsWith(C.ORG.short) ? 0 : 1);
     return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
   }
   // montPairs: the pairs in force of subject S's built file R under content map Cm, by the data shape S declares (flat: the
@@ -506,7 +506,7 @@
         : orphan
           ? shVal(isObj(r.e) && (Array.isArray(r.e.v) || typeof r.e.v === 'string') ? r.e.v : null)
           : `${shVal(r.v)}${r.e ? shSrc(r.e.src) : ''}${r.e && r.state === 'fresh' ? `<details class="adm-csorig"><summary>Original</summary>${shVal(r.base)}</details>` : ''}`;
-    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? '<span class="adm-src adm-imrt">IMR</span>' : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
+    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? `<span class="adm-src adm-imrt">${C.ORG.short}</span>` : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
   }
   // The box on node id's page (R: fish.json as built; nameOf: a node's name), '' for a node with no sheet in the app.
   function sheetBox(S, R, id, nameOf) {
@@ -915,7 +915,7 @@
       open = ed || store.get(CN_KEY, true) !== false,
       max = C.CN_MAX,
       vals = ed ? CN_ED.vals : r.v,
-      list = `<ul class="adm-csv">${r.v.map((x, i) => `<li>${esc(x)}${i === r.imr ? ' <span class="adm-src adm-imrt">IMR</span>' : ''}</li>`).join('')}</ul>`,
+      list = `<ul class="adm-csv">${r.v.map((x, i) => `<li>${esc(x)}${i === r.imr ? ` <span class="adm-src adm-imrt">${C.ORG.short}</span>` : ''}</li>`).join('')}</ul>`,
       keys = Array.from({length: max}, (_, i) => C.typeNormAll(vals[i] || '')),
       // the boxes a refused Save points at: the main name left empty, a name with no letter, a name twice
       wrong = i => !!CN_ED && CN_ED.bad && (i === 0 ? !keys[0] : !keys[i] ? !!(vals[i] || '').trim() : keys.indexOf(keys[i]) !== i),

@@ -636,7 +636,7 @@ test('every answer in the ledger names its doc, and nothing answered is cited as
 const DOC_MARKS = {
   'AGENTS.md': [null, 980],
   'CLAUDE.md': [2, 240],
-  'CONTRIBUTING.md': [5, 130],
+  'CONTRIBUTING.md': [7, 130], // + "Contributing from outside the integrator session" (2026-11-25, REE-229)
   'README.md': [10, 350],
   'docs/ARCHITECTURE.md': [37, 240],
   'docs/LEARNING.md': [152, 320], // lowered from 175 KB when the analyses methods moved out to docs/spec/analyses-method.md
@@ -703,6 +703,7 @@ const DOC_MARKS = {
   'judging/PROMPT.md': [3, 160],
   'judging/SEASLUG.md': [17, 500],
   'tools/README.md': [13, 280],
+  'tools/agent-brief.md': [7, 130], // new, 2026-11-25: what every launched agent is told, in any tool (REE-229)
   'tools/checkin.md': [3, 130], // new, 2026-11-23: the check-in's fixed text (REE-244)
   'tools/queue/recovered/README.md': [5, 400], // new, 2026-11-22: the integrator's queue scripts kept as reference (REE-231)
   'tools/studies/ree112/README.md': [5, 400], // new, 2026-11-22: REE-112's study scripts kept as reference (REE-231)

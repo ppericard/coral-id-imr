@@ -9,7 +9,8 @@ decision's order: the offline fit first, then the sheet, then the app).
 
 **Status: run on the real log on 2026-11-21** (the answers to 2026-11-20 15:50): the results are in
 [docs/reviews/2026-11-21-q316-offline-fit.md](../../../docs/reviews/2026-11-21-q316-offline-fit.md). The figures below
-are on simulated answers only.
+are on simulated answers only. **Refitted on 2026-11-25** (the answers to 2026-11-24 08:29, REE-193), with the Gibbs
+sampler below: [docs/reviews/2026-11-25-q316-refit.md](../../../docs/reviews/2026-11-25-q316-refit.md).
 
 ## Files
 
@@ -20,6 +21,8 @@ are on simulated answers only.
 | `checks.js` | 2C on the real log |
 | `replay2b.js` | 2B on the real log: the half fits, then the replay of the arms (after `run.py`, on its out directory) |
 | `run.py` | Every step for both subjects under one 40-minute clock |
+| `gibbs.py` | The same model's SDs from their posterior (the Gibbs sampler, REE-193), its acceptance test and checks; one subject per run |
+| `refit/` | REE-193's extract tools (`pseudonymise.js`, `cut.js`), the aggregates' writer (`summarise.js`), the refit's aggregates (`q316-refit-2026-11-25.json`) and an exploratory cross-check (`crosscheck.py`) |
 
 Tests: `tests/q316.test.js` (the loader, check 2C, the declared rules; and, with numpy and scipy, `tests/q316fit_check.py`:
 the sparse Laplace objective against a dense computation, a planted SD recovered, the acceptance rule, the clock).
@@ -98,8 +101,8 @@ measure cannot tell" without a test. **Exploratory** (uncorrected): all fish ans
 (the slope of each arm's end-of-log unit offsets on the offline D(u), units with 20 or more answers). Its own 40-minute
 clock (rule L11), from when the machine slot is held.
 
-**Not built**: the study's Gibbs sampler for the photo SD and τ. A level the Laplace fit cannot estimate takes its
-v31-equivalent above, so 2B runs without it; the photo SD and τ stay "not estimable" until another estimator exists.
+**The Gibbs sampler** (`gibbs.py`, built in REE-193 because the refit of 2026-11-25 still could not reach the photo
+SD): see its section below. 2B does not use it: a level the Laplace fit cannot estimate takes its v31-equivalent above.
 
 **2C** (the corals; the fish exploratory). δ = the app's unit ability − its global level before each answer, counted from
 the player's 6th answer on the unit; per unit, the mean over players (one vote each), units with 3 or more such players.
@@ -116,6 +119,77 @@ the limit (it uses the ability the app logged); its arms 4b and 4c take δ from 
 can shorten it, never lengthen it (each step caps its own clock too). Past it each step stops,
 keeps what it has and marks the rest "the measure cannot tell"; nothing escalates, and nothing chooses a value (no
 level 3).
+
+## The Gibbs sampler (REE-193)
+
+`gibbs.py`: the same model and design as `fit.py` (`build()`), its SDs from their posterior. Built only because the
+refit on the log to 2026-11-24 still could not reach the photo SD with the Laplace fit (REE-193's condition); its
+study design is not in the repository (the study of 2026-11-20 was a scratchpad file), so the sampler below is this
+PR's, declared here before any real run.
+
+- **Priors**: each random level's SD half-normal prior of scale 1 (logits); the fixed effects N(0, 10²), as `fit.py`.
+- **One sweep**, exact conditional draws: what the player knew (an answer right was known with probability
+  σ / (σ + (1 − σ) g), else a lucky guess; a wrong one was not known: the guess floor as a latent mixture); a
+  Pólya-Gamma(1, η) weight per answer (Polson, Scott and Windle 2013; the series cut at 64 terms plus the rest's exact
+  mean); every coefficient at once from its Gaussian conditional (the data and the prior perturbed, one sparse solve:
+  Papandreou and Yuille 2010), so the nested levels move together; each SD twice, non-centred (a regression
+  coefficient, Gaussian) then centred (a slice draw in log SD): Yu and Meng's interweaving (2011).
+- **Chains**: the real answers, 2 chains of 6,000 sweeps with 1,000 burn-in (starting SDs 0.3 and 1.0); each
+  acceptance replicate, one chain of 1,500 sweeps with 500 burn-in. Summary: the posterior median and the equal-tailed
+  90% and 95% credible intervals. The real chains were declared at 3,000 sweeps (commit 051d66ad) and raised to 6,000
+  after the synthetic runs below showed the photo SD's effective sample size at about 14-30 per 1,000 draws, before any
+  real run.
+- **The order of a real run**: the two chains, then the chain under the other prior, then the acceptance replicates
+  (from the rated world's values, then from the chains' own medians, every fixed effect included).
+- **Acceptance**: `fit.py`'s `ACCEPT`, unchanged (20 replicates on the real design from the rated world's values, then
+  from the sampler's own medians; the mean of the medians within ±0.1 of the truth, the 90% interval covering it in 15
+  or more of 20). A value that fails either: "not estimable on today's log", with no value.
+- **Converged**: on the real answers, an SD whose split R-hat is above 1.1, or whose effective sample size (both
+  chains) is under 100, is "the measure cannot tell".
+- **The prior's weight**: the real answers sampled again (one chain) under a half-normal prior of scale 0.5; a median
+  that moves by more than 0.1 is reported "prior-driven", not as a value; when that chain has not converged (ESS under
+  100), "the measure cannot tell" (added after Codex's review of #1588; no real result changed by it).
+- **The clock**: its own 40 minutes per run (rule L11), one subject per run, from when the machine slot is held; past
+  it the run stops and the rest is "the measure cannot tell".
+
+    python3 tools/studies/q316/gibbs.py synth <design> out.json          # simulated answers only, the check first
+    python3 tools/studies/q316/gibbs.py fit /path/outside/export-fish.json /path/outside/gibbs-fish.json
+
+**On simulated answers first** (`gibbs.py synth`, 20 replicates each, seed 1, the designs and truth of the Laplace
+table below, replicate chains of 1,500 sweeps; the rule `ACCEPT`). Mean of the 20 posterior medians (bias), 90%
+intervals covering the truth, verdict; the Laplace fit's verdict on the same design beside it:
+
+| Value (truth) | Coral-like, large clusters | Coral-like | Fish-like | Laplace on coral-like / fish-like |
+| --- | --- | --- | --- | --- |
+| player (0.5) | 0.51 (+0.01), 17: pass | 0.55 (+0.05), 20: pass | 0.49 (−0.01), 17: pass | pass / pass |
+| player × unit, τ (0.3) | 0.29 (−0.01), 18: pass | 0.27 (−0.03), 19: pass | 0.37 (+0.07), 19: pass | fail / fail |
+| family (0.37) | | | 0.32 (−0.05), 19: pass | / pass |
+| genus (0.3; corals 0.37) | 0.37 (0.00), 20: pass | 0.35 (−0.02), 20: pass | 0.26 (−0.04), 20: pass | pass / fail |
+| species (0.3) | | | 0.30 (0.00), 20: pass | / fail |
+| photo (0.46) | 0.47 (+0.01), 20: pass | 0.48 (+0.02), 17: pass | 0.54 (+0.08), 19: pass | fail / fail |
+| rank offset, genus (0.4) | | | 0.47 (+0.07), 19: pass | / pass |
+| rank offset, species (0.8) | | | 1.06 (+0.26), 16: fail | / fail |
+
+Compute: 3.1, 4.8 and 6.8 minutes<!-- effort-ok: compute times -->. **Reading**: where the Laplace fit is biased toward 0 on small clusters (the photo SD, τ, the
+fish genus and species), the sampler is not, on these designs. The photo SD's chains mix slowly (effective sample size
+14-30 per 1,000 draws in the replicates' chains; τ 22-38): the reason the real chains were lengthened. The species rank
+offset, on 5% of 3,000 answers, fails. Simulated answers only.
+
+Tests: `tests/q316gibbs_check.py` (through `tests/q316.test.js`): the Pólya-Gamma draws' mean and variance, the joint
+draw against the dense Gaussian conditional, a planted genus SD (strong data) and a planted photo SD (large clusters)
+recovered, R-hat and ESS on independent draws.
+
+## The refit of 2026-11-25 (REE-193): `refit/`
+
+- `refit/pseudonymise.js`: the Answers tab as the Sheets connector saved it (the reply files, columns Name to Scoring),
+  each name replaced at once by K1, K2... (a "~anon " or "~deleted " prefix kept); no mapping written, no name printed;
+  `--delete-input` removes the raw replies once the log is written.
+- `refit/cut.js`: the log cut at a moment, to rerun today's code on an earlier fit's answers (the data's growth told
+  from the code's changes).
+- `refit/summarise.js`: a run directory's aggregates (no row, label or unit effect), the committed
+  `refit/q316-refit-2026-11-25.json`.
+- `refit/crosscheck.py` (exploratory): answers simulated from the sampler's medians, fitted by the Laplace fit.
+- The results: [docs/reviews/2026-11-25-q316-refit.md](../../../docs/reviews/2026-11-25-q316-refit.md).
 
 ## Running it on the real log
 
@@ -192,7 +266,7 @@ rank offset; with four times the answers, the genus and species SDs and both ran
 biased low (toward 0) whenever a photo or a player × unit pair has a handful of answers, even at 12,000 answers: by
 the rule declared above, that is the estimator's limit (the Laplace approximation's known downward bias on small binary
 clusters), not only the data's, since both pass with large clusters. So on the real log they will be reported "not
-estimable"; only another estimator (the study's Gibbs sampler, not built) could give them a value. Synthetic answers
+estimable"; only another estimator could give them a value (the Gibbs sampler, built since: its section above). Synthetic answers
 only: nothing here is about our players.
 
 ## Check 2C on made-up logs (no player)

@@ -182,7 +182,7 @@ const homeCtx = (out, over = {}) => ({
     hr: k => '#' + k,
     photoUrl: u => u,
     saver: () => false,
-    ORG: {short: 'IMR'}
+    ORG: require('../core.js').ORG // the organisation's words, as the page reads them (every field, the course's too)
   },
   ...over
 });

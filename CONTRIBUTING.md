@@ -56,6 +56,26 @@ reserved ([LICENSE](LICENSE)).
 - A choice that is costly to undo (a data format, a migration, content IMR owns, anything about money, accounts or
   access) waits for Pierre; put it under "Choices I made" in the PR.
 
+## Contributing from outside the integrator session
+
+For a person, Codex, ChatGPT or any agent that reads GitHub, Drive and Linear but not the integrator's chat. Everything
+you need is in those three places; if it is not, say so on the issue.
+
+1. Read [AGENTS.md](AGENTS.md), then [the agent brief](tools/agent-brief.md): the lines every launched agent is told.
+2. Find who integrates now in [docs/STATUS.md](docs/STATUS.md) "Now", with what is in flight and any area another team
+   is working in. Only the integrator merges.
+3. Find work from [Project Home](https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc) (the Next view),
+   or take the issue you were given. Read its description and every comment, and reconcile them with the code and the
+   open PRs.
+4. Claim it with a Linear comment "Executor: <team>, branch <prefix>/<name>", using your team's branch prefix. Before
+   building, check the open PRs and the other teams' branches for the same sensitive files (rule W27).
+5. Build as "Make a change" above. Open the PR ready, not draft, with "Part of REE-N" when it is partial, and leave the
+   draft and ready toggling to the queue (rule W6).
+6. Hand back as the brief's report says, in a signed Linear comment: the PR, the figures with links, the limits, what
+   remains. Never merge and never write to the sheet.
+7. The integrator reviews and merges, then answers on the issue. Notes for you arrive there as comments addressed to
+   your team; nobody asks Pierre to relay them.
+
 ## Decisions
 
 A decision is written down where it is taken: a short record in [docs/decisions/](docs/decisions/README.md) (context,

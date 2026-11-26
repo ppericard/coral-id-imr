@@ -2,11 +2,13 @@
 // device's storage is read and written, on a simulated player's saved state (REE-265 step 0; the study is
 // docs/reviews/2026-11-24-incremental-engine-state.md, section 1). Work counts, not timings: they do not move with the
 // machine's load, so a ceiling on them can fail a check. Offline: reads and serves the repository's files, sends nothing
-// (rule D1), the player is signed out, no photo is served.
+// (rule D1), the player is signed out (but with --syncs), no photo is served.
 //
 //   node tools/answercost.js                                  every subject at three histories: fish, corals and sea slugs at
-//                                                             50, 500 and 3,000 answers (STATES; CI's "answer cost" job runs this)
-//   node tools/answercost.js --states fish:50,fish:500        other states (subject:answers, subject fish|coral|seaslug)
+//                                                             50, 500 and 3,000 answers, each in the middle of a session and
+//                                                             back after a break (STATES; CI's "answer cost" job runs this)
+//   node tools/answercost.js --states fish:50,fish:500:back   other states (subject:answers, subject fish|coral|seaslug;
+//                                                             :back, the player back after BACK, 30 days: a comeback)
 //   node tools/answercost.js --dump A.json,B.json             saved states made earlier (tools/learnsim.js --dump)
 //   node tools/answercost.js --budget tools/answercost-budget.json   fail (exit 1) when a count passes its ceiling
 //   node tools/answercost.js --write-budget FILE [--margin 1.25] [--also A.json,B.json]   write the measured counts (the
@@ -18,14 +20,25 @@
 //   [--repeat N]   each state and seed counted N times and the runs compared (exit 1 when the questions asked or the calls an
 //                  answer differ): the check that a count repeats; by hand, after a change to how the page is started
 //   [--trace]      where each random number is drawn (the tick, the callers, the value) and the page's state at the restart, in --out
+//   [--syncs K]    signed in (a made-up account), the sync script answered by an in-memory sheet in this process (tests/gas.js:
+//                  no request leaves it, rule D1): after the idle fill, K syncs (sync.js syncPush), each in a window of its own
+//                  with the idle work it leaves: whether the data version moved, the units the draw's data was filled again
+//                  for, whether the state version moved and the state views computed (STATE_CALCS), the named calls (the
+//                  row's syncs, a table of its own). The page signs in, syncs at its boot and once
+//                  more before the restart (the account made, its first load), so each sync counted loads and merges a saved
+//                  copy and visits the other subjects (app.js inSubject: sync.js syncSummary, mergeSaved). No budget.
+//   [--check]      every read of a kept view computed again and compared (app.js VIEW_CHECK): a difference is a page error,
+//                  which fails the run. No budget (the counts are the check's).
 //
 // A state is made once by tools/learnsim.js (profile lectureRA, seed 1, the page's own answers; the sea slugs play the
 // fish part of the profile, the same engine) and kept in the cache (REEFID_ANSWERCOST_CACHE, else reefid-answercost in
 // the temporary directory, shared by every worktree). The missing states of a subject are made by one run to the longest
-// of them, which saves each of the others on its way: the nine states of STATES take about 2 minutes 15 s on a quiet 4-core
-// machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting them 40 s
-// at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
-// formats), each through the tap, the feedback, the deferred planning, Next and its top-up. V8's precise coverage counts
+// of them, which saves each of the others on its way: the nine players take about 2 minutes 15 s on a quiet 4-core
+// machine (three runs side by side, fish 3,000 the longest), 5 to 14 minutes when other agents load it, counting the
+// eighteen states of STATES (each player in a session and back) about 1 minute 30 s at --par 3. The page plays --warm answers it does not count, then --n it does (three right, one wrong, in the page's own mix of
+// formats), each through the tap, the feedback, the deferred planning, Next and its top-up, each taken alone (the row's
+// `each`; peakCalls, the heaviest, is budgeted beside the average and compared by --repeat; peakTop and eachTop say where
+// the calls went). V8's precise coverage counts
 // the invocations of every named function of the app's files (anonymous callbacks are left out, so the true totals are
 // higher), divided by the answers counted; localStorage getItem and setItem are wrapped to count calls and characters (the text read or written, however the app parses it). The page's
 // Math.random is seeded (--seed off: not) and the seed changes the questions drawn, so the counts of a state move with the
@@ -35,14 +48,22 @@
 // at each tick, every photo is the same 1 x 1 picture served at once, the page boots on About, which draws no question (a
 // question the boot draws is kept and shown again by the quiz, with the photos and the planner's memory it left, and which
 // one the boot draws depends on the order the script tiers load in), is at rest (every tier set up, the photos planned ahead
-// in, the idle tasks run) before the plans are dropped, the numbers start from the seed and the quiz opens, and the
+// in, the idle tasks run) before the plans are dropped, the numbers start from the seed and the quiz opens (then the draw's
+// data is filled in idle time, app.js drawFillSoon, held until the quiz is open and counted in a window of its own: the
+// row's fill, the table's "Filled idle", in no answer's count; fillIn, the units it filled within each answer counted,
+// whose calls are that answer's), and the
 // data (.json) is the pinned tree's, so
 // neither the machine's load, nor the order of an idle task, nor a photo that fails, nor a bot's refill of the data moves it
 // (the same fish:50 counted 133,183 calls an answer twice and 183,144 the third time before). The page's clock starts --clock
 // seconds (30) after the state's last answer, so the player is in the middle of a session whenever the file is played: a
-// gap of several hours since the last answer starts a comeback (model.js rustNow), which draws from fewer units and costs
-// less (fish 50 answers: 0.36 M calls an answer after a gap of hours, 0.51 M inside a session). --clock off: the machine's
-// clock, so the file's age decides (and the run is not repeatable).
+// gap of 30 minutes or more since the last answer starts a new visit, and one that left rust a comeback (model.js
+// rustNow), whose answers sum the rust again (rustAdd) and draw from the units answered right (comebackOf). --clock off:
+// the machine's clock, so the file's age decides (and the run is not repeatable). A comeback state (subject:answers:back)
+// starts the page's clock BACK (30 days) after the state's last answer, plays no warm-up (the visit's first answer is the
+// comeback's first, which a session state's warm-up leaves out), and counts only the answers given in the comeback (rust
+// left, model.js CB.r), as a session state's each taken alone (V8's coverage and the storage counters read and started
+// over after each answer): after a short history the comeback ends within a few answers (corals and
+// sea slugs at 50 answers: 3), and the answers after it are a session's. Fewer than BACK_MIN of them fails the run.
 //
 // Heavy (rule W24): it takes the machine slot before it starts Chromium. No routine local check runs it (Pierre,
 // 2026-11-24 14:06: a minute or two a check, times the checks, times the agents, climbs very fast): the unit tests
@@ -74,6 +95,15 @@ const WATCH = [
   // dataNow for a data view), and the photo draw's data, the parents' lists and the named species (data views)
   'dataNow', 'metCalc', 'introducedCalc', 'genScoreCalc', 'examOnCalc', 'cbPlayCalc', 'cbGeneraCalc', 'startPCalc', 'imrSaidCalc', 'lvlAllCalc', 'lvlNeedCalc',
   'lookRevCalc', 'rankClassesCalc', 'kindRankCalc', 'setMapCalc', 'drawPhotosCalc', 'kidsCalc', 'sciKidsCalc', 'achNamedCalc', 'achBoth', 'varOf', 'calSd', 'calBonus', 'setBonus', 'nAnswers', 'refLevel', 'varKindOf',
+  // the wrong choices' reads: each unit's part of a pair's prior (confUnitCalc; its forms counted as imrFormsOf), the labels
+  // (choiceKey, labelKey), the classes (rankKind)
+  'confUnitCalc', 'pooledConf', 'confScore', 'choiceKey', 'labelKey', 'rankKind', 'imrFormsOf',
+  // the opening's checks: the units ready (readyCalc, once a version; readyPart, per unit), the cards (cardsCalc), circle
+  // 2's condition (c1MetCalc); the rust, summed at a visit or in a comeback (rustAdd), else skipped (rustSkip)
+  'readyCalc', 'readyPart', 'cardsCalc', 'c1MetCalc', 'rustAdd', 'rustSkip',
+  // the confusion groups' pairs, from each unit's part (groupUnitCalc, once a data version per unit; the code before:
+  // groupConf, declaredOf, confPrior per pair) and the units in play's photos (photoAny, once a data version per unit)
+  'groupUnitCalc', 'groupConf', 'declaredOf', 'confPrior', 'comebackOf',
   'introduced', 'closed', 'asked', 'askedOpen', 'introReady', 'introMap', 'mayOpen', 'treeGate', 'treeC3', 'photoAny', 'GX',
   'headScore', 'headPct', 'progPct', 'treeScore', 'pctOf', 'rustNow', 'recallAt', 'stability', 'genusDiff', 'photoDiff', 'photoSet',
   'typeNames', 'treeTypeNames', 'typeDist', 'typeMatchIn', 'imrSaid', 'startV', 'sheetV', 'tipsLoad', 'get', 'set', 'logAnswer', 'save', 'syncSoon',
@@ -85,8 +115,17 @@ const WATCH = [
 // the study.
 const SUBJECTS = ['fish', 'coral', 'seaslug'];
 const HISTORIES = [50, 500, 3000];
-const STATES = SUBJECTS.flatMap(s => HISTORIES.map(n => `${s}:${n}`)).join(',');
-const BUDGETED = ['namedCalls', 'getCalls', 'getChars', 'setChars'];
+// Each state twice: a player in the middle of a session (the page's clock --clock seconds after the state's last answer),
+// and the same player back after a break of BACK seconds (subject:answers:back), whose answers are all a comeback's
+// (model.js rustNow, comebackOf): the rust is summed at each of them.
+// 30 days: a month away, after which every state's comeback lasts at least BACK_MIN answers (the shortest, corals at 50
+// answers: 3).
+const BACK = 30 * 86400,
+  BACK_MIN = 2; // a comeback state counts at least this many comeback answers, or it fails
+const STATES = SUBJECTS.flatMap(s => HISTORIES.flatMap(n => [`${s}:${n}`, `${s}:${n}:back`])).join(',');
+// peakCalls: the named calls of the heaviest answer counted (a row's `each`), so a build that lands on one answer has a
+// ceiling of its own, not only its share of the average.
+const BUDGETED = ['namedCalls', 'peakCalls', 'getCalls', 'getChars', 'setChars'];
 // The computations of the views whose count grows with the state when a version is lost (metCalc, genScoreCalc,
 // examOnCalc, lvlNeedCalc: once a version, per unit or class; drawPhotosCalc: once a data version per unit drawn).
 const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc', 'lvlNext', 'treeScore', 'achSnap', 'sheetV', 'metCalc', 'genScoreCalc', 'examOnCalc', 'lvlNeedCalc', 'drawPhotosCalc'];
@@ -94,27 +133,43 @@ const BUDGETED_FN = ['introduced', 'scoreOf', 'faOf', 'lvStepCalc', 'bonusCalc',
 const FLOOR = 100;
 // The simulated player of the states, as the study's (docs/reviews/2026-11-24-per-answer-cost.md).
 const PLAYER = {profile: 'lectureRA', seed: 1};
+// --syncs: the computations of the state views (app.js stateView, stateViewBy; docs/spec/model.md "The state version and
+// its views"), counted in each sync's window: a state version lost is one of each (one per unit or class read, a keyed
+// one), made again at their next read.
+const STATE_CALCS = ['bonusCalc', 'poolCalc', 'sciUpCalc', 'shareFreeCalc', 'c1MetCalc', 'metCalc', 'readyCalc', 'cardsCalc', 'imrSaidCalc', 'startPCalc',
+  'cbPlayCalc', 'cbGeneraCalc', 'examOnCalc', 'genScoreCalc', 'lvlNeedCalc', 'headScoreCalc', 'lvTableCalc'];
+// --syncs: the made-up account the page is signed in to (no player's name, rule D2).
+const SYNC_ACCOUNT = {name: 'Answercost Probe', pin: '1234', dirty: true};
+// A fresh in-memory sheet running the sync script (tools/sync/Code.gs) with the repository's data.json and
+// curation.json as its fetches: nothing leaves this process (rule D1).
+function syncSheet() {
+  const {loadCodeGs, withData} = require(path.join(ROOT, 'tests', 'syncpage.js'));
+  return Object.assign(loadCodeGs(withData()), {served: 0});
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Pure parts (tests/answercost.test.js): states named, counts flattened, ceilings checked and written.
 
-// 'fish:50,coral:3000' -> [{name, subject, answers}]
+// 'fish:50,coral:3000,fish:500:back' -> [{name, subject, answers, back}]; back: the player comes back after a break
+// (BACK), so every answer counted is a comeback's.
 function parseStates(spec) {
   return String(spec)
     .split(',')
     .filter(Boolean)
     .map(s => {
-      const m = new RegExp(`^(${SUBJECTS.join('|')}):(\\d+)$`).exec(s.trim());
-      if (!m || Number(m[2]) < 1) throw new Error(`bad state ${s} (fish:50, coral:3000: subject ${SUBJECTS.join(', ')}, then the answers)`);
-      return {name: `${m[1]}:${m[2]}`, subject: m[1], answers: Number(m[2])};
+      const m = new RegExp(`^(${SUBJECTS.join('|')}):(\\d+)(:back)?$`).exec(s.trim());
+      if (!m || Number(m[2]) < 1)
+        throw new Error(`bad state ${s} (fish:50, coral:3000, fish:500:back: subject ${SUBJECTS.join(', ')}, then the answers, then :back for a comeback)`);
+      return {name: `${m[1]}:${m[2]}${m[3] || ''}`, subject: m[1], answers: Number(m[2]), back: !!m[3]};
     });
 }
 
-// A row's counts as one flat map: namedCalls, getCalls, getChars, setCalls, setChars, and fn:<name> for each watched
-// function (its calls per answer, over every file).
+// A row's counts as one flat map: namedCalls, peakCalls (the heaviest answer's: the largest of `each`), getCalls,
+// getChars, setCalls, setChars, and fn:<name> for each watched function (its calls per answer, over every file).
 function metrics(row) {
   const m = {
     namedCalls: row.namedCalls,
+    peakCalls: row.peakCalls !== undefined ? row.peakCalls : Math.max(0, ...(row.each || [])),
     getCalls: row.store.getCalls,
     getChars: row.store.getChars,
     setCalls: row.store.setCalls,
@@ -158,8 +213,9 @@ function over(row, budget) {
 const historyOff = (H, answers, warm) => !(Math.abs(H - warm - answers) <= Math.max(10, 0.05 * answers));
 
 // Whether the runs of one state at one seed (rows of the same state and seed, --repeat) agree: the same units asked, in the
-// same order, the same calls an answer (within TOL: the coverage of an idle callback that ran or not moves a count by a few
-// calls of a hundred thousand) and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
+// same order, the same calls an answer and in the heaviest answer (within TOL: the coverage of an idle callback that ran or
+// not moves a count by a few calls of a hundred thousand; work moved from one answer to another moves the heaviest only)
+// and the same storage traffic (within STORE_TOL: once in about sixty counts on a throttled,
 // loaded machine the device's log was read twice more, 3% of the characters read, with the same questions asked; the cause is
 // not known, a timer of the page on the wall clock is a guess).
 // {ok, why}: why names the first run that parts from the first, and how.
@@ -171,6 +227,9 @@ function repeatable(rows, tol = TOL, storeTol = STORE_TOL) {
     const at = `run ${k + 2} of ${r.state}${r.seed === null || r.seed === undefined ? '' : ` seed ${r.seed}`}`;
     if (a.asked.join() !== r.asked.join()) return {ok: false, why: `${at} asked ${r.asked.join(', ')} where run 1 asked ${a.asked.join(', ')}`};
     if (Math.abs(r.namedCalls - a.namedCalls) > tol * a.namedCalls) return {ok: false, why: `${at} counted ${r.namedCalls} calls an answer where run 1 counted ${a.namedCalls}`};
+    const pa = metrics(a).peakCalls,
+      pr = metrics(r).peakCalls;
+    if (Math.abs(pr - pa) > tol * pa) return {ok: false, why: `${at} counted ${pr} calls in its heaviest answer where run 1 counted ${pa}`};
     for (const f of ['getCalls', 'getChars', 'setChars'])
       if (Math.abs(r.store[f] - a.store[f]) > storeTol * a.store[f]) return {ok: false, why: `${at} counted ${r.store[f]} for ${f} where run 1 counted ${a.store[f]}`};
   }
@@ -196,28 +255,65 @@ function verdict(rows, budget, file) {
   return {lines, bad, annotations};
 }
 const mil = x => (x >= 1e5 ? (x / 1e6).toFixed(2) + ' M' : fmt(x));
+// The draw's data filled in idle time (app.js drawFillSoon), apart from the answers: the units filled before the count
+// and the named calls it took, in a window of its own (a row's fill), then any unit filled idle inside an answer's window
+// (fillIn, one count an answer: its calls are in that answer's), "-" for an app without it.
+const fillCell = r => {
+  if (!r.fill) return '-';
+  const inside = (r.fillIn || []).reduce((t, x) => t + x, 0);
+  return `${fmt(r.fill.units)} units (${mil(r.fill.calls)})${inside ? `, ${fmt(inside)} in the answers` : ''}`;
+};
 
 // The study's table (section 1.2), one line a state, from the rows.
 function table(rows) {
-  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written'],
+  const head = ['State', 'U', 'V', 'T', 'R', 'Calls per answer', 'Heaviest answer', '`introduced`', '`scoreOf`', 'Storage reads: calls (chars)', 'Chars written', 'Filled idle'],
     multi = new Set(rows.map(r => r.seed)).size > 1, // several seeds: the seed beside the state
     line = r => {
       const m = metrics(r),
         s = r.size;
       return [
-        multi ? `${r.state} (seed ${r.seed})` : r.state,
+        // a comeback state: the comeback answers counted
+        (multi ? `${r.state} (seed ${r.seed})` : r.state) + (/:back$/.test(r.state) ? `, ${r.answers} answers` : ''),
         fmt(s.records),
         fmt(s.play),
         fmt(s.tree),
         fmt(s.conf + s.off),
         mil(m.namedCalls),
+        mil(m.peakCalls),
         fmt(m['fn:introduced'] || 0),
         fmt(m['fn:scoreOf'] || 0),
         `${fmt(m.getCalls)} (${mil(m.getChars)})`,
-        mil(m.setChars)
+        mil(m.setChars),
+        fillCell(r)
       ];
     };
   return [head, head.map(() => '---'), ...rows.map(line)].map(l => `| ${l.join(' | ')} |`).join('\n');
+}
+// --syncs: one line a state, each sync's window: whether the data version moved, the units the idle fill went through
+// again, the draw's data computed (drawPhotosCalc), whether the state version moved, the state views computed
+// (STATE_CALCS), the window's named calls and the requests the in-memory sheet answered.
+function syncTable(rows) {
+  const head = ['State', 'Syncs', 'Data version moved', 'Units filled again', '`drawPhotosCalc`', 'State version moved', 'State views computed', 'Named calls', 'Requests'],
+    multi = new Set(rows.map(r => r.seed)).size > 1,
+    each = (L, f) => L.map(f).join(' / ');
+  return [head, head.map(() => '---')]
+    .concat(
+      rows
+        .filter(r => r.syncs)
+        .map(r => [
+          multi ? `${r.state} (seed ${r.seed})` : r.state,
+          r.syncs.length,
+          each(r.syncs, s => (s.moved ? 'yes' : 'no')),
+          each(r.syncs, s => fmt(s.refill)),
+          each(r.syncs, s => fmt(s.drawCalc)),
+          each(r.syncs, s => (s.smoved ? 'yes' : 'no')),
+          each(r.syncs, s => fmt(s.stateCalc)),
+          each(r.syncs, s => mil(s.calls)),
+          each(r.syncs, s => s.reqs)
+        ])
+    )
+    .map(l => `| ${l.join(' | ')} |`)
+    .join('\n');
 }
 
 // The ceilings written for the states measured: a file {about, margin, states: {name: {metric: ceiling}}}; the states
@@ -369,6 +465,19 @@ const serveFrom = dataRoot => (req, res) => {
   });
 };
 
+// The named calls of the app's files in a coverage taken (V8's precise coverage), by function and file.
+function callsBy(result) {
+  const one = new Map();
+  for (const sc of result) {
+    if (!FILES.test(sc.url)) continue;
+    const f = path.basename(sc.url).replace(/\?.*/, '');
+    for (const fn of sc.functions) {
+      const c = fn.ranges[0].count;
+      if (fn.functionName && c) one.set(fn.functionName + '@' + f, (one.get(fn.functionName + '@' + f) || 0) + c);
+    }
+  }
+  return one;
+}
 // Closes what stands between the player and the next question (cards, achievement pops) and waits for an answerable one.
 async function prep(p) {
   for (let k = 0; k < 40; k++) {
@@ -415,9 +524,16 @@ async function oneAnswer(p, i, why) {
   let fmt;
   try {
     // 4 s to read and answer; the virtual clock (count) stands still otherwise
-    const r = await p.evaluate(pick => (window.__tick && __tick(4000), smokeAnswer(pick)), i % 4 !== 3); // three right, one wrong
+    // back: whether the answer is given in a comeback (model.js CB.r: the rust left, which rustNow sums again at the
+    // answer), read before it. Not the question's own flag (quiz.js SHOWNQ.warm): a surprise question shown in a comeback
+    // is no photo-quiz question, and the comeback goes on through it.
+    const r = await p.evaluate(
+      pick => ({back: typeof CB === 'object' && CB.r > 0, ...(window.__tick && __tick(4000), smokeAnswer(pick))}),
+      i % 4 !== 3
+    ); // three right, one wrong
     fmt = r.fmt;
     (why.asked = why.asked || []).push(r.t); // the units asked (the row's `asked`: what a count is of)
+    why.back = (why.back || 0) + (r.back ? 1 : 0);
   } catch (e) {
     why.push('smokeAnswer: ' + String(e.message).slice(0, 200));
     return null;
@@ -456,8 +572,18 @@ async function count(browser, base, file, name, o, expect) {
     u => !u.href.startsWith(base),
     r => (/\.(webp|jpe?g|png|gif)(\?|$)/.test(new URL(r.request().url()).pathname) ? r.fallback() : r.abort())
   );
+  // --syncs K: the player signed in, the sync script answered by an in-memory sheet in this process (tests/gas.js, as
+  // tests/syncpage.js serves it). The page is a local copy (app.js LOCAL): its signed-in requests go through sheetFetch to
+  // window.SHEET_STUB alone (set in the init script below, answered here), and any other request leaves through the
+  // abort above, so none reaches the real sheet (rule D1). served: the requests the sheet answered.
+  const sheet = o.syncs ? syncSheet() : null;
+  if (sheet)
+    await ctx.exposeBinding('__sheet', (src, post, url, body) => {
+      sheet.served++;
+      return JSON.stringify(post ? sheet.post(JSON.parse(body)) : sheet.get(Object.fromEntries(new URL(url).searchParams)));
+    });
   await ctx.addInitScript(
-    ({ls, seed, ref, trace}) => {
+    ({ls, seed, ref, trace, check, acct}) => {
       if (ref !== null) {
         // The page's clock is a VIRTUAL one, from the state's own time: the rust since the last answer, the comeback, the time
         // since the first launch read the same whenever the state is played, and it stands still between the tool's ticks
@@ -498,12 +624,30 @@ async function count(browser, base, file, name, o, expect) {
           return x;
         };
       }
+      // The draw's data filled in idle time (app.js drawFillSoon) waits until the page is at rest, then runs in a window of
+      // its own (below), so its calls are counted apart from the boot's and the answers'.
+      window.DRAW_FILL_HOLD = true;
+      if (check) window.VIEW_CHECK_ON = true; // --check: every read of a kept view computed again and compared (app.js VIEW_CHECK)
+      // --syncs: the sheet's replies from the in-memory sheet (app.js sheetFetch, a local copy's only way to it)
+      if (acct)
+        window.SHEET_STUB = (u, q) =>
+          window.__sheet(!!(q && q.body), String(u), (q && q.body) || null).then(t => ({status: 200, ok: true, json: () => Promise.resolve(JSON.parse(t))}));
       if (sessionStorage.getItem('answercost')) return;
       sessionStorage.setItem('answercost', '1');
       localStorage.clear();
       for (const [k, v] of Object.entries(ls)) localStorage.setItem(k, v);
+      // --syncs: signed in (app.js SYNC) as sync.js signIn leaves a new account, the answers played here in its log, so the
+      // sheet's replay of them (Code.gs) is this player's
+      if (acct) localStorage.setItem('reefid-account', JSON.stringify({...acct, log: JSON.parse(ls['reefid-log0'] || '[]')}));
     },
-    {ls, seed: o.seed, ref: o.clock === null ? null : lastAnswerMs(ls, file) + o.clock * 1000, trace: !!o.trace}
+    {
+      ls,
+      seed: o.seed,
+      ref: o.clock === null ? null : lastAnswerMs(ls, file) + o.clock * 1000,
+      trace: !!o.trace,
+      check: !!o.check,
+      acct: o.syncs ? SYNC_ACCOUNT : null
+    }
   );
   await ctx.addInitScript(PAGE);
   const p = await ctx.newPage(),
@@ -530,6 +674,9 @@ async function count(browser, base, file, name, o, expect) {
     {timeout: 120000}
   );
   await p.evaluate(() => typeof prefetched === 'function' && prefetched()); // the photos planned ahead are in
+  // --syncs: the boot's sync over and one more (the account made on the in-memory sheet, its first load), so the syncs
+  // counted below each load and merge a saved copy, as a signed-in player's do.
+  if (sheet) await p.evaluate(() => (typeof syncing === 'object' && syncing ? syncing : Promise.resolve()).then(() => syncPush()));
   await settle(p);
   // --trace: the page as the restart finds it, written into the trace as a line of its own
   const probe = async tag => {
@@ -564,7 +711,71 @@ async function count(browser, base, file, name, o, expect) {
   });
   await p.waitForFunction(() => /quiz/.test(location.hash), null, {timeout: 30000});
   await settle(p);
+  // The draw's data filled in idle time (app.js drawFillSoon), held since the boot (DRAW_FILL_HOLD): let go once the quiz
+  // is open and awaited in a window of its own, the row's fill (the units its slices went through, the named calls). Not
+  // before the restart: the quiz's first route() applies a rebuild pending since the boot (app.js CUR_NEW: a fetched
+  // curation that differs from the page's copy, another reserve id, the script's structure version; then build), which
+  // moves the data version and drops every data view (fish:3000 and fish:3000:back). So the answers counted
+  // find it filled as a player's do once the quiz has been open a moment, its calls are in no answer's count, and the
+  // count stays repeatable: a fill still running in an answer's window would move between answers with the machine's
+  // speed. An app without it: no fill.
+  let fill = null;
+  if (await p.evaluate(() => typeof drawFillSoon === 'function')) {
+    await cdp.send('Profiler.enable');
+    await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
+    await p.evaluate(() => {
+      window.DRAW_FILL_HOLD = false;
+      drawFillSoon();
+    });
+    await p.waitForFunction(() => drawFillDone(), null, {timeout: 120000});
+    const {result} = await cdp.send('Profiler.takePreciseCoverage');
+    await cdp.send('Profiler.stopPreciseCoverage');
+    const one = callsBy(result);
+    fill = {
+      units: await p.evaluate(() => DRAW_FILL.n),
+      calls: [...one.values()].reduce((t, c) => t + c, 0),
+      top: [...one].sort((a, b) => b[1] - a[1]).slice(0, 12)
+    };
+  }
   if (o.trace) await probe('after the restart');
+  // --syncs K: K syncs (sync.js syncPush: the load or the copy held, the merge, the save, its reply), each in a window
+  // of its own with the idle work it leaves (the draw's data filled again, app.js drawFillSoon), awaited. Per sync:
+  // moved, whether the data version (app.js dataNow) moved; refill, the units the idle fill went through again;
+  // drawCalc, the draw's data computed (drawPhotosCalc); smoved, whether the state version (app.js stateNow) moved;
+  // stateCalc, the state views computed (STATE_CALCS); calls, the window's named calls; reqs, the requests the
+  // in-memory sheet answered.
+  const syncs = [];
+  for (let k = 0; sheet && k < o.syncs; k++) {
+    const at = () => p.evaluate(() => ({v: dataNow(), s: stateNow(), n: typeof DRAW_FILL === 'object' ? DRAW_FILL.n : 0})),
+      a = await at(),
+      r0 = sheet.served;
+    await cdp.send('Profiler.enable');
+    await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
+    await p.evaluate(() => syncPush());
+    await settle(p);
+    // The fill asked as the next plan asks it (quiz.js planNext): a bump after the sync's last visit (sync.js stsAsk's
+    // treeWith) asks nothing itself.
+    await p.evaluate(() => typeof drawFillSoon === 'function' && drawFillSoon());
+    await p.waitForFunction(() => !syncing && (typeof drawFillDone !== 'function' || drawFillDone()), null, {timeout: 120000}).catch(async e => {
+      const st = await p.evaluate(() => ({syncing: !!syncing, err: SYNC && SYNC.err, fill: typeof DRAW_FILL === 'object' && {...DRAW_FILL, q: DRAW_FILL.q.length}, v: dataNow()}));
+      throw new Error(`${name}: sync ${k + 1} did not end with the draw's data filled (${JSON.stringify(st)}): ${e.message}`);
+    });
+    const {result} = await cdp.send('Profiler.takePreciseCoverage');
+    await cdp.send('Profiler.stopPreciseCoverage');
+    const one = callsBy(result),
+      b = await at();
+    syncs.push({
+      moved: a.v !== b.v,
+      refill: b.n - a.n,
+      drawCalc: one.get('drawPhotosCalc@model.js') || 0,
+      smoved: a.s !== b.s,
+      stateCalc: [...one].filter(([f]) => STATE_CALCS.includes(f.split('@')[0])).reduce((t, [, c]) => t + c, 0),
+      calls: [...one.values()].reduce((t, c) => t + c, 0),
+      reqs: sheet.served - r0,
+      top: [...one].sort((x, y) => y[1] - x[1]).slice(0, 12),
+      calcs: Object.fromEntries([...one].filter(([f]) => /Calc@/.test(f))) // the views computed in the window
+    });
+  }
   for (let i = 0; i < o.warm; i++) await oneAnswer(p, i, []);
   // The state's sizes, as the app reads them: U records, V units in play, T units of the tree, R pair counts.
   const size = await p.evaluate(() => {
@@ -590,7 +801,9 @@ async function count(browser, base, file, name, o, expect) {
   // The page is on the state's subject, with the state's history: a state that loaded as another subject, or with its
   // history lost, would be counted as another player's work and read as a cheap one.
   if (expect && expect.subject && size.subj !== expect.subject) throw new Error(`${name}: the page loaded the subject ${size.subj}, not ${expect.subject}`);
-  if (expect && expect.answers && historyOff(size.H, expect.answers, o.warm))
+  // Signed in (--syncs), the history is the one the sheet replays from the device's answer log, which keeps the last
+  // answers only (coral:3000: 2,000): the row's size says it.
+  if (expect && expect.answers && !sheet && historyOff(size.H, expect.answers, o.warm))
     throw new Error(`${name}: the page holds ${size.H} answers (after ${o.warm} of warm-up) of the state's ${expect.answers}`);
   // The storage's own boundary (localStorage getItem and setItem, whoever calls them: store.get and store.set, the kept
   // queues' direct writes): calls and characters read and written per answer.
@@ -619,30 +832,74 @@ async function count(browser, base, file, name, o, expect) {
   await cdp.send('Profiler.startPreciseCoverage', {callCount: true, detailed: false});
   const fmts = [];
   const why = [];
-  for (let i = o.warm; i < o.warm + o.n; i++) fmts.push(await oneAnswer(p, i, why));
-  const {result} = await cdp.send('Profiler.takePreciseCoverage');
-  await cdp.send('Profiler.stopPreciseCoverage');
-  const n = fmts.filter(Boolean).length;
-  // Most of the answers played, and no page error: a count over a broken page is no count.
-  if (n < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${n} of ${o.n} answers were played (${errs.join('; ') || 'no page error'}; ${why[0] || 'no reason seen'})`);
-  if (errs.length) throw new Error(`${name}: page errors: ${errs.join('; ')}`);
-  const by = new Map();
-  let total = 0;
-  for (const s of result) {
-    if (!FILES.test(s.url)) continue;
-    const f = path.basename(s.url).replace(/\?.*/, '');
-    for (const fn of s.functions) {
-      const c = fn.ranges[0].count;
-      if (!fn.functionName || !c) continue;
+  const by = new Map(),
+    st = {get: {calls: 0, chars: 0}, set: {calls: 0, chars: 0}, keys: {}};
+  let total = 0,
+    peakTop = []; // the heaviest answer's functions, by their calls in it
+  const eachTop = []; // each answer's 12 heaviest functions (every answer over a mark, not only the heaviest)
+  const each = []; // the calls of each answer counted, each taken alone (peakCalls: the heaviest)
+  // The calls and the storage traffic since the last take, added to the count (keep) or left out; both counters start over
+  // (V8's takePreciseCoverage resets its call counts).
+  const take = async keep => {
+    const {result} = await cdp.send('Profiler.takePreciseCoverage'),
+      s = await p.evaluate(() => {
+        const C = window.__st,
+          out = JSON.parse(JSON.stringify(C));
+        C.get = {calls: 0, chars: 0};
+        C.set = {calls: 0, chars: 0};
+        C.keys = {};
+        return out;
+      });
+    if (!keep) return;
+    const t0 = total,
+      one = callsBy(result); // this answer's calls by function
+    for (const [k, c] of one) {
       total += c;
-      by.set(fn.functionName + '@' + f, (by.get(fn.functionName + '@' + f) || 0) + c);
+      by.set(k, (by.get(k) || 0) + c);
     }
+    if (total - t0 > Math.max(-1, ...each)) peakTop = [...one].sort((a, b) => b[1] - a[1]).slice(0, 30);
+    eachTop.push([...one].sort((a, b) => b[1] - a[1]).slice(0, 12));
+    each.push(total - t0);
+    for (const op of ['get', 'set']) for (const k of ['calls', 'chars']) st[op][k] += s[op][k];
+    for (const [k, v] of Object.entries(s.keys)) {
+      const c = (st.keys[k] = st.keys[k] || {calls: 0, chars: 0});
+      c.calls += v.calls;
+      c.chars += v.chars;
+    }
+  };
+  // Each answer is taken alone, so the heaviest one is seen (peakCalls): a build once a page load or once the units in play
+  // change lands on one answer, which an average over the window hides. A comeback state (back) counts the answers given in
+  // the comeback only: after a short history the comeback ends within a few answers (fish 50 answers, 30 days away: 5),
+  // and the answers after it are mid-session ones.
+  // fillIn: the units the idle fill filled within each answer counted (its calls are in that answer's): none while the
+  // data version stays the one filled before the count.
+  let n = 0;
+  const fillN = () => p.evaluate(() => (typeof DRAW_FILL === 'object' ? DRAW_FILL.n : 0)),
+    fillIn = [];
+  let f0 = await fillN();
+  for (let i = o.warm; i < o.warm + o.n; i++) {
+    const b = why.back || 0,
+      f = await oneAnswer(p, i, why);
+    fmts.push(f);
+    const keep = !(expect && expect.back) || (why.back || 0) > b;
+    if (f && keep) n++;
+    await take(keep);
+    const f1 = await fillN();
+    if (keep) fillIn.push(f1 - f0);
+    f0 = f1;
   }
+  await cdp.send('Profiler.stopPreciseCoverage');
+  const played = fmts.filter(Boolean).length;
+  // Most of the answers played, and no page error: a count over a broken page is no count.
+  if (played < Math.ceil(0.75 * o.n)) throw new Error(`${name}: ${played} of ${o.n} answers were played (${errs.join('; ') || 'no page error'}; ${why[0] || 'no reason seen'})`);
+  if (errs.length) throw new Error(`${name}: page errors: ${errs.join('; ')}`);
+  // A comeback state counts a comeback: at least BACK_MIN answers counted were a comeback's, else it is another player's.
+  if (expect && expect.back && n < BACK_MIN)
+    throw new Error(`${name}: ${n} of the ${o.n} answers counted were a comeback's, fewer than ${BACK_MIN} (the break of ${BACK} s started none, or it ended too soon)`);
   const per = x => Math.round((10 * x) / n) / 10,
     watch = {};
   for (const [k, c] of by) if (WATCH.includes(k.split('@')[0])) watch[k] = per(c);
-  const st = await p.evaluate(() => window.__st),
-    rtrace = o.trace ? await p.evaluate(() => window.__rt || []) : undefined;
+  const rtrace = o.trace ? await p.evaluate(() => window.__rt || []) : undefined;
   await ctx.close();
   return {
     state: name,
@@ -650,9 +907,18 @@ async function count(browser, base, file, name, o, expect) {
     answers: n,
     fmts: fmts.join(','),
     asked: why.asked || [],
+    back: why.back || 0, // the answers played (after the warm-up) that were a comeback's
+    each, // the named calls of each answer counted
+    fill, // the draw's data filled idle before the count, in a window of its own: {units, calls, top}; null without it
+    fillIn, // the units filled idle within each answer counted
+    ...(sheet ? {syncs} : {}), // --syncs: each sync's window
     rtrace,
     errs,
     namedCalls: per(total),
+    peakCalls: each.length ? Math.max(...each) : 0, // the heaviest answer's named calls
+    peakAt: each.length ? each.indexOf(Math.max(...each)) : -1, // which answer counted it was (0: the first)
+    peakTop, // where its calls went
+    eachTop, // where each answer's calls went
     store: {
       getCalls: per(st.get.calls),
       getChars: per(st.get.chars),
@@ -671,8 +937,9 @@ async function count(browser, base, file, name, o, expect) {
 // ---------------------------------------------------------------------------------------------------------------
 
 const USAGE =
-  'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500 | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
-  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now] [--throttle N] [--repeat N] [--trace]';
+  'usage: node tools/answercost.js [--states fish:50,coral:3000,seaslug:500:back | --dump A.json,B.json] [--n 8] [--warm 2] [--seed 1|off] [--clock 30|SECONDS|off]\n' +
+  '                                [--budget FILE | --write-budget FILE [--margin 1.25]] [--out counts.json] [--cache DIR] [--regen] [--par N] [--data-now] [--throttle N] [--repeat N] [--trace]\n' +
+  '                                [--syncs K] [--check]';
 
 async function main() {
   const argv = process.argv.slice(2),
@@ -681,7 +948,7 @@ async function main() {
       return i >= 0 && argv[i + 1] !== undefined && !argv[i + 1].startsWith('--') ? argv[i + 1] : d;
     };
   if (argv.includes('--help') || argv.includes('-h')) return console.log(USAGE);
-  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now', 'throttle', 'trace', 'repeat']);
+  const known = new Set(['states', 'dump', 'n', 'warm', 'seed', 'clock', 'budget', 'write-budget', 'also', 'margin', 'out', 'cache', 'regen', 'par', 'data-now', 'throttle', 'trace', 'repeat', 'syncs', 'check']);
   for (const a of argv.filter(a => a.startsWith('--')))
     if (!known.has(a.slice(2))) return (console.error(`unknown option ${a}\n${USAGE}`), process.exit(2));
   let states;
@@ -700,13 +967,18 @@ async function main() {
       clock: arg('clock', '30') === 'off' ? null : Number(arg('clock', 30)),
       throttle: Number(arg('throttle', 1)),
       trace: argv.includes('--trace'),
-      repeat: Number(arg('repeat', 1))
+      repeat: Number(arg('repeat', 1)),
+      syncs: Number(arg('syncs', 0)),
+      check: argv.includes('--check')
     },
     margin = Number(arg('margin', 1.25)),
     par = Number(arg('par', process.env.CI ? 3 : 1)),
     budgetFile = arg('budget', null),
     budget = budgetFile ? JSON.parse(fs.readFileSync(path.resolve(budgetFile), 'utf8')) : null;
-  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1 && Number.isInteger(o.repeat) && o.repeat >= 1 && o.seeds.every(s => s === null || Number.isInteger(s)))) return (console.error(USAGE), process.exit(2));
+  if (!(o.n >= 1 && o.warm >= 0 && margin >= 1 && par >= 1 && Number.isInteger(o.repeat) && o.repeat >= 1 && o.seeds.every(s => s === null || Number.isInteger(s)) && Number.isInteger(o.syncs) && o.syncs >= 0))
+    return (console.error(USAGE), process.exit(2));
+  // A signed-in run, or one with every view checked, counts other work than a player's answers: never held to a budget.
+  if ((o.syncs || o.check) && (budget || arg('write-budget', null))) return (console.error(`--syncs and --check hold no budget\n${USAGE}`), process.exit(2));
 
   // From here on the run is heavy: the machine slot first (rule W24, a no-op on CI), for the states to make and the count.
   await require('../tests/slot.js')('tools/answercost.js');
@@ -729,12 +1001,16 @@ async function main() {
     rows = new Array(jobs.length);
     await Promise.all(
       Array.from({length: Math.min(par, jobs.length)}, async () => {
-        const browser = await chromium.launch();
+        // --syncs: the script's hosts mapped to this computer too, as tests/pages.smoke.js signs in (rule D1): a request
+        // that escaped the page's stub and the routes would find no sheet
+        const browser = await chromium.launch(
+          o.syncs ? {args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']} : {}
+        );
         try {
           for (let k = queue.shift(); k !== undefined; k = queue.shift()) {
             const {i, seed} = jobs[k],
               t1 = Date.now();
-            rows[k] = {...(await count(browser, base, files[i], states[i].name, {...o, seed}, states[i].subject ? states[i] : null)), seed};
+            rows[k] = {...(await count(browser, base, files[i], states[i].name, {...o, seed, ...(states[i].back ? {clock: BACK, warm: 0} : {})}, states[i].subject ? states[i] : null)), seed};
             console.error(`answercost: ${states[i].name}${o.seeds.length > 1 ? ` seed ${seed}` : ''} counted in ${Math.round((Date.now() - t1) / 1000)} s.`);
           }
         } finally {
@@ -757,6 +1033,7 @@ async function main() {
   }
   console.error(`answercost: ${states.length} states${o.seeds.length > 1 ? `, seeds ${o.seeds.join(',')}` : ''}, ${Math.round((Date.now() - t0) / 1000)} s in all.`);
   console.log(table(rows));
+  if (o.syncs) console.log(`\nSigned in, each sync (sync.js syncPush) in a window of its own:\n\n${syncTable(rows)}`);
   // CI shows the table on the job's page.
   if (process.env.GITHUB_STEP_SUMMARY)
     fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Work of one answer, per state\n\n${table(rows)}\n\n`);
@@ -778,7 +1055,7 @@ async function main() {
   }
 }
 
-module.exports = {repeatable, TOL, parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
+module.exports = {syncTable, repeatable, TOL, BACK, BACK_MIN, parseStates, metrics, roundUp, ceilings, over, verdict, historyOff, table, writeBudget, stateFile, pool, ensureStates, pick, GEN, PLAYERS_AT, cacheDir, STATES, SUBJECTS, HISTORIES, BUDGETED, BUDGETED_FN, FLOOR};
 if (require.main === module)
   main().catch(e => {
     console.error(e);

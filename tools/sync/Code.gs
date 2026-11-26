@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 229 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 236 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 229;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 236;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -268,7 +268,8 @@ function load_(name, row, q){
   // it out (the app keeps its own progress and asks again next time).
   if (q.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data), undefined, stMain_(q)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    const R = CORE_.replaySubject();  // the subject of the unprefixed rv and replay (an older app's, rule D4)
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data, R), q.rv, q.pt, startOf_(data, R), R, stMain_(q)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   const rps = replays_(name, data, q.rvs || {}, q.pt, undefined, undefined, {sts: q.sts, stn: q.stn}); if (rps) out.replays = rps;
   if (q.have === d.rev) { delete out.data; out.same = 1; }  // the device holds this very copy (sync.js sdOf)
@@ -308,7 +309,7 @@ function doPost_(e){
     if (!who) return json_({ok: false, error: 'token'});
     if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // timed (timEnd_)
     // readStats from the snapshot (statsAdmin_), else the whole log; s: the subject (statsSid_: the corals without it)
-    return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who}));
+    return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who, lean: p.lean}));
   }
   if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // roles (roles_)
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.groupMake || p.groupEdit || p.groupDrop || p.mergePlan) return json_(users_(p));  // admin user management (see users_)
@@ -448,7 +449,8 @@ function doPost_(e){
   // The full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
-  if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data), undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
+  const R = CORE_.replaySubject();  // the subject of the unprefixed rv and replay (an older app's, rule D4)
+  if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data, R), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data, R), R, stMain_(p)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
   const rps = replays_(name, p.data, p.rvs, p.pt, undefined, undefined, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;  // the other subjects' (replays_)
   return json_(out);
 }
@@ -718,20 +720,23 @@ function dataJson_(){
 // without) has the replay score the answer with what the app scored it with (core.js scoreAnswer).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL])];
-// start: the player's first-launch answer (the app's reefid-sync-coral-start record): the replay steps the ability
-// with the prior it says, as the app does (core.js startPriorAt).
-// sid: the subject replayed, the corals by default (replays_ for the others: their own rows, units and tab, and no
-// photo memory offsets, pooled confusions, format or genus offsets, which stats_ computes for the corals only: an answer
-// logged with its scoring record, as every fish answer is, replays as the game scored it). No floor: the log is the
-// only reference, a bar may go down (rule D9).
-// appSt: the structure stamp the app applied (undefined: an app that says none; the subject replayed here: stMain_). A
+// start: the player's first-launch answer in that subject (core.js startKey, reefid-sync-<subject>-start): the replay
+// steps the ability with the prior it says, as the app does (core.js startPriorAt).
+// sid: the subject replayed. One path for every subject (rule S1): its own rows (subjRows_), units (subjGen_), variant
+// table (subjVar_), rules versions (rplTop_) and tab (rplTab_). Only its pooled statistics differ, a declared parameter:
+// a subject with offsets (core.js SUBJECTS offsets: the corals) replays with the photo memory, format and genus offsets
+// and pooled confusions of its own stats_; another replays with none, an answer logged with its scoring record (as every
+// fish answer is) replaying as the game scored it (rplMake_). The subject replayed for the request's unprefixed rv
+// (an older app's, rule D4) is core.js replaySubject: the callers pass it (load_, doPost_, anon_), replays_ the others.
+// No floor: the log is the only reference, a bar may go down (rule D9).
+// appSt: the structure stamp the app applied (undefined: an app that says none; for the unprefixed rv: stMain_). A
 // subject with a structure (core.js SUBJECTS structure) is replayed under the one in force (subjRpl_: its units and
 // stamp st), also when the rules version is applied but the stamp is another; the stamp joins the cache's identity
 // (rplSince_) and the reply (st, when not ''). Its units cannot be made (the curation or its file unreadable): no replay.
 function replay_(key, since, appRv, pt, start, sid, appSt){
-  const main = !sid || sid === CORE_.replaySubject(), top = rplTop_(sid);  // its own rules versions (core.js rvOf)
+  const top = rplTop_(sid);  // its own rules versions (core.js rvOf)
   if (typeof appRv !== 'number' || !isFinite(appRv)) return null;
-  const S = CORE_.subjectOf(main ? CORE_.replaySubject() : sid), SX = S.structure ? subjRpl_(S.id) : null;
+  const S = CORE_.subjectOf(sid), SX = S.structure ? subjRpl_(S.id) : null;
   if (S.structure && !SX) return null;
   const stNow = SX ? SX.st : '';
   if (appRv >= top && (appSt === undefined || appSt === stNow)) return null;
@@ -743,7 +748,7 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
   // The cache's identity: the reset time, and the fingerprint of the first-launch history the replay applies (a replay
   // made with another history is not reused). Without a history: the reset time alone.
   const fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stNow), st = stNow ? {st: stNow} : {};
-  const sh = sheet_(main ? RPL.TAB : rplTab_(sid), RPL.HEAD), at = find_(sh, key);
+  const sh = sheet_(rplTab_(sid), RPL.HEAD), at = find_(sh, key);
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0], prev = rplRead_(row);
     // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__"): an old
@@ -757,10 +762,11 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
 }
 // The pieces of replay_, shared with the leaderboard (board_, boardWarm_). A subject's last rules version (core.js
 // rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs).
-const rplTop_ = sid => CORE_.rvOf(!sid ? CORE_.replaySubject() : sid);
-// The structure stamp an app says for the subject replayed here (q: a load's or a save's fields, sts {coral: stamp},
-// sync.js stsAsk), undefined when it says none (an older app: replayed by its rules version alone); with the stamp of
-// the units it holds when another (stn), the curation is read again at once (subjStSeen_), as for another subject.
+const rplTop_ = sid => CORE_.rvOf(sid);
+// The structure stamp an app says for the subject of the unprefixed rv (core.js replaySubject; q: a load's or a save's
+// fields, sts {subject: stamp}, sync.js stsAsk), undefined when it says none (an older app: replayed by its rules version
+// alone); with the stamp of the units it holds when another (stn), the curation is read again at once (subjStSeen_), as
+// replays_ does for the others.
 function stMain_(q){
   const id = CORE_.replaySubject(), sts = q && q.sts && typeof q.sts === 'object' ? q.sts : {}, stn = q && q.stn && typeof q.stn === 'object' ? q.stn : {};
   if (typeof sts[id] !== 'string') return undefined;
@@ -772,8 +778,8 @@ function stMain_(q){
 const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
 // The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
 function rplMine_(key, since, sid){
-  const main = !sid || sid === CORE_.replaySubject(), who = lc_(key);
-  return (main ? answerRows_() : subjRows_(sid)).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
+  const who = lc_(key);
+  return subjRows_(sid).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
 }
 // A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for an old floored one); null when broken.
 function rplRead_(row){
@@ -783,21 +789,22 @@ function rplRead_(row){
 const rplFresh_ = (row, top, n, sinceKey) => Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey;
 // The replayed record of a record kept (an old floored one kept {P: record, F: reference}).
 const rplRec_ = o => (o && o.P && o.F ? o.P : o);
-// The replay itself (core.js replayProgress) over the player's rows (mine). {rec}, null without the units (gen_,
-// subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
+// The replay itself (core.js replayProgress) over the player's rows (mine) of subject sid. {rec}, null without the units
+// (subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
 // g: the units when the caller has them already (replay_, under the stamp it keys the replay by).
 function rplMake_(who, mine, since, start, sid, g){
-  const main = !sid || sid === CORE_.replaySubject(), rows = mine.map(r => rowOf_(who, r));
-  const gen = g || (main ? gen_() : subjGen_(sid));
+  const S = CORE_.subjectOf(sid), rows = mine.map(r => rowOf_(who, r));
+  const gen = g || subjGen_(sid);
   if (!gen) return null;
   // A subject with a variant table (core.js SUBJECTS replayed vars, subjVar_): the replay marks each unit's variant
   // groups with no right answer in the log (core.js replayProgress vars, vl), which take a learned mark away (replayedOf;
-  // rules D8, D9); none made without the table (the app keeps its own and asks again).
-  const vars = main ? null : subjVar_(sid);
-  if (!main && !vars) return null;
-  // The corals' pooled stats from the snapshot (statsServed_), else stats_; other subjects replay without. photos: the
-  // photos' time terms for an answer logged without its own (core.js replayProgress photos, rtWeight ti; rules version 13).
-  const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
+  // rules D8, D9); none made without the table (the app keeps its own and asks again). {} for a subject with none.
+  const vars = subjVar_(sid);
+  if (!vars) return null;
+  // A subject with offsets (core.js SUBJECTS offsets): its pooled stats from the snapshot (statsServed_), else stats_;
+  // another replays without. photos: the photos' time terms for an answer logged without its own (core.js replayProgress
+  // photos, rtWeight ti; rules version 13).
+  const st = S.offsets ? statsServed_(sid) || stats_(undefined, sid) : {}, rep =CORE_.replayProgress(rows, Object.assign({gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, photos: st.photos, starts: start ? {[who]: start} : {}}, vars && Object.keys(vars).length ? {vars: vars} : {}))[who];
   return {rec: rep ? rep.P : {}};
 }
 // Writes the record at row at (0: a new row) of tab sh, in CHUNK-character parts.
@@ -846,11 +853,12 @@ function replays_(key, data, rvs, pt, alt, held, sx){
   } finally { if (lock) lock.releaseLock(); }
   return Object.keys(out).length ? out : null;
 }
-// The tab keeping another subject's replay records: "Replayed Fish", as RPL.TAB keeps the corals'.
-const rplTab_ = sid => RPL.TAB + ' ' + CORE_.subjectOf(sid).name;
-// Every tab of replay records, the corals' first: an account deleted, merged, archived or a device claimed drops its rows
-// in each (rplDrop_).
-const rplTabs_ = () => [RPL.TAB].concat(CORE_.replayedSubjects().map(rplTab_));
+// The tab keeping a subject's replay records: the one its SUBJECTS replayed tab names (the corals' "Replayed", from
+// before there was another), else "Replayed <its name>" ("Replayed Fish").
+const rplTab_ = sid => (S => (S.replayed && S.replayed.tab) || RPL.TAB + ' ' + S.name)(CORE_.subjectOf(sid));
+// Every tab of replay records (holdSubjects_: every subject the sheet replays): an account deleted, merged, archived or a
+// device claimed drops its rows in each (rplDrop_).
+const rplTabs_ = () => holdSubjects_().map(rplTab_);
 function rplDrop_(name){ return rplTabs_().reduce((n, t) => n + dropRows_(t, name), 0); }
 // The units another subject's replay reads (core.js replayProgress gen: look-alikes and family lines): for fish, core.js
 // treeReplayGen over fish.json from GitHub main (the pool's first file, SUBJECTS pool), cached 6 hours as data.json is.
@@ -1038,6 +1046,8 @@ const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w
 //   refused before it (23, rejectedOut_: a list of strings, null when none, absent from a script before v228). In the oldest rows
 //   expected, ability and new photos are null, choices (the genera offered, space-separated) '', seconds and enlarged
 //   null; the UTC offset (minutes east of UTC on the player's device) is null only when an app sent none.
+// q.lean (the admin from v232, admin.js leanOn): the same rows as lean (core.js rowsPack: column by column, about half
+// the bytes) in place of rows; a request without it (tools/analyses.js, an older admin) gets rows as before.
 function answers_(q){
   // The roster read before the answers: a removal while they are read leaves the report stale.
   const ss = SpreadsheetApp.getActiveSpreadsheet(), out = {ok: true, rows: [], players: {}, roster: rosterAt_()}, sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs');
@@ -1061,6 +1071,8 @@ function answers_(q){
   if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, LOG.length).filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // no archive
     .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
+  const lean = q && q.lean ? CORE_.rowsPack(out.rows) : null;
+  if (lean) { out.lean = lean; delete out.rows; }
   return out;
 }
 // One Answers row as readAnswers serves it (above): id, the player's admin id (aid_, memoised by the caller); arch, the
@@ -2409,6 +2421,17 @@ function pagesDrop_(ids){
   for (let i = v.length - 1; i >= 0; i--) if (ids.has(String(v[i][0]))) { sh.deleteRow(i + 2); n++; }
   return n;
 }
+const EV_WINDOW = 2000, EV_SKEW = 3600000;
+// When an event was made, in ms: the first 8 base36 characters of its id are Date.now() (sync.js ev). NaN for an id
+// without them, or one that reads as a time to come (the script's own 'old…' ids).
+function evIdTime_(id){ const s = String(id), t = s.length >= 8 ? parseInt(s.slice(0, 8), 36) : NaN; return t <= Date.now() + EV_SKEW ? t : NaN; }
+// The made-time before which an id may sit in a row outside the window. Rows are appended as they arrive and an old
+// event can arrive late, so the window's first row is no bound: it is the median made-time of the window's first 200
+// ids (the tab's pace when the window began) plus an hour for sending delays. Infinity when none reads: read it all.
+function evWindowTime_(ids){
+  const t = ids.slice(0, 200).map(evIdTime_).filter(x => x === x).sort((a, b) => a - b);
+  return t.length ? t[t.length >> 1] + EV_SKEW : Infinity;
+}
 function events_(p){
   const dev = String(p.dev || '');
   if (!/^[a-z0-9]{8,16}$/.test(dev)) return {ok: false, error: 'input'};
@@ -2429,11 +2452,15 @@ function events_(p){
             : x.k === 'fromhome' ? JSON.stringify({s: num(x.s, 0, 86400), w: x.w ? 1 : 0, tr: x.tr ? 1 : 0}) : '';
       return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.k === 'load' ? word_(x.pop, /^[a-zA-Z0-9, -]*$/, 60) : x.k === 'pages' ? who : x.k === 'fromhome' ? pg(x.to) : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
     };
-    // The pages summaries in their own tab, the other events in Events; an id already in its tab is skipped.
+    // The pages summaries in their own tab, the other events in Events; an id already in its tab is skipped. The ids are
+    // read from the last EV_WINDOW rows; a request with an id made before the window began (a retry from a device that
+    // stayed offline after a lost reply) reads the rows before it too, so the tab's whole id column.
     [['Events', L.filter(x => x.k !== 'pages')], [PAGES_TAB, L.filter(x => x.k === 'pages')]].forEach(([tab, M]) => {
       if (!M.length) return;
-      const sh = sheet_(tab, EVH), n = sh.getLastRow() - 1;
-      const seen = new Set(n > 0 ? sh.getRange(Math.max(2, n - 1998), EVH.length, Math.min(n, 2000), 1).getValues().map(r => String(r[0])) : []);
+      const sh = sheet_(tab, EVH), n = sh.getLastRow() - 1, from = Math.max(2, n - EV_WINDOW + 2);
+      const ids = n > 0 ? sh.getRange(from, EVH.length, Math.min(n, EV_WINDOW), 1).getValues().map(r => String(r[0])) : [], seen = new Set(ids);
+      const began = from > 2 ? evWindowTime_(ids) : 0;
+      if (from > 2 && M.some(x => !(evIdTime_(x.id) >= began))) sh.getRange(2, EVH.length, from - 2, 1).getValues().forEach(r => seen.add(String(r[0])));
       const rows = M.filter(x => !seen.has(String(x.id))).map(row);
       if (rows.length) { const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
         if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);
@@ -2576,11 +2603,16 @@ const ELO_MIN = 200;
 // ko). Names are public here by design: the app says so and lets each player opt out in its settings (privacy.html).
 // Nothing else of the player leaves the sheet. Cached 5 minutes.
 // One leaderboard per subject, no merged ranking: &s=<id> asks for that subject's (core.js SUBJECTS board), the same
-// rule on its own progress and level (core.js subjKey), over the units its apps last sent (boardUnitsSave_); no s, or a
-// subject without a leaderboard, the first one's (the corals). The opt-out, an admin's hide and an archive (the Board
-// column) hold for every subject.
+// rule on its own progress and level (core.js subjKey), over its units (board_); no s, or a subject without a
+// leaderboard, the first one's (the corals). The opt-out, an admin's hide and an archive (the Board column) hold for
+// every subject. Each board cached under its subject's id.
 const boardSubj_ = id => CORE_.SUBJECTS.find(S => S.board && S.id === String(id || '')) || CORE_.SUBJECTS.find(S => S.board);
-const boardCache_ = S => S === CORE_.SUBJECTS.find(x => x.board) ? 'board14' : 'board14:' + S.id;
+const boardCache_ = S => 'board15:' + S.id;
+// The subject of a save's summary (sync.js syncSummary: learned, seen, total, review, genera and %), sent in unprefixed
+// fields as an older app sends them (rule D4): the RAs row's Learned to Progress columns and the "By genus" tab hold
+// it. It is the subject of the unprefixed rv (core.js replaySubject: the corals); every other subject's board units come
+// in the summary's boards (boardUnitsSave_). tests/board.test.js checks it is the app's syncSummary subject.
+const sumSubj_ = () => CORE_.replaySubject();
 const BOARD_UNITS_ = 'BOARD_UNITS_';
 // The admin's mark (core.js SEED, the seedling after his name, the name itself unchanged): the admin's account, one at
 // most, is the player account the admin page is signed in to when it
@@ -2618,8 +2650,8 @@ function adminDrop_(h){
   PropertiesService.getScriptProperties().deleteProperty(ADMIN_ACCT_);
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));
 }
-// The units a subject's leaderboard counts, for a subject after the first (the first reads the "By genus" tab's
-// columns): its list as an app last sent it with a save (summary.boards {id: [units]}, sync.js syncSummary), kept in the
+// The units a subject's leaderboard counts, for a subject other than the summary's (sumSubj_, whose units are the "By
+// genus" tab's columns: sumUnits_): its list as an app last sent it with a save (summary.boards {id: [units]}, sync.js syncSummary), kept in the
 // script's properties when it changed, so every player's % is computed over the same units, as the "By genus" columns
 // do for the corals. A unit is a word of the answer log (the Answers tab's Genus shown), at most 400 of them.
 // A subject with a global score (core.js SUBJECTS score) sends its tree instead, {f: [[family, weight, circle]], s:
@@ -2736,8 +2768,8 @@ function boardLog_(id, what, key){
 // Keeps the units or tree each subject's apps sent (summary.boards), and returns bt {id: boardTreeSum_} for each subject
 // with a score, whether it sent one or not.
 function boardUnitsSave_(boards){
-  const B0 = CORE_.SUBJECTS.find(x => x.board), bt = {}, props = PropertiesService.getScriptProperties();
-  CORE_.SUBJECTS.filter(S => S.board && S !== B0).forEach(S => {
+  const bt = {}, props = PropertiesService.getScriptProperties();
+  CORE_.SUBJECTS.filter(S => S.board && S.id !== sumSubj_()).forEach(S => {
     const b = boards && typeof boards === 'object' ? boards[S.id] : null;
     if (Array.isArray(b)) {
       // An app from before the score sends a list: it never replaces a tree a current app sent, so the
@@ -2761,20 +2793,28 @@ function boardUnits_(S){
   if (/^[{@]/.test(v)) return boardTreeGet_(S) || [];
   try { const L = JSON.parse(v || '[]'); return Array.isArray(L) ? L.map(String) : []; } catch (e) { return []; }
 }
+// The units of the summary's subject (sumSubj_): the "By genus" tab's columns, written from each save's summary over the
+// script's own scale (scale_); [] when the tab has none.
+function sumUnits_(){
+  const bg = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus');
+  return bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : [];
+}
+// One path for every subject (rule S1), but for the save summary's subject (sum: its "By genus" units and Progress
+// column, a listed exception, tests/subject-neutral.test.js).
 function board_(sid){
-  const S = boardSubj_(sid), first = S === CORE_.SUBJECTS.find(x => x.board), key = boardCache_(S);
+  const S = boardSubj_(sid), sum = S.id === sumSubj_(), key = boardCache_(S);
   const cache = CacheService.getScriptCache(), hit = cache.get(key);
   if (hit) return JSON.parse(hit);
   const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), out = {ok: true, rows: []};
   if (ra && ra.getLastRow() > 1) {
-    // The % from the saved progress, over the genera of the list (the "By genus" tab's columns, written from each sync's
-    // summary), with the app's formula (pctOf_); the app-sent Progress column only when that can't be read. Another
-    // subject's, over its units (boardUnits_), from its own saved progress only. A subject ranked by a tree, over the
-    // tree the sheet makes with its replay's units under the structure in force when it holds one (subjTreeKept_), so a
-    // circle Publish moves the board with no device's save; a list kept from an old app stays the board's scale.
-    const bg = first ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus') : null,
-      kept = first ? null : boardUnits_(S),
-      list = first ? (bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : []) : Array.isArray(kept) && kept.length ? kept : subjTreeKept_(S) || kept,
+    // The % from the subject's saved progress, with the app's formula, over its units: those its apps last sent
+    // (boardUnits_); else the tree the sheet makes with its replay's units under the structure in force when it holds
+    // one (subjTreeKept_), so a circle Publish moves the board with no device's save (a list kept from an old app stays
+    // the board's scale); else, for the summary's subject, the summary's units (sumUnits_). A subject ranked by a tree:
+    // its score (core.js treeScore); by a list: pctOf_. The summary's subject only: the app-sent Progress column when that
+    // % cannot be read (no saved progress, no units).
+    const kept = boardUnits_(S),
+      list = Array.isArray(kept) && kept.length ? kept : subjTreeKept_(S) || (sum ? sumUnits_() : kept),
       pk = CORE_.subjKey(S.id, 'progress');
     // Rule D8: a player whose saved copy applied an older rules version of the subject than
     // today's (core.js rvOf) is ranked by the progress their app will hold once it adopts the replay of their log
@@ -2784,7 +2824,8 @@ function board_(sid){
     // keeps the saved copy's. Read only here: nothing is fetched or replayed, and no lock is taken.
     const X = boardRpl_(S), D = datas_(ra);
     const dataOf = r => { try { return JSON.parse(D[lc_(r[0])] || '{}'); } catch (e) { return null; } };
-    const progOf = d => { try { const P = JSON.parse((first ? dataKey_(d, 'progress') : d[pk]) || '{}'); return P && typeof P === 'object' ? P : null; } catch (e) { return null; } };
+    // The subject's saved progress under its key's name, else the one from before the app's rename (subjData_).
+    const progOf = d => { try { const P = JSON.parse(subjData_(d, pk) || '{}'); return P && typeof P === 'object' ? P : null; } catch (e) { return null; } };
     // A player whose replay cannot be read or adopted keeps the saved copy's: one account never breaks the board.
     const nowOf = r => { const d = dataOf(r), P = d ? progOf(d) : null; try { return P ? X.adopted(String(r[0]), d, P) : P; } catch (e) { return P; } };
     // The level the app shows (progress.js eloLine): '~level'.th as saved (the app's eloScore rounds the Elo, so every
@@ -2800,7 +2841,7 @@ function board_(sid){
       // A blank Progress cell: learned / total until the player's next sync writes it.
       // Level only from ELO_MIN answers (fewer do not settle the score): null before.
       .map(r => { const P = nowOf(r), lv = levelOf(P), own = !P ? null : !Array.isArray(list) ? (S.score ? CORE_.treeScore(P, list, S.score).pct : null) : list.length ? pctOf_(P, list) : null,
-          pct = own != null || !first ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
+          pct = own != null || !sum ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
         return lv != null || pct || answered(P) ? [String(r[0]), pct, lv].concat(adm && r[6] === adm ? [1] : []) : null; })
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
@@ -2840,8 +2881,7 @@ function datas_(ra){
 // joins the cache's identity (rplSince_). warm (boardWarm_): the stamp read as replay_ reads it (subjSt_, fetched when not
 // cached); else (the public board_) from the cache only (subjStKept_), never a fetch: not there, the rules version alone.
 function boardRpl_(S, warm){
-  const sid = S.id, top = CORE_.rvsOf(sid).length ? rplTop_(sid) : 0, main = sid === CORE_.replaySubject(), arg = main ? undefined : sid,
-    tab = main ? RPL.TAB : rplTab_(sid);
+  const sid = S.id, top = CORE_.rvsOf(sid).length ? rplTop_(sid) : 0, tab = rplTab_(sid);
   let mine = null, kept = null, stIn;
   const rvOf = d => { try { const v = Number(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'rv')) || '0')); return isFinite(v) ? v : 0; } catch (e) { return 0; } };
   const stOf = d => { try { return String(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'st')) || '""') || ''); } catch (e) { return ''; } };
@@ -2852,13 +2892,13 @@ function boardRpl_(S, warm){
     if (!top || !d) return null;
     const st = stHere();
     if (rvOf(d) >= top && (st === null || stOf(d) === st)) return null;
-    if (!mine) { mine = Object.create(null); (main ? answerRows_() : subjRows_(sid)).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
+    if (!mine) { mine = Object.create(null); subjRows_(sid).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
     if (!kept) {
       kept = Object.create(null);
       const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab);
       if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in kept)) kept[k] = {at: i + 2, r: r}; });
     }
-    const since = resetOf_(d, arg), start = startOf_(d, arg), sinceKey = rplSince_(since, start, st || ''),
+    const since = resetOf_(d, sid), start = startOf_(d, sid), sinceKey = rplSince_(since, start, st || ''),
       rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
     return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) || st ? sinceKey : since, rows: rows, n: rows.length,
@@ -2868,7 +2908,7 @@ function boardRpl_(S, warm){
     const x = need(name, d);
     return x && x.rec && typeof x.rec === 'object' ? CORE_.replayAdopted(x.rec, CORE_.renameUnits(S, P), top) : P;
   };
-  return {sid: sid, top: top, arg: arg, tab: tab, need: need, adopted: adopted};
+  return {sid: sid, top: top, tab: tab, need: need, adopted: adopted};
 }
 // The leaderboard's replays made ahead (rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
 // public board_ only reads them: for every subject with a leaderboard and rules versions, each player it lists whose
@@ -2901,7 +2941,7 @@ function boardWarm_(){
       try {
         const x = X.need(name, d);
         if (!x || x.rec) return;
-        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.arg);
+        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.sid);
         if (mk) pend.push({S: S, X: X, name: name, hash: r[6], json: json, x: x, mk: mk});
       } catch (e) {}
     });
@@ -2920,7 +2960,7 @@ function boardWarm_(){
     pend.forEach(p => { try {
       const k = p.name.toLowerCase(), a = acct[k];
       if (!a || String(a[0]) !== p.name || a[6] !== p.hash || (a[9] !== '' && Number(a[9]) <= 0) || now[k] !== p.json) return;
-      if (ans(rplMine_(p.name, p.x.since, p.X.arg)) !== ans(p.x.rows)) return;
+      if (ans(rplMine_(p.name, p.x.since, p.X.sid)) !== ans(p.x.rows)) return;
       const sh = sheet_(p.X.tab, RPL.HEAD), at = find_(sh, p.name),
         row = at ? sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0] : null;
       if (id(row) !== id(p.x.row)) return;
@@ -3866,7 +3906,7 @@ function replayedAll_(users, dcol){
   const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[lc_(r[0])] = r.slice(2).map(String).join(''); });
   answerRows_().forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); });
-  const sh = sheet_(RPL.TAB, RPL.HEAD);
+  const sh = sheet_(rplTab_(CORE_.replaySubject()), RPL.HEAD);
   if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { cached[lc_(r[0])] = {at: i + 2, r: r}; });
   users.forEach(u => {
     const k = lc_(u.name);
@@ -4175,7 +4215,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     const out = {ok: true, log: true};
     TIM_.op = 'anon save';  // timed as a whole, to its reply (timEnd_)
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's).
-    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null, undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null, CORE_.replaySubject(), stMain_(p)); if (rp) out.replay = rp; } catch (err) {}
     // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
     // {subject: the device's reefid-sync-<subject>-reset and -start}), already under this lock.
     const rps = replays_('~anon ' + id, null, p.rvs, p.pt, {reset: p.sreset, start: p.sstart}, true, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;
@@ -4419,7 +4459,27 @@ const CORE_ = (function () { const module = {exports: {}};
   // static files (index.html, admin.html, privacy.html, manifest.webmanifest, tools/og/og.html, README.md, the docs) are
   // rewritten from it by tools/rename_app.py. The storage keys never depend on it (KEYS), so a fork renames the app
   // without moving any player's data.
-  const ORG = {short: 'IMR', name: 'Institute for Marine Research', app: 'IMR Reef ID', appShort: 'Reef ID'};
+  // The words of the organisation's course, as the players and the admin meet them, each a whole name without its
+  // article (code writes "the " + ORG.course): course, the course; lecture, the coral lecture as a source (its notes,
+  // groups, photos); lectureRef, the lecture as a reference names it (the data's lsrc lines start with it); fishPres,
+  // the fish presentation (the fish families' look-alike lines start with it); list, slate and benthic, the survey's
+  // coral list, its slate and its benthic slate; trainer, who teaches the course. A phrase not listed builds on ORG.short
+  // ("At " + ORG.short + " or elsewhere"). The data's own values and the identifiers keep their words
+  // (docs/decisions/2026-11-25-org-course-words.md). Flat, quoted values only: tools/rename_app.py reads this literal.
+  const ORG = {
+    short: 'IMR',
+    name: 'Institute for Marine Research',
+    app: 'IMR Reef ID',
+    appShort: 'Reef ID',
+    course: 'IMR course',
+    lecture: 'IMR lecture',
+    lectureRef: 'IMR Lecture 6',
+    fishPres: 'IMR fish presentation',
+    list: 'IMR list',
+    slate: 'IMR slate',
+    benthic: 'IMR benthic slate',
+    trainer: 'IMR trainer'
+  };
   // Storage keys (localStorage, sessionStorage): one app-wide prefix that names the app without the organisation, and is
   // distinct from other apps on the shared origin ppericard.github.io.
   //   reefid-<name>        stays on this device (sign-in record, caches, queues, the admin, the Lab);
@@ -4623,6 +4683,204 @@ const CORE_ = (function () { const module = {exports: {}};
       } else return null;
     }
     return out;
+  }
+
+  // The answer log's lean reply (docs/spec/sync.md "The lean answer log"; Code.gs answers_ with lean, admin.js leanOn):
+  // the rows of the admin's readAnswers, column by column, each column in the shortest of a few spellings, so the reply
+  // is about half the bytes and the admin gets back exactly the rows JSON would have given it (rowsUnpack). Generic: no
+  // column is named, so a column added to the rows needs nothing here. A column is one of
+  //   {p: gaps, v: column}    mostly null: the gaps between the values that are not null, then those values;
+  //   {d: deltas}             whole numbers, none null, as the difference from the one before (the times);
+  //   {s: 10|100|1000, r}     numbers (or null) that are whole once times s (seconds, expectations, abilities);
+  //   {k: values, i: indexes} few distinct values (names, ids, units, modes), the most frequent first;
+  //   {t: words, l: column, i: indexes}   texts of space-separated words (photos, choices): l each text's word count;
+  //   {o: keys, c: [column]}  objects of plain values (the scoring record): one column per key, null where absent;
+  //   {r: values}             anything else, as it is.
+  // rowsPack(rows) → {f: 1, n, w, c: [column], l?: column of the row lengths when they differ}, null when the rows are
+  // not arrays (the reply then keeps its rows).
+  const LEAN_F = 1;
+  const leanCell = x =>
+    x === undefined || typeof x === 'function' || typeof x === 'symbol' || (typeof x === 'number' && !isFinite(x)) ? null : x === 0 ? 0 : x;
+  const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  // The kept keys of an object as JSON writes it: its own keys whose value is written; null when the object cannot go in
+  // an object column (no key left, a null value that would read as absent, a __proto__ key).
+  const leanKeys = o => {
+    const K = Object.keys(o).filter(k => {
+      const v = o[k];
+      return v !== undefined && typeof v !== 'function' && typeof v !== 'symbol';
+    });
+    return K.length && !K.includes('__proto__') && K.every(k => leanCell(o[k]) !== null) ? K : null;
+  };
+  // Values by how often they come, the most frequent first, and each one's index: {k, i}.
+  function leanDict(V) {
+    const C = new Map();
+    for (const x of V) C.set(x, (C.get(x) || 0) + 1);
+    const k = [...C.keys()].sort((a, b) => C.get(b) - C.get(a)),
+      ix = new Map(k.map((x, j) => [x, j])),
+      i = new Array(V.length);
+    for (let j = 0; j < V.length; j++) i[j] = ix.get(V[j]);
+    return {k, i};
+  }
+  function leanCol(V0) {
+    const n = V0.length,
+      V = new Array(n);
+    let nul = 0,
+      num = true,
+      int = true,
+      prim = true,
+      str = true,
+      space = false;
+    for (let j = 0; j < n; j++) {
+      const x = (V[j] = leanCell(V0[j]));
+      if (x === null) {
+        nul++;
+        str = false;
+        continue;
+      }
+      const t = typeof x;
+      if (t !== 'number') num = int = false;
+      else if (int && !Number.isSafeInteger(x)) int = false;
+      if (t !== 'string') str = false;
+      else if (!space && x.indexOf(' ') >= 0) space = true;
+      if (t === 'object') prim = false;
+    }
+    if (nul * 2 > n) {
+      const p = [],
+        P = [];
+      let last = -1;
+      for (let j = 0; j < n; j++) if (V[j] !== null) (p.push(j - last - 1), P.push(V[j]), (last = j));
+      return {p, v: leanCol(P)};
+    }
+    if (num && int) {
+      if (!nul && n > 1) {
+        const D = new Array(n);
+        D[0] = V[0];
+        for (let j = 1; j < n; j++) D[j] = V[j] - V[j - 1];
+        if (D.every(Number.isSafeInteger) && JSON.stringify(D).length < 0.8 * JSON.stringify(V).length) return {d: D};
+      }
+      return {r: V};
+    }
+    if (num) {
+      for (const s of [10, 100, 1000]) {
+        const R = new Array(n);
+        let j = 0;
+        for (; j < n; j++) {
+          const x = V[j];
+          if (x === null) R[j] = null;
+          else if (!Number.isSafeInteger((R[j] = Math.round(x * s))) || R[j] / s !== x) break;
+        }
+        if (j === n) return {s, r: R};
+      }
+      return {r: V};
+    }
+    if (prim) {
+      const D = leanDict(V);
+      // Texts too many to list whole (photos, choices) go word by word when that lists fewer.
+      if (str && space && D.k.length >= 256) {
+        const l = new Array(n),
+          F = [];
+        for (let j = 0; j < n; j++) {
+          const W = V[j].split(' ');
+          l[j] = W.length;
+          for (const w of W) F.push(w);
+        }
+        const T = leanDict(F);
+        if (T.k.length < D.k.length) return {t: T.k, l: leanCol(l), i: T.i};
+      }
+      return D.k.length * 2 <= n || D.k.length < 64 ? D : {r: V};
+    }
+    const KS = V.map(x => (x === null ? [] : plain(x) ? leanKeys(x) : null)),
+      o = KS.every(Boolean) ? leanOrder(KS) : null;
+    return o ? {o, c: o.map(k => leanCol(V.map(x => (x !== null && own(x, k) ? x[k] : null))))} : {r: V};
+  }
+  // One order of the keys that keeps each object's own (so every object comes back with its keys in its order), the
+  // first seen first where nothing decides; null when the objects disagree (an object column is then not used).
+  function leanOrder(KS) {
+    const seen = [],
+      after = new Map(),
+      before = new Map();
+    KS.forEach(K =>
+      K.forEach((k, i) => {
+        if (!after.has(k)) (seen.push(k), after.set(k, new Set()), before.set(k, 0));
+        const p = K[i - 1];
+        if (i && !after.get(p).has(k)) (after.get(p).add(k), before.set(k, before.get(k) + 1));
+      })
+    );
+    const o = [];
+    for (let left = seen.slice(); left.length;) {
+      const k = left.find(x => !before.get(x));
+      if (k === undefined) return null;
+      o.push(k);
+      left.splice(left.indexOf(k), 1);
+      after.get(k).forEach(x => before.set(x, before.get(x) - 1));
+    }
+    return o;
+  }
+  function rowsPack(rows) {
+    if (!Array.isArray(rows) || !rows.every(Array.isArray)) return null;
+    const n = rows.length,
+      w = rows.reduce((m, r) => Math.max(m, r.length), 0),
+      out = {f: LEAN_F, n, w, c: []};
+    for (let j = 0; j < w; j++) out.c.push(leanCol(rows.map(r => (j < r.length ? r[j] : null))));
+    if (rows.some(r => r.length !== w)) out.l = leanCol(rows.map(r => r.length));
+    return out;
+  }
+  // One column back (rowsPack), n values; throws on a spelling it does not know.
+  function leanOut(c, n) {
+    if (!plain(c)) throw new Error('lean column');
+    if (c.p) {
+      const out = new Array(n).fill(null),
+        P = leanOut(c.v, c.p.length);
+      let i = -1;
+      for (let j = 0; j < c.p.length; j++) out[(i += c.p[j] + 1)] = P[j];
+      return out;
+    }
+    if (c.d) {
+      let a = 0;
+      return c.d.map(x => (a += x));
+    }
+    if (c.s) return c.r.map(x => (x === null ? null : x / c.s));
+    if (c.r) return c.r;
+    if (c.t) {
+      const L = leanOut(c.l, n),
+        out = new Array(n);
+      let k = 0;
+      for (let i = 0; i < n; i++) {
+        let s = c.t[c.i[k++]];
+        for (let j = 1; j < L[i]; j++) s += ' ' + c.t[c.i[k++]];
+        out[i] = s;
+      }
+      return out;
+    }
+    if (c.k) return c.i.map(x => c.k[x]);
+    if (c.o) {
+      const S = c.c.map(x => leanOut(x, n)),
+        out = new Array(n);
+      for (let i = 0; i < n; i++) {
+        let o = null;
+        for (let j = 0; j < c.o.length; j++) if (S[j][i] !== null) (o = o || {})[c.o[j]] = S[j][i];
+        out[i] = o;
+      }
+      return out;
+    }
+    throw new Error('lean column');
+  }
+  // The rows of a lean reply (rowsPack), exactly as JSON would have given them; throws on a reply it cannot read (another
+  // spelling version f, a column of another length).
+  function rowsUnpack(L) {
+    if (!plain(L) || L.f !== LEAN_F || !Array.isArray(L.c) || L.c.length !== L.w) throw new Error('lean reply');
+    const n = L.n,
+      C = L.c.map(c => leanOut(c, n)),
+      ln = L.l ? leanOut(L.l, n) : null,
+      rows = new Array(n);
+    if (C.some(c => c.length !== n)) throw new Error('lean reply');
+    for (let i = 0; i < n; i++) {
+      const w = ln ? ln[i] : L.w,
+        r = new Array(w);
+      for (let j = 0; j < w; j++) r[j] = C[j][i];
+      rows[i] = r;
+    }
+    return rows;
   }
 
   // Subjects (docs/spec/subjects.md "The registry", which describes every field; docs/ARCHITECTURE.md "Subjects"): what
@@ -4866,7 +5124,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // several: the report dialog's reason for a photo with more than one of them in frame (sync.js REP_WHY, "Several corals").
       several: 'corals',
       card: 'genus',
-      lecture: 'the IMR coral lecture',
+      lecture: `the ${ORG.short} coral lecture`,
       pv: '',
       hash: '',
       zoom: 'the corallites, the detail that often tells look-alikes apart',
@@ -4910,11 +5168,11 @@ const CORE_ = (function () { const module = {exports: {}};
             {k: 'plain', n: 'Plain words', t: 'text'},
             {k: 'qt', n: 'ID tips', t: 'list'},
             {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
-            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'imr', n: `${ORG.lecture} notes`, t: 'list', imr: 1, keep: 1},
             {k: 'sum', n: 'Summary', t: 'text', keep: 1},
             {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
             {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
-            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'check', n: `To check with an ${ORG.trainer}`, t: 'text'},
             {k: 'info', n: 'Other sources', t: 'list'}
           ]
         }
@@ -4930,16 +5188,18 @@ const CORE_ = (function () { const module = {exports: {}};
       },
       // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
       // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
-      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
-      replayed: {gen: d => genLooks(d)},
+      // It stays the subject of the sheet's unprefixed rv and replay (replay), never one of replayedSubjects. tab: the
+      // sheet's tab of its replay records (Code.gs rplTab_), named before there was another subject; the others' take
+      // "Replayed <name>".
+      replayed: {gen: d => genLooks(d), tab: 'Replayed'},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
         q: 'How well do you know corals?',
         opts: {
           new: ['I’m new to corals', 'Start from scratch: the app shows you the basics first.'],
-          imr: ['I had the IMR coral course', 'You have met the genera in the IMR lecture.'],
-          know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
+          imr: [`I had the ${ORG.short} coral course`, `You have met the genera in the ${ORG.lecture}.`],
+          know: ['I know corals well', `At ${ORG.short} or elsewhere: you can already name many genera.`]
         }
       },
       // The admin's part (one subject switch for the whole admin, its address prefix the subject's hash): cur, its part
@@ -4954,7 +5214,7 @@ const CORE_ = (function () { const module = {exports: {}};
         pages: null,
         todo: ['rule', 'sa', 'poor', 'sug'],
         origins: [
-          ['imr', 'IMR lecture', 'IMR'],
+          ['imr', ORG.lecture, ORG.short],
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
@@ -4974,7 +5234,7 @@ const CORE_ = (function () { const module = {exports: {}};
       what: 'Fish',
       several: 'fish species',
       card: 'fish',
-      lecture: 'the IMR fish presentation',
+      lecture: `the ${ORG.fishPres}`,
       pv: 'fish.',
       hash: 'fish/',
       zoom: 'the markings and the fins',
@@ -5093,7 +5353,7 @@ const CORE_ = (function () { const module = {exports: {}};
         q: 'How well do you know reef fish?',
         opts: {
           new: ['I’m new to reef fish', 'Start from scratch: the basics first, then a few easy families.'],
-          imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
+          imr: [`I’m at ${ORG.short} (Research Assistant programme)`, `You are learning the ${ORG.short} survey families.`],
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }
       },
@@ -5111,7 +5371,7 @@ const CORE_ = (function () { const module = {exports: {}};
         // circles: the words the admin's Tree names each circle in, beside its number (admin-content.js circleLab): the
         // players' own, "the IMR course's families", "the family that opens right after the IMR course's" and "the
         // families beyond the IMR course" (docs/spec/fish.md "Circles"). A circle with no words is its number alone.
-        circles: {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'},
+        circles: {1: ORG.course, 2: 'After the course', 3: 'Beyond the course'},
         // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
         // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
         tags: treeRubric('fish', 'fish', {
@@ -5704,9 +5964,7 @@ const CORE_ = (function () { const module = {exports: {}};
   const easyCover = (L, d) => easyRank(L, d)[0] || null;
   // A family's look-alike lines' sources (treeGen lsrc), by the other family's id.
   const treeLookSrc = t => {
-    const L =
-        t.lsrc ||
-        Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+    const L = t.lsrc || Object.fromEntries((t.look || []).map(([id]) => [id, ORG.fishPres + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
       E = t.esrc || {};
     return Object.keys(E).some(k => k.startsWith('look/'))
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
@@ -5816,8 +6074,8 @@ const CORE_ = (function () { const module = {exports: {}};
         // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
         fam: [
           (t.sci || []).join(', '),
-          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
-          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+          t.imr && t.imr !== t.name ? ORG.short + ': ' + t.imr : '',
+          t.imrWith ? ORG.course + ': with the ' + t.imrWith : ''
         ]
           .filter(Boolean)
           .join(' · '),
@@ -6535,25 +6793,35 @@ const CORE_ = (function () { const module = {exports: {}};
   // names below the entries, read as the entry they lift to, and the words owned by none, read as such ({known}).
   function treeTypeNames(gen, drop = '', known = []) {
     const out = [],
+      // each key of a unit once: key → unit → its entry in out
+      at = new Map(),
       // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
       // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
       add = (k, g, x, i, oft, sc) => {
         if (!k) return;
-        const o = out.find(y => y.k === k && y.g === g);
+        let G = at.get(k);
+        if (!G) at.set(k, (G = new Map()));
+        const o = G.get(g);
         if (o) return typeWiden(o, sc);
-        out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})});
+        const e = {k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})};
+        out.push(e);
+        G.set(g, e);
       },
       scOf = (g, x) => (g.scopes || {})[x],
       oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
+      (g.names || [g.name]).forEach((x, i) => {
+        const k = typeNormAll(x);
+        add(k, g.id, x, i, oftOf(g, k), scOf(g, x));
+      })
     );
     const d = typeNormAll(drop);
     if (!d) return out;
     const cut = new RegExp("^([A-Za-z][A-Za-z '-]*?)[ -]*" + d + '(?:es)?$', 'i'),
       short = out
         .map(o => {
-          const x = typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
+          // a unit's own name (old '') is never read from old: an empty name is no key
+          const x = o.old && typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
             m = String(x || '').match(cut),
             k = m ? typeNormAll(m[1]) : '';
           // the short form and its plural, and the name's own plural or singular ("Triggers", "Triggerfishes",
@@ -6569,9 +6837,46 @@ const CORE_ = (function () { const module = {exports: {}};
         })
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
-    short
-      .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
-      .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
+    // A short form is kept unless it is within the tolerance of another unit's name or short form. The names are read by
+    // length, each key once with the units it names (byLen: length → key → units) and its letters (bits: key → a bit per
+    // letter it holds). A distance is never less than the two lengths' difference, so only the lengths within the
+    // tolerance of the short form's are read (lensNear: [length, tolerance]); nor less than the number of letters one
+    // key holds and the other lacks (each needs an edit of its own; a swap brings no new letter), so only the keys within
+    // the tolerance by their letters are measured (tests/typefast.test.js).
+    const byLen = new Map(),
+      bits = new Map(),
+      reach = new Map(),
+      lensNear = n => {
+        if (reach.has(n)) return reach.get(n);
+        const ms = [...byLen.keys()].map(m => [m, TYPE.tol(Math.min(m, n))]).filter(([m, t]) => Math.abs(m - n) <= t);
+        reach.set(n, ms);
+        return ms;
+      },
+      clash = s => {
+        const a = bits.get(s.k);
+        for (const [m, t] of lensNear(s.k.length))
+          for (const [k, gs] of byLen.get(m)) {
+            if (!(gs.size > 1 || !gs.has(s.g))) continue;
+            // the letters of each that the other lacks, t of them cleared (x & (x - 1) clears one): any left, too far
+            let x = a & ~bits.get(k),
+              y = bits.get(k) & ~a;
+            for (let i = 0; i < t; i++) ((x &= x - 1), (y &= y - 1));
+            if (!x && !y && near(s.k, k)) return true;
+          }
+        return false;
+      };
+    [...out, ...short].forEach(o => {
+      if (!byLen.has(o.k.length)) byLen.set(o.k.length, new Map());
+      const L = byLen.get(o.k.length);
+      if (!L.has(o.k)) {
+        L.set(o.k, new Set());
+        let b = 0;
+        for (let i = 0; i < o.k.length; i++) b |= 1 << (o.k.charCodeAt(i) % 32);
+        bits.set(o.k, b);
+      }
+      L.get(o.k).add(o.g);
+    });
+    short.filter(s => !clash(s)).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
     // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
     // scientific name's (a unit of a scientific rank, a family's sciNames: "Zebrasomas" is no plural), which keeps its
     // spelling step.
@@ -6611,7 +6916,16 @@ const CORE_ = (function () { const module = {exports: {}};
   // for a word; a name with none, known ({k, g: '', known: 1, w: 1 for a word}), only where it is no unit's name.
   function typeKnown(out, known) {
     const have = new Set(out.filter(o => !o.known).map(o => o.k)),
-      seen = new Set(out.map(o => o.k + '|' + o.g));
+      seen = new Set(out.map(o => o.k + '|' + o.g)),
+      // the first entry of a key and unit that is no known word (key → unit → entry), kept as out grows
+      own = new Map(),
+      keep = o => {
+        if (o.known) return;
+        let G = own.get(o.k);
+        if (!G) own.set(o.k, (G = new Map()));
+        if (!G.has(o.g)) G.set(o.g, o);
+      };
+    out.forEach(keep);
     (known || [])
       .filter(e => e.g)
       .forEach(e =>
@@ -6621,14 +6935,15 @@ const CORE_ = (function () { const module = {exports: {}};
           if (seen.has(k + '|' + e.g)) {
             // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it, and
             // the wider reading holds
-            const o = out.find(x => x.k === k && x.g === e.g && !x.known);
+            const G = own.get(k),
+              o = G && G.get(e.g);
             if (o && e.oft && !o.oft) o.oft = e.oft;
             if (o) typeWiden(o, e.sc);
             return;
           }
           seen.add(k + '|' + e.g);
           have.add(k);
-          out.push({
+          const n = {
             k,
             g: e.g,
             old: y,
@@ -6637,7 +6952,9 @@ const CORE_ = (function () { const module = {exports: {}};
             ...(e.n ? {n: e.n, of: e.of} : {}),
             ...(e.oft ? {oft: e.oft} : {}),
             ...(e.sc ? {sc: e.sc} : {})
-          });
+          };
+          out.push(n);
+          keep(n);
         })
       );
     (known || [])
@@ -6688,14 +7005,14 @@ const CORE_ = (function () { const module = {exports: {}};
     const out = [],
       fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
       C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
-      off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
-      oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
+      // Pierre's word on name x for family g, the name read once
       put = (x, g, vr, n, of, sc) => {
         if (!x || !fam.has(g)) return;
-        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
-        const o = oft(x, g),
+        const c = (C[typeNormAll(x)] || {})[g];
+        if (c === 'off') return out.push({x, g: '', vr: 'w', w: 1, off: g});
+        const o = c === 'often' && fam.get(g) ? [fam.get(g).name, x] : null,
           // Pierre's on or often gives the name to the whole family, whatever part it named
-          whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
+          whole = ['on', 'often'].includes(c);
         out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
       };
     const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
@@ -6709,12 +7026,13 @@ const CORE_ = (function () { const module = {exports: {}};
       .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
     // A kind word designates the species that carry it ("razorfish" on a cleaner wrasse is a mistake); Pierre's
     // on or often gives it to the whole family.
-    ((F && F.vn) || []).forEach(([x, owners]) =>
+    ((F && F.vn) || []).forEach(([x, owners]) => {
+      const P = C[typeNormAll(x)] || {};
       (owners || []).forEach(([g, r, n, of, sp]) => {
-        const c = (C[typeNormAll(x)] || {})[g];
+        const c = P[g];
         put(x, g, 'k', n, of, c === 'on' || c === 'often' ? null : sp);
-      })
-    );
+      });
+    });
     // Pierre's own names (on), the index's or not.
     Object.entries(cur || {}).forEach(([x, v]) =>
       Object.entries(v || {}).forEach(([g, c]) => {
@@ -8901,8 +9219,8 @@ const CORE_ = (function () { const module = {exports: {}};
     ['elo1200', 'Elo 1200', 'Reached an Elo of 1200', 2, '⭐', s => s.elo >= 1200],
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
-    ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    ['group', 'Group complete', `You know a whole ${ORG.lecture} group`, 3, '🧩', s => s.group],
+    ['bonus', 'Off the list', `You met a bonus genus, off the ${ORG.list}`, 2, '🔓', s => s.bonus >= 1],
     // Coral basics done: every step of the module seen (proto/basics.js), a
     // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
     ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics],
@@ -8935,7 +9253,7 @@ const CORE_ = (function () { const module = {exports: {}};
       s => s.basics
     ],
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetcore', 'Roll call', `Met every family of the ${ORG.course}`, 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
     ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
     ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
@@ -8949,7 +9267,7 @@ const CORE_ = (function () { const module = {exports: {}};
     [
       'fcoreadv',
       'House reef',
-      'Every family of the IMR course at Advanced level or above (80%+)',
+      `Every family of the ${ORG.course} at Advanced level or above (80%+)`,
       2,
       '🗺️',
       s => s.core.total && s.core.adv >= s.core.total
@@ -8957,7 +9275,7 @@ const CORE_ = (function () { const module = {exports: {}};
     [
       'fc2',
       'Supporting cast',
-      'Every family that opens right after the IMR course’s at Advanced level or above',
+      `Every family that opens right after the ${ORG.course}’s at Advanced level or above`,
       2,
       '🗺️',
       s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
@@ -8965,7 +9283,7 @@ const CORE_ = (function () { const module = {exports: {}};
     [
       'fc3adv',
       'Muck diver',
-      '20 families beyond the IMR course at Advanced level or above',
+      `20 families beyond the ${ORG.course} at Advanced level or above`,
       3,
       '🗺️',
       s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
@@ -8973,7 +9291,7 @@ const CORE_ = (function () { const module = {exports: {}};
     [
       'flearncore',
       'Transect master',
-      'You know every family of the IMR course for sure',
+      `You know every family of the ${ORG.course} for sure`,
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
@@ -9024,7 +9342,7 @@ const CORE_ = (function () { const module = {exports: {}};
     [
       'fdauin20',
       'Local legend',
-      "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names",
+      `Dauin's top 20 (the 20 species of the ${ORG.course}'s families most seen around Dauin) at Advanced level or above by their scientific names`,
       3,
       '🗺️',
       s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
@@ -9799,10 +10117,14 @@ const CORE_ = (function () { const module = {exports: {}};
   // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
   // the first listed); 0 for none (app learn.js shownGroup). starRefs(d, n): the surveyed look-alikes in that group, the
   // genera its card names ("★ look-alike of Turbinaria, Tubastraea", learn.js starNote); [] for any other genus.
-  // starWaits(d, n, list, met): a ★ genus opens only once the genus its card compares it to has been met (its card,
-  // "Like Turbinaria, but corallites about 6 mm", means nothing before Turbinaria): true while
-  // one of n's references is in list (the genera the draw can open) and not met. A reference is always a surveyed genus,
-  // which never waits itself, and one not in the list never holds n back: no genus can wait for ever.
+  // A ★ genus opens only once the genus its card compares it to has been met (its card, "Like Turbinaria, but corallites
+  // about 6 mm", means nothing before Turbinaria). One engine (rule S1; one-engine audit step 4): the flat subject's build
+  // writes the references on the unit's record as data, starAfter(d): `after`, the units it opens after (app.js build,
+  // tools/ratedworld.js coralUnits, last, once its look-alikes, groups and slate are final), and the opening reads that
+  // field on any subject's unit, never the corals' file: afterWaits(u, list, met), true while one of the units u.after
+  // names is in list (the units the draw can open) and not met. A tree unit writes none, so it never waits. A reference
+  // is always a surveyed genus, which never waits itself, and one not in the list never holds n back: no unit can wait
+  // for ever.
   function lectureGroup(d, n) {
     const G = (d && d.gen) || {},
       g = G[n];
@@ -9821,7 +10143,17 @@ const CORE_ = (function () { const module = {exports: {}};
     const k = lectureGroup(d, n);
     return (g.look || []).filter(b => G[b] && G[b].n && !X[b] && G[b].ig === k);
   }
-  const starWaits = (d, n, list, met) => starRefs(d, n).some(r => list.includes(r) && !met(r));
+  function starAfter(d) {
+    Object.keys((d && d.gen) || {}).forEach(n => {
+      const g = d.gen[n],
+        R = starRefs(d, n);
+      if (!isObj(g)) return;
+      if (R.length) g.after = R;
+      else delete g.after;
+    });
+    return d;
+  }
+  const afterWaits = (u, list, met) => ((u && u.after) || []).some(r => list.includes(r) && !met(r));
 
   // Photos on R2 (docs/ARCHITECTURE.md "Photos"): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
@@ -11950,7 +12282,8 @@ const CORE_ = (function () { const module = {exports: {}};
     gameOf,
     lectureGroup,
     starRefs,
-    starWaits,
+    starAfter,
+    afterWaits,
     PHOTO_BASE,
     photoLocal,
     photoOnR2,
@@ -12359,7 +12692,9 @@ const CORE_ = (function () { const module = {exports: {}};
     dataSum,
     sameText,
     dataDelta,
-    dataPatch
+    dataPatch,
+    rowsPack,
+    rowsUnpack
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);

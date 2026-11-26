@@ -79,7 +79,7 @@ const termDef = ([, d, src, plain]) =>
 const BASICS_WORDS = [
   ['Colony', 'colony', 'Many polyps living together on one skeleton.'],
   ['Polyp', 'polyp', 'One tiny coral animal: a soft tube, a mouth, a ring of tentacles.'],
-  ['Mouth', 'polyp', 'In the middle of the polyp. IMR asks: is it raised or embedded?'],
+  ['Mouth', 'polyp', `In the middle of the polyp. ${ORG.short} asks: is it raised or embedded?`],
   ['Corallite', 'corallite', 'The stony cup of one polyp.'],
   ['Septa', 'septa', 'Thin blades inside the cup, from the rim to the centre.'],
   ['Costae', 'septa', 'The same blades, carrying on outside the cup’s wall.'],
