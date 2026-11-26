@@ -129,9 +129,9 @@ written for earlier models are often too prescriptive for it). Effort `high`; `x
 launches it himself from ChatGPT or Codex. The integrator writes a self-contained brief, same style, with a ready-to-
 paste prompt, and keeps it on the Linear issue (Waits on › Pierre (action)). It copies the prompt to Pierre in the chat,
 or as a file when long, when it is needed, with a line of context. Astra files its report in the Drive Reef_ID folder
-or a `codex/` PR and signs it on the issue. Two passes: first its own blind study, then a cross check of every Claude
-report on the question, read without their authors (sources checked, the strongest counter-argument, up to three
-missed risks). The integrator
+or a `codex/` PR and signs it on the issue. One prompt, one agent, two phases in turn: first its own blind study, then
+a cross check of every Claude report on the question (sources checked, the strongest counter-argument, up to three
+missed risks), which the integrator puts in the Drive folder beforehand as anonymous copies ("study A", "study B"). The integrator
 compares the reports with their authors hidden, since it is Claude ([red team note](reviews/2026-11-25-red-team-passes.md)),
 and shows Pierre where they agree and differ; he settles the differences.
 
