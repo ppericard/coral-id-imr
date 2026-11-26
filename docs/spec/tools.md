@@ -73,9 +73,16 @@ written with `tools/datajson.py`.
   I made" None, and each item of "Players see" quoting Pierre with a date or marked "integrator's call"), builds `main`
   plus their heads in a temporary worktree (the sheet rules checked by `main`'s copy of `sheet_version.py`: no PR's
   code runs), checks the heads and base again before pushing `train/<UTC time>` and waits for Checks and Smokes.
+  It lists the jobs that must succeed from the train's own workflow files (`smoke (…)` jobs only unless the whole diff
+  is docs, `smoke_scope.py`) and refuses a train where one was skipped or missing (rule W12).
   It squash-merges each PR at its tested head in order (stopping if `main` moved) and compares `main`'s tree with
   the train's. The queue gives both runs `--sha FULL_SHA` for one PR, so a moved head must pass its own gates
   before it can train. `gh api` GET and PUT only, no force-push. See `tests/train.test.js` (a stand-in `gh`, a bare origin).
+- **`smoke_scope.py`**: whether a Smokes run needs the browser matrix (rule W12), in its `browser scope` job. On a train
+  push it walks the "Train: …" merges down to the base, checks the base is on `main` and classifies every path of the
+  diff (`--no-renames`: deletions and both sides of a rename) against `DOCS`, the PR `paths-ignore` list read with
+  GitHub's rules. Only a proven docs-only train answers `browser=false`; anything it cannot prove runs the matrix.
+  `train.py` classifies the same diff. See `tests/smokeparts.test.js` and `tests/train.test.js`.
 - **The session hooks** (`.claude/settings.json`) run tools from a trusted Git revision. SessionStart,
   InstructionsLoaded and SubagentStart each fetch `origin/main` before selecting a script, because eager instruction
   loads can run asynchronously before SessionStart. The fetch is non-interactive, bounded to three seconds and

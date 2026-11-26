@@ -1,10 +1,17 @@
 # The Playwright smoke tests, one job per smoke file, in parallel on separate runners (pages, fish and admin in
-# groups), installing Playwright with npm into a temporary folder; the repo keeps no
-# package.json. A pull request that changes only docs skips them
-# (paths-ignore below: every changed file must match for the run to be skipped); the Checks workflow, tests/docs.test.js
-# included, still runs on it. A merge train's push (train/*, tools/train.py) always runs every smoke: it is the
-# tree that goes live. Keep the list narrow: never tools/, tests/, judging/ or a data file (the smokes read them).
-# One more job, "answer cost" (last in this file), runs beside them: the work of one answer on every subject against its budget.
+# groups), installing Playwright with npm into a temporary folder; the repo keeps no package.json. Where the browser
+# matrix runs (rule W12; Pierre, 2026-11-26, REE-121 (b) and (d)):
+# - a pull request: never on its head (d); the "browser scope" job's `if:` below keeps it off, and the agent runs the
+#   one smoke part its change touches locally (rule W14). A PR that changes only docs skips this whole workflow
+#   (paths-ignore below, GitHub's rules: every changed file must match; `*` stops at `/`); the Checks workflow,
+#   tests/docs.test.js included, still runs on it. Keep that list narrow: never tools/, tests/, judging/ or a data file
+#   (the smokes read them); tools/smoke_scope.py DOCS is the same list (tests/smokeparts.test.js).
+# - a merge train's push (train/*, tools/train.py): all of it on a code, mixed or unknown train, none on a docs-only one
+#   (b): tools/smoke_scope.py classifies the whole diff from the train's base, and tools/train.py refuses a train
+#   whose expected jobs did not all run.
+# - workflow_dispatch: all of it, on any branch (the manual full validation).
+# One more job, "answer cost" (last in this file), runs beside them on every run of this workflow (code PRs and every
+# train, docs-only trains included): the work of one answer on every subject against its budget.
 name: Smokes
 on:
   pull_request:
@@ -23,8 +30,36 @@ concurrency:
   group: smokes-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  # Whether this run needs the browser matrix (tools/smoke_scope.py): browser=false only for a proven docs-only train.
+  scope:
+    name: browser scope
+    # (d) No browser matrix on a PR head (Pierre, 2026-11-26). ROLLBACK, if the late signal slows delivery too much:
+    # delete the one line below; this job then runs on PRs, says browser=true, and every code PR runs the matrix again.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-26.04
+    outputs:
+      browser: ${{ steps.scope.outputs.browser }}
+    steps:
+      # The script only, at the run's commit, with its first-parent history (commits and trees, no file contents).
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 50
+          sparse-checkout: tools/smoke_scope.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      # main as it is now, to prove the train's base is on it; a failed fetch leaves the base unproven: the full matrix.
+      - name: Fetch main (commits and trees only)
+        run: git fetch -q --no-tags --filter=blob:none --depth=50 origin +refs/heads/main:refs/remotes/origin/main || echo "::warning::main not fetched"
+      - name: Docs-only train or not (the whole diff from its base, deletions and both sides of a rename)
+        id: scope
+        run: python3 tools/smoke_scope.py
   smoke:
     name: smoke (${{ matrix.name }})
+    needs: scope
+    # Skipped when the scope job is (a PR head) or says false (a docs-only train); a missing answer runs the matrix.
+    if: needs.scope.outputs.browser != 'false'
     runs-on: ubuntu-26.04
     strategy:
       # Every smoke reports: one failing smoke never hides the others.
@@ -133,7 +168,8 @@ jobs:
   # The work of one answer, on every subject at three histories (REE-265 step 0, REE-274; docs/spec/tools.md "Per-answer
   # cost"): fish, corals and sea slugs at 50, 500 and 3,000 answers, each in the middle of a session and back after a break
   # (a comeback), counted by tools/answercost.js on saved players and held to tools/answercost-budget.json. A count over its ceiling fails this job and names the count (an OVER BUDGET line and an
-  # error annotation). Its own job, side by side with the smokes and needing none of them: the counts are not part of the
+  # error annotation). Its own job, side by side with the smokes and needing none of them, nor the scope job (so it runs
+  # on every code PR and every train, docs-only trains included, as before REE-121 (b) and (d)): the counts are not part of the
   # agents' local checks (Pierre, 2026-11-24 14:06: a minute or two a check, times the checks, times the agents, climbs
   # fast), and the job must end before the longest smoke does (its time is in the PR that added it; each run's summary
   # holds the table of every state). The saved players are made afresh in the job (three runs of learnsim, one a
