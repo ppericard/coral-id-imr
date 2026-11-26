@@ -1061,7 +1061,15 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   web app deployment at it (the same `/exec` URL); the `Deploy log` tab records each install or error.
   `installAutoUpdate` checks the API at once (a standard Cloud project with the Apps Script API may be needed:
   HANDOVER.md). If the code was replaced but the deployment failed, the Script Property `AUTO_PENDING` makes the next run
-  finish it. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
+  finish it (saving one more version each time). After repointing, the **serving check** (REE-342, `selfServeCheck_`)
+  asks each web app deployment for a reply (a GET with no parameter) and compares its `v` with the version deployed;
+  the Script Property `AUTO_SERVE` keeps the result and the last version seen serving. Until it answers everywhere the
+  deploy reads "NOT verified" in the Deploy log and each up-to-date run asks again (no new version, no deployment
+  change); an older version still answering after 30 minutes, or a reply that is not the script's JSON (a build that
+  cannot load), writes one Alerts line a day naming what answers and the last good version. It never repoints or rolls
+  back: that stays a person's decision (Apps Script editor, Deploy > Manage deployments). `tests/selfupdate.test.js`
+  runs the whole update against doubles of GitHub, the Apps Script API and the web apps (each serving the build it
+  points at), with injected failures. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
   leaderboard's replays made ahead (`boardWarmRun_`, which first reads the structure again, `subjStRefresh_`) and the
   pooled statistics' fold (`statsFoldRun_`); every run ends with the Timings trim (`timTrim_`).
 - **The version limit** (`SELF_VERSIONS`; the 2026-11-22 incident): Google keeps at most 200 versions a project and
