@@ -1384,15 +1384,17 @@
     return [cr || null, rotNorm(ro)];
   }
   // A photo's prior difficulty before any answer on it, in logits (+ = harder), as model.js photoDiff starts it: its unit's
-  // offset (the sheet's gd, 0 when unknown) plus (PRIOR_MID - its judged ease) x ce, the subject's calibration of one ease step
-  // (core.js calibOf(S).ease); a photo with no judged ease (the corals') has the offset alone. PRIOR_MID is model.js
-  // PDIFF.MID (tests/priordiff.test.js reads both). null when there is nothing to start from.
+  // offset (the sheet's gd, 0 when unknown) plus (mid - its judged ease) x ce, the subject's calibration of one ease step
+  // (core.js calibOf(S).ease); a photo with no judged ease (the corals') has the offset alone. mid: the mean judged ease
+  // of its unit's photos (model.js easeMid), else PRIOR_MID, model.js PDIFF.MID (tests/priordiff.test.js reads both).
+  // null when there is nothing to start from.
   const PRIOR_MID = 3;
-  function photoPrior(ease, off, ce) {
+  function photoPrior(ease, off, ce, mid) {
     const o = Number.isFinite(off) ? off : null,
-      e = Number.isFinite(ease) && ease > 0 ? ease : null;
+      e = Number.isFinite(ease) && ease > 0 ? ease : null,
+      m = Number.isFinite(mid) ? mid : PRIOR_MID;
     if (o === null && e === null) return null;
-    return (o || 0) + (e === null ? 0 : (PRIOR_MID - e) * (Number.isFinite(ce) ? ce : 0));
+    return (o || 0) + (e === null ? 0 : (m - e) * (Number.isFinite(ce) ? ce : 0));
   }
   // Where a point of the original photo (x, y in fractions) lands in the file the workflow makes with crop c ([l, t, r, b],
   // null for none) and rotation r (tools/photos.py turn), in fractions of that file; null when the crop cut it off.

@@ -553,24 +553,28 @@ test('the apology card: greeted by the first word of the sign-in name, else "Hi!
 });
 
 // One genus difficulty (docs/LEARNING.md "One genus difficulty"): genusDiff is the sheet's genus offset (PGD, ?stats=1
-// gd), plus the mean judged-ease prior of a unit's judged photos (the fish); never the mean of its
-// photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses counted twice).
-test('genusDiff: the genus offset, whatever photos the genus has; the judged-ease prior for judged photos', () => {
+// gd) alone, for every subject: the judged ease places a photo within its unit and never ranks units (model.js easeMid);
+// never the mean of its photos' ratings (adding or curating out a photo moved it) nor a confusion term (the misses
+// counted twice).
+test('genusDiff: the genus offset, whatever photos the genus has, judged or not', () => {
   const src = read('model.js'),
+    f1 = {f: 'f1', e: 5},
+    f2 = {f: 'f2', e: 2},
+    f3 = {f: 'f3', e: 2},
     views = {
       A: [{f: 'a1'}, {f: 'a2'}],
       B: [{f: 'b1'}],
-      F: [
-        {f: 'f1', e: 5},
-        {f: 'f2', e: 2}
-      ]
+      F: [f1, f2, f3],
+      'g:F1': [f1],
+      'g:F2': [f2, f3]
     },
+    rec = {F: {}, 'g:F1': {parent: 'F'}, 'g:F2': {parent: 'F'}},
     ctx = {
       VIEWS: [['wide']],
       gamePics: n => views[n] || [],
-      GX: () => ({}),
+      GX: n => rec[n] || {},
       heldOf: C.heldOf,
-      PGD: {A: [-0.54, 80], B: [0.9, 12]},
+      PGD: {A: [-0.54, 80], B: [0.9, 12], 'g:F2': [0.333, 9]},
       PDIFF: {W: 5, MID: 3},
       // The subject's calibration (core.js calibOf, SUBJECTS calib): the judged ease's logits per point.
       SUBJ: {},
@@ -581,7 +585,10 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
     };
   vm.createContext(ctx);
   vm.runInContext(
-    cut(src, 'let GDIFF = {};', '\n};\n', {through: true}) + '\nthis.genusDiff = genusDiff; this.clear = () => (GDIFF = {});',
+    cut(src, 'let GDIFF = {};', '\n};\n', {through: true}) +
+      '\n' +
+      cut(src, 'const PDIFF = {', '\n}\n', {through: true}) +
+      '\nthis.genusDiff = genusDiff; this.clear = () => (GDIFF = {});',
     ctx
   );
   assert.deepStrictEqual(['A', 'B', 'C'].map(ctx.genusDiff), [-0.54, 0.9, 0]);
@@ -590,7 +597,13 @@ test('genusDiff: the genus offset, whatever photos the genus has; the judged-eas
   views.B = [];
   ctx.clear();
   assert.deepStrictEqual(['A', 'B'].map(ctx.genusDiff), [-0.54, 0.9]);
-  // Judged photos (ease 5 and 2): their priors (3 - 5) x 0.5 and (3 - 2) x 0.5, on top of a genus offset of 0.
-  assert.strictEqual(ctx.genusDiff('F'), -0.25);
-  assert.ok(!/OPEN\.CONF|pooledConf/.test(cut(src, 'const genusDiff = ', '\n};\n', {through: true})));
+  // Judged photos (ease 5, 2 and 2): a family and its genera alike, the offset alone (0 for none, rounded to 0.01),
+  // whatever their photos' ease (the ease never ranks one unit against another).
+  assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, 0, 0.33]);
+  f3.e = 5;
+  ctx.clear();
+  assert.deepStrictEqual(['F', 'g:F1', 'g:F2'].map(ctx.genusDiff), [0, 0, 0.33]);
+  const gd = cut(src, 'const genusDiff = ', '\n};\n', {through: true});
+  assert.ok(!/OPEN\.CONF|pooledConf/.test(gd));
+  assert.ok(!/gamePics|judgedOf|easeMid|\.e\b/.test(gd), 'no judged ease read');
 });
