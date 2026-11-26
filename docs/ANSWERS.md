@@ -2201,5 +2201,8 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   mérite un second regard». On Astra: «on pourrait même demander aussi un avis à Astra comme second regard non?»; he
   does not read Linear («Rappel que je ne lis quasiment jamais Linear moi même»); on the prompt: «ça pourrait être les
   deux. Le prompt dans le ticket pour ne pas l'oublier, et l'intégrateur qui me le recopie dans le chat ou dans un
-  fichier au moment où il y en a besoin, avec le contexte». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
+  fichier au moment où il y en a besoin, avec le contexte». On a full pass or a cross check: «Les 2. Une première
+  passe indépendante, puis une passe de critique/review des études Claude»; then «je ne veut pas 2 prompts
+  indépendants, c'est l'enfer à gérer. Un seul prompt, un seul agent, avec 2 phases successives»; to anonymous copies
+  in the Drive first and one prompt with both phases: «Oui, beaucoup mieux». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
   suis familier, pas un exemple à suivre absolument». Applied: docs/INTEGRATOR.md model table and its two paragraphs.
