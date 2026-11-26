@@ -77,7 +77,7 @@ const server = http.createServer((req, res) => {
 //    Auto is Saver on a line the app measures as slow, and Saver never moves a shown photo to a bigger file.
 // 10. Load order (index.html tiers): Home shows before My progress and the Tools files are asked for, the quiz files come
 //    before My progress, which comes before the Tools; a link straight to #quiz, #progress or #lab on a first visit works.
-// 11. A browser driven by a program sends nothing to the sheet on any host name.
+// 11. A local copy asks the sheet nothing, reads included, on any host name (a browser driven by a program anywhere).
 // 13. A page no service worker controls (none in the browser, or blocked) gets a new version from the deployed page's
 //    build number, at the next page change, never in the middle of a question.
 // 12. Photos are read from R2 (core.js PHOTO_BASE), the ones with an online original from R2 only (no copy in img/ since
@@ -555,8 +555,7 @@ const server = http.createServer((req, res) => {
     const sent = await p.evaluate(async () => {
       const f = window.fetch,
         hits = [];
-      // Only writes count (POST), as in check 11: the sheet's reads (leaderboard, achievements) may come at any time.
-      // A sign-in (GET with a name) counts too: it opens an account (signed-in traffic is guarded).
+      // Writes count here (POST), and a sign-in (GET with a name: it opens an account); check 11 counts the reads too.
       window.fetch = (u, o) =>
         /script\.google/.test(String((u && u.url) || u)) &&
         (String((o && o.method) || 'GET').toUpperCase() === 'POST' || /[?&]name=/.test(String(u)))
