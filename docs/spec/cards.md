@@ -249,11 +249,11 @@ evening, else the date). Button "Thanks" or Escape: `reefid-sorry` (this device 
 
 ## The enlarge hint
 
-Every photo that opens the enlarged view in the quiz, the duels and the genus sheet carries the enlarge mark (`app.js`
+Every photo that opens the enlarged view in the quiz, the duels and the genus sheet carries the enlarge mark (`zoom.js`
 `ZOOMI`, DESIGN.md), its button labelled "Enlarge photo". Once per device a coach mark, "Tap a photo to see it bigger"
 ("Click" with a mouse), points at the mark on the first photo of a photo-quiz question (`zoomHint()` in `quiz.js`,
 called by `quizPhoto`; `ZHINT`: from `AT` = 1 answer, so the 2nd question at the earliest, `DELAY` 600 ms after the
-question shows, gone at the first tap, click or key or after `MS` = 6 s). Key **`reefid-zoomhint`** (`app.js`
+question shows, gone at the first tap, click or key or after `MS` = 6 s). Key **`reefid-zoomhint`** (`zoom.js`
 `ZHINT_KEY`, per device, outside the `reefid-sync-*` progress keys, kept on sign-out): `"seen"` once the hint has shown,
 `"zoomed"` once any photo has been enlarged on the device (`zoom()` sets it); either value means it never shows (again).
 It never shows with the tour, a card or an achievement toast on screen or waiting (`overlayBusy()`, the gating of

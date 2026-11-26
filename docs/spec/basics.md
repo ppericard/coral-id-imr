@@ -148,7 +148,7 @@ bounded by the screen's height (`--h` × `--ar` in `proto/lab.css`, rule U2).
 
 **The enlarged view.** Every teaching photo is itself the enlarge button (`.bx-zoom`, the app's `ZOOMI` mark, no
 "Enlarge" link): the enlarged view shows the whole photo with the step's labels over it and a Labels on/off switch
-(`app.js` `zoom(list, i, {over})`: a layer `.lb-over` kept on the photo's box by a `ResizeObserver`, its SVG sized to
+(`zoom.js` `zoom(list, i, {over})`: a layer `.lb-over` kept on the photo's box by a `ResizeObserver`, its SVG sized to
 fill it, at fit and at actual size; `ANN` keeps each photo's marks).
 
 **The steps.**
