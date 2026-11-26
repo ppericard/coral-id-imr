@@ -72,3 +72,5 @@ in git and the PRs. Pierre: "ok".
 
 Decision: the feedback sheet shows the verdict, the species line and one decisive line; the rest sits behind "More"; no
 line is made by comparing trait tags. Pierre, to the feedback sheet study's recommendation (e), PR #1097: "ok".
+
+Changed by: [2026-11-26-checks-follow-the-question.md](2026-11-26-checks-follow-the-question.md) ("Compute cap and checks", Q405: level 2's worlds for a mechanics run only; the cap and level 3 stay).

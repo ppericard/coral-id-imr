@@ -425,7 +425,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   - photo difficulty, traps and the display schedule start from the player's level (`playerStart`), not from the hardest setting;
   - the draw keeps the `OPEN` share for units never asked (new species come in as results allow, not as a wall of 300 never-asked
     species);
-  - checked with a learnsim fish profile before release (Checks).
+  - checked on a learnsim fish profile when a mechanics question asks it (rule L11; Checks).
 
 ## Fish basics (Pierre, 2026-11-04)
 
@@ -799,7 +799,7 @@ Every question here is answered (3: Q394 A; 5: Q395).
 
 The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
-- **learnsim fish profiles** (rules L11, L12, 5 seeds each; `tools/learnprof.js`, docs/LEARNING.md "Profiles"): built on the
+- **learnsim fish profiles**, for a mechanics run (rule L11; 5 seeds each; `tools/learnprof.js`, docs/LEARNING.md "Profiles"): built on the
   fish's own structure, never on the corals': the beginner, the casual diver (the families met most near Dauin and the commonest
   species of each, common names only), the lecture RA ("I'm at IMR": the circle-1 families, their IMR genera, the IMR
   cheatsheet's 24 most sighted species), the strong RA (the circle-1 families and genera, the cheatsheet's species and the 3
