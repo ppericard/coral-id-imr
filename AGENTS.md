@@ -59,7 +59,7 @@ branch and PR. Subagents never merge. Use [the shipping rules](docs/rules/ship.m
 
 ## Working with Pierre
 
-- In chat, use French and `tu`. Write project artifacts in English (rule W1). Work autonomously and fix by
+- In chat, use French and `tu`, but name fish families in English. Write project artifacts in English (rule W1). Work autonomously and fix by
   default. Estimate in agent time, including checks and reviews. Keep GitHub chores and permission prompts
   with the agents. Use file-editing tools for writes and run scripts by name, without embedding code in shell commands.
 - Before asking, search the [answers ledger](docs/ANSWERS.md), the rules and [decision records](docs/decisions/README.md).
