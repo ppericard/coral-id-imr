@@ -14,20 +14,22 @@ assignment.**
 | --- | --- | --- | --- |
 | **Right** | one thing the code checks | the code: a fixed list, never typed by hand | Host live games, Content, Manage players, Give rights |
 | **Role** | a named set of rights | Pierre, on a Roles page, by ticking rights | Trainer = Host live games + Cohorts |
-| **Group** | a named set of people, with its settings | a manager, on the Groups page | Staff, IMR November 2026 |
+| **Group** | a named set of people, with its settings | a manager, on the Groups page | Staff, Cohort A |
 | **Assignment** | one line: *this role, to this person or this group, on the whole instance or on these subjects* | whoever holds Give rights | P3: Trainer, on Fish and Sea slugs |
 
 What a person may do is the union of the assignments that reach them, directly or through a group they are in. Nothing
 ever subtracts. That is the shape Azure, Kubernetes, Moodle, Google Workspace and GitHub all arrived at (section 8).
 
-**His three examples, and one more:**
+**His three examples:**
 
 | Pierre's example | Recommended model | Today's model with #1554 as written |
 | --- | --- | --- |
 | A trainer for fish and sea slugs | one line: P3, Trainer, Fish + Sea slugs | two groups, "Trainers (fish)" and "Trainers (sea slugs)", P3 in both: a group has one subject |
 | A curator for corals and fish | one line: P4, Curator, Corals + Fish | two more groups |
-| A cohort learning two subjects | the group "IMR November 2026" with its Subjects setting on Fish + Sea slugs: a setting, not a right (question 8) | no place for it: a group without rights stores no scope |
-| All the staff may host live games | one line: the group Staff, Trainer, whole instance | give the Staff group the right, refused today while it has members |
+| A cohort learning two subjects | the group "Cohort A" with its Subjects setting on Fish + Sea slugs: a setting, not a right (question 8) | no place for it: a group without rights stores no scope |
+
+A role still goes to a group when a team shares it: the group Curators holds Curator on the whole instance, which is
+how today's three rights groups carry over (section 10).
 
 With three subjects there are seven possible subject lists. In the model built today, each list a role is ever given
 on needs its own group; in the recommended one there are two roles, and the list sits on the line.
@@ -61,8 +63,11 @@ Numbered for this study only. Each has my recommendation; sections 3 to 10 hold 
    of one; or A, today's model as #1554 builds it. *Recommendation: B.* This reopens Q408's question 1 ("no right is
    given to an account outside a group") for the one case he now asks for: a role given to one person.
 2. **Two built-in roles, the rest are yours.** Admin and Manager are fixed by the code: they cannot be edited, emptied
-   or deleted, because the guard of question 6 rests on them. Every other role (Trainer and Curator to start with) is
-   made, named, changed and deleted on the Roles page. *Recommendation: yes.*
+   or deleted. The reason is his own sentence, "at least one admin and one manager": the two words then mean the same
+   thing on every instance and in every document, and a known-good Manager is always there to give. The guard of
+   question 6 does not need the lock (it counts by what an account can do), so Manager could also be left editable.
+   Every other role (Trainer and Curator to start with) is made, named, changed and deleted on the Roles page.
+   *Recommendation: yes, both fixed.*
 3. **Where a role applies.** The whole instance, or a list of its subjects, chosen on each assignment. A role given on
    the whole instance applies in every subject the instance carries, including one added later. Only the rights about a
    subject's content or games (Content, Host live games, Cohorts) can be limited to subjects; Manage players, Settings
@@ -75,14 +80,20 @@ Numbered for this study only. Each has my recommendation; sections 3 to 10 hold 
      marked "(self)" in the audit (Q364);
    - nobody else. Manage players alone never changes a right.
 
-   *Recommendation: yes.* It is today's rule, restated for roles. The stricter rule of Kubernetes ("you can only give
-   what you hold") would force a Manager to hold Content before naming a Curator, against Q364's separation.
-5. **A role given to a group that already has members.** Today the script refuses a group's first right while it has
-   members. To let him give Trainer to Staff in one move, the page would list every member, ask one confirm, bind each
-   member to their code at that moment, and write one audit row per member. From then on the group is closed: members
-   one at a time by Give rights only, no Add all, no join code. A group that players join by a code (Q345) can never
-   hold a role. *Recommendation: allow it, with that confirm.* The alternative keeps today's refusal: make a new
-   group, add people one by one.
+   *Recommendation: yes.* It is today's rule, restated for roles. The stricter rule of Kubernetes (nobody gives a
+   right they do not hold themselves, section 8) would force a Manager to hold Content before naming a Curator, against
+   Q364's separation.
+5. **Which groups may hold a role.** A group made for it: empty when it receives its first role, then filled one
+   person at a time by Give rights, each bound to their code; or a group that already holds a role. A group that
+   already has members and holds no role (Staff, a cohort, a beta group) is refused, as the script refuses a group's
+   first right today, and a group that players join by a code (Q345) can never hold one. *Recommendation: yes, keep
+   today's refusal.* It follows his words of 2026-11-18 as SECURITY.md records them ("Staff" is not a role) and the
+   practice the spec records (settings and rights in separate groups), and a role given to one person now covers the
+   case that needed a group of one.
+   The alternative lets a manager give a role to a group with members after one confirm that lists them, each bound
+   to their code at that moment, one audit row each. It would reopen two decided points (Q408's refusal of a first
+   right while a group has members; settings and rights never mixed in one group), and a board group given a role
+   could no longer be managed with Manage players alone.
 6. **Never without an admin and a manager.**
    - *A manager* is counted by what the account can do, not by a name: a live account, its code unchanged since the
      right was given, that holds Give rights on the whole instance. *An admin* is the same on the admin list.
@@ -105,7 +116,7 @@ Numbered for this study only. Each has my recommendation; sections 3 to 10 hold 
    feature that reads it. *Recommendation: yes.* The alternative makes playing a subject a right ("Learner"), which
    means subjects are closed unless given: a change for every player, not recommended now.
 9. **Each cohort's trainers (Q448).** He approved "lines in the Groups tab" on 2026-11-21 without the detail. In the
-   recommended model the same fact is an assignment whose "where" is a cohort: P3, Trainer, cohort IMR November 2026.
+   recommended model the same fact is an assignment whose "where" is a cohort: P3, Trainer, Cohort A.
    One store instead of two, and still no new trainers' group each month (his objection of 2026-11-19).
    *Recommendation: yes, built in REE-37.*
 10. **#1554.** Amend it before it merges, not after (section 9): keep its one audited write, its tests and four of
@@ -131,6 +142,8 @@ A second manager would make the guard of question 6 a safety net instead of a da
 | A right holds only for the code it was given under | Q408 (guard 2) | the same: on a person's assignment, and on each membership of a group that holds a role |
 | A merge drops rights and warns first; a delete or an archive drops them (rule D7) | Q408, 7 | the same, assignments to the person included |
 | One confirm naming the rights when a person gets them | Q408, 8 | the same |
+| A group's first right is refused while it has members; no list, no Add all, no join by the player's own act | Q408, 4 and the 2026-11-18 study's gate table | the same, for a group's first role (question 5) |
+| "Staff" is not a role; settings and rights stay in separate groups | Pierre, 2026-11-18 (SECURITY.md); spec/sync.md "Player groups" | the same |
 | Admin is apart from the groups | Q408, answer 6 | the same: the Admin role goes to people only |
 | The token is the platform admin, with every right | SECURITY.md | the same |
 | The pilot's name and 4-digit code are enough for every right | Q423 | the same; a stronger sign-in is REE-172 |
@@ -198,17 +211,16 @@ A removal takes effect at the next request, as now. An unknown role, right or su
 
 A group that holds a role is what the code calls a group that carries rights, with the same guards as today: its
 members are added one at a time, by Give rights only, each bound to their code; no Add all, no Remove all; a
-player's own act never joins it. Three cases test the model (and every alternative of section 7):
+player's own act never joins it. Four cases test the model (and every alternative of section 7):
 
-| The group's members arrived by | May the group receive a role? |
+| The group | May it receive a role? |
 | --- | --- |
-| a manager, one by one | yes: the confirm of question 5 lists them, each is bound to their code then |
-| Add all (one click for a whole list; the 2026-11-18 study records one such mistake) | the same confirm; the list is on the screen, with the count |
-| a join code (Q345, later) | no, refused while the group has a join code, and a group that holds a role cannot get one |
+| empty | yes |
+| already holds a role, so each member was added under Give rights and is bound to their code | yes: one confirm with the role and the number of members, one audit row per member (as another right on a rights group today) |
+| has members and no role: filled by hand or by Add all (one click for a whole list; the 2026-11-18 study records one such mistake) | no, as today (question 5): their memberships hold no code hash, and nobody chose them for a right |
+| has a join code (Q345, later) | never; and a group that holds a role cannot get a join code |
 
-The one built guard that changes is question 5's: today a first right is refused while the group has members. The
-reason for the refusal was that their memberships held no code hash; binding each at the confirm removes the reason.
-The refusal can also stay as it is: the rest of the model does not depend on it.
+So no guard built since Q408 is dropped. Question 5's alternative would change the third line only.
 
 ## 5. Guardrails: never without an admin and a manager
 
@@ -315,12 +327,13 @@ Public pages, fetched 2026-11-26. A page that did not load is not cited (Canvas,
 | System | Who can hold | Role | Where | Combining | Worth copying |
 | --- | --- | --- | --- | --- | --- |
 | [Azure RBAC](https://learn.microsoft.com/en-us/azure/role-based-access-control/overview) | "a user, group, service principal, or managed identity" | "a collection of permissions"; built-in and custom | a tree of scopes | "an additive model", plus deny assignments | "A role assignment consists of three elements: security principal, role definition, and scope": the recommended model, word for word |
-| [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) | "users, groups, or service accounts" | Role, ClusterRole | a namespace, or the cluster | "purely additive (there are no "deny" rules)" | the binding as its own object; its no-escalation rule, quoted under question 4 |
+| [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) | "users, groups, or service accounts" | Role, ClusterRole | a namespace, or the cluster | "purely additive (there are no "deny" rules)" | the binding as its own object; its no-escalation rule, quoted below the table |
 | [Moodle](https://docs.moodle.org/en/Roles_and_permissions), the nearest in purpose | users | "a collection of permissions defined for the whole system", made by an administrator on [Define roles](https://docs.moodle.org/en/Managing_roles) | a context: system, category, course, activity; a role given in one applies to "the current context and all lower contexts" ([Assign roles](https://docs.moodle.org/en/Assign_roles)) | several roles merge; [overrides](https://docs.moodle.org/en/Override_permissions) with Prevent and Prohibit | a page to define roles; teacher of *this* course, not of the site; its overrides are alternative E |
-| [Google Workspace](https://knowledge.workspace.google.com/admin/users/create-edit-and-delete-custom-admin-roles?hl=en) | a user, or "a group or service account" ([assign roles](https://knowledge.workspace.google.com/admin/users/assign-specific-admin-roles?hl=en)) | pre-built and custom, a set of privileges | "some roles" on organisational units | union | Super Admin cannot go to a group: "any role except Super Admin"; the same line as Admin here |
-| [GitHub](https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization) | "individuals or teams" | predefined, and custom on GitHub Enterprise Cloud | the organisation, or a repository | union | roles to people and to teams; at least two owners |
+| [Google Workspace](https://knowledge.workspace.google.com/admin/users/create-edit-and-delete-custom-admin-roles?hl=en) | a user, or "a group or service account" ([assign roles](https://knowledge.workspace.google.com/admin/users/assign-specific-admin-roles?hl=en)) | pre-built and custom, a set of privileges | "some roles" on organisational units | not said on the pages read (a union, my reading) | Super Admin cannot go to a group: "any role except Super Admin"; the same line as Admin here |
+| [GitHub](https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization) | "individuals or teams" | predefined, and custom on GitHub Enterprise Cloud | the organisation, or a repository | not said on the pages read (a union, my reading) | roles to people and to teams; the advice to keep at least two owners |
+| [Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/security-emergency-access) | (page read for its emergency accounts only) | Global Administrator | the organisation | — | it "prevents the last Global Administrator account from being deleted", and still asks for two or more emergency accounts, each use watched |
 | [Django](https://docs.djangoproject.com/en/5.2/topics/auth/default/) | users and groups | none: permissions go straight to a user or a group | the whole site | union | it is alternative A: "A user in a group automatically has the permissions granted to that group" |
-| [Slack](https://slack.com/help/articles/360018112273-Types-of-roles-in-Slack) | people | fixed | the workspace | — | "a single Primary Owner": one account that cannot simply vanish |
+| [Slack](https://slack.com/help/articles/360018112273-Types-of-roles-in-Slack) | people | fixed | the workspace | — | "a single Primary Owner", the only one who can "transfer ownership to someone else": ownership is handed over, not dropped (my reading) |
 | [Discord](https://docs.discord.com/developers/topics/permissions) (rules written for bots) | members | made by the server's managers | the server; overwrites per channel | union, then per-channel deny | "A bot can grant roles to other users that are of a lower position than its own highest role"; its denies are alternative E |
 | Linux ACL, [acl(5)](https://man7.org/linux/man-pages/man5/acl.5.html) | named users, named groups | none: permission bits per entry | one file | first matching class decides, capped by a mask | the list on the object, with people and groups side by side |
 
@@ -328,9 +341,12 @@ Kubernetes on who may give, for question 4: "You can only create/update a role b
 permissions contained in the referenced role (at the same scope as the role binding) or if you have been authorized to
 perform the `bind` verb on the referenced role." Its `bind` is our Give rights.
 
-Three things these systems agree on, and the recommendation follows: the assignment is its own object with three
-parts; a group is one kind of holder, never the role itself; and the most powerful role is fixed, goes to people only,
-and has a rule against losing its last holder.
+Three things to take from them, each no wider than its source:
+- Azure and Kubernetes make the assignment its own object: a holder, a role, a scope.
+- Where a system has both groups and roles (Azure, Kubernetes, Google Workspace, GitHub), a group is one kind of
+  holder of a role, never the role itself.
+- The top role is guarded, each system in its own way: Google keeps Super Admin for people, Entra refuses to delete
+  the last Global Administrator, GitHub advises two owners. None of the pages read describes a forced removal.
 
 ## 9. What it means for #1554
 
@@ -416,8 +432,8 @@ In order, under B. Times from `python3 tools/effort.py --estimate`.
 | 3 | The admin's pages: Roles, Who holds what, History, the guard's warning and Force, gated on PR 2's version | admin L | median 3.6 h, range 28 min-12.4 h (#1330, #1336, #1393, #1435, #1582) |
 | 4 | The rule, the specs, SECURITY and the decision record | docs S | median 8 min, range 5 min-1.5 h (#1327, #1453, #1501, #1555, #1599) |
 
-PR 1 does not wait for question 1. PRs 2 to 4 wait for questions 1 to 6 (a data format and a migration: costly to
-undo). REE-65 (rights in the load reply) and REE-37 (question 9) follow PR 2. `Code.gs` is a sensitive file (rule
+PR 1 does not wait for question 1; it waits for questions 6 (the guard), 7 (what the two columns hold) and 10. PRs 2
+to 4 wait for questions 1 to 6 and 11 (a data format and a migration: costly to undo). REE-65 (rights in the load reply) and REE-37 (question 9) follow PR 2. `Code.gs` is a sensitive file (rule
 W27): PRs 1 and 2 go one after the other.
 
 ## 12. What I checked, and what I could not verify
