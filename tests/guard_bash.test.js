@@ -150,138 +150,142 @@ test('the read-only allowlist never allows a command that deletes, writes or run
   }
 });
 
-// REE-346 mitigation (a)5 and REE-345 (the integrator, 2026-11-27): no `git push` reaches main or release from a shell
-// command, in any form. Only tools/train.py moves them, and it pushes from its own process, not through this guard.
-const PUSH_REFUSED = [
-  'git push origin main',
-  'git push -u origin main',
-  'git push origin HEAD:main',
-  'git push origin HEAD:refs/heads/main',
-  'git push origin claude/x:main',
-  'git push origin +HEAD:main',
-  'git push --force origin main',
-  'git push --force-with-lease=main:abc123 origin HEAD:main',
-  'git push origin HEAD:release',
-  'git push origin HEAD:refs/heads/release',
-  'git push origin :refs/heads/release',
-  'git push origin :main',
-  'git push --delete origin main',
-  'git push origin --delete release',
-  'git push origin refs/heads/release',
-  'git push origin heads/main',
-  'git push origin main release',
-  'git push origin claude/x main',
-  'git push --repo=origin main',
-  'git send-pack origin main',
-  // every branch, or every matching branch, main and release included (Codex review #1631, finding 1: --branches)
-  'git push --all origin',
-  'git push origin --all',
-  'git push --mirror',
-  'git push --mir origin',
-  'git push --branches origin', // git's alias of --all
-  'git push origin --branches',
-  'git push --br origin',
-  'git push origin :',
-  'git push origin refs/heads/*:refs/heads/*',
-  'git push origin HEAD:refs/heads/*',
-  // quoting and escaping do not hide the destination
-  'git push origin "HEAD:main"',
-  "git push origin 'HEAD:release'",
-  'git push origin HEAD:ma""in',
-  'git push origin HEAD:refs/heads/ma\\in',
-  // a destination the guard cannot read fails closed
-  'git push origin $BRANCH',
-  'git push origin HEAD:$BRANCH',
-  'git push origin "$(git branch --show-current)"',
-  'git push origin HEAD:{main,x}',
-  // wrappers, paths, options and chains
-  'git -C /tmp push origin main',
-  'git -c push.default=current push origin main',
-  '/usr/bin/git push origin main',
-  '\\git push origin main',
-  'cd /tmp && git push origin main',
-  'git status; git push origin main',
-  'git fetch -q && git push origin HEAD:main',
-  'echo ok | git push origin main',
-  '(git push origin main)',
-  '{ git push origin main; }',
-  'if true; then git push origin main; fi',
-  'for b in main release; do git push origin $b; done',
-  'env GIT_TERMINAL_PROMPT=0 git push origin main',
-  'GIT_TERMINAL_PROMPT=0 git push origin main',
-  'sudo git push origin main',
-  'command git push origin main',
-  'time git push origin main',
-  'nice -n 5 git push origin main',
-  'git push origin HEAD:main 2>&1 | tail -1',
-  'git push origin main > /dev/null',
-  'echo "$(git push origin main)"',
-  'echo `git push origin main`',
-  'eval "git push origin main"',
-  'echo main | xargs git push origin',
-  '$GIT push origin main',
-  'git $SUB origin main',
-  // the train's own command does not excuse a push chained to it
-  'python3 tools/train.py 1626 1625; git push origin main',
-  'python3 tools/train.py --dry-run 1 && git push origin HEAD:release'
-];
+// REE-346 mitigation (a)5 and REE-345 (the integrator, 2026-11-27). Round 2 of the Codex review of #1631 cut the part that
+// resolved where a push goes (W27): a command line with a git push is refused unless the whole line is exactly one of a few
+// literal forms. The guard is a seat belt; the protection of main and release is server-side (REE-72, REE-345).
 const PUSH_ALLOWED = [
-  'git push -u origin HEAD',
-  'git push origin HEAD',
-  'git push',
-  'git push -u origin',
-  'git push origin HEAD:claude/ree-1-x',
+  'git push origin claude/ree-346-guard-push-outside',
+  'git push -u origin claude/x',
+  'git push -q origin codex/ree-9',
+  'git push -q -u origin train/20261127-120000',
+  'git push -u origin ccr-63260354-26ah4o',
   'git push origin HEAD:refs/heads/claude/x',
-  'git push -u origin claude/ree-346-guard',
-  'git push origin codex/ree-9',
-  'git push origin train/20261127-120000',
-  'git push origin HEAD:refs/heads/ccr-63260354-26ah4o',
-  'git push -q origin HEAD:refs/heads/claude/x',
-  'git push --force-with-lease origin HEAD:claude/x',
-  'git push --force-with-lease=claude/x:abc123 origin HEAD:claude/x',
-  'git push origin --delete claude/old',
-  'git push origin :claude/old',
-  'git push --tags',
-  'git push origin tag v1',
-  'git push origin main:claude/x', // the destination counts, not the source
-  'git push origin claude/main claude/release',
-  'git push -o ci.skip origin claude/x',
-  'git push origin claude/x 2>&1 | tail -1',
-  'git status && git push -u origin HEAD',
-  'git -C /tmp push origin claude/x',
-  // the train: its pushes happen inside train.py (subprocess), so its command has no push for the guard to read
+  'git push -q -u origin HEAD:refs/heads/ccr-63260354-26ah4o',
+  'git push origin claude/x:refs/heads/claude/x',
+  'git push origin claude/a:refs/heads/claude/b',
+  'git push origin claude/main',
+  'git push origin claude/release.v2',
+  'git push -u origin claude/x\n'
+];
+const PUSH_NOT_A_PUSH = [
+  // the train: its pushes happen inside train.py (subprocess), so its command line has no push
   'python3 tools/train.py 1626 1625',
   'python3 tools/train.py --dry-run 1113',
   // text that names a push is not a push
   'git commit -m "never git push origin main"',
   'git commit -m "$(cat <<\'EOF\'\nDo not git push origin main\nEOF\n)"',
+  'git commit -qm "$(git rev-parse HEAD)"',
   'grep -n "git push origin main" docs/INTEGRATOR.md',
-  'echo git push origin main',
   // other git commands that mention main
+  'git status',
   'git fetch origin main',
   'git pull origin main',
   'git merge origin/main',
   'git log origin/main..HEAD',
   'git diff origin/main --stat',
   'git branch -u origin/main',
-  'git worktree add -b claude/x ../wt origin/main'
+  'git worktree add -b claude/x ../wt origin/main',
+  'git checkout -b claude/x origin/main'
+];
+// Every bypass form Codex found in rounds 1 and 2 of #1631, then the forms the allowlist does not name at all.
+const PUSH_REFUSED = [
+  // round 1: --branches (git's alias of --all); a push after a switch in the same line; a mapped colonless refspec (below)
+  'git push --branches origin',
+  'git push origin --branches',
+  'git switch main && git push origin HEAD',
+  'git checkout release; git push',
+  // round 2: --repo, quoted global options before the subcommand, a push in a condition
+  'git push --repo=origin main',
+  'git push --repo upstream claude/x',
+  'git "-C" . push origin main',
+  "git '-c' push.default=current push origin main",
+  'git -c "alias.p=push" p origin main',
+  'if git push origin main; then echo ok; fi',
+  'while ! git push origin main; do sleep 1; done',
+  'git push origin main || true',
+  // main and release in every spelling
+  'git push origin main',
+  'git push -u origin main',
+  'git push origin HEAD:main',
+  'git push origin HEAD:refs/heads/main',
+  'git push origin HEAD:refs/heads/release',
+  'git push origin claude/x:main',
+  'git push origin claude/x:refs/heads/main',
+  'git push origin +HEAD:main',
+  'git push origin :release',
+  'git push --delete origin main',
+  'git push --all origin',
+  'git push --mirror',
+  'git push origin refs/heads/*:refs/heads/*',
+  'git push origin claude/x main',
+  'git push origin claude/x:refs/heads/claude/x:main',
+  'git push origin claude/../main',
+  'git push origin claude/x/',
+  'git push origin ccr-x:main',
+  'git send-pack origin main',
+  // a destination that is not literal
+  'git push origin $BRANCH',
+  'git push origin claude/$X',
+  'git push origin "$(git branch --show-current)"',
+  'git push origin HEAD:refs/heads/claude/{x,y}',
+  'git push origin HEAD:$B',
+  // a line that is more than the push, or a push written another way
+  'git push',
+  'git push origin',
+  'git push -u origin HEAD',
+  'git push origin HEAD',
+  'git push upstream claude/x',
+  'git push -f origin claude/x',
+  'git push --force-with-lease origin claude/x',
+  'git push origin --delete claude/old',
+  'git push --tags',
+  'git push -o ci.skip origin claude/x',
+  'git push origin claude/x 2>&1',
+  'git push origin claude/x | tail -1',
+  'git status && git push -u origin claude/x',
+  'git push origin claude/x; git push origin main',
+  'cd /tmp && git push origin main',
+  'cd "$WT" && git push origin claude/x',
+  'cd /tmp; git push origin claude/x',
+  'git -C /tmp push origin claude/x',
+  '/usr/bin/git push origin claude/x',
+  'env X=1 git push origin claude/x',
+  'sudo git push origin claude/x',
+  'command git push origin claude/x',
+  '\\git push origin claude/x',
+  '(git push origin main)',
+  '{ git push origin main; }',
+  'git push origin "claude/x"',
+  'GIT_TERMINAL_PROMPT=0 git push origin claude/x',
+  'eval "git push origin main"',
+  'echo main | xargs git push origin',
+  '$GIT push origin main',
+  'git $SUB origin main',
+  'echo "$(git push origin main)"',
+  'echo `git push origin main`',
+  'python3 tools/train.py 1626 1625; git push origin main',
+  // over-refusals accepted: a word `push` beside a git word is read as a push
+  'echo git push origin claude/x',
+  'git log --grep push',
+  'git config alias.p push'
 ];
 
-test('refuses a git push to main or release in any form, and fails closed on a destination it cannot read', () => {
+test('lets exactly the allowed push forms through, and every line that runs no push', () => {
+  const dir = repo('claude/t');
+  for (const cmd of [...PUSH_ALLOWED, ...PUSH_NOT_A_PUSH]) assert.strictEqual(check(cmd, dir), '', 'refused: ' + JSON.stringify(cmd));
+  assert.strictEqual(check('cd ' + dir + ' && git push -u origin claude/x', repo('claude/u')), '');
+});
+
+test('refuses every other line with a push, with the allowed forms and the merge train in the message', () => {
   const dir = repo('claude/t');
   for (const cmd of PUSH_REFUSED) {
     const why = check(cmd, dir);
     assert.ok(why, 'not refused: ' + JSON.stringify(cmd));
     assert.match(why, /REE-346/);
+    assert.match(why, /git push \[-q\] \[-u\] origin <branch>/);
     assert.match(why, /merge train \(python3 tools\/train\.py\)/);
-    assert.match(why, /git push -u origin HEAD/);
     assert.match(why, /Do not work around this refusal/);
   }
-});
-
-test('lets a push of a claude/*, codex/*, train/* or session (ccr-*) branch through, and the train command itself', () => {
-  const dir = repo('claude/t');
-  for (const cmd of PUSH_ALLOWED) assert.strictEqual(check(cmd, dir), '', 'refused: ' + JSON.stringify(cmd));
 });
 
 const refused = (branch, cfg, cmds) => {
@@ -293,117 +297,36 @@ const allowed = (branch, cfg, cmds) => {
   for (const cmd of cmds) assert.strictEqual(check(cmd, dir), '', branch + ' ' + JSON.stringify(cfg) + ': ' + cmd);
 };
 
-test('a push with no destination follows the configuration: the current branch, the tracked one, push.default, remote.*.push', () => {
-  const bare = ['git push', 'git push origin', 'git push -u origin', 'git push --force-with-lease', 'git push origin HEAD'];
-  refused('main', {}, bare);
-  refused('release', {}, bare);
-  // HEAD and a bare push name the current branch; an explicit destination does not
-  allowed('main', {}, ['git push origin HEAD:claude/x', 'git push origin claude/x']);
-  // a branch cut from origin/main tracks it: a bare push would go to main (simple and upstream)
-  const tracks = {'branch.claude/t.remote': 'origin', 'branch.claude/t.merge': 'refs/heads/main'};
-  refused('claude/t', tracks, ['git push', 'git push origin', 'git push -u origin']);
-  refused('claude/t', {...tracks, 'push.default': 'upstream'}, ['git push']);
-  refused('claude/t', {'branch.claude/t.merge': 'refs/heads/release'}, ['git push']);
-  allowed('claude/t', tracks, ['git push -u origin HEAD', 'git push origin HEAD:claude/t', 'git push origin claude/t']);
-  allowed('claude/t', {...tracks, 'push.default': 'current'}, ['git push']); // current: the branch's own name
-  allowed('claude/t', {'branch.claude/t.merge': 'refs/heads/claude/t'}, ['git push', 'git push origin']);
-  allowed('claude/t', {}, ['git push', 'git push origin']);
-  refused('claude/t', {'push.default': 'matching'}, ['git push', 'git push origin']);
-  refused('claude/t', {'remote.origin.push': 'HEAD:refs/heads/main'}, ['git push', 'git push origin']);
-  refused('claude/t', {'remote.origin.push': 'refs/heads/*:refs/heads/*'}, ['git push']);
-  allowed('claude/t', {'remote.origin.push': 'HEAD:refs/heads/claude/t'}, ['git push']);
-  // an alias that runs a push is a push; another alias is not
-  refused('claude/t', {'alias.p': 'push', 'branch.claude/t.merge': 'refs/heads/main'}, ['git p']);
+test('an allowed form is refused when the repository configures remote.origin.push, remote.origin.mirror or push.default', () => {
+  const forms = ['git push origin claude/x', 'git push -u origin claude/x', 'git push origin HEAD:refs/heads/claude/x'];
+  // Codex rounds 1 and 2: a colonless refspec mapped to main by remote.origin.push; a mirror remote
+  refused('claude/t', {'remote.origin.push': 'refs/heads/x:refs/heads/main'}, [...forms, 'git push origin x']);
+  refused('claude/t', {'remote.origin.push': 'refs/heads/*:refs/heads/*'}, forms);
+  refused('claude/t', {'remote.origin.mirror': 'true'}, forms);
+  refused('claude/t', {'push.default': 'current'}, forms);
+  refused('claude/t', {'push.default': 'matching'}, forms);
+  allowed('claude/t', {'remote.upstream.push': 'HEAD:refs/heads/claude/y', 'push.autosetupremote': 'true'}, forms);
+});
+
+test('an alias for a push is a push; another alias is not', () => {
+  refused('claude/t', {'alias.p': 'push'}, ['git p origin main', 'git p']);
   refused('claude/t', {'alias.up': '!git push origin HEAD:main'}, ['git up']);
   allowed('claude/t', {'alias.st': 'status -sb'}, ['git st']);
-  // the repository is the command's own: -C, cd, or the hook event's cwd
-  const onMain = repo('main'),
-    other = repo('claude/t');
-  assert.match(check('git -C ' + onMain + ' push', other), /REE-346/);
-  assert.match(check('cd ' + onMain + ' && git push', other), /REE-346/);
-  assert.strictEqual(check('cd ' + other + ' && git push', onMain), '');
-  assert.match(check('cd "$WT" && git push origin HEAD', other), /cannot be checked/);
-  const event = cwd => JSON.stringify({tool_name: 'Bash', cwd, tool_input: {command: 'git push'}});
-  assert.strictEqual(hook(event(onMain)).hookSpecificOutput.permissionDecision, 'deny');
-  assert.strictEqual(hook(event(other)), null);
 });
 
-// Codex review #1631, finding 3: a colonless refspec is looked up in remote.<name>.push, which can send it to main or release.
-test('a colonless refspec follows remote.<name>.push', () => {
-  const mapsX = {'remote.origin.push': 'refs/heads/x:refs/heads/main'};
-  refused('claude/t', mapsX, ['git push origin x', 'git push origin refs/heads/x', 'git push origin +x', 'git push -u origin x']);
-  refused('x', mapsX, ['git push origin HEAD']);
-  refused('claude/t', {'remote.origin.push': 'refs/heads/*:refs/heads/*'}, ['git push origin claude/x']);
-  refused('claude/t', {'remote.origin.push': 'HEAD:refs/heads/release'}, ['git push origin claude/x']);
-  allowed('claude/t', mapsX, ['git push origin y', 'git push origin HEAD:claude/x', 'git push origin HEAD']);
-  allowed('claude/t', {'remote.origin.push': 'refs/heads/x:refs/heads/claude/x'}, ['git push origin x']);
-});
-
-// Codex review #1631, finding 2: git is queried before the line runs, so what an earlier command of the same line did to
-// the branch or the configuration is not in its answer: the destination is refused unless it is written out.
-test('a command that may change the branch or the configuration spoils the answers for the pushes after it', () => {
-  const later = ['git push origin HEAD', 'git push', 'git push -u origin'];
-  for (const first of [
-    'git switch main',
-    'git checkout release',
-    'git checkout -- app.js',
-    'git branch -m main',
-    'git branch -f x',
-    'git symbolic-ref HEAD refs/heads/main',
-    'git update-ref refs/heads/x HEAD',
-    'git worktree add ../w main',
-    'git init -b main',
-    'git frobnicate',
-    'echo $(git switch main)',
-    'echo "$(git checkout main)"'
-  ])
-    for (const sep of [' && ', '; '])
-      refused(
-        'claude/t',
-        {},
-        later.map(c => first + sep + c)
-      );
-  refused('claude/t', {}, [
-    'git config push.default matching && git push',
-    'git config remote.origin.push HEAD:refs/heads/main && git push origin claude/x'
-  ]);
-  refused('claude/t', {}, ['git remote set-url origin x && git push -u origin claude/x', 'git config --add alias.p push; git p']);
-  refused('claude/t', {}, [
-    'git checkout -b claude/x origin/main && git push',
-    'git checkout -B claude/x && git push',
-    'git switch -c claude/x --track origin/main && git push'
-  ]);
-  refused('claude/t', {'branch.autosetupmerge': 'always'}, ['git checkout -b claude/x && git push']);
-  refused('claude/t', {}, ['git push -u origin claude/x && git push', 'git push --set-upstream origin claude/x; git push']);
-  refused('main', {}, ['git switch -c claude/x && git switch main && git push origin HEAD']);
-  allowed('main', {}, ['git switch main && git push origin HEAD:claude/x']);
-  allowed('claude/t', {}, [
-    'git checkout -b claude/x && git push -u origin HEAD',
-    'git switch -c claude/x && git push',
-    'git checkout -b claude/x origin/main && git push -u origin HEAD',
-    'git checkout -b claude/x origin/main && git push -u origin claude/x', // an upstream matters only to a push with no destination
-    'git switch main && git push origin HEAD:claude/x',
-    'git switch main && git push origin claude/x',
-    'git commit -qm "$(git rev-parse HEAD)" && git push -u origin HEAD',
-    'git add -A && git commit -qm x && git push -u origin HEAD',
-    'git fetch -q origin main && git merge -q origin/main && git push -u origin HEAD',
-    'git rebase origin/main && git push --force-with-lease origin HEAD',
-    'git branch --show-current && git push -u origin HEAD',
-    'git config --get remote.origin.url && git push -u origin HEAD',
-    'git remote -v; git push origin HEAD',
-    'git status -sb; git push origin HEAD'
-  ]);
-});
-
-test('a push the guard cannot query fails closed, and a command that only mentions a push is read as text', () => {
-  const nowhere = fs.mkdtempSync(path.join(os.tmpdir(), 'guard-push-norepo-')); // not a repository: git cannot answer
-  assert.match(check('git push', nowhere), /cannot be checked here/);
-  assert.match(check('git push origin HEAD', nowhere), /cannot be checked here/);
-  assert.strictEqual(check('git push origin claude/x', nowhere), ''); // an explicit destination needs no query
-  const deny = hook(JSON.stringify({tool_name: 'Bash', tool_input: {command: 'git push origin HEAD:main'}}));
+test('the repository is the one the line runs in: the event cwd, or the literal path after cd; one that cannot be read refuses', () => {
+  const clean = repo('claude/t'),
+    mirror = repo('claude/t', {'remote.origin.mirror': 'true'});
+  assert.match(check('cd ' + mirror + ' && git push origin claude/x', clean), /REE-346/);
+  assert.strictEqual(check('cd ' + clean + ' && git push origin claude/x', mirror), '');
+  assert.match(check('cd /guard-push-no-such-dir && git push origin claude/x', clean), /cannot be checked/);
+  const event = (cwd, command) => JSON.stringify({tool_name: 'Bash', cwd, tool_input: {command}});
+  assert.strictEqual(hook(event(mirror, 'git push origin claude/x')).hookSpecificOutput.permissionDecision, 'deny');
+  assert.strictEqual(hook(event(clean, 'git push origin claude/x')), null);
+  const deny = hook(event(clean, 'git push origin HEAD:main'));
   assert.strictEqual(deny.hookSpecificOutput.permissionDecision, 'deny');
-  assert.match(deny.hookSpecificOutput.permissionDecisionReason, /pushes to main/);
-  assert.strictEqual(hook(JSON.stringify({tool_name: 'Bash', tool_input: {command: 'git push origin HEAD:claude/x'}})), null);
+  assert.match(deny.hookSpecificOutput.permissionDecisionReason, /allowed only as exactly/);
+  assert.strictEqual(hook(event(clean, 'git push origin claude/x:refs/heads/claude/x')), null);
 });
 
 test('tools/train.py pushes from its own process, so the guard needs no exception for `python3 tools/train.py ...`', () => {

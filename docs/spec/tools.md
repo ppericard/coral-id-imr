@@ -101,13 +101,16 @@ written with `tools/datajson.py`.
   `bash -c`, code piped into an interpreter). Quoted text is not read as a command; a command
   substitution is, and so is the body of a `cat <<EOF` heredoc with a bare delimiter, which the shell expands;
   `git show origin/main:tools/X.py | python3 -I -` stays allowed; an error in it lets the command through, except in
-  the push rule. That rule refuses a `git push` whose destination is `main` or `release` in any form (a refspec such as
-  `HEAD:main` or `:refs/heads/release`, `--all`, `--mirror`, a pattern, a bare push on a branch tracking main or with
-  `push.default=matching`, a `remote.<name>.push` mapping, an alias, a variable) and fails closed when it cannot read the
-  destination, also when an earlier command of the same line (`switch`, `checkout`, `branch`, `config`, `remote`,
-  `push -u`…) may have changed the branch or the configuration git was asked about (REE-346, REE-345). The
-  merge train needs no exception: `tools/train.py` pushes from its own process, not through Bash. Pushing `claude/*`,
-  `codex/*`, `train/*` or the session's `ccr-*` branch stays allowed. `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
+  the push rule. That rule is a strict allowlist, not a reading of where a push goes (every attempt to resolve the
+  destination left another bypass in the Codex review of #1631, so that part was cut, rule W27): a command line with
+  `push` or `send-pack` as a word beside a `git` word (any position, wrapper, condition or quoting; a git alias for a
+  push; over-refusal is accepted) is refused unless the whole line is exactly `[cd <literal path> && ]git push [-q] [-u]
+  origin <branch>`, `… origin HEAD:refs/heads/<branch>` or `… origin <branch>:refs/heads/<branch>`, with `<branch>` a
+  literal `claude/*`, `codex/*`, `train/*` or `ccr-*` name, and only when the repository configures no
+  `remote.origin.push`, `remote.origin.mirror` or local `push.default` (a configuration it cannot read refuses; REE-346,
+  REE-345). The merge train needs no exception: `tools/train.py` pushes from its own process, not through Bash. The guard
+  is a seat belt: the protection of `main` and `release` is server-side (REE-72's release ruleset, REE-345's deny rules,
+  Pierre's). `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
   keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
