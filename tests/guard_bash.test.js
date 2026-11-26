@@ -173,11 +173,14 @@ const PUSH_REFUSED = [
   'git push origin claude/x main',
   'git push --repo=origin main',
   'git send-pack origin main',
-  // every branch, or every matching branch, main and release included
+  // every branch, or every matching branch, main and release included (Codex review #1631, finding 1: --branches)
   'git push --all origin',
   'git push origin --all',
   'git push --mirror',
   'git push --mir origin',
+  'git push --branches origin', // git's alias of --all
+  'git push origin --branches',
+  'git push --br origin',
   'git push origin :',
   'git push origin refs/heads/*:refs/heads/*',
   'git push origin HEAD:refs/heads/*',
@@ -281,15 +284,16 @@ test('lets a push of a claude/*, codex/*, train/* or session (ccr-*) branch thro
   for (const cmd of PUSH_ALLOWED) assert.strictEqual(check(cmd, dir), '', 'refused: ' + JSON.stringify(cmd));
 });
 
+const refused = (branch, cfg, cmds) => {
+  const dir = repo(branch, cfg);
+  for (const cmd of cmds) assert.match(check(cmd, dir), /REE-346/, branch + ' ' + JSON.stringify(cfg) + ': ' + cmd);
+};
+const allowed = (branch, cfg, cmds) => {
+  const dir = repo(branch, cfg);
+  for (const cmd of cmds) assert.strictEqual(check(cmd, dir), '', branch + ' ' + JSON.stringify(cfg) + ': ' + cmd);
+};
+
 test('a push with no destination follows the configuration: the current branch, the tracked one, push.default, remote.*.push', () => {
-  const refused = (branch, cfg, cmds) => {
-    const dir = repo(branch, cfg);
-    for (const cmd of cmds) assert.match(check(cmd, dir), /REE-346/, branch + ' ' + JSON.stringify(cfg) + ': ' + cmd);
-  };
-  const allowed = (branch, cfg, cmds) => {
-    const dir = repo(branch, cfg);
-    for (const cmd of cmds) assert.strictEqual(check(cmd, dir), '', branch + ' ' + JSON.stringify(cfg) + ': ' + cmd);
-  };
   const bare = ['git push', 'git push origin', 'git push -u origin', 'git push --force-with-lease', 'git push origin HEAD'];
   refused('main', {}, bare);
   refused('release', {}, bare);
@@ -322,6 +326,73 @@ test('a push with no destination follows the configuration: the current branch, 
   const event = cwd => JSON.stringify({tool_name: 'Bash', cwd, tool_input: {command: 'git push'}});
   assert.strictEqual(hook(event(onMain)).hookSpecificOutput.permissionDecision, 'deny');
   assert.strictEqual(hook(event(other)), null);
+});
+
+// Codex review #1631, finding 3: a colonless refspec is looked up in remote.<name>.push, which can send it to main or release.
+test('a colonless refspec follows remote.<name>.push', () => {
+  const mapsX = {'remote.origin.push': 'refs/heads/x:refs/heads/main'};
+  refused('claude/t', mapsX, ['git push origin x', 'git push origin refs/heads/x', 'git push origin +x', 'git push -u origin x']);
+  refused('x', mapsX, ['git push origin HEAD']);
+  refused('claude/t', {'remote.origin.push': 'refs/heads/*:refs/heads/*'}, ['git push origin claude/x']);
+  refused('claude/t', {'remote.origin.push': 'HEAD:refs/heads/release'}, ['git push origin claude/x']);
+  allowed('claude/t', mapsX, ['git push origin y', 'git push origin HEAD:claude/x', 'git push origin HEAD']);
+  allowed('claude/t', {'remote.origin.push': 'refs/heads/x:refs/heads/claude/x'}, ['git push origin x']);
+});
+
+// Codex review #1631, finding 2: git is queried before the line runs, so what an earlier command of the same line did to
+// the branch or the configuration is not in its answer: the destination is refused unless it is written out.
+test('a command that may change the branch or the configuration spoils the answers for the pushes after it', () => {
+  const later = ['git push origin HEAD', 'git push', 'git push -u origin'];
+  for (const first of [
+    'git switch main',
+    'git checkout release',
+    'git checkout -- app.js',
+    'git branch -m main',
+    'git branch -f x',
+    'git symbolic-ref HEAD refs/heads/main',
+    'git update-ref refs/heads/x HEAD',
+    'git worktree add ../w main',
+    'git init -b main',
+    'git frobnicate',
+    'echo $(git switch main)',
+    'echo "$(git checkout main)"'
+  ])
+    for (const sep of [' && ', '; '])
+      refused(
+        'claude/t',
+        {},
+        later.map(c => first + sep + c)
+      );
+  refused('claude/t', {}, [
+    'git config push.default matching && git push',
+    'git config remote.origin.push HEAD:refs/heads/main && git push origin claude/x'
+  ]);
+  refused('claude/t', {}, ['git remote set-url origin x && git push -u origin claude/x', 'git config --add alias.p push; git p']);
+  refused('claude/t', {}, [
+    'git checkout -b claude/x origin/main && git push',
+    'git checkout -B claude/x && git push',
+    'git switch -c claude/x --track origin/main && git push'
+  ]);
+  refused('claude/t', {'branch.autosetupmerge': 'always'}, ['git checkout -b claude/x && git push']);
+  refused('claude/t', {}, ['git push -u origin claude/x && git push', 'git push --set-upstream origin claude/x; git push']);
+  refused('main', {}, ['git switch -c claude/x && git switch main && git push origin HEAD']);
+  allowed('main', {}, ['git switch main && git push origin HEAD:claude/x']);
+  allowed('claude/t', {}, [
+    'git checkout -b claude/x && git push -u origin HEAD',
+    'git switch -c claude/x && git push',
+    'git checkout -b claude/x origin/main && git push -u origin HEAD',
+    'git checkout -b claude/x origin/main && git push -u origin claude/x', // an upstream matters only to a push with no destination
+    'git switch main && git push origin HEAD:claude/x',
+    'git switch main && git push origin claude/x',
+    'git commit -qm "$(git rev-parse HEAD)" && git push -u origin HEAD',
+    'git add -A && git commit -qm x && git push -u origin HEAD',
+    'git fetch -q origin main && git merge -q origin/main && git push -u origin HEAD',
+    'git rebase origin/main && git push --force-with-lease origin HEAD',
+    'git branch --show-current && git push -u origin HEAD',
+    'git config --get remote.origin.url && git push -u origin HEAD',
+    'git remote -v; git push origin HEAD',
+    'git status -sb; git push origin HEAD'
+  ]);
 });
 
 test('a push the guard cannot query fails closed, and a command that only mentions a push is read as text', () => {

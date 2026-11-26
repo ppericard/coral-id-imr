@@ -290,7 +290,28 @@ def run_git(gitopts, cwd, *args):
     return r.stdout if r.returncode == 0 else ''
 
 
-def read_config(gitopts, cwd):
+UNKNOWN = object()  # State.cur after a command that may have switched, renamed or re-pointed the current branch
+
+
+class State:
+    """What the commands run so far in this line may have changed. The hook reads git before the line runs, so an answer
+    about the branch or the configuration holds only until one of those commands runs: after it, the destination is
+    refused unless it is written out in full (the push rule fails closed)."""
+
+    def __init__(self):
+        self.cur = None  # None: ask git; a name: `checkout -b NAME` made it current; UNKNOWN: it may have changed
+        self.cfg = False  # remotes, push.default, aliases may have changed
+        self.bcfg = False  # the current branch's upstream (branch.<name>.*) may have changed
+
+    def taint(self, cur=True, cfg=True, bcfg=True):
+        self.cur = UNKNOWN if cur else self.cur
+        self.cfg = self.cfg or cfg
+        self.bcfg = self.bcfg or bcfg
+
+
+def read_config(gitopts, cwd, st=None):
+    if st and st.cfg:
+        raise Unreadable('an earlier command in this line may have changed the git configuration')
     out = []
     for line in run_git(gitopts, cwd, 'config', '--list').split('\n'):
         k, eq, v = line.partition('=')
@@ -304,11 +325,15 @@ def last(cfg, key):
     return vals[-1] if vals else None
 
 
-def current_branch(gitopts, cwd):
+def current_branch(gitopts, cwd, st=None):
+    if st and st.cur is UNKNOWN:
+        raise Unreadable('an earlier command in this line may have switched branch')
+    if st and st.cur:
+        return st.cur
     return run_git(gitopts, cwd, 'symbolic-ref', '--short', '-q', 'HEAD').strip() or None
 
 
-def refspec_reason(spec, gitopts, cwd):
+def refspec_reason(spec, gitopts, cwd, st=None):
     """Why a refspec's destination is refused, or None."""
     spec = spec.lstrip('+')
     if spec == ':':
@@ -317,18 +342,26 @@ def refspec_reason(spec, gitopts, cwd):
     if re.search(r'[$`*?\[{\\]', dst):
         raise Unreadable('the destination %r is a variable, a substitution or a pattern, so it may be main or release' % dst)
     if dst in ('HEAD', '@'):
-        dst = current_branch(gitopts, cwd) or ''
+        dst = current_branch(gitopts, cwd, st) or ''
     b = branch_of(dst)
     return 'it pushes to %s' % b if b in PROTECTED else None
 
 
-def bare_push_reason(remote, gitopts, cwd):
+def effective_remote(remote, cfg, cur):
+    if not remote and cur:
+        remote = last(cfg, 'branch.%s.pushremote' % cur.lower()) or last(cfg, 'branch.%s.remote' % cur.lower())
+    return remote or last(cfg, 'remote.pushdefault') or 'origin'
+
+
+def bare_push_reason(remote, gitopts, cwd, st):
     """A push with no refspec goes where the configuration says: the current branch, the branch it tracks, a remote's
     configured refspecs, or every matching branch."""
-    cur = current_branch(gitopts, cwd)
+    cur = current_branch(gitopts, cwd, st)
     if cur in PROTECTED:
         return 'the current branch is %s' % cur
-    cfg = read_config(gitopts, cwd)
+    if st.bcfg:
+        raise Unreadable('an earlier command in this line may have changed the branch\'s upstream')
+    cfg = read_config(gitopts, cwd, st)
     default = (last(cfg, 'push.default') or 'simple').lower()
     if default == 'matching':
         return 'push.default=matching pushes every branch that exists on both sides, main and release included'
@@ -336,19 +369,45 @@ def bare_push_reason(remote, gitopts, cwd):
     if merge and default in ('simple', 'upstream', 'tracking') and branch_of(merge) in PROTECTED:
         return 'branch %s tracks %s, and a push with no destination goes there (git push -u origin HEAD names its own)' % (
             cur, branch_of(merge))
-    if not remote and cur:
-        remote = last(cfg, 'branch.%s.pushremote' % cur.lower()) or last(cfg, 'branch.%s.remote' % cur.lower())
-    remote = remote or last(cfg, 'remote.pushdefault') or 'origin'
+    remote = effective_remote(remote, cfg, cur)
     for k, v in cfg:
         if k == 'remote.%s.push' % remote.lower():
-            why = refspec_reason(v, gitopts, cwd)
+            why = refspec_reason(v, gitopts, cwd, st)
             if why:
                 return 'the remote %s is configured to push there (%s)' % (remote, why)
     return None
 
 
-def push_args_reason(args, gitopts, cwd, via_xargs):
-    """Why `git push ARGS` (the words after `push`) is refused, or None."""
+def mapped_push_reason(remote, names, gitopts, cwd, st):
+    """A refspec with no colon (`x`, `HEAD`) is also looked up in remote.<name>.push, which can map it to main or release."""
+    cfg = read_config(gitopts, cwd, st)
+    remote = effective_remote(remote, cfg, None if remote else current_branch(gitopts, cwd, st))
+    names = {branch_of(n) for n in names}
+    if names & {'HEAD', '@'}:
+        names.add(current_branch(gitopts, cwd, st) or '')
+    for k, v in cfg:
+        if k == 'remote.%s.push' % remote.lower():
+            src = v.lstrip('+').partition(':')[0]
+            if branch_of(src) in names or src in ('', 'HEAD', '@') or re.search(r'[*?\[{]', src):
+                why = refspec_reason(v, gitopts, cwd, st)
+                if why:
+                    return 'the remote %s maps what is pushed to a protected branch (%s)' % (remote, why)
+    return None
+
+
+def push_args_reason(args, gitopts, cwd, via_xargs, st):
+    """Why `git push ARGS` (the words after `push`) is refused, or None. A push that sets the upstream (-u) is noted in st."""
+    why = push_args_check(args, gitopts, cwd, via_xargs, st)
+    if not why and any(
+        (a.text.startswith('--') and len(a.text.split('=')[0]) >= 5 and '--set-upstream'.startswith(a.text.split('=')[0]))
+        or (re.fullmatch(r'-[A-Za-z]*u[A-Za-z]*', a.text) is not None)
+        for a in args
+    ):
+        st.bcfg = True
+    return why
+
+
+def push_args_check(args, gitopts, cwd, via_xargs, st):
     positional, repo_opt, tags_only, k = [], False, False, 0
     while k < len(args):
         a = args[k].text
@@ -357,8 +416,12 @@ def push_args_reason(args, gitopts, cwd, via_xargs):
             positional += args[k + 1:]
             break
         if a.startswith('--'):
-            if (len(name) >= 3 and '--mirror'.startswith(name)) or (len(name) >= 4 and '--all'.startswith(name)):
-                return '--all and --mirror push every branch, main and release included'
+            if (
+                (len(name) >= 3 and '--mirror'.startswith(name))
+                or (len(name) >= 4 and '--all'.startswith(name))
+                or (len(name) >= 3 and '--branches'.startswith(name))  # --branches is git's alias of --all
+            ):
+                return '--all, --branches and --mirror push every branch, main and release included'
             tags_only = tags_only or name == '--tags'
             if name in PUSH_ARG:
                 repo_opt = repo_opt or name == '--repo'
@@ -372,17 +435,20 @@ def push_args_reason(args, gitopts, cwd, via_xargs):
         return 'a push run through xargs takes its destination from standard input'
     remote, specs = (None, positional) if repo_opt else ((positional[0].text if positional else None), positional[1:])
     if not specs:
-        return None if tags_only else bare_push_reason(remote, gitopts, cwd)
-    k = 0
+        return None if tags_only else bare_push_reason(remote, gitopts, cwd, st)
+    k, colonless = 0, []
     while k < len(specs):
         if specs[k].text == 'tag' and k + 1 < len(specs):  # `git push origin tag v1`: a tag, not a branch
             k += 2
             continue
-        why = refspec_reason(specs[k].text, gitopts, cwd)
+        spec = specs[k].text.lstrip('+')
+        why = refspec_reason(spec, gitopts, cwd, st)
         if why:
             return why
+        if ':' not in spec:
+            colonless.append(spec)
         k += 1
-    return None
+    return mapped_push_reason(remote, colonless, gitopts, cwd, st) if colonless else None
 
 
 def without_redirects(words):
@@ -398,9 +464,77 @@ def without_redirects(words):
     return out
 
 
-def push_in(words, cwd, depth):
-    """Why one simple command is a refused push, or None; with the directory the next command runs in."""
+# Git commands that change neither the branch HEAD names nor the configuration (so an answer read before the line runs
+# still holds after them); any other subcommand, an alias or an unknown one is recorded in State by git_effects.
+SAFE_GIT = set(
+    'add am apply archive blame bundle cat-file check-ref-format cherry cherry-pick clean clone commit commit-tree '
+    'count-objects describe diff diff-tree difftool fetch for-each-ref format-patch fsck gc grep hash-object help log '
+    'ls-files ls-remote ls-tree maintenance merge merge-base mergetool mktree mv name-rev notes pull range-diff read-tree '
+    'rebase reflog repack reset restore rev-list rev-parse revert rm shortlog show show-ref sparse-checkout stash status '
+    'submodule tag var verify-commit version whatchanged write-tree'.split()
+)
+CREATE_FLAGS = {'-b', '-B', '-c', '-C', '--create', '--force-create', '--orphan'}
+BRANCH_LIST = {'--show-current', '-l', '--list', '-a', '--all', '-r', '--remotes', '--contains', '--merged', '--no-merged', '--points-at'}
+BRANCH_EDIT = {'-d', '-D', '-m', '-M', '-c', '-C', '-f', '--force', '-u', '--set-upstream-to', '--unset-upstream', '-t', '--track',
+               '--delete', '--move', '--copy', '--edit-description'}
+CONFIG_READ = {'--get', '--get-all', '--get-regexp', '--get-urlmatch', '--list', '-l', '--show-origin', '--show-scope'}
+
+
+def git_effects(sub, args, st, gitopts, cwd):
+    """Records in st what a git command other than push may change."""
+    if sub in SAFE_GIT:
+        return
+    pos = [a.text for a in args if not a.text.startswith('-')]
+    flags = {a.text.split('=')[0] for a in args if a.text.startswith('-')}
+    if sub in ('switch', 'checkout'):
+        for k, a in enumerate(args):
+            if a.text in CREATE_FLAGS and k + 1 < len(args) and not args[k + 1].dynamic and not args[k + 1].text.startswith('-'):
+                # A new branch of a known name. A start point or --track may set an upstream; so may -B/-C (it resets
+                # an existing branch) and branch.autoSetupMerge.
+                rest = [x for x in args[k + 2:] if not x.text.startswith('-')]
+                tracked = rest or any(x.text in ('-t', '--no-track') or x.text.split('=')[0] == '--track' for x in args)
+                try:
+                    auto = any(key == 'branch.autosetupmerge' for key, _ in read_config(gitopts, cwd, st))
+                except Unreadable:
+                    auto = True
+                st.cur = args[k + 1].text
+                st.bcfg = st.bcfg or bool(tracked) or auto or a.text in ('-B', '-C', '--force-create')
+                return
+        st.taint(cur=True, cfg=False, bcfg=True)
+    elif sub == 'branch':
+        if (not pos and not flags) or (flags & BRANCH_LIST and not flags & BRANCH_EDIT):
+            return
+        st.taint(cur=True, cfg=False, bcfg=True)
+    elif sub == 'config':
+        if not flags & CONFIG_READ:
+            st.taint(cur=False, cfg=True, bcfg=True)
+    elif sub == 'remote':
+        if pos[:1] not in ([], ['show'], ['get-url']):
+            st.taint(cur=False, cfg=True, bcfg=True)
+    elif sub == 'symbolic-ref':
+        if len(pos) > 1 or flags & {'-d', '--delete', '-m'}:
+            st.taint(cur=True, cfg=False, bcfg=False)
+    elif sub in ('update-ref', 'worktree'):
+        st.taint(cur=True, cfg=False, bcfg=False)
+    else:  # init, bisect, an alias, an unknown subcommand: anything
+        st.taint()
+
+
+def push_in(words, cwd, depth, st):
+    """Why one simple command is a refused push, or None; with the directory the next command runs in. Records in st
+    what the command may change."""
     words = without_redirects(words)
+    for w in words:  # a substitution runs before the command: what it does counts too
+        if w.dynamic and ('$(' in w.text or '`' in w.text):
+            try:
+                if depth >= 4:
+                    raise Unreadable('too deep')
+                for inner in substitutions(w.text):
+                    if not TEXT_HEREDOC.fullmatch(inner):
+                        for cmd in shell_commands(inner):
+                            push_in(cmd, cwd, depth + 1, st)
+            except Unreadable:
+                st.taint()
     i, via_xargs = 0, False
     while i < len(words):
         t, base = words[i].text, words[i].text.rsplit('/', 1)[-1]
@@ -414,7 +548,7 @@ def push_in(words, cwd, depth):
                 cwd = None
             return None, cwd
         elif t == 'eval' and depth < 4:
-            return push_reason(' '.join(w.text for w in words[i + 1:]), cwd, depth + 1), cwd
+            return push_reason(' '.join(w.text for w in words[i + 1:]), cwd, depth + 1, st), cwd
         elif base in WRAPPERS:
             via_xargs = via_xargs or base == 'xargs'
             i += 1
@@ -447,21 +581,29 @@ def push_in(words, cwd, depth):
         return None, cwd
     sub = words[j].text
     if sub in ('push', 'send-pack'):
-        return push_args_reason(words[j + 1:], gitopts, run_cwd, via_xargs), cwd
+        return push_args_reason(words[j + 1:], gitopts, run_cwd, via_xargs, st), cwd
     if words[j].dynamic:
         return 'a git subcommand named by a variable or a substitution may be a push to main or release', cwd
     if sub not in GIT_BUILTINS:
-        alias = last(read_config(gitopts, run_cwd), 'alias.' + sub.lower())
+        if st.cfg:
+            return 'the git command %r may be an alias, defined earlier in this line, for a push' % sub, cwd
+        try:
+            alias = last(read_config(gitopts, run_cwd, st), 'alias.' + sub.lower())
+        except Unreadable:  # not a push as far as is known: the line goes on, its later pushes lose their cached answers
+            st.taint()
+            return None, cwd
         if alias and re.search(r'push|send-pack', alias):
             return 'the git alias %r runs a push' % sub, cwd
+    git_effects(sub, words[j + 1:], st, gitopts, run_cwd)
     return None, cwd
 
 
-def push_reason(command, cwd, depth=0):
+def push_reason(command, cwd, depth=0, st=None):
     """Why the command contains a push to main or release (any form), or None."""
+    st = st or State()
     try:
         for words in shell_commands(command):
-            why, cwd = push_in(words, cwd, depth)
+            why, cwd = push_in(words, cwd, depth, st)
             if why:
                 return PUSH_WAY_OUT % why
     except Unreadable as e:
