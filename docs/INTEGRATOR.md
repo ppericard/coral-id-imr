@@ -142,6 +142,9 @@ missed risks), which the integrator puts in the Drive folder beforehand as anony
 compares the reports with their authors hidden, since it is Claude ([red team note](reviews/2026-11-25-red-team-passes.md)),
 and shows Pierre where they agree and differ; he settles the differences.
 
+For a whole-project [independent review round](reference/independent-reviews.md), use one mandate per reviewer
+and collect the first-pass reports before circulating material for the cross-check.
+
 Each launch names one level, never a range (in Claude Code a launch without one runs at the session's level on the
 session's model, and at the model's own default, `medium` for all four, on another). Where no row fits: Opus 5.5 at
 medium, Anthropic's starting point. A task that failed for want of thoroughness (stopped early, skipped a check, missed

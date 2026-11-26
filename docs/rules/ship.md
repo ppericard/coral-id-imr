@@ -69,7 +69,8 @@ evidence, 2026-11-21 (#1361).
 the app, and a mission as open as possible: no checklist, no fixed scope, no imposed form for the proposals. The mission
 says to keep an open mind, to explore what we did not think of, and to **question the choices already made** rather than
 take them as given (would we have done it differently, is something better possible), up to proposing a complete
-redesign. Then fix by default (rule W7). Reviews are copied in
+redesign. For a whole-project round, use the [shared brief and 14 perspectives](../reference/independent-reviews.md).
+The integrator follows up on the findings under rule W7. Reviews are copied in
 [`docs/reviews/`](../reviews/README.md).
 *Source:* Pierre, 2026-11-04 (a general rule for every independent review).
 
