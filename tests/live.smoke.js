@@ -312,9 +312,9 @@ async function shot(p, name) {
   check(!kai && !kaiAll.length, `4: a nickname kept live answers: ${kai} ${kaiAll}`);
 
   // 5. Nothing left this machine; no page error.
-  // Every request that tried to leave was refused here (the public reads the app makes on start-up: stats, board,
-  // achievements); none carried a name, an answer or a live call.
-  const out = escaped.filter(u => /script\.google/.test(u) && !/\?(stats|board|achs)=1/.test(u));
+  // Every request that tried to leave was refused here; none went to the sync script, not even the public reads (stats,
+  // board, achievements: a local copy asks them through app.js sheetFetch, answered by the in-memory sheet).
+  const out = escaped.filter(u => /script\.google/.test(u));
   check(!out.length, '5: a request to the sync script tried to leave the machine: ' + out);
   [T, ...S].forEach((x, i) => check(!x.errs.length, `5: page ${i} errors: ${x.errs.join('; ')}`));
   await b.close();

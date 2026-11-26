@@ -8,10 +8,12 @@ and [rule D2](#d2). The index of every rule is in [README.md](README.md#the-inde
 
 ### D1
 
-**Your tests never reach the real sheet.** The app sends nothing to the sheet from a local copy or a browser driven by a
-program (`app.js` `LOCAL`: localhost, 127.x, `file:`, `navigator.webdriver`), signed in or not: signing in, saving and
-loading an account go through `app.js` `sheetFetch`, which a local copy answers only from a test's `window.SHEET_STUB`
-(`tests/pages.smoke.js`). Never work around it (a made-up host name, a patched `LOCAL`, a stubbed
+**Your tests never reach the real sheet.** The app talks to the sheet only from the deployed site (`app.js`
+`SHEET_SITE`, the one opt-in); every other copy is a local copy (`app.js` `LOCAL`: any other address, `file:`, and a
+browser driven by a program, `navigator.webdriver`, even on the deployed site), signed in or not, and asks the sheet
+nothing, reads included: every request to it (statistics, leaderboards, signing in, saving, sending) goes through `app.js`
+`sheetFetch`, which a local copy answers only from a test's `window.SHEET_STUB` (`tests/pages.smoke.js`;
+`tests/sheetoff.test.js` holds it). Never work around it (a patched `SHEET_SITE` or `LOCAL`, a stubbed
 `navigator.webdriver`): network mocks (`route`) miss the requests a page sends while it unloads. To test the sending
 code, run it against stubs (`tests/sync.test.js`, a wrapped `fetch` as in `tests/net.smoke.js` check 11) and map the
 sync script's hosts to this computer (`--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP
