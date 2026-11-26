@@ -2357,3 +2357,54 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   comparisons opened as a new event kind joined to the answers by device (a sheet column change, asked and allowed).
   REE-6: «ok» to deleting the 2 unused objects listed and nothing else. Applied: Linear REE-194, REE-261, REE-226,
   REE-41, REE-6.
+- **17:07-17:13, versioning (REE-311).** «Et on suit les bonnes pratiques de semantic versionning please. Sauf s'il
+  existe de meilleures pratiques mieux adaptées à une app en continuous delivery». «Il faut probablement séparer les
+  différents modules/composant de notre future infrastructure (voir ticket d'hier je crois). Donc versionner l'app, la
+  base de donnée, le futur Reef Studio, ...». On listing the database and each subject's content as two components:
+  «C'est la même chose dans la nouvelle conception» (17:08; precision 17:13: «A vérifier, mais c'est ce que je crois
+  avoir compris de nos réflexions avec ChatGPT hier», so to check against REE-283 and REE-284). On "0.x while in
+  alpha": «C'est pas 0.x le semantic versioning. Renseigne toi» (the correction on the issue sets out what SemVer says;
+  no scheme is chosen yet). Applied: Linear REE-311.
+- **17:12-17:22, the id scheme and the Reviews page (REE-256, REE-252).** REE-256, (A) lifted: «oui!»; on the prefixes
+  `g:`, `f:`, `s:`: «Pas assez spécifique à mon avis. Et si on fini avec 100 matières?»; on the short ids (17:18):
+  «Globalement c'est une mauvaise pratique d'utiliser des identifiants aussi courts»; (B), re-explained: «ok pour les
+  2»; (C) his: «Tu me demandes un détail d'implémentation que je ne maitrises pas» (the integrator's call); (D): «Oui,
+  et ce sont des détails d'implémentation, sauf si tu me demandes parce que les gardes fou ne te laisse pas le faire
+  tout seul?». On old app versions (17:22): «Il faut prévoir ce qu'il se passe si quelqu'un se reconnecte sur son app
+  après longtemps, depuis une vieille version». REE-252, the Reviews page (17:12): R1: «ok»; R2: «ok»; R3: «ok», and
+  «Mes corrections devront être prises en compte pour affiner/calibrer/corriger le jugement»; R4: «ok»; R5: «Pas
+  d'accord veut bien dire qu'il faut corriger...»; R6: «Je suis d'accord. Ca n'a aucun sens de me demander de cliquer
+  sur un bouton si je ne valide pas à la main de toute façon»; R7: «En fonction des critères les plus difficiles à
+  juger, ou les plus critiques. Par au hasard du tout. Il faut générer l'échantillon le plus informatif possible pour
+  les problèmes qu'on cherche à résoudre. Il faut minimiser mon temps et maximiser l'information qu'on en tire».
+  Applied: Linear REE-256 (a short design of long, readable ids first, to him; old versions lose nothing), REE-252.
+- **17:24-17:29, tooling, the species exams, the dev cycle.** REE-27, (b) the "at least 3 questions" minimum dropped:
+  «ok»; (d) the ultimate exam of 150 questions, at most 7 misses: «Ok. A ré-évaluer lorsqu'on aura déjà quelques
+  personnes qui l'auront passé. Du coup dans 2 ans ;-) (blague ^^». REE-121 (17:27), (a) a train identical to its PR
+  reuses the PR's CI, (b) a docs-only train skips the smokes, (c) CodeQL with path filters, (e) a budget alert and a
+  measured week: «ok»; and «Dans tous les cas, on peut optimiser dès maintenant, surtout si ça n'a pas d'impact sur le
+  résultat final»; (d) the smokes once per train only (17:29): «ok». REE-234 (17:24): «ok» to no new VERSION when
+  `Code.gs` is identical once comments are stripped, and to grouping `Code.gs` and `core.js` changes. REE-122
+  (17:24): «oui!» to iNaturalist API v2 now. REE-230 (17:24): «ok» to closing it without option (c). REE-239 (17:25),
+  on closing it: «Non. On remet ça dans la liste des trucs à faire» (the clean design is built). Applied: Linear
+  REE-27, REE-121, REE-234, REE-122, REE-230, REE-239.
+- **17:34-17:49, the rules not followed: a cross-review (REE-297).** «J'aimerais une relecture et une réflexion croisée
+  avec Astra. Tu as soumis à Fable le problème?» (17:34); «oui» to a Fable second view in parallel (17:38). The Astra
+  prompt rules (17:37, 17:42, 17:47, 17:48) are in #1620's entry. Applied: Linear REE-297 (A1, A2 and C1-C4 wait for
+  the Fable study and the Astra review, compared blind).
+- **17:40-17:46, method, achievements, the next steps line.** REE-229, P2a as a one-week trial (the agent hands back at
+  PR open, the integrator resumes the same agent on a Codex finding): «ok» (17:40). REE-32: «ok», the four names and
+  the 1-species threshold kept, the 10 and 50 thresholds lowered after a timing on the app (17:46). REE-56: «ok» to
+  (a)-(f) as recommended (17:46). REE-228: «ok», a Sea slug basics achievement under the rule of Fish basics (17:46).
+  REE-147: «Ok pour y réfléchir, mais pour moi c'était plus un mode spécifique "Time attack" qui peut être inclu dans
+  le quiz général, et apparaitre de temps en temps comme les autres + Un jeu à part qui ne fait que du time attack»
+  (17:46). REE-70: «ok» to (4) and (5), and «T'as vérifié que c'était toujours valable encore maintenant?» (the build
+  starts from screenshots of today's app). Applied: Linear REE-229, REE-32, REE-56, REE-228, REE-147, REE-70.
+- **17:51, the studies of the architecture and the market (REE-287, REE-284, REE-283, REE-285, REE-286).** REE-287:
+  «Option A», two full blind passes on the five missions. REE-284: «ok», a first Claude pass at the next session.
+  REE-283: «ok», after the Red Team reports of REE-290 and REE-292. REE-285: «ok», an Astra desk-research pass.
+  REE-286, on when to return to the Reef Recall market study: «C'est une bonne question. Honnêtement je ne sais pas
+  encore, mais vous serez les premiers au courant» (check-again date 2027-02-26, the integrator's). Applied: Linear
+  REE-287, REE-284, REE-283, REE-285, REE-286.
+- **17:54, the handover (REE-312).** «Ca sera pour le prochain agent. Donc pas toi. Donc sans ton contexte ni ton
+  transcript. Donc la passation a intérêt d'être propre.» Applied: Linear REE-312, docs/STATUS.md.
