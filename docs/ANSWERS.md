@@ -2206,3 +2206,12 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   indépendants, c'est l'enfer à gérer. Un seul prompt, un seul agent, avec 2 phases successives»; to anonymous copies
   in the Drive first and one prompt with both phases: «Oui, beaucoup mieux». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
   suis familier, pas un exemple à suivre absolument». Applied: docs/INTEGRATOR.md model table and its two paragraphs.
+- **09:50-09:56, rights: roles, groups and assignments decided (REE-31, REE-305).** On the consolidated points after
+  the three studies (scope, #1554 revised, `grant` in other roles, the handover, the cohort's subjects, the three
+  risks, the build order): «ok». On the last admin or manager: «C'est probablement une meilleure pratique. Une encore
+  meilleure pratique serait d'avoir au moins 2 admins et 2 managers par instance. Mais c'est pas toujours possible
+  concrètement»; on a permanent warning: «ça va être pénible de voir un warning tout le temps si on ne peut rien y
+  faire». On a role given to a populated group: «Aaaaaaaahhhh. J'ai compris! C'est l'inscription libre par un code qui
+  pose problème. Oui, ok». On "Add all": «plus il va y avoir de joueurs plus ce bouton sera dangereux. Je propose
+  qu'on le redesigne autour des bétas exclusivement», «Et avec confirmation». Applied:
+  docs/decisions/2026-11-26-roles-groups-assignments.md; REE-305.
