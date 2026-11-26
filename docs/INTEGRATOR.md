@@ -108,6 +108,7 @@ on 2026-11-20 05:39 («OK pour cette stratégie»):
 | --- | --- | --- | --- |
 | Photo judging (fish candidate pass; slugs and corals until measured) | Opus 5.5 | high | Measured (#1211): nothing lighter validated; gold set 2 tests Sonnet 5.5 high and Opus 5.5 medium; Haiku 5.5 out; 5% drift sample per batch |
 | Learning engine, design, architecture, security, independent reviews | Opus 5.5 (Fable 5.2 where Opus at higher effort measurably falls short) | high | Anthropic + judgement: verification and edge cases; costly to undo |
+| A second view on a complex reflection or a choice costly to undo (a data format, the architecture, security, a migration, a large refactor) | Fable 5.2, beside the Opus 5.5 study, never instead of it | high | Pierre, 2026-11-26; first measure: #1611 (Opus) and #1612 (Fable) on the rights model, same conclusion, Fable a little more precise |
 | Rule wording | Opus 5.5 | high | Judgement: Pierre's scope kept; his OK is the check |
 | Sourcing research with verbatim quotes | Opus 5.5 | medium (high for a batch where a quote is not found word for word in its source) | Anthropic: research, fewer wrong citations; quote check by script |
 | Studies | Opus 5.5 | medium (high when it decides the engine, a data format or the architecture) | Anthropic: research figures |
@@ -116,6 +117,23 @@ on 2026-11-20 05:39 («OK pour cette stratégie»):
 | Ordinary code (game formats, admin pages) | Sonnet 5.5 | high (medium for a small, fully specified change) | Anthropic: `medium` 7-15 points lower on coding |
 | Bringing PRs up to date, docs | Sonnet 5.5 (Opus 5.5 medium for a conflict in the engine, `core.js`, `Code.gs`) | medium | Judgement: well specified, checked by tests and Codex |
 | Mechanical data conversion | A script where a rule can be written; else Haiku 5.5 after the sample test | medium | Anthropic: Haiku for checkable outputs, skips checks at `low` |
+
+**Fable 5.2, the second view** (Pierre, 2026-11-26): launched with the Opus study from the start when the difficulty is
+known, or afterwards when an Opus result deserves a second look. The two do not read each other's work; the integrator
+compares them and shows Pierre where they agree and differ. It costs about twice Opus a token, so it is kept for the
+row above, and each launch says why in its description. Its brief states the goal, the context to read, the hard
+constraints and the expected output, never the steps or the outline: it chooses how to search (Anthropic: prompts
+written for earlier models are often too prescriptive for it). Effort `high`; `xhigh` only where a gain is measured.
+
+**Astra, a view from another model family** (Pierre, 2026-11-26): for the same choices, more sparingly, since Pierre
+launches it himself from ChatGPT or Codex. The integrator writes a self-contained brief, same style, with a ready-to-
+paste prompt, and keeps it on the Linear issue (Waits on › Pierre (action)). It copies the prompt to Pierre in the chat,
+or as a file when long, when it is needed, with a line of context. Astra files its report in the Drive Reef_ID folder
+or a `codex/` PR and signs it on the issue. One prompt, one agent, two phases in turn: first its own blind study, then
+a cross check of every Claude report on the question (sources checked, the strongest counter-argument, up to three
+missed risks), which the integrator puts in the Drive folder beforehand as anonymous copies ("study A", "study B"). The integrator
+compares the reports with their authors hidden, since it is Claude ([red team note](reviews/2026-11-25-red-team-passes.md)),
+and shows Pierre where they agree and differ; he settles the differences.
 
 Each launch names one level, never a range (in Claude Code a launch without one runs at the session's level on the
 session's model, and at the model's own default, `medium` for all four, on another). Where no row fits: Opus 5.5 at
