@@ -44,6 +44,7 @@ Conventions that hold across them:
 | `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre, the links to Linear (where open work is tracked), and whether the local `origin/main` is the remote's main (one bounded `git ls-remote`, nothing fetched). The session hooks run it (`--short`, `--time`); every `send_later` check-in runs `--checkin`, which prints the live signals and then `checkin.md`, the check-in's fixed text |
 | `agent-brief.md` | What every launched agent is told, in any tool: the lines a launch prompt used to repeat, the report, the Linear conventions. A launch prompt says to read it and names the task |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
+| `smoke_scope.py` | Whether a Smokes run needs the browser matrix: none on a docs-only train, all on any other (rule W12) |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
 | `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |
 | `issue_guard.py` | The same on Linear's `save_issue`: refuses a new issue whose description has no `Searched:` line |

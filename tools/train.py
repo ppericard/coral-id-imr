@@ -20,10 +20,16 @@ nothing is re-run):
 2. Builds the train in a temporary worktree without the photos: origin/main, then each head merged in order. A conflict
    stops it (leave that PR out, or bring it up to date). The sheet rules are checked on it as on main, by main's copy
    of tools/sheet_version.py: no code from a PR's head runs on the integrator's machine.
+   It also classifies the train's whole diff from main (tools/smoke_scope.py, the same rule as the Smokes workflow's
+   "browser scope" job; rule W12): a docs-only train runs no browser smoke (Pierre, 2026-11-26, REE-121 (b)), any
+   other runs the whole browser matrix (d). From that and the train's own checks.yml and smokes.yml it lists the jobs
+   that must succeed: every Checks job (both unit shards), `browser scope`, `answer cost`, and every `smoke (…)` job
+   unless the train is docs-only. A workflow file it cannot read stops it before pushing.
 3. --dry-run stops here and says what it would do.
 4. Rechecks the heads and main, pushes a new branch train/<UTC time> and waits for the Checks and Smokes workflows (their
-   `push: train/*` trigger). Red: nothing is merged; it names the failing jobs (never re-run them, rule W23). The
-   branch stays; the weekly "Clean branches and Actions" workflow (.github/workflows/clean.yml) deletes it after two days.
+   `push: train/*` trigger). Red, or an expected job missing or skipped: nothing is merged; it names the jobs (never
+   re-run them, rule W23). The branch stays; the weekly "Clean branches and Actions" workflow (.github/workflows/clean.yml)
+   deletes it after two days.
 5. Green: squash-merges each PR through the API in order, at the head the train tested, titled "<title> (#N)". Before
    each merge main must be where the train left it (its base, then the previous merge): if a Publish, an Action or
    another merge landed meanwhile, it stops, and the PRs not merged yet go in a new train.
@@ -41,6 +47,8 @@ checked, default BODY_FROM).
 """
 import argparse, json, os, re, shutil, subprocess, sys, tempfile, time
 from datetime import datetime, timezone
+
+import smoke_scope  # tools/smoke_scope.py, beside this file in the integrator's checkout of main
 
 REPO = os.environ.get('TRAIN_REPO', 'ppericard/coral-id-imr')
 POLL = float(os.environ.get('TRAIN_POLL', '20'))
@@ -183,8 +191,34 @@ def build(prs, top, base, wt):
     return git('rev-parse', 'HEAD', cwd=wt), git('rev-parse', 'HEAD^{tree}', cwd=wt)
 
 
-def wait_green(sha):
-    """Waits for the Checks and Smokes runs of the train's push; returns the failing jobs (empty: green)."""
+def expected_jobs(top, base, train):
+    """(kind, {workflow: [the jobs that must succeed on this train]}): kind is smoke_scope's for the whole diff from base
+    (docs, code, mixed or unknown; only docs drops the browser jobs). The jobs are read from the train's own workflow
+    files (data only, nothing of the train runs), by the names the Actions API gives: tests/smokeparts.test.js holds the
+    workflow files to them."""
+    try:
+        kind, _ = smoke_scope.classify(smoke_scope.changed(base, train, top))
+    except smoke_scope.Unknown:
+        kind = 'unknown'
+    docs = kind == 'docs'
+
+    def part(f, start, end):
+        src = subprocess.run(['git', 'show', '%s:%s' % (train, f)], cwd=top, capture_output=True, text=True).stdout
+        return src.split(start, 1)[1].split(end, 1)[0] if start in src else ''
+
+    names = re.findall(r'\n\s+- name: (.+)', part('.github/workflows/smokes.yml', '\n  smoke:\n', '\n    steps:'))
+    shards = re.search(r'^\s+shard: \[([\d, ]+)\][ \t]*$', part('.github/workflows/checks.yml', '\n  unit:\n', '\n    steps:'), re.M)
+    if not names or not shards:
+        raise Stop('cannot read the jobs this train must run from its smokes.yml and checks.yml: nothing pushed')
+    ks = [k.strip() for k in shards.group(1).split(',')]
+    want = {'Checks': ['checks'] + ['unit tests (%s/%d)' % (k, len(ks)) for k in ks],
+            'Smokes': ['browser scope', 'answer cost'] + ([] if docs else ['smoke (%s)' % n.strip() for n in names])}
+    return kind, want
+
+
+def wait_green(sha, want):
+    """Waits for the Checks and Smokes runs of the train's push; returns the failing jobs and the expected jobs that did
+    not succeed (empty: green)."""
     end = time.time() + WAIT
     while True:
         runs = {}
@@ -197,9 +231,14 @@ def wait_green(sha):
         time.sleep(POLL)
     bad = []
     for w in WORKFLOWS:
+        jobs = api('actions/runs/%s/jobs?per_page=100' % runs[w]['id']).get('jobs', [])
         if runs[w].get('conclusion') not in GREEN:
-            jobs = api('actions/runs/%s/jobs?per_page=100' % runs[w]['id']).get('jobs', [])
             bad += ['%s › %s: %s' % (w, j['name'], j.get('conclusion')) for j in jobs if j.get('conclusion') not in GREEN] or ['%s: %s' % (w, runs[w].get('conclusion'))]
+            continue
+        # Green is not enough: a skipped or absent job is never a pass (REE-121: a browser job skipped on a code train,
+        # a unit shard or answer cost missing).
+        got = {j['name']: j.get('conclusion') for j in jobs}
+        bad += ['%s › %s: %s' % (w, n, got.get(n) or 'did not run') for n in want[w] if got.get(n) != 'success']
     return bad
 
 
@@ -249,6 +288,11 @@ def run(numbers, dry, expected_sha=None):
         train, tree = build(prs, top, base, wt)
         say('Train on main %s: %s' % (base[:7], ', '.join('#%s %s' % (n, sha[:7]) for n, sha, _ in prs)))
         say('Train %s, tree %s' % (train[:7], tree[:7]))
+        kind, want = expected_jobs(top, base, train)
+        if kind == 'docs':
+            say('Docs-only train (rule W12): no browser smoke runs on tree %s; Checks and answer cost do.' % tree[:7])
+        else:
+            say('%s train: the whole browser matrix (%d jobs) runs on it.' % (kind.capitalize(), len(want['Smokes']) - 2))
         if dry:
             say('Dry run: would push %s, wait for %s on it, then squash-merge %s in this order, compare main\'s tree and move %s to the commit main ends on.'
                 % (branch, ' and '.join(WORKFLOWS), ', '.join('#%s' % n for n, _, _ in prs), RELEASE))
@@ -265,9 +309,9 @@ def run(numbers, dry, expected_sha=None):
         subprocess.run(['git', 'worktree', 'remove', '--force', wt], cwd=top, capture_output=True)
         shutil.rmtree(wt, ignore_errors=True)
         subprocess.run(['git', 'worktree', 'prune'], cwd=top, capture_output=True)
-    bad = wait_green(train)
+    bad = wait_green(train, want)
     if bad:
-        raise Stop('the train is red, nothing merged. Never re-run it (rule W23): find the PR the failing job points to, leave it out, run a new train.\n  ' + '\n  '.join(bad))
+        raise Stop('the train is red or incomplete, nothing merged. Never re-run it (rule W23): find the PR the failing job points to, leave it out, run a new train; a job that did not run is a workflow fault, not a pass.\n  ' + '\n  '.join(bad))
     say('Train green.')
     expect, done = base, []
     try:
