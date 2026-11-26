@@ -303,7 +303,8 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   dispatch Checks and Smokes on `main` and fix forward. Train branches stay on GitHub until the weekly "Clean branches and
   Actions" run deletes them after two days (agents cannot delete branches; docs/HANDOVER.md); `tools/brief.py` does not
   list them. A train of one PR is the usual case (87 of 98 trains, 2026-11-14 to 16): it saves the catch-up merge, its
-  CI run and its Codex wait; a docs-only PR runs the smokes on its train (about 3 min). The merges land
+  CI run and its Codex wait; a docs-only train skips the browser matrix and runs Checks and `answer cost` (rule W12),
+  any other train runs the whole matrix, the first browser run of a code PR. The merges land
   seconds apart: Deploy Pages cancels all but the last run (its concurrency group), so check that last one; a Code.gs
   PR in the train goes live on the sheet at the next self-update, as after any merge (rule D4). The last step of a
   green train moves the `release` branch to the commit `main` ended on (the sheet script installs from `release`, rule
