@@ -3407,15 +3407,19 @@ function syncTrouble() {
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 // How a message names it ("Progress loaded from your account."): players are never told about "the sheet".
 const SHEET_NAME = 'your account';
-// A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
-// sheet (rule D1; requests a service worker or an unloading page sends escape a test's network mocks). A browser driven
-// by a program (Playwright, Selenium: navigator.webdriver) counts as one whatever its address. No player's browser sets
-// it.
-const LOCAL =
-  /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:' || navigator.webdriver === true;
-// Signed-in traffic (signing in, saving, loading a saved account) goes through sheetFetch, so a local copy never reaches
-// the sheet with a name either. A test answers it with window.SHEET_STUB(url, options), set before the app loads (pages.smoke.js);
-// without one a local copy gets an error and stays signed out. Players never run a local copy.
+// The one copy of the app that talks to the real sheet: the deployed site players open (index.html og:url). This is the
+// opt-in, and the only one: every other copy is a local copy (LOCAL) with the sheet off, whatever serves it (a developer's
+// or a review's server on this computer or the network, file:, a test, tools/perf.js, a fork or another site on the same
+// origin). A browser driven by a program (Playwright, Selenium: navigator.webdriver) is one even on the deployed site. No
+// player's browser sets it. Rule D1: requests a service worker or an unloading page sends escape a test's network mocks,
+// so the app itself never sends them.
+const SHEET_SITE = 'https://ppericard.github.io/coral-id-imr/';
+const LOCAL = !(location.origin + location.pathname.toLowerCase()).startsWith(SHEET_SITE) || navigator.webdriver === true;
+// Every request to the sheet goes through sheetFetch, reads included (photo statistics, the leaderboards, the
+// achievements' shares, signing in, saving, loading a saved account); the senders of anonymous answers, reports and
+// events also stop at LOCAL before they build their batch (sync.js). A test answers it with window.SHEET_STUB(url,
+// options), set before the app loads (pages.smoke.js); without one a local copy gets an error: no statistics (each photo
+// at its prior), the kept leaderboard, and signed out. Players never run a local copy.
 const sheetFetch = (url, o) =>
   !LOCAL
     ? fetch(url, o)

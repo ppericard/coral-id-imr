@@ -1534,19 +1534,37 @@ const server = http.createServer((req, res) => {
       await ctx.close();
     }
   }
-  // 11. A browser driven by a program never sends to the sheet, whatever host it opens the app on (app.js LOCAL:
-  // navigator.webdriver; rule D1: a test on a made-up host name must not reach the sheet). The sync
-  // script's hosts are mapped to this computer too, so a request that escaped the check could not reach Google.
+  // 11. A local copy never reaches the sheet, reads included, whatever host it opens the app on (app.js LOCAL: any copy
+  // but the deployed site, a browser driven by a program even there; rule D1: a test on a made-up host name must not
+  // reach the sheet; REE-341: review copies read the photo statistics). Every fetch and beacon the page makes is
+  // recorded from before its first script, and every request that leaves this server is recorded and refused; the sync
+  // script's hosts are mapped to this computer too, so a request that escaped both could not reach Google. Through
+  // start-up, the statistics' refresh on a return to the tab, a subject switch, offline and back online, the leaderboard
+  // and the achievements, the senders of anonymous answers, reports and events, and a signed-in save and load.
   {
     const bw = await chromium.launch({
       args: ['--host-resolver-rules=MAP coral.test 127.0.0.1, MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
     });
-    const ctx = await bw.newContext({serviceWorkers: 'block'});
-    await ctx.addInitScript(
-      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
+    const ctx = await bw.newContext({serviceWorkers: 'block'}),
+      home = `http://coral.test:${server.address().port}/`,
+      SHEET = /script\.google|googleusercontent/,
+      out = [];
+    await ctx.route(
+      u => !u.href.startsWith(home),
+      r => (SHEET.test(r.request().url()) && out.push(`${r.request().method()} ${r.request().url()}`), r.abort())
     );
+    await ctx.addInitScript(() => {
+      localStorage.setItem('reefid-tour', '1');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      const f = window.fetch,
+        b = navigator.sendBeacon && navigator.sendBeacon.bind(navigator),
+        sheet = u => /script\.google|googleusercontent/.test(String((u && u.url) || u));
+      window.SHEET_TRIES = [];
+      window.fetch = (u, o) => (sheet(u) && SHEET_TRIES.push(`${(o && o.method) || 'GET'} ${String((u && u.url) || u)}`), f(u, o));
+      if (b) navigator.sendBeacon = (u, d) => (sheet(u) && SHEET_TRIES.push(`BEACON ${u}`), b(u, d));
+    });
     const p = await ctx.newPage();
-    await p.goto(`http://coral.test:${server.address().port}/#home`);
+    await p.goto(home + '#home');
     await p.waitForFunction(
       () => window.APP_READY && typeof sendAnon === 'function' && typeof sendEvents === 'function' && typeof syncPush === 'function',
       null,
@@ -1555,30 +1573,58 @@ const server = http.createServer((req, res) => {
       }
     );
     const r = await p.evaluate(async () => {
-      const f = window.fetch,
-        hits = [];
-      // Only writes count (POST: answers, reports, events): Home's own reads (the leaderboard, the achievements' shares)
-      // are GETs, allowed from any copy, and sometimes landed in this window (the check failed now and then).
-      window.fetch = (u, o) =>
-        /script\.google/.test(String((u && u.url) || u)) && String((o && o.method) || 'GET').toUpperCase() === 'POST'
-          ? (hits.push(String(u)), Promise.reject(new Error('x')))
-          : f(u, o);
-      localStorage.setItem('reefid-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
-      localStorage.setItem('reefid-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
-      sendAnon();
-      sendReports();
-      sendEvents();
+      const wait = ms => new Promise(ok => setTimeout(ok, ms)),
+        steps = [];
+      const step = async (name, fn) => {
+        const n = SHEET_TRIES.length;
+        await Promise.resolve()
+          .then(fn)
+          .catch(() => {});
+        await wait(300);
+        if (SHEET_TRIES.length > n) steps.push(name);
+      };
+      await step('start-up', () => wait(1000));
+      // Back to the tab after 10 minutes away: the photo statistics' refresh (sync.js loadStats).
+      await step('return to the tab', () => ((statsAt = 0), document.dispatchEvent(new Event('visibilitychange'))));
+      await step('statistics', () => loadStats());
+      // Every subject with statistics of its own (core.js SUBJECTS stats), as a switch to it asks them, and a switch.
+      await step('a subject’s own statistics', () => SUBJECTS.filter(S => S.stats).forEach(S => loadOwnStats(S)));
+      await step('subject switch', () => setSubject(SUBJECTS.find(S => S !== SUBJ).id));
+      await step('leaderboard', () => (go('board'), loadBoard()));
+      await step('achievements', () => (go('ach'), loadAchs()));
+      await step('anonymous answers, reports, events', () => {
+        localStorage.setItem('reefid-anonq', JSON.stringify([{id: 'w1', t: Date.now(), g: 'Acropora', a: 'Porites', ok: 0}]));
+        localStorage.setItem('reefid-reports', JSON.stringify([{k: 'photo', m: 'test'}]));
+        sendAnon();
+        sendReports();
+        sendEvents();
+      });
       // Signed in (an account saved on this device): neither its save nor its load reaches the sheet.
-      SYNC = {name: 'Local test', pin: '1234', dirty: true, log: [{id: 'w2', t: Date.now(), g: 'Acropora', a: 'Acropora', ok: 1}]};
-      await Promise.resolve(syncPush()).catch(() => {});
-      await Promise.resolve(syncGet()).catch(() => {});
-      SYNC = null;
-      await new Promise(ok => setTimeout(ok, 300));
-      window.fetch = f;
-      return {local: LOCAL, hits};
+      await step('signed-in save and load', async () => {
+        SYNC = {name: 'Local test', pin: '1234', dirty: true, log: [{id: 'w2', t: Date.now(), g: 'Acropora', a: 'Acropora', ok: 1}]};
+        await Promise.resolve(syncPush()).catch(() => {});
+        await Promise.resolve(syncGet()).catch(() => {});
+        SYNC = null;
+      });
+      await step('leaving the page', () => window.dispatchEvent(new Event('pagehide')));
+      return {local: LOCAL, steps};
     });
+    // Offline, then back online: the senders that wait for the line (sync.js 'online').
+    await ctx.setOffline(true);
+    await p.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await ctx.setOffline(false);
+    const online = await p.evaluate(async () => {
+      const n = SHEET_TRIES.length;
+      window.dispatchEvent(new Event('online'));
+      await new Promise(ok => setTimeout(ok, 500));
+      return SHEET_TRIES.length > n;
+    });
+    if (online) r.steps.push('back online');
+    const tries = await p.evaluate(() => SHEET_TRIES);
     if (!r.local) fails.push('A browser driven by a program on a made-up host name does not count as a local copy');
-    if (r.hits.length) fails.push('A browser driven by a program sent to the sheet: ' + r.hits[0].slice(0, 60));
+    if (r.steps.length || tries.length)
+      fails.push(`A local copy asked the sheet (${r.steps.join(', ')}): ${tries.slice(0, 3).join(' | ').slice(0, 300)}`);
+    if (out.length) fails.push(`A local copy's request to the sheet left the page: ${out.slice(0, 3).join(' | ').slice(0, 300)}`);
     await bw.close();
   }
   await b.close();
