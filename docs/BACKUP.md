@@ -120,19 +120,50 @@ applications.
    `/IMR/reef-id-sheet-backups`).
 2. To look at it or check one tab: open it in Google Sheets, Excel or LibreOffice.
 3. To rebuild the sync sheet (the Google account or the sheet is lost): in Google Drive, **New > Google Sheets**, then
-   **File > Import > Upload**, choose the file, **Replace spreadsheet**, **Import data**. Every tab comes back with its
-   name and values. Then open **Extensions > Apps Script** in that sheet, paste `tools/sync/Code.gs` from `main` and
-   `tools/sync/appsscript.json`, deploy it as a web app (HANDOVER.md "Code.gs (progress sync) and how to redeploy"), and
-   point `SYNC_URL` in `app.js` at the new `/exec` address (a PR). The Script Properties (`ANON_SALT`, the code or the token) are not
-   in the backup: `ANON_SALT` must be set again to its old value, or every anonymous player's admin id changes. Ask an
-   agent to walk through it.
-4. Partial restore (one tab damaged): import the file into a new spreadsheet, then copy the tab's rows into the live
+   **File > Settings** and set the time zone to Manila (**GMT+08:00**), the script's zone (`Asia/Manila`). Do this
+   **before** the import: the `.xlsx` dates carry no time zone, so in a spreadsheet on another zone every date moves
+   (restore rehearsal, gap 6; `tests/restore.test.js`). Then **File > Import > Upload**, choose the file, **Replace
+   spreadsheet**, **Import data**. Every tab comes back with its name and values. Then open **Extensions > Apps
+   Script** in that sheet, paste `tools/sync/Code.gs` from `main` and `tools/sync/appsscript.json`, deploy it as a web
+   app (HANDOVER.md "Code.gs (progress sync) and how to redeploy"), and point `SYNC_URL` in `app.js` at the new `/exec`
+   address (a PR).
+4. **Carry the Script Properties**, which are not in the backup (**Extensions > Apps Script > Project settings >
+   Script properties**). The rehearsal restarted the script with these three kinds set, and nothing else:
+   - `ANON_SALT`: the old value, or every anonymous player's admin id changes and a player left out of the statistics
+     counts again (gap 5). It is a secret and cannot be read back once the project is lost, so it is **kept outside the
+     sheet, with the backup**: kept by Pierre in <TBD>, see REE-337 (where is Pierre's decision; not chosen here).
+   - Every property whose name starts with `ONCE_` (`ONCE_<name>`; each marks a one-shot migration done, and its value
+     is a timestamp of which only the presence is tested). Without them every group reads with no rights until the
+     one-shots run again; the rights migration then writes back a Managers membership revoked long before, and the `tz`
+     one-shot gives +480 to an answer sent without a UTC offset (gap 3).
+   - `ROLES_SEED` (any non-empty value). Without it the admin page's first read gives the admin account back the
+     rights it had left (gap 4).
+
+   **Export** them from the live script, at backup time (the lost project cannot be read afterwards): in Project
+   settings, copy the name and value of each `ONCE_<name>` property and of `ROLES_SEED` into the same place as
+   `ANON_SALT`, outside the sheet and never into the repository or a chat; record them again after each new one-shot
+   ships. **Import**: **Add script property** for each, with the same name and value. Set `PCLOUD_UPLOAD_CODE` or
+   `PCLOUD_TOKEN` again too (setup above). Ask an agent to walk through it.
+5. Partial restore (one tab damaged): import the file into a new spreadsheet, then copy the tab's rows into the live
    sheet by hand, or ask the integrator (writing to the sheet needs Pierre's explicit permission each time).
 
+### Known limits
+
+Found by the restore rehearsal (REE-337, `tests/restore.test.js`, [spec/sync.md](spec/sync.md) "Restore rehearsal"); not
+fixed, each pinned by a `GAP` test; the decisions are Pierre's, on REE-337:
+
+- **Gap 1.** A delete or a revocation made after the snapshot is undone by the restore: nothing outside the sheet
+  records it.
+- **Gap 2.** Revision numbers are reused after a restore, so a device that saved after the snapshot can overwrite a newer
+  save without merging.
+- **Gap 8.** The recovery point is the last weekly backup, up to 7 days; answers confirmed after it are lost (the devices
+  drop them from their queue once the sheet confirms them; rule D9). The recovery time is not measured: the import, the
+  redeploy and the `SYNC_URL` change are outside the rehearsal's local doubles.
+
 Not checked yet (rule W11): Google Sheets' import of a cell longer than 32,767 characters (Excel's cell limit; Google's
-is 50,000). LibreOffice opens such a cell from this file whole. The tabs that hold such cells are rebuilt by the script
-itself (the pooled stats' `Stats` snapshots, the `Replayed` tabs), and the answer log, which progress is rebuilt from
-(rule D9), holds short cells only.
+is 50,000). LibreOffice opens such a cell from this file whole. Such cells are in tabs the script rebuilds (the pooled
+stats' `Stats` snapshots, the `Replayed` tabs) and also in three it does not: the `Progress` data pieces, the RAs Data
+cell and `Report images`. The answer log, which progress is rebuilt from (rule D9), holds short cells only.
 
 ## Privacy and deleted accounts (rule D7)
 
