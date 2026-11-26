@@ -213,9 +213,9 @@ test('told the truth, the app reads every photo and unit as the world has them; 
   assert.ok(Math.abs(ctx.photoDiff(n, p) - (W.mu[n] + W.eps[p.f])) < 1e-12);
   assert.ok(Math.abs(M.genusDiff(n) - W.mu[n]) < 0.006, `${M.genusDiff(n)} ${W.mu[n]}`);
   // On its own: a photo nobody answered at its prior, the judged ease at the shared weight (core.js calibOf ease, whose
-  // value tests/priordiff.test.js pins), centred on its family's mean judged ease (model.js easeMid: n is a family, so
-  // the mean over every one of its judged photos, its reserved ones too, worked out here on its own); over the unit's
-  // wide photos, at least one off that centre so that the weight is read.
+  // value tests/priordiff.test.js pins), centred on its unit's mean judged ease (model.js easeMid: the mean over every
+  // one of the unit's judged photos, its reserved ones too, worked out here on its own); over the unit's wide photos, at
+  // least one off that centre so that the weight is read.
   const own = RW.engine(X, W, {app: 'own'}),
     w = own.ctx.calibOf(own.ctx.SUBJ).ease,
     g = own.G[n],
@@ -225,7 +225,7 @@ test('told the truth, the app reads every photo and unit as the world has them; 
   assert.ok(judged.length > 1, `${n}: judged photos`);
   assert.ok(
     wide.some(q => q.e && q.e !== mid),
-    `${n}: a wide photo off its family's mean ease`
+    `${n}: a wide photo off its unit's mean ease`
   );
   wide.forEach(q => assert.ok(Math.abs(own.ctx.photoDiff(n, q) - (q.e ? (mid - q.e) * w : 0)) < 1e-9, `${n} ${q.f} ease ${q.e}`));
 });

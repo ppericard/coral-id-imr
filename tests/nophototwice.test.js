@@ -80,7 +80,7 @@ function game({units = {Porites: 20, Lobophyllia: 20, Plerogyra: 20, Acropora: 2
     GX: n => ({levels: 3, views: {wide: L[n]}}),
     imrFormsOf: () => ['a'],
     gamePics: (n, v) => (v === 'wide' ? L[n] : []),
-    VIEWS: [['wide']], // read by model.js easeMid (a judged photo's prior centred on its family's mean ease)
+    VIEWS: [['wide']], // read by model.js easeMid (a judged photo's prior centred on its unit's mean ease)
     gamePhotoOk: () => true,
     isCore: () => false,
     level: () => ['new'],

@@ -14,7 +14,7 @@
 //     unit then met (introAdd is not called: the draw alone, the pace and the timing aside), --seqs
 //     sequences from a fixed seed; per unit its mean rank and its chance to be in the first 8 and 16 openings, the
 //     starter core first as the app has it.
-// The measures the PR reads are in docs/LEARNING.md "The judged ease, within a family".
+// It measured #1571's first build (the family's mean ease); the README says what holds for the rule in force.
 // Takes the machine slot (tests/slot.js, rule W24).
 'use strict';
 const http = require('http'),

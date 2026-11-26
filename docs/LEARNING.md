@@ -402,8 +402,9 @@ opens one with the chance `openChance` ("One opening rule"), drawn by `model.js`
    then its member, each with the weight exp(−`OPEN.T` × trust × (genus offset − the lowest)) × the commonness factor
    (`model.js` `easyWeights`): the easiest first, softly, and the most common first ("Common first").
 
-**Trusted only as far as the data goes.** `model.js` `easyTrust`: the weighed answers behind the photo ratings, plus
-`PDIFF.W` per judged photo, over `OPEN.DATA`, at most 1. Without data every genus offset is 0 and the order is random.
+**Trusted only as far as the data goes.** `model.js` `easyTrust`: the weighed answers behind the photo ratings over
+`OPEN.DATA`, at most 1 (the judged ease adds nothing: it never ranks units). Without data every genus offset is 0 and
+the order is random.
 
 ### One opening rule
 
@@ -429,11 +430,9 @@ hold the rest of the path back. Every subject.
 
 One estimate of a unit's difficulty everywhere (`model.js` `genusDiff`: the draw weight, shaky, the comeback's
 stability, the opening's order, the bar's population): the sheet's genus offset (`?stats=1` `gd`, the hierarchical photo
-Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), plus, for a unit with judged photos, the
-mean of their judged-ease priors, centred on its family's mean ease: 0 for a family, so the ease never ranks one
-family against another ("The judged ease, within a family"). Adding or curating out a photo never moves the offset; it
-moves a unit's judged-ease mean (the fish, the sea slugs), and the value, kept for the data version, follows the photos
-in force. 0 before the sheet's first reply.
+Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), alone, for every subject: the judged ease
+places a photo among its own unit's photos and never ranks units ("The judged ease, within its unit"). Adding or
+curating out a photo never moves it; kept for the data version. 0 before the sheet's first reply.
 
 ### Common first
 
@@ -800,15 +799,14 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 - **The starter core**: the families whose record says `first` (fish.json `start`: the Butterflyfishes, Angelfishes,
   Damselfishes and Surgeonfishes) open before any other (`model.js` `openPick`).
 - **Fish photos judged**: every fish photo carries a judged ease from 1 (hard) to 5 (very easy) (judging/FISH.md). It is
-  the photo's prior before any answer: its genus offset + (its family's mean ease − ease) × the subject's `calib.ease`,
+  the photo's prior before any answer: its unit's offset + (its unit's mean ease − ease) × the subject's `calib.ease`,
   fading as answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `easeMid`, `PDIFF = {W: 5, MID: 3}`;
-  "The judged ease, within a family" below). The weight is **one
+  "The judged ease, within its unit" below). The weight is **one
   shared value, 0.3 logit an ease point** (`core.js` `CALIB.ease`; "The judged ease weight, measured" below), read by
   every subject whose photos carry a judged ease: today the fish and the sea slugs. A subject may set its own in its
   `SUBJECTS` `calib` only with a declared reason (rule S1); none does. The corals' photos carry no judged ease, so their
-  prior has no ease term. The same prior gives each unit its difficulty, so the judged units below a family (its
-  genera and species) open easiest first within it from the first card, while the families open by their offsets and
-  commonness; no photo is ever walled off.
+  prior has no ease term. Its mean over a unit is 0, so every unit opens by its offset and commonness, never by its
+  photos' ease; within a unit the easy photos come first; no photo is ever walled off.
 - **The first questions on a unit** lean towards its easy photos: the target sits `calib.early` logits lower, fading as
   `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's `calib` = {ref: 3, early: 1.5, u:
   0.25, pool: 30}; the sea slugs' the same with pool 20; the corals keep the shared `core.js`
@@ -883,86 +881,44 @@ profile × 3,000 answers, one profile per check (the five-profile check was cut 
   0.3, 0.3 is faster (−16, −63) and only E rises (casual diver). The direction follows whichever world is true; the
   real log points to about 0.3 within a family.
 
-### The judged ease, within a family
+### The judged ease, within its unit
 
-A judged photo's prior is centred on the mean judged ease of its family, not on the scale's middle (`model.js`
-`easeMid`, `easeTop`; the decision: `docs/decisions/2026-11-23-judged-ease-within-family.md`). Within a family the ease
-ranks photos (the REE-85 study: −0.22 logit a point with a term per family); between families it predicts nothing
-(−0.03 [−0.15, +0.04]; families judged harder were, if anything, answered better). So a family's difficulty is its
-offset alone (`genusDiff`), and the ease orders only the units below a family (its genera and species, by how far
-their photos sit from the family's mean). One rule for every subject with a judged ease: a unit's family is the top of
-its parents (a fish family itself; a fish genus or species, a sea slug genus or species, their family record), checked
-on every record of both trees (1,625 fish and 317 sea slug families, genera and species, each centred on its family
-record).
+A judged photo's prior is centred on the mean judged ease of the unit asked, not on the scale's middle (`model.js`
+`easeMid`, `photoDiff`; the decision: `docs/decisions/2026-11-26-judged-ease-within-unit.md`): the unit's offset +
+(the unit's mean ease − the photo's ease) × 0.3. One rule for every subject and every rank (rule S1): a fish family, a
+fish genus or species, a sea slug genus or species each centre on their own photos (the reserve included); a photo
+shared by a family and its genus is centred on the unit asked. The corals' photos carry no judged ease. Its mean over a
+unit is 0, so a unit's difficulty is its offset alone (`genusDiff`), learned from answers as every coral genus's
+already is, and the units open by their offsets and commonness, never by their photos' ease.
 
-**What players see** (the exact opening order of a fresh player: the first `INTRO.START` cards as `quiz.js`
-`introStart` draws them, then `openPick` on the units not met, a circle after the one before it, 500 sequences;
-`tools/studies/ree241/openorder.js`, `ordercmp.py`). The starter core opens first either way. With the sheet's offsets as
-served (rank correlations, Spearman):
+- **Why.** The rubric judges a photo against its own taxon's reference look ("Judge what the photo shows, not the
+  species": judging/FISH.md, judging/SEASLUG.md), so a clear photo of a hard family is a 5 as is one of an easy family.
+  On the fish answers (the REE-85 study, 3,349 family questions, 9 players), the ease ranks photos within a family
+  (−0.22 logit a point [−0.39, −0.18]) and predicts nothing between families (−0.03 [−0.15, +0.04]). Below the family,
+  nothing measured: there the rule rests on the rubric.
+- **The level is the sheet's.** A unit's mean prior was (3 − its mean ease) × 0.3; it is now its offset. The sea slug
+  photos average ease 3.58, so their units start about 0.17 logit harder than before; the fish (2.89) 0.03 easier.
+- **The real log** (rule L12; the fish answers of 2026-11-06 to 2026-11-22 as REE-240 prepared them, 3,349 family
+  questions of 9 players; `tools/studies/ree241/replay.py`): each answer's logged expectation with the ease's part at
+  0.3, centred on the scale's middle (unc) or on the family's mean ease (cen). A fish family is its own unit, so this
+  holds for this rule's family questions. These are the answers REE-85 found the between-family null on: a
+  consistency check, not an independent test. Genus, species and sea slug answers are too few: not measured.
 
-| Subject | Units | Moving 2 places or more | Largest move | Rank against mean ease, circle 1: main → change | Circle 3 |
-| --- | --- | --- | --- | --- | --- |
-| Fish | 65 families | 11 | 5.8 | +0.01 → +0.09 | −0.36 → +0.13 |
-| Sea slugs | 78 genera | 14 | 5.4 | −0.37 → −0.18 | −0.63 → −0.18 |
+| Replay | cen − unc, all answers | Players better | p |
+| --- | --- | --- | --- |
+| Ability as logged | −0.0022 [−0.0034, −0.0009] | 7 of 9 | 0.02 |
+| Ability following the difficulties it met | −0.0007 [−0.0011, −0.0002] | 8 of 9 | 0.01 |
+| Each arm's level per player refitted | −0.0012 [−0.0022, −0.0002] | 7 of 9 | 0.04 |
 
-- Fish, circle 1: little moves, since the offsets dominate (Fusiliers among the first 16 openings 0.55 → 0.68;
-  Anthias 0.92 → 0.84, Cardinalfishes and Soldierfishes 0.17 → 0.11). Circle 3 moves most: Needlefishes, Convict
-  Blennies, Jawfishes, Jacks, Sea Moths, Tunas and Stingrays 2 to 5 places earlier; Bigeyes, Triplefins, Stargazers
-  and Hawkfishes 3 to 6 later. Without offsets (a unit nobody has answered) the ease was the only order: circle 1's
-  rank against ease −0.34 → +0.09.
-- Sea slugs, circle 1: Melibe and Costasiella among the first 16 openings 0.50 → 0.79 and 0.57 → 0.77; Hypselodoris
-  0.80 → 0.62, Hexabranchus 0.82 → 0.67, Reticulidia 0.96 → 0.88.
-- **The level moves too.** A unit's mean prior was (3 − its mean ease) × 0.3; centred it is 0, its offset alone. The
-  sea slugs' photos average ease 3.58, so their units are rated about 0.17 logit harder on average than before
-  (the fish: 2.89, 0.03 easier). For a unit the sheet has rated, the offset is what the answers say, and the old prior
-  sat on top of it.
-
-**The real log** (rule L12; the fish answers of 2026-11-06 to 2026-11-22 as REE-240 prepared them, 3,349 family
-questions of 9 players; `tools/studies/ree241/replay.py`): each answer's logged expectation with the ease's part at 0.3
-centred on the scale's middle (unc) or on today's family mean (cen); players the unit. These are the answers the
-REE-85 study found the between-family null on, so this is a consistency check, not an independent test.
-
-| Replay | cen − unc, all answers | Players better | p | Families judged hardest | Families judged easiest |
-| --- | --- | --- | --- | --- | --- |
-| Ability as logged | −0.0022 [−0.0034, −0.0009] | 7 of 9 | 0.02 | −0.0088 (9 of 9) | +0.0032 (0 of 9) |
-| Ability following the difficulties it met | −0.0007 [−0.0011, −0.0002] | 8 of 9 | 0.01 | −0.0018 (7 of 9) | −0.0004 (5 of 9) |
-| Each arm's level per player refitted | −0.0012 [−0.0022, −0.0002] | 7 of 9 | 0.04 | −0.0021 (7 of 9) | −0.0017 (7 of 9) |
-
-With each arm's level refitted, the families judged hardest (mean ease under 2.77) were answered right 92.3% against
-90.6% expected uncentred and 91.2% centred; those judged easiest (3.01 and over) 85.0% against 86.6% and 85.8%. The sea
-slugs: too few answers (168, 2 players), not measured.
-
-**The simulation** (rule L11, level 2; declared before running: primary units at Open Water at 300 questions up, app
-world, fish, the truth where Q457 holds; costs declared for the sea slugs, units met and E up). App world: the sheet's
-ratings served (`--stats`), the learner's truth fixed for both arms and built two ways (`tools/studies/ree241/truth.py`):
-cen, the offset plus 0.3 × (family mean − ease); unc, the offset plus 0.3 × (3 − ease). 5 seeds × 300, then 10 seeds
-(looks 2) on cen.
-
-- **Primary: not clear** (fish, cen, 10 seeds: 16 of 50 pairs up, p 0.38).
-- **Held** in every cell: true knowledge, units met at 300, the share under ease 4 before Open Water, families at
-  Advanced.
-- **Breached, not declared** (a breach at either look stands; the seeds 1-5 of the two looks are the same runs):
-  - fish, cen: the expert's units at Open Water at 300 (27.7 → 25.3 at 10 seeds, 27.8 → 24.8 at 5; spread over
-    families of every mean ease); the casual diver's longest plateau (52 → 64, 10 seeds); the beginner's E at 300
-    (−0.356 → −0.323 at 5 seeds, the under-claim shrinking; unclear at 10);
-  - sea slugs, cen: the first unit at Open Water, beginner 56 → 78 and casual diver 54 → 77 answers at 10 seeds (the
-    seeds 6-10 turn the 5-seed −13 and −9 round: a heavy-tailed measure), lectureRA 23 → 36 at 5 seeds; the lectureRA's
-    plateau (47 → 59, 10 seeds); the expert's units at Open Water at 300 (21.4 → 19.2, 5 seeds). Units at Open Water
-    down 1 to 2 for every profile at 10 seeds (unclear). E moved down (more under-claim), not up as declared.
-- **The sea slugs' level, apart** (exploratory, added after seeing the breaches: a third arm with the change's ranking
-  and main's overall level, the same 10 seeds on cen): main → that arm (the ranking alone) breached nothing, four
-  cells unclear; that arm → the change (the level alone) breached the beginner's and the casual diver's first Open
-  Water (+27, +26) and the lectureRA's plateau (+14). At 5 seeds on unc the ranking alone breached the casual diver's
-  units met at 300 (−2.4).
-- **The rated world** (fish, `--app own`, normal photos, 3,000 answers, GitHub runners, one profile a check): its
-  judged ease is drawn from each photo's own deviation around its unit, so every family's mean ease sits near 3 and
-  the change barely moves it; a no-harm check. 10 seeds: every guardrail held for the beginner; unclear cells for the
-  other four (casual diver units at Open Water at 1,000 and plateau, lectureRA E at 300 and the score at 1,000, strong
-  RA the score at 1,000 and 3,000, expert units at Open Water at 1,000). 20 seeds (looks 2): all held for the casual
-  diver, the lectureRA and the expert; the strong RA's runs were cut at 12 pairs, its score at 3,000 unclear (−0.4,
-  bound −1.1): the measure cannot tell. Nothing breached.
-- **Truth unc** (5 seeds, reported, not a verdict): the fish casual diver's plateau +10 breached; the sea slug
-  lectureRA's units at Open Water and plateau breached.
+- **No effect simulation** (rules L11 and L12, set aside by Pierre, 2026-11-26 09:16: «on a tellement peu de données
+  réelles sur les nudibranches que toutes les simulations du monde ne pourront pas savoir si c'est ok ou pas. Je
+  propose de juste implémenter sans simuler. Et de revenir simuler une fois qu'on aura un nombre suffisant de
+  réponses»). Regression checks only: the prior's unit tests (`tests/priordiff.test.js`), same-seed `learnsim` runs on
+  the corals and the fish against main (PR #1571), the smokes and the answer cost. A first build centred each photo on
+  its family's mean (the same level); its app-world runs (`tools/studies/ree241/out`) found the level alone delayed the
+  sea slug beginner's and casual diver's first unit at Open Water by about 26 answers and lengthened the lectureRA's
+  plateau by 14. That is the cost to expect until real sea slug answers move their offsets; it is measured again once
+  they exist.
 
 ### Fish: easy, reference-like photos first, whoever took them
 
@@ -1311,7 +1267,7 @@ offset and keeps the photo's own P (`model.js` `photoDiff`).
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
 its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior centred on its
-family's mean ease ("Fish photos judged", "The judged ease, within a family"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
+unit's mean ease ("Fish photos judged", "The judged ease, within its unit"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
 time term is added on top of that blend ("The photo's time term", below). A unit's difficulty is read from the same
 offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
 Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one

@@ -4682,7 +4682,7 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   fishtodo: `<p>Everything on the fish side that needs your eye, most urgent first: a red <b>Health</b> line when Health finds fish photos everyone misses or families or genera players are stuck on (nothing when all is well), the players' <b>reports</b> about fish (and those about no subject), the fish photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days, and last the fish <b>photos</b> work as counts, each opening its page: the <b>candidates</b> waiting in Candidates (the auto-sort's Checks apart, and those of a species at its target or set aside, as the swiper hides them), the open <b>cover proposals</b> and <b>light proposals</b> (Photo review), and Coverage's To do (under its All | ${ORG.short} filter; a click opens Coverage › Games on those rows). The corals' photo sections (out of the presence rule, share-alike, Featured rated Poor, the judging agent's suggestions) have no fish counterpart here: the fish candidates already carry the pass's judgment. Each part works as in its own view: <b>Reports</b>, <b>Errors</b>, <b>Health</b>.</p>`,
-  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the photos' difficulty is on Photo stats › Difficulty). Under each photo: the share right, its answers and the players who miss it out of those who answered it, then its <b>prior</b>: how hard the game expected it before any answer, read as the share of starting players who would recognise it, from its judged ease (yours, else the judging pass's) and its family's offset in the sheet's ratings (hover for both; the ease alone while the ratings are not read), to set beside what the answers say. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
+  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the photos' difficulty is on Photo stats › Difficulty). Under each photo: the share right, its answers and the players who miss it out of those who answered it, then its <b>prior</b>: how hard the game expected it before any answer, read as the share of starting players who would recognise it, from its judged ease (yours, else the judging pass's) set against its unit's mean ease, and its unit's offset in the sheet's ratings (hover for both; the ease alone while the ratings are not read), to set beside what the answers say. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
   points: `<p>The points to settle: questions for an ${ORG.trainer} (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>data/points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} more, whoever took them): the ${ORG.short} genera and the book's other genera seen at Dauin (Not ${ORG.short}). Every photo of the view counts (field and ${ORG.lecture} photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
@@ -5399,7 +5399,7 @@ const REVIEW_BUILD = {
                   )
                 : null,
               mids = rows.length && V ? treeEaseMids(FISHA, easeOf, f => playing.has(f)) : {},
-              midOf = f => mids[(FISHA.fam || {})[FISHA.ph[f].entry] || FISHA.ph[f].entry],
+              midOf = f => mids[FISHA.ph[f].entry],
               plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
               num = o => {
                 const m = missedBy(PH[o.f]);
@@ -9466,10 +9466,10 @@ function diffByAnswers(PH, min, order) {
     .sort((a, b) => s * (a.r - b.r) || b.n - a.n || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0));
 }
 // The prior beside the answers on By difficulty (REE-62, plan PR 9): a photo's difficulty before any answer on it, as the
-// app starts it (autosort.js photoPrior: its unit's offset in the subject's own ratings + (its family's mean ease - ease) x
+// app starts it (autosort.js photoPrior: its unit's offset in the subject's own ratings + (its unit's mean ease - ease) x
 // calib.ease), read as "recognised by N%" like the learned reading. treePrior(S, ease, own, unit, mid): {d, ease, off} or null
 // when there is neither a judged ease nor an offset; own is OWNST[S.id] (loadOwnStats; none or old: the ease alone, off null);
-// mid, the family's mean ease (treeEaseMids; none: the scale's middle). Pure: tests/priordiff.test.js.
+// mid, the unit's mean ease (treeEaseMids; none: the scale's middle). Pure: tests/priordiff.test.js.
 // The corals' prior on their tile: the genus's offset (GD, the sheet's ?stats=1 gd), the photos having no judged ease; nothing
 // before the genus has one.
 function genusPrior(genus) {
@@ -9485,21 +9485,26 @@ function treePrior(S, ease, own, unit, mid) {
     d = photoPrior(ease, o, calibOf(S).ease, mid);
   return d === null ? null : {d, ease: ease > 0 ? ease : null, off: Number.isFinite(o) ? o : null};
 }
-// The centre of the judged ease in each family of registry R (model.js easeMid): {family: the mean ease in force
-// (easeOf) of the photos it holds in play}, a photo's family its unit's (R.fam: a genus's or a species', a family its
-// own). The registry keeps every photo a report may name, removed or sent elsewhere too, so inPlay(f) keeps the game's
-// pool only, as the app's mean is taken (fuData play: the photos in play, the reserve among them).
+// The centre of the judged ease in each unit of registry R (model.js easeMid): {unit: the mean ease in force (easeOf) of
+// its own photos in play} (R.gen: each unit's photos, a family's and its genus's alike). The registry keeps every photo a
+// report may name, removed or sent elsewhere too, so inPlay(f) keeps the game's pool only, as the app's mean is taken
+// (fuData play: the photos in play, the reserve among them). A unit with no judged photo in play has none.
 function treeEaseMids(R, easeOf, inPlay = () => true) {
-  const sum = {};
-  Object.entries((R && R.ph) || {}).forEach(([f, p]) => {
-    const e = easeOf(f),
-      fam = (R.fam || {})[p.entry] || p.entry;
-    if (!(e > 0) || !fam || !inPlay(f)) return;
-    const s = (sum[fam] = sum[fam] || [0, 0]);
-    s[0] += e;
-    s[1]++;
+  const mids = {};
+  Object.entries((R && R.gen) || {}).forEach(([u, g]) => {
+    const E = [
+      ...new Set(
+        Object.values((g && g.views) || {})
+          .flat()
+          .map(p => p && p.f)
+      )
+    ]
+      .filter(f => f && inPlay(f))
+      .map(easeOf)
+      .filter(e => e > 0);
+    if (E.length) mids[u] = E.reduce((t, e) => t + e, 0) / E.length;
   });
-  return Object.fromEntries(Object.entries(sum).map(([k, [t, n]]) => [k, t / n]));
+  return mids;
 }
 // Its caption line: the prior as a reading, with the ease it comes from (the same shape as Health's reading line).
 function priorHnum(P) {

@@ -192,7 +192,7 @@ const calBonus0 = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 const calSd0 = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
 const setBonus0 = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
 function photoDiff0(n, p) {
-  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+  const prior = gdOff(n) + (p.e ? (easeMid(n) - p.e) * calibOf(SUBJ).ease : 0),
     o = PSTAT[p.f],
     tm = ptimeOff(PTM[p.f], PDIFF.W);
   if (!o) return prior + tm;
@@ -309,7 +309,7 @@ function page(subject, seed, check, mutate = s => s, model = MODEL_CODE) {
     introduced: n => MET.has(n),
     imrFormsOf: n => U[n].forms || (n === 'C3' ? ['b', 'm'] : ['b']),
     gamePics: (n, v) => U[n].views[v] || [],
-    // the views and the reserve, read by model.js easeMid (a judged photo's prior centred on its family's mean ease)
+    // the views and the reserve, read by model.js easeMid (a judged photo's prior centred on its unit's mean ease)
     VIEWS: [['wide'], ['medium'], ['macro']],
     heldOf: C.heldOf,
     gamePhotoOk: (n, p) => !refused.has(p.f),

@@ -363,10 +363,10 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null, id = 
   ctx.__groups = M.openGroup ? M.INTRO.START : 0;
   Object.assign(ctx, {introduced: M.introduced, asked: M.asked, askedOpen: M.askedOpen, introMap: M.introMap, imrSaid: M.imrSaid, genScore: M.genScore, LV_AT: M.LV_AT});
   // Told the truth: every photo's and unit's difficulty as the world has it. photoDiff (a function declaration, so on
-  // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff (the offset plus the mean
-  // judged-ease prior of its photos, the player's reserved ones included as model.js genusDiff counts them: core.js
-  // heldOf) gives the unit's mu. The prior's centre: its family's mean ease (model.js easeMid), PDIFF.MID in an app
-  // without it (--root: an older version).
+  // the vm's global object) gives the photo's; the unit offset PGD is set so that genusDiff gives the unit's mu. In this
+  // app genusDiff is the offset alone (the judged-ease prior is centred on its unit's mean ease, model.js easeMid, so its
+  // mean over the unit is 0); an older app (--root) added the mean judged-ease prior of its photos, the player's reserved
+  // ones included (core.js heldOf), centred on PDIFF.MID, so that mean is taken off.
   if (app === 'truth') {
     ctx.photoDiff = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0);
     const ez = C.calibOf(SUBJ).ease || 0,

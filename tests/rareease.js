@@ -102,7 +102,7 @@ function engine(
     introduced: met,
     imrFormsOf: () => ['a'],
     gamePics: (n, v) => (v === 'wide' ? L : []),
-    VIEWS: [['wide']], // read by model.js easeMid (a judged photo's prior centred on its family's mean ease)
+    VIEWS: [['wide']], // read by model.js easeMid (a judged photo's prior centred on its unit's mean ease)
     gamePhotoOk: () => true,
     level: () => [lv],
     rankOf: () => rank,
