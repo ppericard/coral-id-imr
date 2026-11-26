@@ -409,7 +409,9 @@ Both counts of question 6 are at their minimum: one manager, one admin.
    rights they give now, and nothing is rewritten per person.
 4. The step computes every account's rights before and after, and finishes only if they are equal for all; otherwise
    it writes nothing and says so in the Deploy log.
-5. Four audit rows, `assign … (migration)`, Before `-`, After the scope. No row per person: nobody's rights change.
+5. Four audit rows, `assign … (migration)`, Before `-`, After the scope. Then one `snapshot (migration)` row per
+   account holding any right, Before `-`, After its effective rights, so section 6's lookup (the last After of an
+   account) answers from the migration on without a replay. Nobody's rights change.
 6. Nothing is deleted. The Rights column and the Roles tab stay as the record, read by nothing.
 
 Until the step has run, the script reads the rights as the step will write them, as it did twice before. The admin
