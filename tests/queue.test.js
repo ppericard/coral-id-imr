@@ -279,11 +279,11 @@ test('the assignver commit names no session', () => {
 const SHA = '33f0556dbc1a3bb0125730d2c02b3c6fa4925c10',
   OTHER = '00956cfd4f53c53d42120597ec84ea5962a4a6b2',
   CODEX = {login: 'chatgpt-codex-connector[bot]', type: 'Bot'};
-const summary = (sha, status, {state = status, stateSha = sha, unresolved = null, escape = false} = {}) => {
+const summary = (sha, status, {state = status, stateSha = sha, unresolved = null, escape = false, code = {}} = {}) => {
   let s =
     '<!-- codex-pull-request-review-summary -->\n' +
     `<!-- codex-review-state:v1 ${JSON.stringify({
-      code_review: {commit_sha: sha, has_any_findings: false, has_unresolved_findings: false, status: 'completed'},
+      code_review: {commit_sha: sha, has_any_findings: false, has_unresolved_findings: false, status: 'completed', ...code},
       security_review: {commit_sha: stateSha, has_any_findings: unresolved, has_unresolved_findings: unresolved, status: state}
     })} -->\n` +
     `<!-- codex-security-review:v1 ${JSON.stringify({blockingSeverityThreshold: 'P0', headSha: sha, status, pullRequestNumber: 1})} -->\n` +
@@ -469,6 +469,100 @@ test('nightq refuses missing code or security approval, the wrong security SHA, 
     assert.ok(!r.calls.some(s => s.startsWith('train ')), r.calls.join('\n'));
     assert.match(r.out, why);
   }
+});
+
+// ---- prstate: Codex's clean receipt from its review-state marker alone (REE-344) ----
+// prstate.sh run against fixture API answers: a gh shim serves each call from files, no network. The issue comments
+// are the fixture; the head is SHA, checks green, no review comments, no threads.
+const runPrstate = issueComments =>
+  tmp(d => {
+    fs.writeFileSync(
+      path.join(d, 'pr.json'),
+      JSON.stringify({head: {sha: SHA}, state: 'open', mergeable_state: 'clean', body: '## Choices I made\n\nNone\n'})
+    );
+    fs.writeFileSync(path.join(d, 'issue.json'), issueComments.map(p => JSON.stringify(p)).join('\n')); // gh --paginate pages
+    fs.writeFileSync(
+      path.join(d, 'gh'),
+      '#!/bin/bash\ncase "$*" in\n' +
+        '  *"/check-runs"*) echo "25 runs, 0 pending,  failed" ;;\n' +
+        '  *"/issues/1 --jq"*) echo "" ;;\n' +
+        '  *"/issues/1/comments"*) cat "$FX/issue.json" ;;\n' +
+        '  *"/pulls/1/comments"*) echo "[]" ;;\n' +
+        '  *"/pulls/1/ccr/review_threads") echo "[]" ;;\n' +
+        '  *"--jq .commit.committer.date") echo 2026-11-22T09:00:00Z ;;\n' +
+        '  *"/pulls/1") cat "$FX/pr.json" ;;\n' +
+        '  *) exit 1 ;;\nesac\n',
+      {mode: 0o755}
+    );
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'prstate.sh'), '1'], {
+      encoding: 'utf8',
+      timeout: 15000,
+      env: {...process.env, PATH: d + path.delimiter + process.env.PATH, QUEUE_DIR: d, QUEUE_REPO: 'o/r', FX: d}
+    });
+    assert.strictEqual(r.status, 0, r.error || r.stderr);
+    return r.stdout.trim();
+  });
+const codexOf = line => (line.match(/ \| codex@head: ([^|]*) \| /) || [])[1];
+const CLEAN = /^Didn't find any major issues/;
+
+test("prstate: Codex's review-state marker, completed for the full head with no findings, is the clean receipt (REE-344)", () => {
+  // #1622: the summary comment with its markers is Codex's only comment on the head, no "Codex Review:" line
+  const line = runPrstate([[c(summary(SHA, 'completed'))]]);
+  assert.match(codexOf(line), CLEAN, line);
+  assert.match(line, new RegExp(`\\| security@head: completed ${SHA} \\| head comments: 0 \\| open threads: 0 \\| unanswered@head: 0 \\|`));
+  // the same marker, its braces HTML-escaped (secreview.py reads that form too)
+  assert.match(codexOf(runPrstate([[c(summary(SHA, 'completed', {escape: true}))]])), CLEAN);
+  // the textual receipt keeps working, alone or beside the marker
+  assert.strictEqual(codexOf(runPrstate([[receipt]])), "Didn't find any major issues.");
+  assert.strictEqual(codexOf(runPrstate([[c(summary(SHA, 'completed')), receipt]])), "Didn't find any major issues.");
+  // and nightq.sh trains on it
+  const r = runNightq({code: codexOf(line)});
+  assert.deepStrictEqual(r.calls.slice(-2), [
+    `train o/r tools/train.py --dry-run --sha ${SHA} 1`,
+    `train o/r tools/train.py --sha ${SHA} 1`
+  ]);
+});
+
+test('prstate: any other marker, or one not from the Codex bot, is no clean receipt (REE-344)', () => {
+  const notClean = (comments, why) => {
+    const v = codexOf(runPrstate(comments));
+    assert.ok(v !== undefined && !CLEAN.test(v), `${why}: ${v}`);
+  };
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: OTHER}}))]], 'code review of another commit');
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: SHA.slice(0, 10)}}))]], 'a short SHA');
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: SHA.toUpperCase()}}))]], 'not the exact head SHA');
+  notClean([[c(summary(SHA, 'completed', {code: {has_any_findings: true}}))]], 'has_any_findings true');
+  notClean([[c(summary(SHA, 'completed', {code: {has_unresolved_findings: true}}))]], 'has_unresolved_findings true');
+  notClean([[c(summary(SHA, 'completed', {code: {has_any_findings: null}}))]], 'has_any_findings null');
+  notClean([[c(summary(SHA, 'completed', {code: {has_unresolved_findings: null}}))]], 'has_unresolved_findings null');
+  notClean([[c(summary(SHA, 'completed', {code: {has_any_findings: 'false'}}))]], 'findings as a string');
+  notClean([[c(summary(SHA, 'completed', {code: {status: 'running'}}))]], 'code review running');
+  notClean([[c(summary(SHA, 'completed', {code: {status: 'failed'}}))]], 'code review failed');
+  notClean([[c(summary(SHA, 'completed', {code: {status: undefined}}))]], 'no status');
+  notClean([[c(summary(SHA, 'completed').replace(/"code_review":\{[^}]*\},/, ''))]], 'no code_review');
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: undefined}}))]], 'no commit_sha');
+  // not the Codex bot: a person, or the bot's login on a User account
+  notClean([[c(summary(SHA, 'completed'), {login: 'someone', type: 'User'})]], 'a person');
+  notClean([[c(summary(SHA, 'completed'), {login: 'chatgpt-codex-connector[bot]', type: 'User'})]], 'bot login, User type');
+  notClean([[c(summary(SHA, 'completed'), {login: 'other-bot[bot]', type: 'Bot'})]], 'another bot');
+  // unreadable: malformed JSON, a marker not closed, the marker twice
+  notClean([[c(summary(SHA, 'completed').replace('"has_any_findings":false', '"has_any_findings":fals'))]], 'malformed JSON');
+  notClean([[c(summary(SHA, 'completed').replace(/(codex-review-state:v1 \{[^\n]*\}) -->/, '$1'))]], 'marker not closed');
+  const twice = summary(SHA, 'completed');
+  notClean([[c(twice + '\n' + twice.split('\n')[1])]], 'marker twice');
+  // a findings receipt on the head beside a clean marker, and a later marker with findings, are not clean
+  const findings = c(`Codex Review: Here are some automated review suggestions.\n\n**Reviewed commit:** \`${SHA.slice(0, 10)}\``);
+  notClean([[c(summary(SHA, 'completed')), findings]], 'findings receipt');
+  notClean(
+    [
+      [
+        c(summary(SHA, 'completed'), CODEX, '2026-11-22T09:10:29Z'),
+        c(summary(SHA, 'completed', {code: {has_any_findings: true, has_unresolved_findings: true}}), CODEX, '2026-11-22T09:20:00Z')
+      ]
+    ],
+    'a later marker with findings'
+  );
+  notClean([[]], 'no comment');
 });
 
 test('ask_security: draft then ready through the CCR routes, a PR left a draft said loudly (REE-232)', () => {
