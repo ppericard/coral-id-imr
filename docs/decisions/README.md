@@ -58,6 +58,7 @@ Newest first, every record, written by `python3 tools/decisions_index.py --fix`.
 
 | Date | Record | PR |
 |---|---|---|
+| 2026-11-26 | [Judged ease within its unit only: a photo's prior centred on its unit's mean ease, a unit's difficulty its offset](2026-11-26-judged-ease-within-unit.md) | #1571 |
 | 2026-11-26 | ["Not now" always gets a when; Scheduled is a date; a trigger must be sure to come](2026-11-26-not-now-gets-a-when.md) | #1609 |
 | 2026-11-26 | [Rights: roles, groups and assignments, each scoped to the instance or a list of subjects](2026-11-26-roles-groups-assignments.md) | #1615 |
 | 2026-11-25 | [The lecture's photo references move into the IMR instance's layer, written by `datajson.dump()`; the coral slate is declared and checked](2026-11-25-course-layer.md) | #1582 |

@@ -2206,6 +2206,16 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   indépendants, c'est l'enfer à gérer. Un seul prompt, un seul agent, avec 2 phases successives»; to anonymous copies
   in the Drive first and one prompt with both phases: «Oui, beaucoup mieux». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
   suis familier, pas un exemple à suivre absolument». Applied: docs/INTEGRATOR.md model table and its two paragraphs.
+- **08:22-09:16, the judged ease within its unit; no simulation for it (REE-241, #1571).** On the family-only ease:
+  «J'ai l'impression qu'on fait une exception pour un niveau taxonomique. A réfléchir et justifier. Voire prendre de
+  la hauteur et re-concevoir». To (a), the ease ranks photos within the unit asked only, and (A), units start at the
+  sheet's offset: «ok», «ok». On a simulation: «on a tellement peu de données réelles sur les nudibranches que toutes
+  les simulations du monde ne pourront pas savoir si c'est ok ou pas. Je propose de juste implémenter sans simuler. Et
+  de revenir simuler une fois qu'on aura un nombre suffisant de réponses?»; in general: «il faut vraiment revenir sur
+  cette tendance à vouloir appliquer une simulation pour toute modif du moteur […] Tu fait un inventaire de tout ce
+  qui existe déjà dans le code et les règles, et tu lances une études?» Applied:
+  docs/decisions/2026-11-26-judged-ease-within-unit.md, #1571; REE-304 (the sea slugs' Data gate); the study
+  docs/reviews/2026-11-26-when-to-simulate-study.md.
 - **09:50-09:56, rights: roles, groups and assignments decided (REE-31, REE-305).** On the consolidated points after
   the three studies (scope, #1554 revised, `grant` in other roles, the handover, the cohort's subjects, the three
   risks, the build order): «ok». On the last admin or manager: «C'est probablement une meilleure pratique. Une encore
