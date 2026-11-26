@@ -52,8 +52,8 @@ its scope, later amendments and whether it still applies; a decision that settle
 again; on incomplete or contradictory evidence, say what is unsure, leave that point open and go on with the work
 already allowed.
 - **Questions, the details** (AGENTS.md "Working with Pierre"): keep open decisions in Linear's Decisions for Pierre
-  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, park what must wait
-  in STATUS, using the existing issue link when available. Past numbers stay as they are. When asking, include enough
+  with the number if any, context, question, recommendation and PR. During Rule 0's quiet window, they wait there too;
+  STATUS only lists them by issue and may be incomplete. Past numbers stay as they are. When asking, include enough
   context for Pierre to place the question.
 *Source:* Pierre, 2026-11-01 (fix by default; work autonomously); the questions, 2026-11-08; the ledger, 2026-11-19; a hit as
 evidence, 2026-11-21 (#1361).

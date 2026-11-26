@@ -2146,3 +2146,27 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
 - **06:43-06:46, a PR that waits for Pierre yields the lane.** On whether a PR blocks the rest by function or by
   method: «c'est pas la même chose en termes de blocage». To «une PR qui attend ta réponse cède la voie»: «oui !!!!!!»;
   to launching REE-38 at once: «ok»; to the W27 wording shown: «ok». Applied: docs/rules/ship.md W27.
+
+## 2026-11-26
+
+- **06:24-06:27, the sweep checks the condition behind a label (REE-244).** On no agent running at 06:20: «Tu n'avais
+  aucun agent qui tournait quand je me suis connecté. Ca veut dire que t'as tout fini. Ya plus rien dans le
+  backlog?» To the diagnosis (a label taken as a reason without checking it still held): «Il faut que le balayage
+  tienne compte de ça». To the three proposals (the sweep checks the written condition, not only the label; when a PR
+  frees a sensitive file, look at once for what waited on it; the brief's other signals — W6 branches, docs past their
+  size mark, outdated stack — count as work): «oui. Ok». Applied: tools/checkin.md steps 3-4.
+- **06:28, the sweep and STATUS on one rhythm.** On the sweep (about every 90 minutes) and the STATUS refresh (about
+  every 90 minutes of work) listed side by side: «A synchroniser». Applied: tools/checkin.md step 5, docs/INTEGRATOR.md
+  "Habits" (STATUS refreshed right after each sweep, with its result).
+- **06:42-06:46, Linear holds the truth; Waiting restructured; the quota note.** On where night questions wait: «Il
+  faut limiter au maximum les redondances. La vérité doit être dans Linear. STATUS n'est qu'un résumé temporaire pour
+  toi, mais doit être considéré comme potentiellement incomplet.» To the wording shown (questions wait in Linear's
+  Decisions for Pierre view; STATUS only summarises them and may be incomplete): «ok». On the Waiting label: «A
+  corriger, et probablement à re-structurer […] "Waiting" pour quoi? […] Etiquette utile et informatives?» To the
+  label group Waits on (Data with a gate line, Pierre (action), External) beside blocked-by relations and Scheduled,
+  Waiting and Blocked retired, and an agent reclassifying the issues: «ok». On the 2026-11-06 quota note: «Le quota
+  c'est un problème de tout les jours. Mais déjà, en limitant les passes de jugement sur des milliers de photos ça va
+  déjà beaucoup mieux […] cette note d'il y a 20 jours n'est plus vraiment valable.» On the integrator's inline
+  sweeps: «Pour économiser quoi????? Tu coutes bien plus cher qu'un agent Sonnet». Applied: AGENTS.md Rule 0,
+  docs/rules/ship.md "Questions, the details", docs/INTEGRATOR.md "Linear" (reason 2) and "Habits" (the quota note
+  removed), tools/checkin.md steps 4 and 7, tools/brief.py's quiet line; Linear label group Waits on.

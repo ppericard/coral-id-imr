@@ -25,7 +25,8 @@ HTML/CSS/JS app, used mostly on phones. ReefRecall is separate. See [README.md](
 > after 04:00; everything else goes on as normal, agents included.**
 
 Use `python3 tools/brief.py --time` or Manila time (`TZ=Asia/Manila date`) if the hook did not print it. Questions,
-reviews or files that call for his answer wait in STATUS.
+reviews or files that call for his answer wait in Linear's Decisions for Pierre view, which holds the truth. STATUS
+only summarises them for the next session and may be incomplete.
 
 ## Working mode: the integrator and the merge contract (Pierre, 2026-11-05)
 

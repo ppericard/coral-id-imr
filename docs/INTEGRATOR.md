@@ -54,7 +54,8 @@ below, the rule wins. Dated stories behind a habit are in git and the PRs.
 - **Pierre's follow-ups go to the running agent** with `SendMessage`, not to a new agent: he corrects the shape of a
   subject quickly.
 - **An interruption to ask a question is not a stop**: answer, then carry on.
-- **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then.
+- **A handover about every 90 minutes of work** (Pierre, 2026-11-18 11:08): [STATUS.md](STATUS.md) is refreshed then,
+  right after the sweep, with its result (2026-11-26; [tools/checkin.md](../tools/checkin.md) step 5).
 - **"Choices I made" is filtered before it is passed on**: what is easy to correct afterwards ships as the integrator's
   call.
 - **A rule credited to Pierre quotes his words**; a paraphrase says "integrator's reading". A decision of his is never
@@ -153,9 +154,9 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
   resolution, one species) before looking, and judge the species under target first. A photo in doubt is looked at
   in full size, never only as a thumbnail: small views hide faults and quality (Pierre, 2026-11-19 20:57).
-- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; when the decided work
-  runs out, take the next decided Linear issues (Todo), or ROADMAP rows not transferred yet, the agents can move alone;
-  never invent a study to fill the time.
+- **A night's work** (Pierre, 2026-11-19 20:42-20:43): a few agents at a time, not a burst; the work is every open
+  issue without one of the five reasons ([Linear](#linear), 2026-11-25), whatever its column; never invent a study to
+  fill the time.
 - **A large judging or boxing pass is measured first, without asking him** (Pierre, 2026-11-20 06:42-06:44: «Il faut
   faire des tests et trouver le modèle/effort le plus léger qui permet de faire le job proprement»; «Je ne devrais pas
   devoir te le suggérer»): a bench of 50-100 items, lighter configurations beside the strongest model, the threshold
@@ -177,12 +178,12 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   integrator's to judge: undoing an agent's own mistake in a checkout is the integrator's job, done at once; only a
   step it may not take itself goes to him, as a yes/no question, never as a command.
 - **Rule 0** (AGENTS.md, one sentence): after 17:30 Manila, ask him nothing until his first message after 04:00;
-  questions wait in STATUS. It protects his time, not the agents' (Pierre, 2026-11-20 05:31-05:33): the work goes on
+  questions wait in Linear's Decisions for Pierre view. It protects his time, not the agents' (Pierre, 2026-11-20 05:31-05:33): the work goes on
   at every hour, and nothing stops at 04:00. A session restart kills the queue and the background waits, so a
   check-in at most an hour apart, night and day, re-starts them (`tools/queue/`).
-- **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
-  The daily 04:31 morning-report scheduled task stays disabled (Q202) and is not re-enabled (Pierre closed it on
-  2026-11-18: no morning report); the [session-start summary of reports and events](#integrator-startup) stands.
+- **No morning report task**: the daily 04:31 morning-report scheduled task stays disabled (Q202) and is not
+  re-enabled (Pierre closed it on 2026-11-18: no morning report); the
+  [session-start summary of reports and events](#integrator-startup) stands.
 
 ## Questions and corrections
 
@@ -437,8 +438,9 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   form 2026-11-21 in ANSWERS). Linear is organised for the agents; Pierre works from the app and the chat. The five
   reasons:
   1. a choice of Pierre's (label Decision for Pierre, asked in the chat in French);
-  2. a checkable condition: a blocked-by relation to an issue or a PR, or a Scheduled date. A free-text "after X" is
-     not one;
+  2. a checkable condition: a blocked-by relation to an issue or a PR, a Scheduled date, or one label of the group
+     Waits on with its condition stated (Data: a "Gate: <measure> ≥ N (measured <date>: x)" line; Pierre (action):
+     the action named; External: who, and when to check again). A free-text "after X" or a bare label is not one;
   3. an idea not decided yet (Idea: building it is a new requirement, his OK first);
   4. Parked by him;
   5. a Study › Open inquiry with no pass assigned to an agent the integrator can launch.

@@ -73,7 +73,7 @@ def window(hm):
         return ('day', "working day (Rule 0): Pierre may be asked from his first message after 04:00 until 17:30. "
                        "The hook cannot verify his first message")
     return 'quiet', ('after 17:30 (Rule 0): ask Pierre nothing until his first message after 04:00; questions wait in '
-                     'docs/STATUS.md; all else goes on')
+                     "Linear's Decisions for Pierre; all else goes on")
 
 
 def manila_now(at):
