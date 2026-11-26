@@ -738,6 +738,7 @@ const DOC_MARKS = {
   'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
   'docs/spec/sync.md': [82, 220],
+  'docs/spec/answer.md': [13, 160], // new, 2026-11-27: one logged answer's contract (REE-284)
   'docs/spec/content.md': [16, 130],
   'docs/spec/data.md': [34, 140],
   'docs/spec/fish-photos.md': [54, 180],

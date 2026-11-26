@@ -76,7 +76,7 @@ QUERY on A:E): new columns only ever go at the end. A tab with fewer columns rea
 until the next answer adds them (`logAnswers_` inserts the columns before its header check). A row logged before a
 column existed has it blank, and an app that sends no value for a field leaves it blank: the script ignores the fields
 it does not know, so a field that an older script would drop needs no gate (no `*_SHEET`) unless the app must know it
-was kept.
+was kept. One answer's whole path, as one contract with its field table: [answer.md](answer.md).
 
 - **Seconds** and **Enlarged**: the answer's time and whether a photo was enlarged (below, "Answer time and
   enlargement"). `readAnswers` rows carry them at indexes 12 and 13 (null when blank), after the anonymous flag (11).
