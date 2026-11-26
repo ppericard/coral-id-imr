@@ -13,18 +13,19 @@ the ledger or Linear; **[count]** counted by a script over PR bodies or git; **[
   triggers (the integrator's checklist, Codex's review, the Linear issues whose completion evidence is "the simulation
   tables"), five tools of about 4,000 lines, two CI jobs and one manual workflow. Rule L11 picks the check by the
   change's *possible effect* (what it touches), not by whether a simulation can answer the question asked.
-- **What the simulations did** (§3, a census of the 44 engine PRs from #790 to #1571 that declared level 1, 2 or 3):
-  - they **changed the design in 4** (#855, #871, #975, #1331), each time on a question of mechanics: a rule that never
-    binds, a first level twice as late, a rule that held back the IMR genera, a group of four that came up to 7 times
-    later;
+- **What the simulations did** (§3, a census of the 45 engine PRs from #790 to #1584 that declared level 1, 2 or 3):
+  - they **changed the design in 4** (#855, #871, #975, #1331): two on a question of mechanics (#1331's group of four
+    that came up to 7 times later; #975's rank share that held back the IMR genera), two on a simulated beginner's
+    level or pace (#855, #871);
   - they **stopped 3 changes** (#808, #852, #1304), and #808's idea came back 12 days later as #1357, merged over a
     breached guardrail;
-  - they **sent a breach to Pierre 17 times** (counted in the answers ledger, §3.2). He kept the change as built 14
-    times, chose a variant once (Q355), closed the PR once (Q335) and, today, dropped the simulation (#1571);
-  - they had **no bearing on the decision in 18**, and could not be run in 4;
+  - they **sent a simulation result to Pierre 17 times** (counted in the answers ledger, §3.2). He kept the change as
+    built 13 times (10 of them with his words on the breach itself), chose a variant twice (Q338, Q355), closed the PR
+    once (Q335) and, today, dropped the simulation (#1571);
+  - they had **no bearing on the decision in 19**, and could not be run in 4;
   - **the simulator or its noise misled at least 4 checks** inside the census (a 3-seed breach that vanished at 20 seeds,
-    an A/A comparison that read like a breach, a broken pairing), plus 7 tool bugs outside it (REE-249, REE-262,
-    REE-281, among others).
+    an A/A comparison that read like a breach, a broken pairing), plus at least 6 tool bugs outside it (REE-249,
+    REE-262, REE-281, among others).
 - **What they cost** (§4): little on GitHub runners (2,355 runner-minutes, 1.4% of November's Actions, the CI cost
   study); much more in Pierre's attention (17 escalations), in waits (#1571 waited about 24 hours for a choice the simulation had
   raised), in the shared machine (#1099: 8.9 hours of runner time; #1067: 2 hours against 40 minutes declared), and in
@@ -60,7 +61,8 @@ the ledger or Linear; **[count]** counted by a script over PR bodies or git; **[
   évident». 08:53 (Q420): «Il n'y a aucune raison que ça influence les résultats...».
 - **2026-11-17** («6h de calcul ne devrait JAMAIS arriver», #1060, #1042): the 40-minute cap followed (Q405). The same
   evening he "questioned simulating a subject with no data" (ledger, paraphrase): that reached #1060 (no learnsim for the
-  sea slugs) but never the rule, so #1519 (11-23) and #1571 (11-25) simulated around it.
+  sea slugs) but never the rule. #1519 (11-24) still ran a level-2 check on the fish, saying no sea slug world existed;
+  #1571 (11-25) then simulated the sea slugs, with 168 real answers in the log.
 - **Earlier** (the habit's origin): Q188, 2026-11-06 15:35, "only after simulation; decide nothing the simulation
   contradicts"; Q315, 2026-11-09, option (1) "must go through the L11 level-2 simulation before it can go live"; L11's
   levels, 2026-11-08 (#735). §8 lists them with their scope.
@@ -73,10 +75,10 @@ the ledger or Linear; **[count]** counted by a script over PR bodies or git; **[
 | --- | --- | --- |
 | L10 (`docs/rules/learning.md`) | "A new variable there needs its learnsim check per answer, right and wrong" | effect, for every new first-launch variable |
 | L11, the level table | level 1 (a constant nudged, a rare situation): the app world, 5 seeds × 300 questions; level 2 (the draw, the bar, the opening, the levels, the score): the rated world 10 seeds (20 if unclear) × 3,000 or 10,000 answers, "every guardrail"; level 3: Pierre's go, runners | effect, picked by what the change *touches* ("in doubt, the higher one") |
-| L11, "Progressive" | a declared primary, a stratified sign-flip test, Holm; guardrails at fine margins (−1 point of score, +0.03 over-claim, −0.02 knowledge); "breached, or a cost not declared, goes to Pierre" | effect, at margins smaller than the learner model's own uncertainty |
+| L11, "Progressive" | a declared primary, a stratified sign-flip test, Holm; guardrails at fine margins (−1 point of score, +0.03 over-claim, −0.02 knowledge); "breached, or a cost not declared, goes to Pierre" | effect, at margins I judge smaller than the learner model's own uncertainty [guess; §3.5 shows the noise reaching them] |
 | L11, "What a simulation decides" (11-23) | mechanics, bugs and extremes, equivalence, rough starting values: yes; how people learn, an unmodelled signal, small differences: no | the right scope, but it sits *below* the level table, which still triggers the runs |
 | L12 | "Any change to the learning algorithm … is checked twice before its PR: in `tools/learnsim.js` (5 seeds …) and on the real answer log" | effect, for every engine change |
-| W27 (`docs/rules/ship.md`) | "A simulation reads only what is declared"; "a check longer than 40 minutes is a tooling bug" (#843, #1086) | cost control |
+| W27 (`docs/rules/ship.md`) | "A simulation reads only what is declared"; "a check longer than 40 minutes is a tooling bug" (both from #843) | cost control |
 | W24 | every heavy run takes the machine slot | cost control |
 | AGENTS.md "Read on demand" | "L11–L12 before a run" | pointer |
 
@@ -88,8 +90,7 @@ the ledger or Linear; **[count]** counted by a script over PR bodies or git; **[
   #1391 ("Codex P1"), #1273 ("Codex's finding, answered").
 - **Linear issues whose next action or completion evidence is a simulation**: REE-245 (the continuous ease draw: "a
   simulation for the draw mechanics … a merged PR, with the simulation tables"), REE-241 (until this morning: "a merged
-  PR with the simulation tables"), REE-187 (a learnsim arm, only if the real log shows late families), REE-56 (the fish
-  hunt achievements' timing), REE-97 (the profiles fitted to real players, gate: 10 players with 200+ answers), REE-304
+  PR with the simulation tables"), REE-187 (a learnsim arm, only if the real log shows late families), REE-97 (the profiles fitted to real players, gate: 10 players with 200+ answers), REE-304
   (sea slugs, at its gate: "run the simulation if it then helps").
 - **The decisions that quote a simulation** as their condition: Q188, Q315, Q457 («ok», "later, with a simulation").
 
@@ -133,27 +134,31 @@ Pierre's complaint is about the third kind only.
 3. **Effect and value**: "does it help real players learn, and which value is best?" The level-1/2/3 runs with a
    primary and fine guardrails. Here the simulated learner's assumptions decide the answer.
 
-## 3. What the simulations did: a census of 44 engine PRs
+## 3. What the simulations did: a census of 45 engine PRs
 
-**Method** [count, read]. Every PR from #790 (the first after L11's levels, #735, and the tools of 2026-11-08) to #1571
+**Method** [count, read]. Every PR from #790 (the first after L11's levels, #735, and the tools of 2026-11-08) to #1584
 whose body declares rule L11 level 1, 2 or 3 for a change to the engine (study, rules, docs and tool PRs left out),
 found through the REST search on "learnsim", "rated world", "learncmp", "level 1", "level 2", "level 3", "simulation"
 (348 PRs matched any of them; a keyword count that also matches docs and comment-only PRs, so an upper bound, not a
-census), then read one by one: what ran, what it found, and whether the result changed what shipped. Appendix A lists
-each PR and its class. A PR found by none of the searches is missing; I believe few are [guess].
+census), then read one by one: what ran, what it found, and whether the result changed what shipped. My pattern for a
+declared level missed #855, #1148, #1234 and #1584, added by reading. Appendix A lists each PR and its class. A PR found
+by none of the searches is missing; I believe few are [guess].
 
 | What the simulation did to the decision | PRs | Which |
 | --- | ---: | --- |
 | Changed the design | 4 | #855, #871, #975, #1331 |
 | Stopped the change | 3 | #808 (Pierre, Q335), #852 (Q338's first arms), #1304 (`CAL.U`) |
-| Breach sent to Pierre, change merged as built | 13 | #809, #857, #953, #1045, #1093, #1099, #1130, #1148, #1195, #1273, #1357, #1391, #1519 |
-| Breach sent to Pierre, simulation then dropped | 1 | #1571 (2026-11-26 09:16) |
-| No bearing: held, or "the measure cannot tell" | 18 | #790, #822, #833, #834, #840, #885, #951, #1057, #1067, #1116, #1133, #1162, #1234, #1301, #1349, #1376, #1410, #1414 |
+| A simulation result sent to Pierre, change merged as built | 13 | #809, #857, #953, #1045, #1093, #1099, #1130, #1148, #1195, #1273, #1357, #1391, #1519 |
+| Breaches sent to Pierre, simulation then dropped | 1 | #1571 (2026-11-26 09:16) |
+| No bearing: held, or "the measure cannot tell" | 19 | #790, #822, #833, #834, #840, #885, #951, #1057, #1067, #1116, #1133, #1162, #1234, #1301, #1349, #1376, #1410, #1414, #1584 |
 | Not run (no world for the subject, dormant code, or Pierre's 11-17 words) | 4 | #1049, #1060, #1412, #1433 |
 | A breach whose outcome I did not trace | 1 | #1237 |
-| **Total** | **44** | |
+| **Total** | **45** | |
 
-### 3.1 Where they helped: mechanics and equivalence [read]
+### 3.1 Where they helped [read]
+
+Two of the four design changes answered a question of mechanics; the other two rest on how the simulated beginner's
+level and pace move, which is the learner model's part (§3.4).
 
 - **#1331** (rule L4, a level opens with 4 close units): the first version, which waited for room for four at once,
   put the first species **1.2 to 6.9 times later** (strong RA 215 → 1,473 answers). A bound declared before measuring
@@ -162,11 +167,14 @@ each PR and its class. A PR found by none of the searches is missing; I believe 
   RA had no genus question by question 600), so they were left out (`shareFree`). It also compared three curves
   (m, m², m³) and kept m²: a value choice on simulated players, which §7 would leave to the logic and the real log.
 - **#855** (Q338 b): no threshold on the global level protected the simulated beginner, so **#857 shipped the plain
-  200-answer floor** without the level condition: a simpler rule (L11's own "simplest algorithm").
-- **#871** (Q350): the beginner's first Open Water came 62 → 112 answers; Pierre chose variant B (Q355).
+  200-answer floor** without the level condition: a simpler rule (L11's own "simplest algorithm"). It rests on the
+  simulated beginner's level path (0.56 at 200 answers, 1.09 at 500), so on the learner model.
+- **#871** (Q350): the beginner's first Open Water came 62 → 112 answers; Pierre chose variant B (Q355). The group's
+  wait is a mechanic; how long it lasts is the simulated beginner's pace.
 - **#729** (11-08, before the census): 20 seeds of the real app found why about 21% of the draw before Open Water was
   hard photos (the target sits between ease 4 and 3 after two right answers): a mechanic, fixed by the cap.
-- **#1234**: a recurring breach traced to counting the live answers themselves (rule L4), not to the fix.
+- **#1234**: a recurring breach traced to counting the live answers themselves (rule L4), not to the fix. A useful
+  diagnosis, but it changed nothing that shipped (classed N).
 - **#642** (Q133, 11-06): the simulation showed the opening order did not need the confusion term, so it was dropped:
   a simplification.
 - **Equivalence**: #998 and #1514 showed byte-identical outputs with the false-alarm table; the REE-265 series used the
@@ -178,11 +186,16 @@ Counted in `docs/ANSWERS.md`: Q335 (#808), Q338 (#855, #857), Q355 (#871), Q392 
 (#1130), Q413 (#1148), Q420 and Q432 (#1099), Q421 (#1045), Q426 (#1093), Q427 (#1195), Q440 (#1273), 2026-11-21 05:40
 (#1331), 2026-11-21 13:23 (#1357), 2026-11-23 17:22 (#1391), 2026-11-24 13:50 (#1519), 2026-11-26 09:16 (#1571).
 
-- **14 times he kept the change as built**, often with words that say the question did not need asking: «C'est juste
-  évident» (Q432), «aucune raison que ça influence les résultats» (Q420), «quel que soit l'impact … sur les
-  simulations» (#1331), «Donc ça va dans le bon sens» (#1519), «C'est pas un coup à partir du moment où c'est un mode de
-  jeu qu'on ajoute» (Q440), «merger sans simulation de plus» (Q421, Q413).
-- **Once he chose a variant** the simulation had shown (Q355).
+- **13 times he kept the change as built.** In 10 of them his answer was on the breach itself (Q413, Q420, Q421, Q426,
+  Q427, Q432, Q440, 11-21 05:40, 11-21 13:23, 11-24 13:50), often with words that say the question did not need
+  asking: «C'est juste évident» (Q432), «aucune raison que ça influence les résultats» (Q420), «quel que soit l'impact
+  … sur les simulations» (#1331), «Donc ça va dans le bon sens» (#1519), «C'est pas un coup à partir du moment où
+  c'est un mode de jeu qu'on ajoute» (Q440); and «ok» to the option "merge with no further simulation" (Q421; Q413 the
+  same). In the other 3 the question was wider than the breach: Q392 is recorded only as a paraphrase ("a, b", level 3
+  or accept), Q412 settled three choices including an unclear simulated cost, and 11-23 17:22 merged #1391 as a stop-gap.
+- **Twice he chose a variant** the simulation had informed: Q355 (variant B) and Q338 (the ledger records "option b,
+  above an Elo level", #857 records "option a, after 200 answers"; #855's run showed no level gate works, and #857
+  shipped the floor alone with its cost accepted).
 - **Once he closed the PR** (Q335, #808).
 - **Once, today, he dropped the simulation** (#1571).
 
@@ -195,19 +208,22 @@ profile, equal again by 3,000** (#1093, #1195, #1304, #1357), or the bar's under
 #808 (time in the photo rating, option 1) had a clear gain on the real log (−1.03 × 10⁻³ per answer, 10 of 14 players
 better, p 0.0015, Q318) and failed level 2 in three rounds of simulation; Pierre closed it on 2026-11-09 (Q335). On
 2026-11-21 a related design (#1357) breached a rated-world guardrail in its turn, and Pierre merged it: «est-ce que la
-simulation en elle-même … est réellement représentative». In #1357's rated world every player had the same time noise,
+simulation en elle-même, en fait, elle est réellement représentative de ce qui se passe réellement dans un cas
+d'apprentissage avec des joueurs réels?». In #1357's rated world every player had the same time noise,
 so the weighting the PR builds could not be tested there at all (the 2026-11-21 note). The real log said yes in both
 cases, and the simulation said no both times.
 
-### 3.4 Where the simulator could not see the change [read]
+### 3.4 Where the simulator could not see the change, or no real data anchored it [read]
 
 - **#1195** (rule P1, no source boost): "Neither world, as run, can see a source's difficulty", and yet a level-2
   check ran at 20 seeds and its one breach went to Pierre (Q427).
 - **#1357**: the time weighting was not modelled (above).
 - **#1519** (ease weight 0.3): no sea slug world existed, so the sea slugs were not simulated; the fish runs went on.
-- **#1571** (ease within a family): the sea slug breaches (first Open Water 56 → 78 answers for the beginner) came from
-  the prior's *level* moving by about 0.17 logit, a figure simple arithmetic gives without any run; the sea slugs had
-  168 real answers from 2 players (REE-304, measured 2026-11-26).
+- **#1571** (ease within a family): the simulation did see the change, and its exploratory arm was useful: it showed
+  the ranking alone breached nothing and the prior's *level*, moving by about 0.17 logit, caused the sea slug breaches
+  (first Open Water 56 → 78 answers for the beginner). That split informed the redesign note (#1610). But nothing
+  anchored the sea slug learner: 168 real answers from 2 players (REE-304, measured 2026-11-26), and Pierre's answer was
+  that no simulation could tell.
 - **Profiles are assumptions**: no profile is fitted to real players (REE-97's gate, 10 players with 200+ answers, not
   met), and LEARNING.md says so for the fish ("These fish values are assumptions, not fits").
 
@@ -218,12 +234,13 @@ cases, and the simulation said no both times.
 - **#1067**: the rated world drew the new genera on the seed's single stream, so the two arms played different worlds
   (the tool fixed mid-PR); the lecture RA's 3-seed breach was gone at 20 seeds.
 - **#1099**: the level-1 breaches were not confirmed at level 2, which found two others.
-- **#1414**: a 5-seed breach held at 20 seeds.
+- **#1414**: a 5-seed breach, gone at 20 seeds.
 - **Outside the census**: REE-249 (#1502), the fish app world never recorded a right typed answer from 2026-11-06 to
   2026-11-23 and froze on one question from #1375; the inventory (#1512) rated 2 of its 11 rows high, and **no
   conclusion that touched players changed**. REE-262 (#1514): long fish runs cut at 40 minutes with 0 runs done, the
   plan's estimate a seventh of the truth. REE-281: one random stream for the whole world, so a photo bot refill broke
-  two tests and left `main` red (#1546). #998 (a 10,000-answer check could not end in the workflow's 6 hours), #769
+  two tests and left `main` red (#1546); and the regression kind is not free either: three PRs made the answer-cost
+  count repeat on the same seed (#1552, #1557, #1559). #998 (a 10,000-answer check could not end in the workflow's 6 hours), #769
   (long runs crashed), #1094 (`main` red: the rated world counted held-out photos).
 
 ### 3.6 The 2026-11-23 scope paragraph did not change the practice [read]
@@ -253,13 +270,13 @@ result. An agent following the rules in order runs the check first.
   PR and 79 min for an L one (300 merged PRs). **Not separable**: that time runs from the first commit to green checks
   and includes Codex rounds and the wait for Pierre's answer, so it is an upper bound on what the simulation itself cost
   (#1519, #1331, #1357, #1391).
-- **Pierre's attention**: 17 questions (§3.2), each with tables of cells, bounds and margins to read; 14 answered "as
+- **Pierre's attention**: 17 questions (§3.2), each with tables of cells, bounds and margins to read; 13 answered "as
   built".
 - **Waits**: #1571 waited from 2026-11-25 09:01 to 2026-11-26 09:16 Manila on a choice its simulation raised (#1571); #808's
   idea, closed on 2026-11-09, came back merged on 2026-11-21 (#808, #1357); REE-245's build waits on "a simulation for
   the draw mechanics".
-- **Upkeep**: 78 commits on the simulation tools; about 4,000 lines; at least 7 tool bugs since 2026-11-08, each found
-  and fixed by an agent (§3.5).
+- **Upkeep**: 78 commits on the simulation tools; about 4,000 lines; at least 7 tool bugs since 2026-11-08 (#1067 inside the
+  census, 6 outside), each found and fixed by an agent (§3.5).
 
 ## 5. What the literature says
 
@@ -283,8 +300,8 @@ Only the abstracts and catalogue pages were read; the full texts were not.
 1. **The trigger is the size of what the change touches, not the question.** L11's table makes "the draw, the bar, the
    opening, the levels, the score" level 2 whatever the simulator can see; "in doubt, the higher one".
 2. **L12 asks learnsim for every engine change**, beside the real log.
-3. **The margins are finer than the model.** A one-point score margin and a +0.03 over-claim margin are below what an
-   unfitted learner can resolve; the noise alone reaches them (#1057's A/A, #1067, #1414).
+3. **The margins are finer than the model** [guess]. A one-point score margin and a +0.03 over-claim margin are, I
+   judge, below what an unfitted learner can resolve; the noise alone reaches them (#1057's A/A, #1067, #1414).
 4. **Every breach goes to Pierre**, and a cost not declared before running too, so a check almost always becomes a
    question.
 5. **Codex and the issues ask for it** (§2.2), and the earlier decisions quote it as a condition (Q188, Q315, Q457).
@@ -316,7 +333,7 @@ Run one when **all** of these hold, and say so in the PR:
 
 1. the question follows from the rules (§7.1), not from how people learn;
 2. the mechanism the change acts through is in the simulator (if not, write "the simulator cannot see this" and skip);
-3. the answer would change what is built: a choice between designs, a fallback, a bug (#1331, #975, #855), not a
+3. the answer would change what is built: a choice between designs, a fallback, a bug (#1331, #975), not a
    confirmation of a rule already decided;
 4. the outcome is **failure-sized**: declared before running as a coarse threshold a player would notice (twice later,
    never, stuck, a cliff), not a point of score;
@@ -362,11 +379,28 @@ will feel. Not a simulated guardrail at a fine margin.
 | L12, first sentence | "checked twice before its PR: in `tools/learnsim.js` (5 seeds …) and on the real answer log" | "Any change to the learning algorithm is checked on the real answer log where it holds the answers to judge it (players as the unit); where it does not, the PR says so and a Data issue carries the check to its gate (rule L11)." The rest of L12 unchanged. |
 | L10 | "A new variable there needs its learnsim check per answer, right and wrong" | "A new variable there is checked like any engine change (rule L11)" |
 | `docs/INTEGRATOR.md` "Learning changes" | "need rule L11-L12 checks (learnsim before/after, 4 profiles × 5 seeds) or Codex flags them" | "name their question (rule L11): a regression check always; a simulation only for a mechanics question" |
-| Issues REE-245, REE-187, REE-56 | completion evidence "the simulation tables" | reworded to the question each one asks (REE-245's draw is a mechanics question: a cliff, a share; keep a short mechanics run there) |
+| Issues REE-245, REE-187 | next action or completion evidence "a simulation", "the simulation tables" | reworded to the question each one asks (REE-245's draw is a mechanics question: a cliff, a share; keep a short mechanics run there) |
 
-Pierre's caution of 2026-11-21 stays visible: this does not make the simulation "plus qu'un garde-fou". It keeps it
-where it decided things in §3.1 (the mechanics of the rules) and takes it away where it decided nothing or misled
-(§3.2 to §3.5).
+Pierre's caution of 2026-11-21 («il faut pas non plus l'inverser complètement et le transformer plus qu'en garde-fou»)
+stays visible: this does not reduce the simulation to a guardrail only. A mechanics simulation still decides a design
+(§3.1, §7.8). The proposal takes the simulation away where it decided nothing or misled (§3.2 to §3.5).
+
+### 7.8 Back-test: the 7 PRs where a simulation changed or stopped the change
+
+What the proposal would have run on each, and what would have been lost [guess, from the PR bodies]:
+
+| PR | Under §7 | Lost |
+| --- | --- | --- |
+| #1331 | run: a mechanics question, a "2× later" bound declared, a design choice at stake | nothing |
+| #975 | the held-back IMR genera: caught by §7.2's failure check ("a level that never comes": no genus question by 600) or a §7.3 run; the m² curve: a value, left to the logic and Pierre | the comparison of three curves on simulated players |
+| #871 | probably run: "the first level 62 → 112 answers" is near a "2× later" failure bound, and the group's wait is a mechanic | little, if the threshold is set near 1.5×; Q355 otherwise |
+| #855 | not run as a gate: whether a level gate protects a beginner depends on the learner's level path (criterion 5) | the evidence that no gate works; the floor alone, which shipped, is what L11's "simplest algorithm" and Pierre's «le niveau Elo n'est pas stable avant un paquet de réponses» already point to |
+| #808 | not run: an effect; the real log's clear gain decides | the finding that the photos' ranking improved while the ratings' spread worsened, which a real-log check could also look at; the change would have shipped 12 days before #1357 |
+| #852 | not run: a value choice (N) | nothing decisive: #857 shipped the floor alone |
+| #1304 | not run: a value choice (`CAL.U`) before data | the simulated reason not to change it; with no real-log gain, the logic keeps the current value anyway |
+
+So the proposal keeps the two mechanics uses (#1331, #975's held-back genera), probably #871's, and gives up the
+value comparisons and #855's evidence, which fall to the logic, Pierre's choice or the real log.
 
 ## 8. Earlier words a new rule would touch
 
@@ -385,14 +419,15 @@ where it decided things in §3.1 (the mechanics of the rules) and takes it away 
 - **S1. Pick the check by the question, not by the change's size?** (A) Replace L11's levels with §7.1-§7.3: a
   regression check always, a mechanics simulation only when §7.3 holds, no effect simulation. (B) Keep the levels and add
   two exemptions: "the simulator cannot see the mechanism" and "the subject has too little data". (C) No change.
-  **Recommended: A.** B keeps the trigger that ran #1519 and #1571 after the 11-23 paragraph; A is simpler and keeps
-  every use that decided something in §3.1.
+  **Recommended: A.** B keeps the trigger that ran #1519 and #1571 after the 11-23 paragraph. A is simpler; it keeps the
+  mechanics uses that changed a design (#1331, #975's held-back genera, probably #871) and gives up the value
+  comparisons and #855's evidence (§7.8), which fall to the logic, your choice or the real log.
 - **S2. L12 without "learnsim for every change"?** The real log judges where it holds the answers; where it does not, a
   Data issue carries the check. **Recommended: yes.** The real log is the measure his rules already trust; the learnsim
   half of L12 is the effect simulation of S1.
 - **S3. What goes to you?** Only a failure-sized mechanics result, a real-log reading against the change, or a cost the
   arithmetic says players will feel; a fine-margin guardrail is reported in the PR, not asked. **Recommended: yes**
-  (14 of the 17 questions of §3.2 came back "as built").
+  (13 of the 17 questions of §3.2 came back "as built", 10 of them with words on the breach itself).
 - **S4. A default gate for a Data issue that proposes none?** (a) REE-304's form, about 1,500 answers from at least 5
   players with at least 100 each, per subject; (b) REE-97's 10 players with 200+ answers; (c) each issue sets its own,
   no default. **Recommended: (c) with (a) as the fallback**: the gate depends on what is measured, and the integrator
@@ -431,7 +466,7 @@ built, **P0** breach to Pierre then the simulation dropped, **N** no bearing, **
 | #951 | 1 | N | the cost reported; a smaller value would need level 3 |
 | #953 | 2 | P | declared cost breached as declared; level 3 or accept (Q392) |
 | #975 | 2 | D | found the IMR genera held back; curve m² chosen among three |
-| #1045 | 1 | P | over-claim breach; «merger sans simulation de plus» (Q421) |
+| #1045 | 1 | P | over-claim breach; «ok» to "merge with no further simulation" (Q421) |
 | #1049 | 1 | X | no learnsim (Pierre, 11-17) |
 | #1057 | 1, 3 | N | an A/A comparison read breach-sized: the variants could not be told apart |
 | #1060 | 1 | X | sea slugs, almost no answers: no learnsim (Pierre, 11-17) |
@@ -456,10 +491,11 @@ built, **P0** breach to Pierre then the simulation dropped, **N** no bearing, **
 | #1391 | 1, 2 | P | declared cost breached with heavy tails; merged as a stop-gap (11-23 17:22) |
 | #1410 | 1 | N | held |
 | #1412 | 1 | X | dormant on today's data |
-| #1414 | 1, 2 | N | a 5-seed breach held at 20 seeds |
+| #1414 | 1, 2 | N | a 5-seed breach, gone at 20 seeds |
 | #1433 | 1 | X | no sea slug world |
 | #1519 | 2 | P | an undeclared cost; sea slugs not simulated (11-24 13:50) |
-| #1571 | 2 | P0 | sea slug breaches from the level shift; no simulation (11-26 09:16) |
+| #1571 | 2 | P0 | sea slug breaches from the level shift, split from the ranking by an exploratory arm; no simulation (11-26 09:16) |
+| #1584 | 1 | N | a regression use: no value moves in any flow, fix against main and main against main |
 
 ## Sources
 
@@ -474,4 +510,5 @@ built, **P0** breach to Pierre then the simulation dropped, **N** no bearing, **
   (<https://doi.org/10.1007/s40593-019-00187-x>). Abstract read.
 - In the repository: rules L10-L12 (`docs/rules/learning.md`), W24 and W27 (`docs/rules/ship.md`), LEARNING.md
   "Validating a learning change", `docs/ANSWERS.md`, the reviews cited above, the PR bodies of Appendix A (REST API),
-  Linear REE-71, REE-97, REE-187, REE-241, REE-245, REE-249, REE-262, REE-281, REE-304.
+  and of #1502, #1512, #1514 (REE-249, REE-262); Linear REE-71, REE-97, REE-187, REE-191, REE-241, REE-245, REE-281
+  (with its comments), REE-304.
