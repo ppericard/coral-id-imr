@@ -442,7 +442,7 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
      Waits on with its condition stated (Data: a "Gate: <measure> ≥ N (measured <date>: x)" line; Pierre (action):
      the action named; External: who, and when to check again). A free-text "after X" or a bare label is not one;
   3. an idea not decided yet (Idea: building it is a new requirement, his OK first);
-  4. Parked by him;
+  4. Parked by him, with a date or a trigger that will come (below, "Not now");
   5. a Study › Open inquiry with no pass assigned to an agent the integrator can launch.
 
   Backlog holds only issues with one of these reasons; an open issue without one goes to Todo. Every Todo issue not
@@ -450,6 +450,11 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   not work). A lane held by a PR that waits for Pierre is raised to him the same working day. A "Next" list in STATUS
   is never a substitute for launching. Launch agents from the main checkout: an agent starts in the integrator's
   current directory, and one started inside a PR's worktree takes it over.
+- **"Not now" always gets a when** (Pierre, 2026-11-26): a "not now" from Pierre means not at this moment, never
+  "later, without a date". The integrator asks when: an hour, a day, a week, a month, several months; the issue gets
+  that date (Scheduled). An event that is not a date becomes a blocked-by relation to the issue of that event, or
+  Waits on › External with a date to check again, and only if it is sure to come: a date, or a prerequisite that will
+  happen. A trigger that may never come is not used; ask for a date instead, so no issue stays blocked for good.
 - **The night report counts the night's launches**: the issues launched, and those left open with their reason. An
   issue left without a reason is a rule not followed.
 - **Two kinds of study** (Pierre, 2026-11-25; the label group Study, one kind per issue):
@@ -463,10 +468,10 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
   integrator updates Linear, unless the brief tells the subagent to.
 - **Labels**: Decision for Pierre only for a real unresolved choice, checked against ANSWERS first
   ([AGENTS.md, Working with Pierre](../AGENTS.md#working-with-pierre)). The issue holds its context.
-  Blocked, Study, Idea, Waiting and Parked as named. **Scheduled** (Pierre, 2026-11-22;
+  Study, Idea, Waits on and Parked as named. **Scheduled** (Pierre, 2026-11-22;
   [decision](decisions/2026-11-22-scheduled-tasks.md)): a task
-  that only needs to come back on a date or a named trigger goes to Backlog with this label, its due date (or its
-  trigger in the description's "Comes back" line); it stays out of every list, report, STATUS and question to Pierre
+  that only needs to come back on a date goes to Backlog with this label and its due date (a trigger that is not a
+  date follows "Not now" above); it stays out of every list, report, STATUS and question to Pierre
   until then. The integrator checks Scheduled issues at each session start and brings one back to Todo, telling Pierre
   once, when the date comes (14 days before a due date: integrator's call) or the trigger happens.
 - **The free plan**: 250 active issues (archived ones unlimited). Basic (USD 10 a user a month, billed yearly) only if

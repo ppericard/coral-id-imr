@@ -2170,3 +2170,26 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sweeps: «Pour économiser quoi????? Tu coutes bien plus cher qu'un agent Sonnet». Applied: AGENTS.md Rule 0,
   docs/rules/ship.md "Questions, the details", docs/INTEGRATOR.md "Linear" (reason 2) and "Habits" (the quota note
   removed), tools/checkin.md steps 4 and 7, tools/brief.py's quiet line; Linear label group Waits on.
+- **08:36-08:48, "not now" always gets a when; triggers that will come.** On issues parked "on his signal": «quand je
+  dis "pas maintenant" ça veut dire pas maintenant, dans l'instant. Mais je m'attend à ce que la question revienne,
+  sauf si j'ai dis explicitement de remettre à plus tard avec un délai explicite. En fait, tu ne devrais jamais
+  accepter un "pas maintenant" de ma part, et me demander/forcer à donner un délai. Est-ce qu'on parle d'une heure,
+  d'un jour, d'une semaine, d'un mois, de plusieurs mois?» To the wording shown: «Oui». On a trigger such as the next
+  circle review: «IL faut que ça soit un déclencheur qui ait une chance de se déclencher. Soit par une date soit par un
+  pré-requis qui va arriver. Attention à ne pas mettre des déclencheurs susceptibles de ne jamais arriver, sinon
+  l'issue peut être bloquée.» Applied: docs/INTEGRATOR.md "Linear" ("Not now" always gets a when; reason 4; Scheduled
+  is a date).
+- **08:36-08:48, the trusted-answers gate and its recurrence.** On REE-105's gate never checked: «on n'a jamais eu de
+  compte de bots qui spamment. Donc ça veut dire que parce qu'on n'avait pas de mécanisme en place pour
+  vérifier/compter, on n'a jamais déclencher l'action»; to measuring it: «ok. Et comment on fait pour que ça ne se
+  reproduise pas?» Applied: REE-105 measured (7,713 trusted answers; gate met, Todo).
+- **08:36-08:48, rights: roles, groups and a design study (REE-31, #1554).** On one scope per group: «Euh.... Je suis
+  pas sur... Imagine des cas contraires»; to a list of subjects per group: «mieux». On an instance right: «oui, bien
+  sur. Dans chaque matière portée par l'instance». On guardrails: «Il doit toujours y avoir un admin, et un manager
+  pour une instance. Bien sur il sera toujours permis de forcer mais le minimum c'est qu'un fort warning et stop
+  soient émis»; «il faut éviter que quelqu'un puisse complètement bloquer une instance». On roles: «il me faut une
+  page de gestion de rôles, dans laquelle je customise les droits pour chaque rôle, et une page de gestion des groupes
+  dans laquelle j'associe des groupes de gens à un ou plusieurs rôles + la possibilité d'associer des rôles à des
+  personnes spécifiques […] Est-ce que ça reste compatible avec l'idée des ACL». On the study: «Une vrai étude de
+  conception», global best practices with options. To two Audit columns Before and After: «Ok». Applied: the design
+  study of REE-31 (launched 2026-11-26); #1554 held for it; REE-303 (the dropped option).
