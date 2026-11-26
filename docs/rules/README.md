@@ -110,7 +110,7 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 **Working with Pierre, and shipping** ([ship.md](ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French, and he is "tu"; fish families keep
   their English names.
-- **W3** Alpha: no backward compatibility.
+- **W3** Alpha: no backward compatibility; the effort of a refactor is never an argument.
 - **W4** Many prototypes first; Pierre judges by taps.
 - **W6** No work sleeps on a branch; a PR waiting for Pierre is opened ready with `needs-pierre`.
 - **W7** Work autonomously; fix by default; never re-ask what was answered.

@@ -22,7 +22,10 @@ an old page name), migrate the data once, in the data itself (the app moves its 
 `core.js` `migrateRoutes`; the sheet script moves its own rows once after its install, `Code.gs` `ONCE_`, logged in the
 Deploy log), then forget the old name: no redirect, no permanent dual read. Old app versions may break; players update.
 The deploy-order rule D4 still holds (the app never relies on a sheet feature before the sheet has it).
-*Source:* Pierre, 2026-11-04.
+
+While the app is in alpha, the effort of a refactor or a migration is never an argument for a design choice: only the
+end result and the design decide. A change costly to undo for players or their records still waits for Pierre's OK.
+*Source:* Pierre, 2026-11-04; the effort of a refactor, 2026-11-26.
 
 ### W4
 
