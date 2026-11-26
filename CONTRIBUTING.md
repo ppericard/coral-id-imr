@@ -37,8 +37,8 @@ reserved ([LICENSE](LICENSE)).
 6. **Keep real names out**: no real player or staff name anywhere in the repository (rule D2). Everything produced is in
    English (rule W1).
 7. **Update the docs in the same PR** (rule W19): the doc that describes what you changed, the README if a newcomer
-   would notice, Linear (team REE) for an idea discussed and not built. When the PR carries out a decision, add a
-   [decision record](docs/decisions/README.md). History stays in git and the PRs, never in the docs.
+   would notice, Linear (team REE) for a problem or idea discussed and not solved. When the PR carries out a decision,
+   add a [decision record](docs/decisions/README.md). History stays in git and the PRs, never in the docs.
 8. **Open a PR** from `origin/main` with the [template](.github/pull_request_template.md): what and why, where each
    choice was decided, the choices that still need Pierre, what changes for players, the tests, the sheet script, the
    docs. When bringing a PR up to date, merge `origin/main`. Never rebase a pushed branch or force-push (rule W18).
@@ -85,6 +85,7 @@ retell a decision in another document; link it.
 ## Reporting problems
 
 - A wrong credit, or a photo that should be removed: use the "Rights holder" issue form.
-- A bug or an idea: open an issue; the integrator tracks the ideas discussed and not built in Linear (team REE).
+- A bug or an idea: open an issue; the integrator tracks the problems and ideas discussed and not solved in Linear
+  (team REE).
 - A security problem: report it privately through GitHub's "Report a vulnerability" on the repository's Security tab,
   not in a public issue. [docs/SECURITY.md](docs/SECURITY.md) says what is exposed and what protects it.
