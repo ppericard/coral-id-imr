@@ -62,8 +62,8 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; checks proportionate to the change, valid statistics, a hard cap of 40 minutes of compute, level 3 never on this machine.
-- **L12** Check algorithm changes on the real log too.
+- **L11** The simplest algorithm that works; checks follow the question (a simulation only for mechanics); a 40-minute cap; level 3 never on this machine.
+- **L12** Check algorithm changes on the real answer log.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
 - **L15** First goal: ID on ideal photos.

@@ -100,4 +100,5 @@ reasons and tests (rule S1).
 
 Check version stamps (W15), admin-only curation (A1), declared subject differences (S1), anonymous names (D2),
 sheet version gates and changes files (D3–D4), progress rules versions (D5), and isolation from the real sheet (D1)
-against the linked topic rules when reviewing affected files.
+against the linked topic rules when reviewing affected files. A learning change without a simulation is not a
+finding: check that it names its question (L11) and reads the real log where it can judge (L12).

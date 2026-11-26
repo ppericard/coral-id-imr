@@ -165,7 +165,7 @@ to existing players under 50 answers and inferred silently from 50 on. Each answ
 model (`core.js` `CHOICE`); the one dynamic algorithm then runs the same for everyone, with a one-time fallback card
 when the answers do not fit (its thresholds, cards and the replay's prior: LEARNING.md "The first-launch question",
 ARCHITECTURE.md "First-launch question"). A
-new variable there needs its learnsim check per answer, right and wrong. **Each subject asks its own** (the fish question works exactly like the coral one): its words in `core.js` `SUBJECTS` `start`, the same answers and engine,
+new variable there is checked like any engine change (rule L11). **Each subject asks its own** (the fish question works exactly like the coral one): its words in `core.js` `SUBJECTS` `start`, the same answers and engine,
 its own record (`startKey`); never a subject named in the code that asks it.
 *Source:* Pierre, 2026-11-03; each subject, 2026-11-04.
 
@@ -173,40 +173,7 @@ its own record (`startKey`); never a subject named in the code that asks it.
 
 **The simplest algorithm that works.** Don't add a variable, a special case or a hard-coded ramp to patch a problem:
 first rethink the rule or recalibrate the existing settings (example: the opening of units became a slope on `OPEN.K`
-instead of new duel/opening knobs, LEARNING.md). **Checks are proportionate to the change's possible effect, and progressive; the statistics always
-valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0, §3.2, §4, §6.7;
-LEARNING.md "Validating a learning change": the worlds, the profiles, the measures, the margins, the commands). The PR
-declares the change's level with one line of why; the integrator checks it and may raise it; in doubt, the higher one.
-
-**Every check has a hard cap of 40 minutes of compute, at every level; when the agent reaches it, it stops and returns
-what it has.** Level 2 runs only the worlds the change touches (the rated world for the levels it touches; the app world
-only if it changes what the player sees); the rated world runs at least LEARNING.md's level-2 length.
-**Level 3 never runs on this machine**: only with Pierre's explicit go, on
-GitHub runners, with its duration announced first. An unclear result is reported as "the measure cannot tell", never
-escalated automatically.
-
-| Level | The change | The check |
-| --- | --- | --- |
-| 0 | no effect on learning: a wording, the UI, a test, code that gives the same answers | the unit tests and the CI smokes, no simulation |
-| 1 | small and local: one kind of unit, a rare situation, a constant nudged | the app world, the subject touched, its profiles × 5 seeds, 300 questions; the primary and the guardrails it can touch |
-| 2 | changes what players see or learn broadly: the draw, the bar, the opening, the levels, the score | the worlds the change touches: the rated world 10 seeds per profile, long enough to reach the levels the change touches; the app world as level 1 only if the change alters what the player sees; every guardrail |
-| 3 | choosing a value (Pierre's go and GitHub runners only; a close level 1 or 2 result is "the measure cannot tell", never a level 3 by itself) | 30-40 seeds in the app world, 40 in the rated world under both photo distributions; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the value chosen confirmed on fresh seeds |
-
-Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12). **The app world** is the
-real app on the real data (`tests/profiles.smoke.js`, `node tools/learnsim.js`); **the rated world** has photos, units
-and players each with a continuous Elo difficulty or ability drawn from the distributions LEARNING.md states (normal
-photos, a heavy-tailed variant beside), the engine running on them.
-
-**Progressive**: a large expected effect needs no high sensitivity; start with the level's fewest seeds and add seeds
-only when a result lands near a margin (unclear), by the rule declared before running (at level 2, the rated world 10,
-then 20 seeds; then "the measure cannot tell"). The error is split over the looks declared, k of them: each look reads the one-sided
-bound at 1 − 0.10/k (two looks: 95%) and the primary at 0.05/k (Bonferroni), so stopping on a result keeps the 90%. Before running, declare one primary measure, its world, its checkpoint and its direction,
-and any cost the change is expected to bring (a guardrail it will move, with the bound accepted). Test the primary
-pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else
-100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm. Guardrails (LEARNING.md's table,
-the margins set once there): held when the one-sided 90% bound of the paired difference stays inside the margin; unclear
-goes one step up within the cap, then is reported "the measure cannot tell"; breached, or a cost not declared, goes to Pierre. Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
-9% of cells with no effect). **Real data** (rule L12): inference per player (players are the statistical unit), never per answer.
+instead of new duel/opening knobs, LEARNING.md).
 
 **What a simulation decides, and what it does not.** The simulated learner is our own model, not fitted to real
 players. A simulation decides on the mechanics of the rules (what follows from the rules alone), on bugs and extreme
@@ -214,6 +181,49 @@ cases, on the equivalence of two implementations of one rule, and on rough start
 labelled as hypotheses. It does not decide on how real people learn, hesitate, forget or stay motivated, nor on a signal
 the simulator does not model, nor on a difference inside its own uncertainty. Then the logic of the feature, the real
 answer log (rule L12) and use by real players, when the change can be reverted, decide.
+
+**Checks follow the question, not the size of the change.** The PR names its question in one line:
+
+- **Regression** (does everything else still work?): every engine change keeps the unit tests and the CI smokes
+  (`profiles` and answer cost included); a refactor or a speed-up gives the same output on the same seed; a decided
+  change shows no failure (a page error, a freeze, a unit that never opens, a level that never comes). No primary, no
+  margins, nothing for Pierre unless a failure shows.
+- **Mechanics** (what follows from the rules alone?): a simulation only when all hold, and the PR says so. The question
+  follows from the rules, not from how people learn. The simulator models the mechanism (else the PR says "the
+  simulator cannot see this" and skips). The answer would change what is built (a choice between designs, a fallback,
+  a bug), not confirm a rule already decided. The outcome is failure-sized: a coarse threshold a player would notice
+  (twice later, never, stuck, a cliff), declared before running, not a point of score. The conclusion holds with both
+  learners (item and count) or both photo distributions. A few seeds and one look are enough.
+- **Effect** (does it help real players learn?): no simulation decides it. The logic of the feature and Pierre's
+  decision come first; then the real log (rule L12) and use by real players, when the change can be reverted. A
+  simulation of an effect may run as exploration, labelled so, never as a gate and never sent to Pierre as a breach.
+- **Value** (which constant?): the real log when it holds enough answers; before that, the logic or Pierre's choice,
+  labelled a starting value.
+
+**While the real log cannot judge yet** (a new subject, a rare situation, a signal not logged before): build on the
+logic and Pierre's decision; keep it reversible (one constant or switch that turns it off, no rules version where rule
+D5 allows); say in one line in the PR the expected direction and cost, from the arithmetic; make sure what the later
+check needs is logged; open a Data issue with its gate and the reading declared in advance. The integrator proposes the
+gate in the issue; when it proposes none, about 1,500 answers from at least 5 players with at least 100 each (REE-304's
+form). At the gate, read the real log, and simulate only if that then helps.
+
+**What goes to Pierre**: a failure-sized mechanics result, a real-log reading against the change, or a cost the PR's
+own arithmetic says players will feel. A guardrail result at a finer margin is reported in the PR, not asked.
+
+**Every check has a hard cap of 40 minutes of compute; when the agent reaches it, it stops and returns what it has.**
+**Level 3 (LEARNING.md's largest run: more than 20 seeds, or more than 10,000 answers in the rated world) never runs
+on this machine**: only with Pierre's explicit go, on GitHub runners, with its duration announced first. An unclear
+result is reported as "the measure cannot tell", never escalated automatically.
+
+**A mechanics run that needs a measure** is rare, and its statistics stay valid (method, worlds, profiles, margins and
+commands: LEARNING.md "Validating a learning change"; [the statistics study](../reviews/2026-11-05-stats-methods-study.md)
+§0, §3.2, §4, §6.7). It runs only the worlds the change touches, at least LEARNING.md's level-2 length, with the
+fewest seeds first; more only when a result lands near a margin, by the rule declared before running, then "the measure
+cannot tell". Before running, declare one primary measure, its world, its checkpoint and its direction, and any cost
+the change is expected to bring; the primary is tested pooled over the profiles with a stratified sign-flip test, then
+per profile under Holm. A guardrail is held when its one-sided 90% bound stays inside the margin; a breach goes to
+Pierre only when it is failure-sized, otherwise it is reported in the PR. Anything else is labelled exploratory,
+uncorrected. **Real data** (rule L12): inference per player, never per answer.
 
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
 Analyses) get the method suited to the design, found before running (e.g. a factorial design with a mixed-effects
@@ -228,16 +238,19 @@ and level 3's go, and level 3's tests, LEARNING.md's level-2 length the minimum,
 What a simulation decides: Pierre, 2026-11-21 13:25 («il faut pas non plus l'inverser complètement et le transformer
 plus qu'en garde-fou»); 2026-11-23 16:40 Manila («ça me parait raisonnable comme compromis. Ok pour implémenter cette
 proposition», REE-71; scope: [reviews/2026-11-21-simulation-scope.md](../reviews/2026-11-21-simulation-scope.md)).
+Checks follow the question, not the size of the change: Pierre, 2026-11-26 11:51
+([decision](../decisions/2026-11-26-checks-follow-the-question.md), which supersedes the levels of 2026-11-08 and
+Q188 for effects and values).
 
 ### L12
 
-**Check algorithm changes against the real players, not only the simulation** (rule L11, from level 1). Any change to the
-learning algorithm (Elo, progress, draw, opening, difficulty, typed questions…) is checked twice before its PR: in
-`tools/learnsim.js` (5 seeds, the subject's default profiles: no learning path may break) and on the real answer log (read-only
-replay of the sheet's Answers tab, or a saved extract kept outside the repo): the change must not move the app's
-estimates away from what players really do, and should bring them closer (next-answer log-loss and calibration,
+**Check algorithm changes against the real players.** Any change to the learning algorithm (Elo, progress, draw,
+opening, difficulty, typed questions…) is checked on the real answer log where it holds the answers to judge it (players
+as the unit); where it does not, the PR says so and a Data issue carries the check to its gate (rule L11). The check is a
+read-only replay of the sheet's Answers tab, or a saved extract kept outside the repo: the change must not move the
+app's estimates away from what players really do, and should bring them closer (next-answer log-loss and calibration,
 Expected against actual, overall and by level band and question format). Where a replay cannot judge a change (a
-different draw asks other questions), say what was measured instead. The PR shows both tables; LEARNING.md keeps them.
+different draw asks other questions), say what was measured instead. The PR shows the table; LEARNING.md keeps it.
 Any agent reads the real log through the Google Sheets connector ("Data access" in AGENTS.md; no GitHub Action needed),
 for every change to the estimates and **routinely** while the app moves fast and players play every day. **A player's
 level is their global level (Elo) and their progress, never their success rate**, which the engine holds near its aim
@@ -245,7 +258,8 @@ for every player (docs/LEARNING.md "What each number measures"); the Elo settles
 200), so say what a level rests on. Compare players with right − expected.
 *Why:* the real log caught many problems in these last days; two agents read a 75-83% success rate as "mid-level
 players" (2026-11-12). *Source:* Pierre, 2026-11-03; connector and routine, 2026-11-05; the level, 2026-11-12; the
-subject's default profiles, 2026-11-19 (Q415).
+subject's default profiles, 2026-11-19 (Q415); without learnsim for every change, 2026-11-26 11:51
+([decision](../decisions/2026-11-26-checks-follow-the-question.md)).
 
 ### L13
 

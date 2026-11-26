@@ -44,3 +44,6 @@ at least LEARNING.md's level-2 length; L12 names the subject's default profiles.
 Pierre, 08:05, on #773's "tu n'as pas besoin de ma validation avant de publier" (2026-11-08): "Cette règle a été
 largement remplacée par des règles plus récentes sur quand merger tout seul" (the merge contract's "easy to correct
 afterwards" rule, 2026-11-14); nothing is added to the decided processes.
+
+Changed by: [2026-11-26-checks-follow-the-question.md](2026-11-26-checks-follow-the-question.md) ("L11 over LEARNING", Q415: level 2's length the minimum only for a run L11 allows;
+L12 reads the real log).
