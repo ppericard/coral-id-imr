@@ -2170,3 +2170,48 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   sweeps: «Pour économiser quoi????? Tu coutes bien plus cher qu'un agent Sonnet». Applied: AGENTS.md Rule 0,
   docs/rules/ship.md "Questions, the details", docs/INTEGRATOR.md "Linear" (reason 2) and "Habits" (the quota note
   removed), tools/checkin.md steps 4 and 7, tools/brief.py's quiet line; Linear label group Waits on.
+- **08:36-08:48, "not now" always gets a when; triggers that will come.** On issues parked "on his signal": «quand je
+  dis "pas maintenant" ça veut dire pas maintenant, dans l'instant. Mais je m'attend à ce que la question revienne,
+  sauf si j'ai dis explicitement de remettre à plus tard avec un délai explicite. En fait, tu ne devrais jamais
+  accepter un "pas maintenant" de ma part, et me demander/forcer à donner un délai. Est-ce qu'on parle d'une heure,
+  d'un jour, d'une semaine, d'un mois, de plusieurs mois?» To the wording shown: «Oui». On a trigger such as the next
+  circle review: «IL faut que ça soit un déclencheur qui ait une chance de se déclencher. Soit par une date soit par un
+  pré-requis qui va arriver. Attention à ne pas mettre des déclencheurs susceptibles de ne jamais arriver, sinon
+  l'issue peut être bloquée.» Applied: docs/INTEGRATOR.md "Linear" ("Not now" always gets a when; reason 4; Scheduled
+  is a date).
+- **08:36-08:48, the trusted-answers gate and its recurrence.** On REE-105's gate never checked: «on n'a jamais eu de
+  compte de bots qui spamment. Donc ça veut dire que parce qu'on n'avait pas de mécanisme en place pour
+  vérifier/compter, on n'a jamais déclencher l'action»; to measuring it: «ok. Et comment on fait pour que ça ne se
+  reproduise pas?» Applied: REE-105 measured (7,713 trusted answers; gate met, Todo).
+- **08:36-08:48, rights: roles, groups and a design study (REE-31, #1554).** On one scope per group: «Euh.... Je suis
+  pas sur... Imagine des cas contraires»; to a list of subjects per group: «mieux». On an instance right: «oui, bien
+  sur. Dans chaque matière portée par l'instance». On guardrails: «Il doit toujours y avoir un admin, et un manager
+  pour une instance. Bien sur il sera toujours permis de forcer mais le minimum c'est qu'un fort warning et stop
+  soient émis»; «il faut éviter que quelqu'un puisse complètement bloquer une instance». On roles: «il me faut une
+  page de gestion de rôles, dans laquelle je customise les droits pour chaque rôle, et une page de gestion des groupes
+  dans laquelle j'associe des groupes de gens à un ou plusieurs rôles + la possibilité d'associer des rôles à des
+  personnes spécifiques […] Est-ce que ça reste compatible avec l'idée des ACL». On the study: «Une vrai étude de
+  conception», global best practices with options. To two Audit columns Before and After: «Ok». Applied: the design
+  study of REE-31 (launched 2026-11-26); #1554 held for it; REE-303 (the dropped option).
+- **08:51-09:26, Fable 5.2 and Astra as second views.** «Je me demande s'il ne faudrait pas ajouter Fable en High, à
+  utiliser avec parcimonie, pour les études de conception complexes ou les réflexions autour de problèmes complexes ou
+  de refactoring». On briefs written as goals, not steps: «oui!!!». On a Fable study run beside Opus: «ok. Bonne
+  idée!». After the comparison: «Fable en plus d'Opus pour les réflexions complexe et choix couteux. A lancer soit en
+  parallèle dès le début parce qu'on a identifié la difficulté, ou a posteriori en complément si on trouve que ça
+  mérite un second regard». On Astra: «on pourrait même demander aussi un avis à Astra comme second regard non?»; he
+  does not read Linear («Rappel que je ne lis quasiment jamais Linear moi même»); on the prompt: «ça pourrait être les
+  deux. Le prompt dans le ticket pour ne pas l'oublier, et l'intégrateur qui me le recopie dans le chat ou dans un
+  fichier au moment où il y en a besoin, avec le contexte». On a full pass or a cross check: «Les 2. Une première
+  passe indépendante, puis une passe de critique/review des études Claude»; then «je ne veut pas 2 prompts
+  indépendants, c'est l'enfer à gérer. Un seul prompt, un seul agent, avec 2 phases successives»; to anonymous copies
+  in the Drive first and one prompt with both phases: «Oui, beaucoup mieux». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
+  suis familier, pas un exemple à suivre absolument». Applied: docs/INTEGRATOR.md model table and its two paragraphs.
+- **09:50-09:56, rights: roles, groups and assignments decided (REE-31, REE-305).** On the consolidated points after
+  the three studies (scope, #1554 revised, `grant` in other roles, the handover, the cohort's subjects, the three
+  risks, the build order): «ok». On the last admin or manager: «C'est probablement une meilleure pratique. Une encore
+  meilleure pratique serait d'avoir au moins 2 admins et 2 managers par instance. Mais c'est pas toujours possible
+  concrètement»; on a permanent warning: «ça va être pénible de voir un warning tout le temps si on ne peut rien y
+  faire». On a role given to a populated group: «Aaaaaaaahhhh. J'ai compris! C'est l'inscription libre par un code qui
+  pose problème. Oui, ok». On "Add all": «plus il va y avoir de joueurs plus ce bouton sera dangereux. Je propose
+  qu'on le redesigne autour des bétas exclusivement», «Et avec confirmation». Applied:
+  docs/decisions/2026-11-26-roles-groups-assignments.md; REE-305.

@@ -12,7 +12,7 @@ added the mean of its photos' priors, so units opened in the order of their mean
 questions, 9 players) found that the ease ranks photos within a family (−0.22 logit a point) and predicts nothing
 between families (−0.03 [−0.15, +0.04]). Q457 (Pierre, 2026-11-23 17:20 Manila: «ok») kept the ease within a family. A
 first build centred each photo on its family's mean, so the ease still ranked the genera and species below a family.
-The design note of PR #1610 (`docs/reviews/2026-11-26-judged-ease-scale.md`) showed
+The design note [reviews/2026-11-26-judged-ease-scale.md](../reviews/2026-11-26-judged-ease-scale.md) (#1610) showed
 that the rubric judges a photo against its own taxon's look: the ease places a photo among its unit's photos and says
 nothing about how units differ.
 
