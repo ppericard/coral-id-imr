@@ -449,7 +449,8 @@ Desktop must be able to pick up the work; they read GitHub, Drive and Linear, ne
 
 - **The integrator keeps it current as part of normal work**: In Progress at an agent's launch, In Review when its PR
   opens, Done when the completion evidence exists (Linear's merge automation no longer closes issues: Pierre,
-  2026-11-23, REE-219); a new issue (label Idea) for every idea discussed and not built; an issue's description holds
+  2026-11-23, REE-219); a new issue for every problem discussed and not solved (Pierre, 2026-11-26, REE-229 P5: «ok»;
+  an idea not decided yet takes label Idea); an issue's description holds
   the outcome, current understanding, next action, completion evidence and references (the team template), agent
   detail in its collapsible "Agent notes". Its skeleton, the executor line, the signed comments and an assignee a
   connector set to Pierre: [the brief](../tools/agent-brief.md#in-linear).

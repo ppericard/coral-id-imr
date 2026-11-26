@@ -2241,3 +2241,95 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   familles de poissons il faut vraiment que tu prennes l'habitude de les nommer en anglais, parce que c'est comme ça
   que je les connais. Mon niveau de noms communs en français est malheureusement limité ^^»; on where to record it:
   «Dans les règles». Applied: docs/rules/ship.md W1, docs/rules/README.md, AGENTS.md "Working with Pierre".
+- **12:02-13:27, the parked issues get a real when (the question session).** REE-73, the trainer role: «ok», given
+  through the new rights page once step 2 of REE-31 merges. REE-92, permission for Corals of the World: «ok», it comes
+  back with the market studies (REE-285). REE-247, the simple credits page: «oui», after the lecture photos are out
+  (REE-93). REE-108, the growth-form guesses, closed on «ok». On how good they are: «La forme de croissance est
+  toujours évaluée par la passe de jugement? J'ai souvenir qu'on n'était pas hyper bon sur ça.», then «ok pour l'issue»
+  and «J'ai très peu noté à la main des formes» (13:25). REE-79 (Coral ID Key photos): «Pourquoi attendre un mois?»;
+  REE-116 and REE-109: «Idem»; one Sonnet agent searches the judged photos for all three. REE-93, on a 1-for-1
+  replacement of the lecture photos (13:25): «Le but c'est pas de faire du 1 pour 1. Il faut faire le point sur ce que
+  ces photos restantes couvrent et (si) par quoi elles doivent être remplacées». REE-91, the fish families left out
+  (13:25): «En théorie, j'aimerais que notre base de connaissance (et de photos) contiennent tout, mais en pratique il
+  faut aussi choisir un parcours pédagogique qui fait du sens. Donc ya une vrai réflexion à avoir.» REE-100, when the
+  next round of independent reviews comes (13:27): «Au plus tard. Ou après une grosse refonte». Applied: Linear REE-73,
+  REE-92, REE-247, REE-108, REE-306 (the accuracy of the guesses); REE-79, REE-116, REE-109, REE-93, REE-91 (to run);
+  REE-100 (due 2026-12-15, or right after a large overhaul).
+- **13:38, the species exams and the ultimate exam (REE-27, #1489).** (a) a rolling set: «ok». (c) announced, started
+  from My progress, pause and resume: «Je suis d'accord! Il peut même être visualisé sous la forme d'un succès caché
+  mais avec un hover text un peu mystérieux ^^». (e) on by default for every subject that reaches species, the sea
+  slugs included: «Same thing. Sauf exception justifiée». (f) the stored shapes: «C'est du détail d'implémentation»,
+  the integrator's call. (g) B, a right answer on two different days, each on a never-shown photo at Advanced: «ok. A ce
+  stade c'est moins grave qu'on ralentisse un peu. On est déjà à la fin.» (b) and (d) not answered yet: on (b) «je ne
+  suis pas sur de comprendre le problème»; on (d) «Mouais... Je sais pas. Options? Bénéfices vs défauts». Applied:
+  Linear REE-27, to build (steps 1 and 2 on (f) and (g)); REE-30 (the hidden achievement).
+- **13:44-13:48, the reserve and the fish offsets already decided (REE-248, REE-55).** REE-248, after the integrator
+  asked again: «je suis quasiment sur qu'on avait déjà validé une stratégie… Je dis que j'ai tranché plus que le
+  principe, j'ai tranché les détails d'implémentations normalement». The integrator then rebuilt them from his words of
+  2026-11-18 and 2026-11-19; he corrected it (13:48): «Non, ça c'était avant. Les décisions ont été retravaillées après le
+  23»; «Là tu essaye de reconstruire un raisonnement à l'envers. Si on a tout remis sur la table le 23, ça veut dire que
+  les détails d'implémentations sont forcément arrivés après». So the 2026-11-18/19 words do not decide the build; his
+  later details are to be recovered. REE-55 (13:44): «Exactement» to removing the declared one-engine exception
+  `offsets` (the fish take their own memory and format offsets, as rule S1 and Q123 decided), and: «Ya des fois où il
+  faut accepter que le moteur ne soit pas encore parfait. Sauf si effectivement on a des bugs, ou que t'as de vrais
+  propositions d'améliorations fondamentales basées sur la logique ou de bonnes pratiques externes, et pas juste sur des
+  ajustements statistiques.» Applied: Linear REE-248, REE-307 (recovering his later details); REE-55, REE-28 steps 3
+  and 8, to build.
+- **14:07-14:27, small calls.** REE-101, on a lag test "not testable with today's draw": «ça on peut "nudge" le jeu
+  temporairement pour avoir les données qui nous intéresse ;-)»; (14:14) «Discrètement stp». REE-191, on more typed
+  questions and finer ranks sooner: «C'est des bonnes idées. Mais est-ce qu'on a eu une vrai réflexion globale sur
+  comment garder intéressés les joueurs de tout niveaux? Ca mérite une étude multi-modèle ça». REE-28 step 6, the
+  sign-in rule: «Je n'ai pas d'avis si ce n'est qu'il faut trouver la meilleure solution technique, et l'appliqué à
+  l'ensemble de l'app». REE-297 B1 (14:14), a reworded rule needs no approval step of his: «ok». REE-229 P5 (14:14), a
+  problem discussed and not solved gets an issue: «ok». REE-117 (14:14), the 2026-12-18 date kept as a plain return
+  date: «ok». REE-192 (Q316's fallback for the fish genera and species) and REE-255 (the coral single-view offset), both
+  closed on option A (14:27): «Si c'est ce que tu retiens après mes remarques alors ok»; nothing moves for players, and
+  no re-measure is scheduled. Applied: docs/INTEGRATOR.md "Linear" (P5); Linear REE-101 (design of the nudge, to
+  build), REE-191 (the study to launch), REE-28 step 6 (to build), REE-297, REE-117, REE-192, REE-255.
+- **14:07-14:23, an observation is not an absolute (REE-102, REE-308, REE-268).** On the name-similarity test (14:07):
+  «Pas du tout limité aux coraux...................». The integrator took it for a fact and wrote that the test already
+  covers every subject; he (14:14): «T'as vérifié? Mon commentaire n'était pas une affirmation factuelle, c'était un
+  commentaire sur le fait que ce test ne devrait pas être limité aux coraux». It then became an absolute rule; he
+  (14:17): «A nouveau, tu l'as transformé en règle absolu. J'ai besoin que tu vérifies et réfléchisse au problème avant de
+  transformer mon verbatim en absolu», «à noter comme un problème de travail». To testing the same hypothesis on every
+  choice among Latin names, the ~650 gate counted across them (14:23): «ok». On leaving the fish common names out of it:
+  «Mais du coup ça ouvre une nouvelle avenue d'erreurs à envisager». Applied: Linear REE-102; REE-308 (the new issue);
+  REE-268 (the working problem; the rule it fixes already stands in AGENTS.md "The rules").
+- **14:07-14:26, what a wrong answer should change (REE-26).** On the case: «ça ne devrait pas être un problème
+  spécifique d'un taxon. La question se pose quelque soit le niveau taxonomique»; on the family evidence: «Je suis
+  plutôt d'accord»; on wrong answers in general: «on a déjà eu plusieurs réflexions sur comment tenir compte des
+  réponses fausses. Et la littérature semblait dire qu'il ne fallait pas "punir" les réponses fausses»; on rule L2's set
+  of impacts: «est-ce que cet ensemble d'impacts correspond à une stratégie raisonnable et aux bonnes pratiques?»; on
+  option (b) generalised: «Ok? A voir en fonction des réflexions à côté». And (14:26) on logging the alternatives:
+  «Tu me confirmes que dans tous les cas on note les choix alternatifs pour une question à choix multiple? Et les choix
+  alternatifs pour les questions à plusieurs photos? A généraliser bien sur». Applied: Linear REE-26, the study to
+  launch (the choice among (a), (b) and (c) waits for it).
+- **14:45-14:49, photos and judging.** REE-309, the judging passes: «Rien de suite. ça sera pour la prochaine session.
+  Mais on peut définitivement faire une liste de priorités, et les pré-valider. The actual run has to be validated by me
+  when I am able to gage the quota and the charge of the agents». REE-275, (a) the view from above as reference for
+  flatfish and rays: «ok, mais j'élargirait probablement aux vues de 3/4 depuis le dessus. C'est probablement les plus
+  courantes pour ces poissons. En pratique, comment les sources externes les représentent sur les quelques photos les
+  plus mise en avant (voire photo de couverture)?»; (d), (e), (f): «ok». REE-225, on the tile rule that refuses
+  juveniles: «Pourquoi?»; then «ok» to dropping the juvenile flag from the general tile rule, and on Q321 D4's date:
+  «C'est ya longtemps ça ^^». REE-260, on the watermark rule for sheets: «Oui, et attention à ne pas faire d'exceptions
+  non justifiées entre les différents niveaux de fiches», then «Après il est tout a fait possible de faire des
+  exceptions, mais il faut qu'elles soient justifiées». REE-277, the judge comparison: «Sinon on reconstruit un nouveau
+  set, qu'on combine à l'autre test visuel (ou intégre à l'app comme suggéré. Review???) Je trouvais intéressant
+  d'évaluer différents modèles pour ça parce que ça pourrait potentiellement nous faire économiser beaucoup de quotas».
+  Applied: Linear REE-309 (the pre-validated list; each run on his go, rule P7), REE-275, REE-225, REE-260, REE-277.
+- **14:49-15:05, how a question's difficulty is aimed (REE-26's scope).** On Find the X: «find the x soulève tout un
+  tas de questions sur la manière de gérer les réponses pour les appliquer aux calculs de difficultés et de progrès. On
+  y avait réfléchi?» On the candidate photos (14:51): «Et aussi, comment on choisi les photos candidates, et donc la
+  difficulté de la question par rapport à la progression pédagogique du [joueur]? Exemple des juveniles». On multi-photo
+  formats (14:53): «Et surtout un nom est un nom, pour un niveau taxonomique donné. Une photo peut représenter la même
+  bestiole, mais le taux de réussite peut varier en fonction de la difficulté intrinseque de la photo (visibilité, state
+  de croissance, qualité de la photo, ...)». The scope (15:05): «Comment on ajuste la difficulté et les
+  sous-difficultés, pièges spécifiques, pour une question donnée, à un joueur donné (en fonction de son parcours)».
+  Applied: Linear REE-26 (the scope of the study), REE-225 (a build condition).
+- **15:05, the content design and the coral pairs.** REE-294 (the IMR layer): (a) the coral genus grid declared as IMR
+  layer data: «ok»; (b) on keeping the lecture photo references in `data.json` because a file of their own would change
+  a format fifteen tools read: «La difficulté d'une refont ne doit jamais être un argument à ce stade du développement.
+  Seul le résultat final et la conception doivent aider à décider» (re-decided on design alone, his answer pending);
+  (c) C8's PDF read as the instance's reference list: «oui». REE-61: Cycloseris / Lithophyllon, a one-sided line from
+  the sourced side: «ok»; Acropora / Cyphastrea, where two sources disagree: «Besoin de remonter le problème à un expert
+  de IMR». Applied: Linear REE-294, REE-61 (the question for an IMR expert, sent by him).
