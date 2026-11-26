@@ -103,7 +103,9 @@ written with `tools/datajson.py`.
   `git show origin/main:tools/X.py | python3 -I -` stays allowed; an error in it lets the command through, except in
   the push rule. That rule refuses a `git push` whose destination is `main` or `release` in any form (a refspec such as
   `HEAD:main` or `:refs/heads/release`, `--all`, `--mirror`, a pattern, a bare push on a branch tracking main or with
-  `push.default=matching`, an alias, a variable) and fails closed when it cannot read the destination (REE-346, REE-345). The
+  `push.default=matching`, a `remote.<name>.push` mapping, an alias, a variable) and fails closed when it cannot read the
+  destination, also when an earlier command of the same line (`switch`, `checkout`, `branch`, `config`, `remote`,
+  `push -u`…) may have changed the branch or the configuration git was asked about (REE-346, REE-345). The
   merge train needs no exception: `tools/train.py` pushes from its own process, not through Bash. Pushing `claude/*`,
   `codex/*`, `train/*` or the session's `ccr-*` branch stays allowed. `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
