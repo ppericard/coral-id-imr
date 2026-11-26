@@ -1,6 +1,6 @@
 // The offer to install the app, moved out of app.js (REE-64, one piece at a time; behaviour unchanged). A classic script of
 // tier 1, loaded right after app.js (index.html), so its names are globals like app.js's own and app.js's (store here at
-// load; cardShow, hashNow, setOpen, lb, $set, $helpbox, ORG, esc later, when the page runs) are already declared. Its
+// load; cardShow, hashNow, setOpen, $set, $helpbox, ORG, esc later, when the page runs; lb is zoom.js's) are already declared. Its
 // set-up (the visit's record, the two install events, the ⚙ row) runs once, when the script does.
 // Install the app (docs/ARCHITECTURE.md "Install the app"): our button calls the browser's prompt (beforeinstallprompt)
 // or, on iPhone and iPad Safari, the card shows the steps. Offered once on a touch screen (rule U4), from INSTALL.VISITS visits or
