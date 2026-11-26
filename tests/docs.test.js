@@ -695,6 +695,7 @@ const DOC_MARKS = {
   'docs/rules/subjects.md': [5, 130],
   'docs/rules/ui.md': [8, 150],
   'docs/reference/genus-overview-2026-10-31.md': [16, 650],
+  'docs/reference/independent-reviews.md': [6, 240],
   'docs/reference/lit-componential-difficulty.md': [36, 700],
   'docs/reference/lit-photo-memory.md': [30, 470],
   'docs/reference/lit-response-time.md': [37, 870],
