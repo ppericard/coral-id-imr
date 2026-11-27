@@ -269,7 +269,7 @@ function app({sheet, SYNC = null, P = {}, ls = {}, v, av = true, seen = true, ex
       progData +
       groups +
       read('sync.js') +
-      '\nbindSync = () => {};\nthis.A = {syncPush, syncPull, rvApplied, sheetV, store};',
+      '\nbindSync = () => {};\nthis.A = {syncPush, syncPull, rvApplied, sheetV, store, sendAnon, loadStats};',
     ctx
   );
   return Object.assign(ctx.A, {ctx, sent, got});
@@ -558,54 +558,128 @@ test('GAP: a queue past 2,000 answers drops its oldest, never sent (quiz.js logA
   assert.strictEqual(SYNC.log[0].id, 'q1', 'q0 is gone from the device before the sheet had it');
 });
 
-test('GAP: a save before the device has seen any reply say its version leaves out pa and cv for good, though the sheet stores them', async () => {
-  // A new device whose photo statistics' reply (sync.js loadStats, sheetSeen) has not come: sheetV is the floor, and the
-  // load before the save is not read for the version. The acknowledgement then drops the entries that held them.
+const settle = () => new Promise(r => setImmediate(r)).then(() => new Promise(r => setImmediate(r)));
+test('a device that has seen no version yet: the load before its save says it, so pa and cv go and are stored; an anonymous send waits for it (REE-351)', async () => {
+  // A new device whose photo statistics' reply (sync.js loadStats, sheetSeen) has not come: sheetV is the floor until a
+  // reply says the version. The load before the save is read for it (syncOnce), so nothing is trimmed for want of it.
   const s = loadCodeGs(withData()),
     SYNC = {name: 'Ana', pin: '1234', log: []};
   coralAnswers(recorder(CORAL(), SYNC));
   const queue = copy(SYNC.log),
     A = app({sheet: s, SYNC, seen: false});
+  assert.strictEqual(A.sheetV(), C.SHEET_FLOOR, 'no version seen: the floor');
   await A.syncPush();
   const [body] = saves(A);
-  assert.ok(
-    body.answers.every(a => !('cv' in a) && !('pa' in a)),
-    'trimmed at the floor'
-  );
+  eq(body.answers, queue, 'sent as queued, pa and cv included');
   assert.ok(queue.some(a => a.pa) && queue.every(a => a.cv));
-  eq(SYNC.log, [], 'acknowledged: the queue held the only copy');
-  const {H, R} = answersTab(s);
-  eq(
-    R.map(r => [r[H.indexOf('Photo answered')], r[H.indexOf('Content version')]]),
-    queue.map(() => ['', ''])
-  );
-  assert.strictEqual(A.sheetV(), VERSION, 'the save reply teaches the version, too late for these');
+  eq(SYNC.log, [], 'acknowledged');
+  const {H, byId} = answersTab(s);
+  for (const a of queue) {
+    assert.strictEqual(byId(a.id)[H.indexOf('Content version')], a.cv);
+    assert.strictEqual(byId(a.id)[H.indexOf('Photo answered')], a.pa || '');
+  }
+  // Not signed in: no load comes first, so the anonymous send holds the answers that carry a field the floor trims
+  // until a reply says the version (the photo statistics', loadStats), then sends them whole.
+  const s2 = loadCodeGs(withData()),
+    AN = {name: '', pin: '', log: []};
+  coralAnswers(recorder(CORAL(), AN));
+  const later = [],
+    B = app({
+      sheet: s2,
+      seen: false,
+      ls: {'reefid-anon-id': JSON.stringify('abcdefghij'), 'reefid-anonq': JSON.stringify(AN.log)},
+      extra: {performance: {now: () => 0}, setTimeout: f => (later.push(f), 0)}
+    });
+  B.sendAnon();
+  await settle();
+  eq(B.sent, [], 'held: nothing sent before a version is known');
+  eq(B.store.get('reefid-anonq', []), AN.log, 'kept');
+  B.loadStats();
+  await settle();
+  assert.strictEqual(B.sheetV(), VERSION, 'the photo statistics say the version');
+  assert.ok(later.includes(B.ctx.sendAnon), 'and send what was held (anonSoon)');
+  B.sendAnon();
+  await settle();
+  const sent = B.sent.find(b => Array.isArray(b.anonAnswers));
+  eq(sent.anonAnswers, AN.log, 'whole');
+  eq(B.store.get('reefid-anonq', []), [], 'acknowledged');
+  const t = answersTab(s2);
+  for (const a of AN.log) assert.strictEqual(t.byId(a.id)[t.H.indexOf('Content version')], a.cv);
 });
 
-test('GAP: an answer whose id the sheet refuses is acknowledged, leaves the queue and is never logged', async () => {
+test('an answer whose id the sheet refuses stays queued, goes again with the next sends, and leaves after 3 with an Events line (REE-351)', async () => {
   const s = loadCodeGs(withData()),
     SYNC = {name: 'Ana', pin: '1234', log: []};
   coralAnswers(recorder(CORAL(), SYNC));
-  const [a, b, c] = SYNC.log;
-  SYNC.log = [a, {...b, id: 'Not-An-Id'}, (({id, ...x}) => x)(c)];
-  const A = app({sheet: s, SYNC});
-  await A.syncPush();
-  eq(SYNC.log, [], 'all three dropped from the queue');
+  const [a, b, c] = SYNC.log,
+    bad = [{...b, id: 'Not-An-Id'}, (({id, ...x}) => x)(c)];
+  assert.ok(C.logIdOk(a.id) && !C.logIdOk(bad[0].id) && !C.logIdOk(bad[1].id), 'core.js logIdOk: the sheet’s rule');
+  SYNC.log = [a, ...bad];
+  const A = app({sheet: s, SYNC}),
+    evs = () => (A.store.get('reefid-evq', []) || []).filter(e => e.k === 'sync').map(e => e.msg);
+  // (a push may save twice: a replay adopted from the save's reply is saved again at once, syncOnce)
+  const carried = () => saves(A).filter(x => x.answers.some(e => e.id === bad[0].id)).length;
+  for (let i = 0; i < 5 && SYNC.log.length; i++) {
+    await A.syncPush();
+    if (carried() < 3) (eq(SYNC.log, bad, `kept after ${carried()} sends`), eq(evs(), []));
+  }
+  eq(saves(A)[0].answers, [a, ...bad], 'the first send carries all three');
+  assert.strictEqual(carried(), 3, 'sent three times in all');
+  eq(SYNC.log, [], 'after the third send they leave the queue');
+  eq(evs(), ['answers whose id the sheet refuses, dropped after 3 sends: 2'], 'never silently');
+  eq(A.store.get('reefid-refused', null), null, 'their count goes with them');
   eq(
     answersTab(s).R.map(r => r[7]),
     [a.id],
     'only the one with a valid id logged'
   );
+  // The anonymous queue alike.
+  const s2 = loadCodeGs(withData()),
+    AN = {name: '', pin: '', log: []};
+  coralAnswers(recorder(CORAL(), AN));
+  const [x, y] = AN.log,
+    z = {...y, id: 'NO'},
+    B = app({sheet: s2, ls: {'reefid-anon-id': JSON.stringify('abcdefghij'), 'reefid-anonq': JSON.stringify([x, z])}});
+  B.sendAnon();
+  await settle();
+  eq(B.store.get('reefid-anonq', []), [z], 'the refused one kept');
+  eq(
+    answersTab(s2).R.map(r => r[7]),
+    [x.id]
+  );
 });
 
-test('GAP: the replay counts a row twice when the log holds its id twice (only the intake keeps ids unique)', () => {
+test('the replay counts an answer once when the log holds its id twice: the device’s rows and the sheet’s tab (REE-351)', () => {
   const SYNC = {name: 'Ana', pin: '1234', log: []};
   coralAnswers(recorder(CORAL(), SYNC));
   const row = C.logRow(SYNC.log[0], 'me'),
-    once = C.replayProgress([row], {gen: DATA.gen}).me.P.Acropora,
-    twice = C.replayProgress([row, [...row]], {gen: DATA.gen}).me.P.Acropora;
-  assert.strictEqual(once.ok, 1);
-  assert.strictEqual(twice.ok, 2);
+    once = C.replayProgress([row], {gen: DATA.gen}).me,
+    twice = C.replayProgress([row, [...row]], {gen: DATA.gen}).me;
+  assert.strictEqual(once.P.Acropora.ok, 1);
+  eq(twice, once, 'the same replay');
+  // A row without an id (the admin's readAnswers rows, a study's) counts as it comes, as before.
+  const bare = [...row];
+  bare[C.LOG_RID] = undefined;
+  assert.strictEqual(C.replayProgress([bare, [...bare]], {gen: DATA.gen}).me.P.Acropora.ok, 2);
+  // The sheet: a tab holding a row twice (a hand edit, a restore) replays as the tab with it once: the same record, n
+  // and ids, also once its Replayed row is cached.
+  const load = sh => sh.get({name: 'Ana', pin: '1234', rv: '0', av: '900-x'}).replay,
+    tab = () => {
+      const s = loadCodeGs(withData());
+      s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: SYNC.log, av: '900-x'});
+      return s;
+    },
+    clean = tab(),
+    dup = tab(),
+    R = dup.sheets.Answers.rows;
+  R.push([...R[1]]);
+  assert.strictEqual(R.length, 5, 'the tab holds one id twice');
+  const want = load(clean);
+  assert.strictEqual(want.n, 3);
+  for (let i = 0; i < 2; i++) {
+    const got = load(dup);
+    eq([got.n, [...got.ids].sort(), got.rec], [want.n, [...want.ids].sort(), want.rec]);
+  }
 });
 
 test('GAP: tests/anslog.js writes an Answered the sheet never writes ("I don\'t know"; logAnswers_ writes it blank)', () => {
