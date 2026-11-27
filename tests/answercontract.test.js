@@ -647,6 +647,15 @@ test('an answer whose id the sheet refuses stays queued, goes again with the nex
     answersTab(s2).R.map(r => r[7]),
     [x.id]
   );
+  // Any refused id obeys the bound, one named as an object's member included (Codex review #1636): after 3 sends it leaves.
+  B.store.set('reefid-anonq', [{...y, id: '__proto__'}]);
+  for (let i = 0; i < 4 && (B.store.get('reefid-anonq', []) || []).length; i++) {
+    B.sendAnon();
+    await settle();
+  }
+  eq(B.store.get('reefid-anonq', []), [], 'gone after 3 sends');
+  eq(B.store.get('reefid-anon-refused', null), null);
+  assert.strictEqual(B.sent.filter(b => Array.isArray(b.anonAnswers) && b.anonAnswers.some(a => a.id === '__proto__')).length, 3);
 });
 
 test('the replay counts an answer once when the log holds its id twice: the device’s rows and the sheet’s tab (REE-351)', () => {

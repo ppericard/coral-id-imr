@@ -340,8 +340,9 @@ function logAcked(L, sent, k) {
     if (store.get(k, null)) store.drop(k);
     return kept; // none refused: every answer the app makes (answerId, live.js liveAid)
   }
+  // By id in a map with no prototype: any id is a key of its own, __proto__ or constructor included (Codex review #1636).
   const n0 = store.get(k, null),
-    n = n0 && typeof n0 === 'object' && !Array.isArray(n0) ? n0 : {};
+    n = Object.assign(Object.create(null), n0 && typeof n0 === 'object' && !Array.isArray(n0) ? n0 : {});
   bad.forEach(id => (n[id] = (Number(n[id]) || 0) + 1));
   const out = kept.filter(x => x && (logIdOk(x.id) || (Number(n[String(x.id)]) || 0) < REFUSED.TRIES)),
     gone = kept.length - out.length,
