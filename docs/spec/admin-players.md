@@ -186,9 +186,19 @@ beta group's Add / Remove and the Cohort select. Its help: `HELP.groups`. What a
 - **Merge into** reads `{mergePlan}` first and its confirm lists the groups the kept name joins, the rights groups
   dropped with their rights, and leaving the admin list; not read, no merge.
 - **Admins (outside the groups)**: a read-only line from `{roles: 1}` (Q408 answer 6).
-- A rights change's errors in words (`rightsErr`: `token`, `members`, `input`, `server`); for `server` ("Saved in part:
-  its Audit record failed. Try again to finish it.") **Try again** sends the same request again. After any answer the
-  players are read again, so no change is sent from a list the sheet no longer has.
+- A right at a subject's scope (sheet `vNEXT`; [groups by scope](../decisions/2026-11-21-groups-by-scope.md)) shows
+  with its scope, as `rightWord` shows any scope but the instance's ("Content (subject:fish)"); **+ Add a right** offers
+  the instance's rights only, which the sheet refuses (`scope`) on a group whose rights are at subjects (a group's
+  subjects are a list: each of its rights at each of them). Choosing a group's subjects on this page is a later step.
+- **Give rights** asks first: the sheet answers `confirm` with how many members would hold it (`grantOk`: "Give rights
+  to "Trainers"? Its 2 members could then give or take any right in IMR, Give rights included."); yes sends the same
+  request again with the sheet's confirmation, no sends nothing more.
+- A rights change's errors in words (`rightsErr`: `token`, `members`, `input`, `scope`, `separate`, `last` with the
+  seat it would empty, `server`); for `server` ("Not done, or saved in part: its Audit record failed. Try again.")
+  **Try again** sends the same request again. After any answer the players are read again, so no change is sent from a
+  list the sheet no longer has. A delete, merge or archive that would leave IMR without an admin or a manager says so
+  the same way (`last`). The seat counts, naming a successor or a standby, and the audit history come with the Roles
+  page.
 - **One Groups write at a time on the whole page, of any kind** (rule W27; `rPend`, `gStart`, `gReread`): a group made,
   renamed, set or deleted, a right given or taken away, a player in or out. From the request until the players are read
   again with the answer applied (a read dropped by a newer one is made again), every Groups control is off (the page's

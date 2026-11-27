@@ -136,7 +136,10 @@ test('players named like Object.prototype members: every admin read, group and c
   assert.strictEqual(st.ok, true);
   assert.deepStrictEqual(Object.keys(st.ras).sort(), all.map(n => s.ctx.aid_(n)).sort());
   assert.strictEqual(polluted(s), '|||', 'the stats add nothing to Object');
-  // readAnswers and the live view: each row under its player's id (a string), the caller's own id as "me".
+  // readAnswers and the live view: each row under its player's id (a string), the caller's own id as "me". Pierre's
+  // rights are not given here (Code.gs rolesSeed_): the admin's account then holds both seats, and the guard would keep
+  // it from its archive below (tests/rightswrite.test.js).
+  s.props.ROLES_SEED = '1';
   const ra = s.post({readAnswers: 1, token: TOK, aname: 'constructor', apin: '1234'});
   assert.strictEqual(ra.me, s.ctx.aid_('constructor'));
   assert.deepStrictEqual(Object.keys(ra.players).sort(), all.map(n => s.ctx.aid_(n)).sort());

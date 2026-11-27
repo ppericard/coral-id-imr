@@ -9,7 +9,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, confirmed} = require('./gas.js');
 const block = require('./block.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -22,7 +22,7 @@ const save = (s, name, pin = '1234') => s.post({name, pin, data: {}, summary: {}
 const grant = (s, account, role) => {
   const rights = copy(run(s, `ROLES.DEF.${role}.rights`)).map(r => r + '@' + IMR),
     had = s.post({users: 1, token: TOK}).groupDefs.find(d => d.n === role),
-    g = (had || s.post({groupMake: {n: role, rights}, token: TOK}).group).id;
+    g = (had || confirmed(s, {groupMake: {n: role, rights}, token: TOK}).group).id;
   return s.post({userGroup: account, group: g, on: true, token: TOK});
 };
 // A question as the trainer's page sends it (live.js liveBuild): photos, four choices, the right one's index.
@@ -72,11 +72,11 @@ test('only an account with the trainer role starts a session, checked by the scr
   assert.strictEqual(r.ok, true);
   assert.match(r.code, /^\d{6}$/);
   assert.match(r.tk, /^[a-z0-9]{18}$/);
-  // Audited: the start and the refusal, by anonymous id, never a name.
+  // Audited: the start and the refusal, at the game's subject, by anonymous id, never a name.
   const A = s.sheets.Audit.rows.slice(1).map(x => [x[2], x[3], x[4]]);
   assert.deepStrictEqual(A.slice(-2), [
-    ['live start', IMR, 'denied'],
-    ['live start', IMR, 'ok']
+    ['live start', 'subject:coral', 'denied'],
+    ['live start', 'subject:coral', 'ok']
   ]);
   assert.ok(!JSON.stringify(s.sheets.Audit.rows).includes('Tess'));
   // The right is the Trainers group's only: a Manager or a Curator without it is refused (rights are separate).

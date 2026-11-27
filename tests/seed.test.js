@@ -38,8 +38,13 @@ const play = (s, name, pin, extra = {}, more = {}) =>
     answers: []
   });
 const names = s => s.sheets.RAs.rows.slice(1).map(r => r[0]);
-// The admin page's read of the answer log, signed in to a player account on that browser (admin.js loadStats).
-const adminRead = (s, aname, apin, token = TOK) => s.post({readAnswers: 1, aname, apin, token});
+// The admin page's read of the answer log, signed in to a player account on that browser (admin.js loadStats). Pierre's
+// rights are not given here (Code.gs rolesSeed_, tests/roles.test.js): the admin's account would then hold both seats,
+// and the guard would keep it from the deletes, merges and archives these tests make (tests/rightswrite.test.js).
+const adminRead = (s, aname, apin, token = TOK) => (
+  (s.props.ROLES_SEED = s.props.ROLES_SEED || '1'),
+  s.post({readAnswers: 1, aname, apin, token})
+);
 const marked = (s, S) =>
   s
     .get({board: '1', s: S.id})
