@@ -332,6 +332,17 @@ addEventListener('pagehide', () => pendClock());
 // at: the reading's moment (performance.now()); a page being closed while hidden reads at the moment it was hidden.
 const qclockRead = (at = performance.now()) =>
   QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (at - QCLOCK.t0 - QCLOCK.off) / 1000 + QCLOCK.pre)) * 10) / 10;
+// The small line under a choice's name (question): the common name of a species asked by its scientific name while
+// shown with it (sv 'sc', app.js sciShow), none when shown alone ('so'); on any other question, the scientific name of a
+// unit labelled by its common name (its record's sci), none for the rest.
+const choiceSub = (c, sv) => (sv ? (sv === 'sc' ? (GX(c) || {}).cn || '' : '') : (GX(c) || {}).sci || '');
+// How a name showed (core.js offerOf: the Answers' Offered): its label a common name (app.js uplain: c) or a scientific
+// one (s), then the other kind when the line under it showed one too (choiceSub). line false: the label alone (a Find the
+// X's prompt, a live game's choices).
+const nameForm = (n, sv, line = true) => {
+  const m = uplain(n) ? 'c' : 's';
+  return line && choiceSub(n, sv) ? m + (m === 'c' ? 's' : 'c') : m;
+};
 // A new question's clock (question(), winkShow): stopped and not enlarged; the first of its photos to be in starts it,
 // whichever (one cached or quicker than the first in the page would otherwise be looked at off the clock).
 function qclockArm() {
@@ -354,7 +365,7 @@ function question(cur, target, choices, prompt, set, kq) {
   // A kept question comes back with the display it was shown with (PENDSCI, q.sv): sciShow draws at random between two.
   SCIQ = !set.typed && !set.find && kindOf(target) === 'sci' ? {t: target, v: PENDSCI || sciShow(target)} : null;
   PENDSCI = null;
-  const sub = c => (SCIQ ? (SCIQ.v === 'sc' ? (GX(c) || {}).cn || '' : '') : (GX(c) || {}).sci || '');
+  const sub = c => choiceSub(c, SCIQ && SCIQ.v);
   let answered = false,
     hintShown = false,
     by = ''; // 'key' while a number key clicks its answer (the keys tip's counter)
@@ -727,7 +738,9 @@ const photoTimeQ = ph =>
 // cor: a corallites photo in view; exq: a mastery exam question; tq: the typed question (TYPEDQ); warm: a comeback
 // question, R and Rc its recalls (1 otherwise); mu: the unit a photo of the mimicry class resembles; tm: {rt, zm} the
 // seconds and a photo enlarged; id, at: the attempt id and time (answerId and now by default); tap: a Find the X's photo
-// tapped. Returns {res, s, h0}: the scorer's result, the unit's record, the opening hold before this answer.
+// tapped; fx: a Find the X's tiles ([{n, p}], its choices: SHOWNQ[4].find), null for any other question; form: how each
+// name showed (nameForm by default: its label and the line under it). Returns {res, s, h0}: the scorer's result, the
+// unit's record, the opening hold before this answer.
 function recordAnswer({
   cur,
   mq,
@@ -747,7 +760,9 @@ function recordAnswer({
   tm = {},
   id,
   at,
-  tap = null
+  tap = null,
+  fx = null,
+  form = null
 }) {
   const good = c === target,
     s = st(target),
@@ -901,6 +916,20 @@ function recordAnswer({
     // A Find the X's photo tapped (the Answers' Photo answered): sent only from PA_SHEET (core.js logOut, sync.js), the
     // queue keeps it until then (rule D4). Information only: no score, replay or rule reads it.
     ...(tap && tap.f ? {pa: tap.f} : {}),
+    // What produced it (the Answers' Context: the app build, the subject's rules version, the record format; cxField) and
+    // every stimulus the question showed with its role (the Answers' Offered, core.js offerOf: the photos of the unit
+    // asked, a Find the X's name asked and its tiles, the names offered with the form each showed in, a typed answer's
+    // option set as its rule). Sent only from CX_SHEET and OF_SHEET (core.js logOut, rule D4); logged only: no score,
+    // replay or rule reads them.
+    ...cxField(),
+    of: offerOf({
+      t: target,
+      ph: seenPh.map(p => p.f || ''),
+      tiles: fx ? fx.map(x => [x.n, x.p.f || '']) : null,
+      chs: fx ? [] : chs,
+      form: form || (n => nameForm(n)),
+      rule: tq ? (rankOf(target) || unitRankOf(SUBJ)) + (kindOf(target) ? ':' + kindOf(target) : '') : ''
+    }),
     // The content version its subject's units were made from (app.js contentVer, core.js contentVersion; the Answers'
     // Content version): sent only from CV_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). No
     // score, replay or rule reads it.
@@ -994,7 +1023,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
     (tq ? '|t' : '') +
     (exq ? '|x' : '');
-  // Scored, kept and logged as every counted answer is (recordAnswer, live.js liveLog too).
+  // Scored, kept and logged as every counted answer is (recordAnswer, live.js liveLog too). Its Offered: a Find the X's
+  // tiles (fx) and its prompt's name, a label alone; any other question's names as its buttons showed them (sci: the
+  // display of a species asked by its scientific name).
+  const fx = (photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find) || null;
   const {h0} = recordAnswer({
     cur,
     mq,
@@ -1012,7 +1044,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     Rc: warm && !good && GX(c) ? recallAt(c) : 1,
     mu,
     tm,
-    tap
+    tap,
+    fx,
+    form: fx ? n => nameForm(n, null, false) : n => nameForm(n, sci ? sci.v : null)
   });
   // (exq, above: never from the custom quiz.)
   EXAMQ = null;
@@ -1347,6 +1381,11 @@ const cvField = () => {
   const cv = typeof contentVer === 'function' ? contentVer(SUBJ) : '';
   return cv ? {cv} : {};
 };
+// The Context field of an answer in the subject on screen (core.js ctxOf; the Answers' Context): the app build that
+// records it (sync.js appVer, left out where sync.js is not loaded or the copy has no stamp), the subject's rules version
+// (core.js rvOf: the rules this device scores it under) and the record format (core.js ANS_FMT). The sheet adds the
+// script's version when it logs it.
+const cxField = () => ({cx: ctxOf(typeof appVer === 'function' ? appVer() : '', rvOf(SUBJ.id))});
 // An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
 // twice or lost offline; not signed in, it waits on this device (LOG0) and also goes to the sheet anonymously
 // (sync.js sendAnon). Both queues written as store.set would, their text kept parsed for the next read (sync.js keptPush).
@@ -1404,7 +1443,8 @@ function winkPhoto(g) {
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
 }
 // A surprise card's answer for the log: a game answer's fields for what was shown and answered (ch: renamed ids,
-// core.js renamedId: an absurd choice may name an old entry), mode WINK_MODE, nothing scored (no e, th, nw, sc).
+// core.js renamedId: an absurd choice may name an old entry), mode WINK_MODE, nothing scored (no e, th, nw, sc). Its
+// Offered: its photo and its four labels, each upright text of its own (fish.json wink: form c).
 function winkAnswer(n, id, ids, p, tm) {
   const r = x => renamedId(SUBJ, x),
     a = r(id),
@@ -1426,6 +1466,8 @@ function winkAnswer(n, id, ids, p, tm) {
     ...(unitName(n) ? {tn: unitName(n)} : {}),
     ...(unitName(a) ? {ta: unitName(a)} : {}),
     ...(sp ? {sp} : {}),
+    ...cxField(),
+    of: offerOf({t: n, ph: [p.f || ''], chs: ids.map(r), form: () => 'c'}),
     ...cvField()
   };
 }

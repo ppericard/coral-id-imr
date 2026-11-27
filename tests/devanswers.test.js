@@ -36,7 +36,11 @@ test('Code.gs: Device is Answers column Y, after every column before it, which s
   const H = s.sheets.Answers.rows[0],
     LOG = vm.runInContext('LOG', s.ctx);
   assert.strictEqual(H[24], 'Device');
-  assert.strictEqual(H.length, 27, 'Photo answered and Content version after it (tests/findxlog.test.js, tests/contentver.test.js)');
+  assert.strictEqual(
+    H.length,
+    29,
+    'Photo answered, Content version, Context and Offered after it (tests/findxlog.test.js, tests/contentver.test.js, tests/answercontract.test.js)'
+  );
   assert.deepStrictEqual(
     [...H.slice(0, 24)],
     [

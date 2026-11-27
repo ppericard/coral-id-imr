@@ -282,6 +282,31 @@ const GATES = {
     assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
     return out.cv === 'c1x2y3z';
   },
+  // An answer's Context and Offered (quiz.js cxField, core.js offerOf; docs/spec/answer.md, REE-311 point 8, REE-26
+  // point 11(b)): each sent from the version that stores it (Code.gs Context, Offered), through core.js logOut at both of
+  // sync.js's sends; before, the copy sent leaves it out and keeps the rest, the queue untouched.
+  CX_SHEET: v => {
+    const {logOut} = C,
+      cx = {b: '900-abc', r: 16, f: 1},
+      a = {id: 'a1', m: 'quiz', ph: 'p1', cx},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz', ph: 'p1', cx}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, cx}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.cx === cx;
+  },
+  OF_SHEET: v => {
+    const {logOut} = C,
+      of = [['t', 'Acropora', 'p1']],
+      a = {id: 'a1', m: 'quiz', ph: 'p1', of},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz', ph: 'p1', of}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, of}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.of === of;
+  },
   // The photos' time terms (core.js PTIME, ptimeInto: a photo's 6th to 8th numbers in ?stats=1; model.js ptmOf): read from
   // a reply of the version that serves them; before, none, so every photo's difficulty stays as it was.
   PTIME_SHEET: (v, N) => {

@@ -41,10 +41,18 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 //   Answered keeps that photo's unit. Logged only.
 // - Content version: the content the answer's subject was built from (core.js contentVersion), 'c' and up to 15
 //   lower-case letters and digits (docs/ROADMAP.md "Content versions and duplicate-safe answers"). Logged only.
+// - Context (from vNEXT): what produced the answer, as JSON: the app's part (cx: b its build, r its subject's rules
+//   version, f the record format; core.js ctxRec keeps each that checks) and this script's VERSION (v), written for every
+//   answer it logs, an old app's included (context_). Rows logged before the column existed stay blank. Logged only.
+// - Offered (from vNEXT): every stimulus the question showed with its role (of: core.js offerOf), as JSON, blank when
+//   any item fails its check (core.js offerRec: 12 items, a unit or a photo 80 characters, the cell 2,000). Logged only.
 // The answer-level fields name no one, so they travel with their row (merge, delete, archive).
 // Id, the answer's attempt id (core.js answerId): an id the tab already has, or one met earlier in the same send, is
 // skipped (freshAnswers_, logAnswers_), so a retried send never logs an answer twice.
-const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered', 'Content version'];
+const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered', 'Content version', 'Context', 'Offered'];
+// The columns the readers take (answerRows_, readAnswers, live_, the stats' fold, the one-shot renames): every one before
+// Context, so the logged-only columns at the end, which no reader takes yet, never add to a request's read of the tab.
+const READ_W = LOG.indexOf('Context');
 const DEV_COL = LOG.indexOf('Device');
 const SC_COL = LOG.indexOf('Scoring');
 const RJ_COL = LOG.indexOf('Rejected tries');  // 23: the same index in readAnswers rows (answerOut_)
@@ -519,7 +527,7 @@ function logAnswers_(name, answers, seen0, dev){
   // An id of a-z and 0-9 only (core.js logIdOk): the device keeps an entry with another one queued (sync.js logAcked).
   const rows = newIds_(answers.filter(a => a && CORE_.logIdOk(a.id)), seen).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
-      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '']; });  // Photo answered checked as Photos
+      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '', context_(a.cx), offered_(a.of)]; });  // Photo answered checked as Photos
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -545,6 +553,11 @@ const typed_ = x => typeof x === 'string' ? safe_(x.replace(/[\u0000-\u001f\u007
 const rejected_ = x => { const L = Array.isArray(x) ? x.filter(t => typeof t === 'string').map(t => t.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 40)).filter(Boolean).slice(0, 10) : []; return L.length ? JSON.stringify(L) : ''; };
 // The scoring record (core.js scoreRec: only its known fields, each checked), as JSON; blank when the app sent none.
 const scoring_ = x => { const o = CORE_.scoreRec(x); return o ? JSON.stringify(o) : ''; };
+// The answer's Context (core.js ctxRec: the app's build, rules version and record format, each kept when it checks),
+// then this script's VERSION as v, never the app's: written for every answer logged, one that sent none included.
+const context_ = x => JSON.stringify(Object.assign(CORE_.ctxRec(x), {v: VERSION}));
+// What the question showed (core.js offerRec), as JSON; blank when the app sent none or any item fails its check.
+const offered_ = x => { const L = CORE_.offerRec(x); return L ? JSON.stringify(L) : ''; };
 
 // The opening hold, kept here so it follows the player from one device to another (model.js holdStep, docs/LEARNING.md
 // "Held while the player falls behind"): over the answers in time order, h = max(0, h + expected - right - SLACK),
@@ -625,7 +638,7 @@ function answerRows_(){
   if (ROWS_) return ROWS_;
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
   ROWS_LAST_ = sh ? sh.getLastRow() : 0;
-  ROWS_ALL_ = sh ? logRows_(sh, LOG.length).filter(r => !protoRow_(r)) : [];  // protoRow_: never a row with a reserved word
+  ROWS_ALL_ = sh ? logRows_(sh, READ_W).filter(r => !protoRow_(r)) : [];  // protoRow_: never a row with a reserved word
   return ROWS_ = ROWS_ALL_.filter(replayed_);
 }
 // The rows of another subject the sheet replays (core.js replayedSubjects: fish), from the same read of the tab
@@ -1078,7 +1091,7 @@ function answers_(q){
   const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
   // A surprise card's answer (core.js winkRow) is served to no reader: the admin's pages and analyses never count it.
-  if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, LOG.length).filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
+  if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, READ_W).filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // no archive
     .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
   const lean = q && q.lean ? CORE_.rowsPack(out.rows) : null;
@@ -1117,8 +1130,8 @@ function live_(){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), out = {ok: true, rows: [], last: {}, n: 0, k: 0, roster: rosterAt_()};
   if (!sh || sh.getLastRow() < 2) return out;
   const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // by name, no prototype (a player named constructor)
-  const n = out.n = sh.getLastRow() - 1, k = out.k = Math.min(n, LIVE_N), w = sh.getMaxColumns ? Math.min(LOG.length, sh.getMaxColumns()) : LOG.length;
-  out.rows = sh.getRange(n - k + 2, 1, k, w).getValues().map(r => w < LOG.length ? r.concat(new Array(LOG.length - w).fill('')) : r)
+  const n = out.n = sh.getLastRow() - 1, k = out.k = Math.min(n, LIVE_N), w = sh.getMaxColumns ? Math.min(READ_W, sh.getMaxColumns()) : READ_W;
+  out.rows = sh.getRange(n - k + 2, 1, k, w).getValues().map(r => w < READ_W ? r.concat(new Array(READ_W - w).fill('')) : r)
     .filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
   const act = ss.getSheetByName('Activity'), f = act ? act.getRange(1, 1).getFormula() : '';
   const L = act && act.getLastRow() > 1 && (f === ACTIVITY || f === ACTIVITY_V1)  // V1: from before the first surprise card, none to leave out
@@ -1506,14 +1519,14 @@ function statsFold_(o){
   const reset = w => { why = w; return statsNew_(roster, sxL, t0, w, sid); };
   if (why) S = reset(why);
   const salt = anonSalt_(), K = nul_(), key = n => K[n] = K[n] || aid_(n, salt);
-  const width = an && an.getMaxColumns ? Math.min(LOG.length, an.getMaxColumns()) : LOG.length;
+  const width = an && an.getMaxColumns ? Math.min(READ_W, an.getMaxColumns()) : READ_W;
   const more = () => S.c < last && read < cap && (!read || Date.now() - t0 < budget);
   let read = 0, settled = 0, caught = false, served = null, admin = null, tr = null;
   for (;;) {
     while (more()) {
       const k = Math.min(B, last - S.c);
       let v = an.getRange(S.c + 2, 1, k, width).getValues();
-      if (width < LOG.length) v = v.map(r => r.concat(new Array(LOG.length - width).fill('')));
+      if (width < READ_W) v = v.map(r => r.concat(new Array(READ_W - width).fill('')));
       read += k;
       const fresh = [];
       let late = false;
@@ -4152,7 +4165,7 @@ const ONCE_ = {
     // would drop the apostrophe safe_() put before a name or a typed answer).
     // The tab's columns by name (Species shown), and its rows through logRows_ (a column added since reads blank).
     if (an && an.getLastRow() > 1 && an.getLastColumn() >= C('Species shown') + 1) {
-      const n = an.getLastRow() - 1, v = logRows_(an, LOG.length), cols = ['Genus shown', 'Answered', 'Mode', 'Choices', 'Taxon shown', 'Taxon answered'];
+      const n = an.getLastRow() - 1, v = logRows_(an, READ_W), cols = ['Genus shown', 'Answered', 'Mode', 'Choices', 'Taxon shown', 'Taxon answered'];
       const nv = cols.map(c => v.map(r => [r[C(c)]])), key = ['g', 'a', 'm', 'ch', 'tn', 'ta']; let k = 0;
       v.forEach((r, i) => {
         const FS = RS.find(S => S.id === String(r[C('Subject')]));
@@ -11197,16 +11210,93 @@ const CORE_ = (function () { const module = {exports: {}};
   // docs/ROADMAP.md "Content versions and duplicate-safe answers"). Sent with cv only once the script's replies say
   // v >= CV_SHEET; below, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
   const CV_SHEET = 178;
+  // The sync script version that stores an answer's Context (Code.gs: Answers Context, the entry's cx: ctxOf) and its
+  // Offered (Code.gs: Answers Offered, the entry's of: offerOf; REE-311 point 8 and REE-26 point 11(b), Pierre,
+  // 2026-11-27). Sent with them only once the script's replies say v >= the gate; below, the copy sent leaves them out
+  // (the queue keeps them), as for pa and cv (rule D4).
+  const CX_SHEET = 238;
+  const OF_SHEET = 238;
+  // The fields a version gate trims from the copy sent (docs/spec/answer.md "How each sheet version trims an answer").
+  const LOG_GATES = [
+    ['pa', PA_SHEET],
+    ['cv', CV_SHEET],
+    ['cx', CX_SHEET],
+    ['of', OF_SHEET]
+  ];
   const logOut = (a, v) => {
-    // (a reply with no version, NaN, is below both)
-    const pa = !!a && a.pa !== undefined && !(Number(v) >= PA_SHEET),
-      cv = !!a && a.cv !== undefined && !(Number(v) >= CV_SHEET);
-    if (!pa && !cv) return a;
+    // (a reply with no version, NaN, is below every gate)
+    const out = a ? LOG_GATES.filter(([k, g]) => a[k] !== undefined && !(Number(v) >= g)).map(([k]) => k) : [];
+    if (!out.length) return a;
     const o = {...a};
-    if (pa) delete o.pa;
-    if (cv) delete o.cv;
+    out.forEach(k => delete o[k]);
     return o;
   };
+  // The record format of an answer: the keys of a logged entry and what each means (docs/spec/answer.md "The fields").
+  // 1: the first format stamped (2026-11-27, with the Context and Offered columns). Raised by one whenever a key is added
+  // or removed or changes meaning, with its line in docs/spec/answer.md "Record formats", so a reader can tell a blank
+  // that means "not recorded then" from one that means "none".
+  const ANS_FMT = 1;
+  // An answer's Context (the Answers' Context, docs/spec/answer.md): what produced it on the device, b the app build
+  // that recorded it (sync.js appVer: "<build>-<hash>"; left out on a copy that has none), r the rules version of its
+  // subject the device scored it under (rvOf), f the record format (ANS_FMT). The script adds its own version (v) when
+  // it logs it (Code.gs context_). ctxRec: the same, each field checked, as the sheet keeps it ({} when none holds).
+  const CX_B = /^[A-Za-z0-9._-]{1,40}$/;
+  function ctxRec(x) {
+    const o = {},
+      n = v => Number.isInteger(v) && v >= 0 && v <= 99999;
+    if (!isObj(x)) return o;
+    if (typeof x.b === 'string' && CX_B.test(x.b)) o.b = x.b;
+    if (n(x.r)) o.r = x.r;
+    if (n(x.f)) o.f = x.f;
+    return o;
+  }
+  const ctxOf = (b, r) => ctxRec({b, r, f: ANS_FMT});
+  // What a question showed (the Answers' Offered, docs/spec/answer.md "Offered"; REE-26 point 11(b)): every stimulus on
+  // screen with its role, in the order shown, one rule for every format, each item [role, unit, what]:
+  //   t: a photo of the unit asked (a corallites hint seen included, one left closed not): [t, unit, file stem];
+  //   d: a photo of another unit shown beside it as a choice (a Find the X's decoy tile): [d, unit, file stem];
+  //   a: the name asked (a Find the X's prompt): [a, unit, form];
+  //   c: a name offered as a choice (the right one included): [c, unit, form];
+  //   r: a typed answer's option set, as a rule: [r, the class asked (its rank, and its kind of name when it has one),
+  //      'names'] (every name the game knows for a unit of that class in the answer's content, cv: quiz.js typeMatch).
+  // form: how a name showed (OF_FORMS): c a common name, s a scientific one, then the other kind when a line under it
+  // showed one too (cs, sc). A photo without a file id (an iNaturalist candidate not downloaded yet) is there with an
+  // empty stem. In: t the unit asked; ph the file stems of its photos shown; tiles [[unit, stem]] the
+  // photos offered as the choices (a Find the X: t's photo is t, the others d), with the name asked; chs the names
+  // offered; form(unit) their form; rule the class of a typed answer ('' none).
+  const OF_FORMS = ['c', 's', 'cs', 'sc'];
+  function offerOf({t, ph = [], tiles = null, chs = [], form = () => 's', rule = ''}) {
+    const L = [];
+    if (tiles) {
+      L.push(['a', t, form(t)]);
+      tiles.forEach(([n, f]) => L.push([n === t ? 't' : 'd', n, f]));
+    } else ph.forEach(f => L.push(['t', t, f]));
+    chs.forEach(n => L.push(['c', n, form(n)]));
+    if (rule) L.push(['r', rule, 'names']);
+    return L;
+  }
+  // Offered as the sheet keeps it (Code.gs offered_): a list of at most OF_MAX.n items, each checked; null when any
+  // fails (the cell is then written blank, never a part of what was shown). Caps sized for the long readable ids to
+  // come (REE-311 point 9: subject:rank:Key, at most 33 characters measured on 1,359 ids): a unit or a photo at most 80
+  // characters, the cell at most 2,000.
+  const OF_MAX = {n: 12, unit: 80, ph: 80, cell: 2000};
+  const OF_UNIT = /^[A-Za-z][A-Za-z0-9 :_.-]*$/,
+    OF_PH = /^[A-Za-z0-9_.-]*$/,
+    OF_CLASS = /^[a-z]{1,20}(:[a-z]{1,10})?$/;
+  function offerRec(x) {
+    if (!Array.isArray(x) || !x.length || x.length > OF_MAX.n) return null;
+    const ok = it => {
+      if (!Array.isArray(it) || it.length !== 3 || !it.every(s => typeof s === 'string')) return false;
+      const [r, u, w] = it;
+      if (r === 'r') return OF_CLASS.test(u) && w === 'names';
+      if (u.length > OF_MAX.unit || !OF_UNIT.test(u)) return false;
+      if (r === 't' || r === 'd') return w.length <= OF_MAX.ph && OF_PH.test(w);
+      return (r === 'a' || r === 'c') && OF_FORMS.includes(w);
+    };
+    if (!x.every(ok)) return null;
+    const L = x.map(it => it.slice());
+    return JSON.stringify(L).length <= OF_MAX.cell ? L : null;
+  }
   // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
@@ -12434,7 +12524,15 @@ const CORE_ = (function () { const module = {exports: {}};
     structSheet,
     PA_SHEET,
     CV_SHEET,
+    CX_SHEET,
+    OF_SHEET,
     logOut,
+    ANS_FMT,
+    ctxOf,
+    ctxRec,
+    offerOf,
+    offerRec,
+    OF_MAX,
     answerId,
     logIdOk,
     contentVersion,

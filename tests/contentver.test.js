@@ -356,14 +356,15 @@ const cvs = s => {
   return R.slice(1).map(r => [r[7], r[c] ?? '']);
 };
 
-test('Code.gs: Content version is the last Answers column, after Photo answered; every column before it stays where it was', () => {
+test('Code.gs: Content version is the Answers column after Photo answered, before Context and Offered; every column before it stays where it was', () => {
   const s = loadCodeGs();
   save(s, 'Ana', [ans('a1', {cv: 'c1abc2def3gh'})]);
   const H = tab(s)[0],
     LOG = vm.runInContext('LOG', s.ctx);
   assert.deepStrictEqual([...H], [...LOG]);
-  assert.strictEqual(H.length, 27);
-  assert.strictEqual(H.at(-1), 'Content version');
+  assert.strictEqual(H.length, 29, 'Context and Offered after it (tests/answercontract.test.js)');
+  assert.strictEqual(H[26], 'Content version');
+  assert.deepStrictEqual([...H.slice(27)], ['Context', 'Offered']);
   assert.strictEqual(H[25], 'Photo answered');
   assert.strictEqual(H[7], 'Id');
   assert.deepStrictEqual(cvs(s), [['a1', 'c1abc2def3gh']]);
@@ -539,9 +540,9 @@ test('Code.gs: a tab on a 26-column grid (a new Sheets tab) is read by every rea
   assert.ok(s.post({readStats: 1, token: TOK}).ok);
   s.ctx.autoUpdate();
   assert.strictEqual(sh.maxCols, 26, 'nothing written past the grid yet');
-  // The next answer adds the column, then writes it.
+  // The next answer adds the columns (Content version, and Context and Offered after it), then writes them.
   assert.strictEqual(save(s, 'Ana', [ans('a3', {cv: 'cabc'})]).ok, true);
-  assert.strictEqual(sh.maxCols, 27);
+  assert.strictEqual(sh.maxCols, 29);
   assert.strictEqual(sh.rows[0][26], 'Content version');
   assert.deepStrictEqual(cvs(s), [
     ['a1', ''],

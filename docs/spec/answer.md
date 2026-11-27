@@ -56,9 +56,68 @@ the script does not know is not stored; a key the app does not send is blank.
 | `sp` | Species shown | `app.js` `speciesShown` | 300 characters | no |
 | `pa` | Photo answered | a Find the X's photo tapped | as Photos | no |
 | `cv` | Content version | `quiz.js` `cvField` (`app.js` `contentVer`, `core.js` `contentVersion`) | `c` and up to 15 a-z or 0-9 | no |
+| `cx` | Context | `quiz.js` `cxField` (`core.js` `ctxOf`): the app build, the subject's rules version, the record format | each field that checks (`core.js` `ctxRec`), then the script's `VERSION` as `v`, as JSON; written for every answer, one sent without `cx` included | no |
+| `of` | Offered | `core.js` `offerOf` (`recordAnswer`, `winkAnswer`): every stimulus shown, with its role | `core.js` `offerRec`, as JSON: at most 12 items, a unit or a photo 80 characters, the cell 2,000; blank when one item fails | no |
 
 A surprise card's entry (`winkAnswer`) has no `e`, `th`, `sc`, `nw` or typed fields; no reader counts it (`core.js`
 `winkRow`, `winkEntry`). `tests/anslog.js` imitates the rows `logAnswers_` writes.
+
+### Context
+
+What produced the answer (REE-311 point 8; Pierre, 2026-11-27 ~08:43 Manila, «oui»: a sheet column change approved).
+One JSON object, its keys in this order, each present only when it holds a value that checks:
+
+| Key | What | Made by | The sheet keeps |
+| --- | --- | --- | --- |
+| `b` | the app build that recorded the answer | `sync.js` `appVer` ("<build>-<hash>": the deploy's build number, then `app.js`'s content hash; none on a copy never deployed) | 1 to 40 of A-Z, a-z, 0-9, `.`, `_`, `-` |
+| `r` | the rules version of the answer's subject the device scored it under | `core.js` `rvOf` (`RVS`, `FISH_RVS`, `SEASLUG_RVS`; rule D5) | a whole number, 0 to 99,999 |
+| `f` | the record format of the entry (below) | `core.js` `ANS_FMT` | a whole number, 0 to 99,999 |
+| `v` | the script version that logged it | `Code.gs` `VERSION`, added by `context_`, never taken from the app | always |
+
+For example `{"b":"1234-ab12cd3","r":16,"f":1,"v":238}`. The build is the one that recorded the answer, not the one
+that sent it (`av`, per request): an answer queued offline and sent after an update keeps its own. A live answer is
+recorded when it is logged (`live.js` `liveFlush`), so its build is the one that logged it. Rows logged before the
+column stay blank and are never filled in; from the script that added it every row has at least `v`, so a blank Context
+means "logged before it" and `{"v":N}` alone an app that sent no Context.
+
+### Offered
+
+Every stimulus the question showed, with its role, one rule for every format (REE-26 point 11(b); Pierre, 2026-11-27
+~08:43 Manila, «ok»: a sheet column change approved). One JSON list, in the order shown, each item `[role, unit, what]`
+(`core.js` `offerOf`):
+
+| Role | Item | What it is |
+| --- | --- | --- |
+| `t` | `[t, unit, photo]` | a photo of the unit asked, its file stem (a corallites hint seen included, one left closed not, as Photos) |
+| `d` | `[d, unit, photo]` | a photo of another unit shown beside it as a choice: a Find the X's decoy tile |
+| `a` | `[a, unit, form]` | the name asked: a Find the X's prompt |
+| `c` | `[c, unit, form]` | a name offered as a choice, the right one included |
+| `r` | `[r, class, names]` | a typed answer's option set, as a rule: every name the game knows for a unit of that class (its rank, then its kind of name when it has one: `genus`, `family`, `species:sci`) in the answer's content (`cv`; `quiz.js` `typeMatch`) |
+
+The form a name showed in: `c` a common name, `s` a scientific one, then the other kind when the line under it showed
+one too (`cs`, `sc`; `quiz.js` `nameForm`, by the buttons' own rule, `choiceSub`). A photo without a file id (an
+iNaturalist candidate not downloaded yet) is there with an empty stem. Per format:
+
+- **4 choices** (the photo quiz, the custom quiz, an exam, a comeback), **duel**, **Again**: `t` for each photo seen,
+  then `c` for each name button (2 for a duel or an Again).
+- **Find the X**: `a` (its label alone), then the four tiles in order, `t` for the unit asked's, `d` for the others.
+- **Live**: `t` for each photo, then `c` for each choice, its label alone (`live.js` `liveName`).
+- **Surprise card** (wink): `t` for its photo, then `c` for each of its four labels, its own text (`fish.json` wink).
+- **Typed**: `t` for each photo seen, then one `r`.
+
+For example, a Find the X: `[["a","f:Damselfishes","c"],["d","f:Wrasses","fi171204539"],["t","f:Damselfishes","fi40233250"],…]`.
+The caps are sized for the long readable ids REE-311 point 9 plans (`subject:rank:Key`, at most 33 characters measured on
+1,359 ids): a Find the X on such ids with 32-character photos takes about 330 characters. Logged only: no score, replay,
+statistic or reader takes it, and the readers read the tab only up to Content version (`Code.gs` `READ_W`).
+
+### Record formats
+
+The record format `f` of the Context names the entry's keys and what each means (the table above). It is raised by one,
+with its line here, whenever a key is added or removed or changes meaning, so a reader can tell a blank that means "not
+recorded then" from one that means "none".
+
+- **1** (2026-11-27, script vNEXT): the keys of the table above, `cx` and `of` the newest. The first format stamped: the
+  rows before it carry none, their era read from the fields present.
 
 ## The id and its deduplication
 
@@ -109,7 +168,8 @@ A surprise card's entry (`winkAnswer`) has no `e`, `th`, `sc`, `nw` or typed fie
 ## How each sheet version trims an answer
 
 - **The app trims to the version the sheet says** (rule D4): `logOut` leaves out a field the sheet's version does not
-  store yet, in the copy sent only; the queue keeps it. Today: `pa` from `PA_SHEET` (141), `cv` from `CV_SHEET` (178).
+  store yet, in the copy sent only; the queue keeps it. Today: `pa` from `PA_SHEET` (141), `cv` from `CV_SHEET` (178),
+  `cx` from `CX_SHEET` (vNEXT), `of` from `OF_SHEET` (vNEXT).
   The version read is the last `v` a reply said (the photo statistics, a load's, a save's or an anonymous send's reply),
   never below `SHEET_FLOOR` (`sync.js` `sheetV`), so a field gated at or below the floor is never trimmed and its gate is
   removed (`tests/gates.test.js`). A field trimmed is gone for that answer: the acknowledgement drops the entry that held
@@ -136,7 +196,9 @@ Four different signals meet in one answer, none of them a version of the answer 
    replay reads today's content from `main`, never the one `cv` names.
 
 Beside them, `av` (the app's build, `sync.js` `appVer`) tells the sheet an app is old or behind (`oldApp_`, `behind_`);
-the intake and the replay never read it. These feed REE-311 (a version per component).
+the intake and the replay never read it. These feed REE-311 (a version per component). From script vNEXT each answer
+also carries its own: the Context (above) records the build that made it, the rules version its device scored it under,
+its record format and the script that logged it.
 
 ## Where the code breaks it
 

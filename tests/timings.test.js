@@ -83,7 +83,8 @@ test('Code.gs Timings: a sampled save logs its reads and itself, with a header, 
       .pop();
   assert.deepStrictEqual([ids[3], ids[4]], [2, 1]);
   assert.strictEqual(all[3], 3);
-  assert.strictEqual(all[4], run(s, 'LOG.length'));
+  assert.strictEqual(all[4], run(s, 'READ_W'), 'the columns the readers take (up to Content version)');
+  assert.strictEqual(run(s, 'READ_W'), run(s, 'LOG.length') - 2, 'Context and Offered left out');
   assert.strictEqual(sv[3], 3, 'a save row carries the Answers rows it saw');
   assert.strictEqual(sv[4], '');
 });

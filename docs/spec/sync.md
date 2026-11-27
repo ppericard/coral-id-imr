@@ -74,8 +74,10 @@ record in a new tab.
 Columns, in order: Name, Time, Genus shown, Answered, Right, Mode, Photos (space-separated file stems), Id, Expected,
 Ability, New photos, Choices (the units offered, space-separated), Seconds, Enlarged, UTC offset, Typed, Retyped right,
 Subject, Rank, Taxon shown, Taxon answered, Species shown, Scoring, Rejected tries, Device, Photo answered, Content
-version (`Code.gs` `LOG`). Every reader takes them by position (`answers_`, `stats_`, `users_`, `hold_`, the Activity
-QUERY on A:E): new columns only ever go at the end. A tab with fewer columns reads the missing ones blank (`logRows_`)
+version, Context, Offered (`Code.gs` `LOG`). Every reader takes them by position (`answers_`, `stats_`, `users_`,
+`hold_`, the Activity QUERY on A:E): new columns only ever go at the end. The readers take the columns up to Content
+version only (`Code.gs` `READ_W`: the replay, the statistics' fold, `readAnswers`, `readLive`, the one-shot renames), so
+the logged-only columns after it never add to a request's read. A tab with fewer columns reads the missing ones blank (`logRows_`)
 until the next answer adds them (`logAnswers_` inserts the columns before its header check). A row logged before a
 column existed has it blank, and an app that sends no value for a field leaves it blank: the script ignores the fields
 it does not know, so a field that an older script would drop needs no gate (no `*_SHEET`) unless the app must know it
@@ -126,6 +128,23 @@ was kept. One answer's whole path, as one contract with its field table: [answer
   or key list meets: `cvIn`), on the device, because the copy in force is the device's (a kept curation, a draft
   preview). 'c' and up to 15 lower-case letters and digits, else blank. Sent only once the replies say `v` ≥ `core.js`
   `CV_SHEET` (`logOut`, rule D4). Logged only; a reader takes it by name and accepts a blank. `tests/contentver.test.js`.
+- **Context** (from vNEXT; REE-311 point 8, Pierre, 2026-11-27): what produced the answer, a JSON object, the entry's
+  `cx` (`quiz.js` `cxField`, `core.js` `ctxOf`) with each field that checks (`core.js` `ctxRec`): `b` the app build that
+  recorded it (`sync.js` `appVer`), `r` the rules version of its subject the device scored it under (`rvOf`), `f` the
+  record format (`core.js` `ANS_FMT`), then `v`, the script's own `VERSION`, added by `context_` for every answer it
+  logs (one sent without `cx` included): `{"b":"1234-ab12cd3","r":16,"f":1,"v":238}`. Rows logged before the column
+  stay blank, never filled in. Sent only once the replies say `v` ≥ `core.js` `CX_SHEET` (`logOut`, rule D4). Logged
+  only. The keys, the record formats and their history: [answer.md](answer.md#context).
+- **Offered** (from vNEXT; REE-26 point 11(b), Pierre, 2026-11-27): every stimulus the question showed, with its role,
+  one rule for every format (4 choices, duel, Again, Find the X, live, surprise card, typed): a JSON list in the order
+  shown, each item `[role, unit, what]`, the entry's `of` (`core.js` `offerOf`): `t` a photo of the unit asked, `d` a
+  photo of another unit offered as a choice (a Find the X's decoy tile), each with its file stem; `a` the name asked (a
+  Find the X's prompt) and `c` a name offered, each with the form it showed in (`c` common, `s` scientific, `cs`, `sc`
+  with the other under it: `quiz.js` `nameForm`); `r` a typed answer's option set as a rule (`[r, class, names]`).
+  Checked by `core.js` `offerRec`, sized for the long readable ids to come (REE-311 point 9): at most 12 items, a unit or
+  a photo at most 80 characters, the cell at most 2,000; blank when one item fails, never a part of what was shown.
+  Sent only once the replies say `v` ≥ `core.js` `OF_SHEET` (`logOut`, rule D4). Logged only; no reader takes it yet.
+  Per format, with examples: [answer.md](answer.md#offered). `tests/answercontract.test.js`.
 
 **Id** is the answer's attempt id (`core.js` `answerId`: the time in base 36 and 8 characters of the device's crypto, 16
 in all; a live answer's is `live.js` `liveAid`, one per player and question, so a page reloaded before it left the queue
