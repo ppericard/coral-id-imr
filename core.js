@@ -6589,6 +6589,13 @@
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09; docs/reviews/2026-11-09-level-count-checkpoints.md): the replay's count of the player's answers wins over the device's also when the device counts more (answers counted twice before #824), as every unit's record already did, and a level with no answer in the log keeps none (replayedOf, replayBase); the app's checkpoints count on their own answer clock (model.js tally), which never goes down. A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 16,
+      at: '2026-11-27',
+      why: 'The replay counts each answer id once (REE-351; rule D5): a log that holds an id twice (a hand edit, a restore) counts that answer once (replayProgress, LOG_RID; Code.gs onceById_). A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)',
+      // No card (rule D5).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -6646,6 +6653,13 @@
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 8,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      // No card (rule D5).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -6673,6 +6687,12 @@
       v: 4,
       at: '2026-11-23',
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15 and the fish's 7: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      msg: null
+    },
+    {
+      v: 5,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16 and the fish's 8: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       msg: null
     }
   ];

@@ -71,7 +71,8 @@ A surprise card's entry (`winkAnswer`) has no `e`, `th`, `sc`, `nw` or typed fie
 - The replay counts an id once (REE-351), whatever the tab holds (a hand edit, a restore): every replay reads a
   player's rows through `Code.gs` `onceById_` (the first row of an id in the tab's order), so its record, `ids` and row
   count `n` count it once, and `core.js` `replayProgress` skips a row whose id (`LOG_RID`, from `logRow` and `rowOf_`)
-  that player's rows already met. A row without one (the admin's `readAnswers` rows, a study's) counts as it comes. The
+  that player's rows already met (rules version 16, fish 8, sea slugs 5: every device takes that replay once, rule
+  D5). A row without one (the admin's `readAnswers` rows, a study's) counts as it comes. The
   device leaves out of the answers it replays on top those the replay names (`replay.ids`: the last 500, and every one
   from `pt`, the time of the oldest it queues).
 

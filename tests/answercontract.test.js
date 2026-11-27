@@ -682,6 +682,40 @@ test('the replay counts an answer once when the log holds its id twice: the devi
   }
 });
 
+test('a device on the rules before the id guard takes its replay once, under the rules version that brought it (rule D5; REE-351)', async () => {
+  // Every subject's list gained one version on the same day: the corals', the fish's and the sea slugs'.
+  for (const id of ['coral', 'fish', 'seaslug']) {
+    const last = C.rvsOf(id),
+      e = last[last.length - 1];
+    assert.strictEqual(C.rvOf(id), e.v, id);
+    assert.ok(e.at === '2026-11-27' && /REE-351/.test(e.why) && e.msg === null, `${id}: the id guard's version, no card`);
+  }
+  // A tab that holds an answer twice; a device that applied the rules before (RV - 1), its record counted over it.
+  const SYNC0 = {name: 'Ana', pin: '1234', log: []};
+  coralAnswers(recorder(CORAL(), SYNC0));
+  const s = loadCodeGs(withData());
+  s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: SYNC0.log, av: '900-x'});
+  const R = s.sheets.Answers.rows;
+  R.push([...R[1]]);
+  const SYNC = {name: 'Ana', pin: '1234', log: []},
+    P = {Acropora: {ok: 2, ko: 0, streak: 2, h: '11', ps: {}}},
+    A = app({sheet: s, SYNC, P, ls: {'reefid-sync-coral-rv': JSON.stringify(C.RV - 1)}});
+  await A.syncPush();
+  const rp = A.got.filter(j => j && j.replay).map(j => j.replay);
+  assert.ok(rp.length >= 1 && rp.every(r => r.rv === C.RV && r.n === 3), 'the replay under the new version, each id once');
+  assert.strictEqual(A.rvApplied(), C.RV, 'adopted');
+  assert.strictEqual(P.Acropora.ok, 1, 'the answer counted once');
+  // Adopted once: the next syncs ask with the new version and get no replay.
+  const before = A.got.length;
+  await A.syncPush();
+  await A.syncPush();
+  assert.ok(
+    A.got.slice(before).every(j => !j || !j.replay),
+    'no replay again'
+  );
+  assert.strictEqual(P.Acropora.ok, 1);
+});
+
 test('GAP: tests/anslog.js writes an Answered the sheet never writes ("I don\'t know"; logAnswers_ writes it blank)', () => {
   const rows = synthLog(3000, 1),
     i = LOG.indexOf('Answered');
