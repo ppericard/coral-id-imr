@@ -9,57 +9,70 @@ Linear holds the truth (work, state, questions, who waits on what): [Project Hom
 may be incomplete. `python3 tools/brief.py --short` gives live GitHub and sheet version signals; check-ins follow
 [tools/checkin.md](../tools/checkin.md). [ANSWERS.md](ANSWERS.md) holds Pierre's answers; git and PRs hold what shipped.
 
-Last checked: reports and events: 2026-11-26 ~18:00 Manila (Claude integrator; handover)
+Last checked: reports and events: 2026-11-27 06:49 Manila (nothing new; integrator via read-only agent). PRs, checks and
+Linear re-read at 2026-11-27 ~09:50 Manila.
 
-Night report: last sent 2026-11-25 (06:22 Manila)
+Night report: last sent 2026-11-27 (06:21 Manila, in the integrator's first reply)
 
 ## Now
 
-- **Integrator:** the Claude Code cloud session that took over on 2026-11-27 (Manila).
-- **Main** has everything of 2026-11-26 merged, #1620 (3397d41) and #1621 (7cbd546) last, then #1622 (a69a928, REE-100,
-  the independent review method); the sheet script is v236, live and on main. **Open PR:** #1554 (REE-31, rights step
-  2), green, label `needs-pierre`: it waits for his go (the brief is on REE-31), and it yields its lane (W27).
-- **Written, not to relaunch:** REE-297's study A, study B (Fable) and review C (Astra) and the Codex comparison linked
-  there; A1, A2 and C1-C4 wait for Pierre's decisions. REE-310's outside review is written (the issue is Done). The
-  Codex and Astra passes on REE-288 to REE-292 and REE-285's desk study are frozen and linked from their issues.
-- **Foundation phase** (Pierre, 27 November, REE-312 section 0): new feature dispatch is paused; "Next" below is the
-  start order. Live pilot incidents, real external deadlines and already-approved operational work stay in scope.
+Snapshot of 2026-11-27 ~09:50 Manila.
+
+- **Integrator:** the Claude Code cloud session of 2026-11-27 (Manila).
+- **Merged today (27 November):** #1622, #1624, #1623, #1625, #1627, #1626, #1629, #1633, #1632, #1634, #1636 (sheet
+  script v237, live and on main), #1638, #1628, #1637 (main 88749ba), #1635 (docs, restore), and any later merge (git
+  holds them).
+- **Open PRs:**
+  - #1644 (REE-311 point 8, REE-26 11b: the Answers tab's Context and Offered columns), green: in the queue, to merge
+    first.
+  - #1554 (REE-31, rights step 1), label `needs-pierre`: Q-a and Q-b of 09:43 wait for him; one check was still running
+    on its head and Codex was asked again at 09:42 and 09:44.
+  - #1642 (REE-121 c, CodeQL advanced setup): its three Analyze checks fail until Pierre's cutover from the default
+    setup; it waits for him.
+  - #1631 (REE-346, REE-345, the push guard): green, to train by hand.
+  - Green, not yet placed in the order below: #1643 (REE-281), #1641 (REE-352), #1640 (REE-348), #1639 (REE-339), #1630
+    (REE-342).
+- **P2a trial** running since 2026-11-26 22:19 UTC (window to 2026-12-03 22:19 UTC); the register is on REE-229.
+- **Foundation phase:** new feature dispatch is paused. The arbitration point document "Point d'arbitrage · phase
+  fondations · 27 novembre" (Linear, on REE-312) holds the points; Pierre's answers of about 08:40 to 08:43 are on the
+  tickets they concern.
+- **Written, not to relaunch:** REE-297's studies A, B and review C; REE-310's outside review (Done); the Codex and
+  Astra passes on REE-288 to REE-292 and REE-285's desk study.
 - **Held, do not build from old words:** REE-248 (the reserve): recover his later details through REE-307.
-- **Judging is on hold** (rule P7). REE-309 holds the pre-validated order of the passes; each run waits for his go at
-  the start of the session, when he can judge the quota and the agents' load.
+- **Judging is on hold** (rule P7). REE-309 holds the pre-validated order of the passes; each run waits for his go.
 
 ## Next
 
-The start order as of 2026-11-27 ~06:30 Manila, copied from REE-312 section 0, which keeps the longer reasons. One
-line per step: the issues, then the reason after the dash (REE-316; tests/docs.test.js checks the form).
+The start order as of 2026-11-27 ~09:50 Manila, from REE-312 and the arbitration point, which keep the longer reasons.
+One line per step: the issues, then the reason after the dash (REE-316; tests/docs.test.js checks the form).
 
-1. REE-100: reconcile the Codex and Opus syntheses, then check live PR heads, callbacks and owners — every later step
-   starts from the live state, not from this snapshot.
-2. REE-316, then REE-121 under the REE-229 P2a hand-back trial — approved changes (Pierre, 2026-11-26 17:27-17:29, 17:40
-   and 18:29) that also give the one-week trial its first real runs.
-3. REE-287 (the Fable passes on REE-288 to REE-292), REE-26, REE-191, REE-284: commission the studies — Pierre already
-   asked for them, and they run while the foundations advance.
-4. REE-341, REE-342, REE-337, REE-336, REE-338, REE-343, REE-335, REE-256, REE-311: the foundations — their failure
-   would invalidate later work.
-5. REE-81, REE-283: place the future products against those contracts — they must fit what step 4 settles; REE-283
-   waits for the REE-290 and REE-292 reports.
-6. REE-312: return to Pierre with a proposal to restart product work — he decides which features resume.
+1. REE-311 point 8, REE-26 11(b): #1644 — green and in the queue; merge it first.
+2. REE-26 11(a), REE-338, REE-343: the Find the X fix, in one rules version — after #1644 merges.
+3. REE-335, REE-337: the 14-day keep and the twice-weekly backup — contracts the later work relies on.
+4. REE-121 (c) and (e): the CodeQL cutover with Pierre (#1642) and the budget alert in his settings — only his hands
+   can do them.
+5. REE-31: step 1 (#1554) — after his answers to Q-a and Q-b.
+6. REE-256: the ids — after step 8's decisions.
+7. REE-352, REE-284: the seams, with the test conversion — the foundations the next features must fit.
+8. REE-191, REE-26: the Astra reviews, run by Pierre, then the decisions they ask for — his hands come first.
+9. REE-312: the proposal to restart product work, REE-260 as the first feature — he decides which features resume.
 
 ## Questions for Pierre
 
 Linear's [Decisions for Pierre](https://linear.app/reef-id/view/cc08634e-681a-4f23-bad9-44505f52118d) view holds them,
-not this file. REE-312 section 4 names what is not yet asked: dossier A's remainder and dossier B (71 issues, one batch,
-an ok or no per line), both in the Drive Reef_ID folder, and REE-297's A1, A2 and C1-C4 (its studies and their
-comparison are written). His standing remark: no engine change on statistical adjustments alone, only bugs or
-fundamental logic.
+not this file. Open as of 09:50: point 6 of the arbitration point (REE-345, the deny rules), point 7 (the disposable
+Apps Script drill, REE-100 B), REE-31 Q-a and Q-b, the release ruleset (REE-72) and the budget alert (his settings).
+REE-312 section 4 names what is not yet asked: dossier A's remainder and dossier B (71 issues, one batch, an ok or no
+per line), and REE-297's A1, A2 and C1-C4. His standing remark: no engine change on statistical adjustments alone,
+only bugs or fundamental logic.
 
 Last question number: Q458
 
 ## Pierre's hands
 
-Listed in REE-312 section 5: send the IMR feedback document to the trainers (REE-310), the two Astra reviews, the 13
-branches on REE-72, REE-74's curation, REE-61 (2) for an IMR expert (the integrator writes the question first), and
-REE-8 (gold set, via the Reviews page once built).
+The two Astra prompts (REE-191, REE-26), the CodeQL cutover (#1642), the release ruleset (REE-72), the budget alert
+(his settings), and ANON_SALT in his password manager. Also in REE-312 section 5: send the IMR feedback document to the
+trainers (REE-310), REE-74's curation, REE-61 (2) for an IMR expert, and REE-8 (gold set).
 
 ## Parked after hours
 
@@ -67,7 +80,7 @@ The questions above, in Linear.
 
 ## Last stop
 
-2026-11-26 ~18:00 Manila, handover of the integrator of 2026-11-23 to 2026-11-26; the next integrator starts with
-REE-312.
+2026-11-27 ~09:50 Manila, mid-session refresh by the integrator of 2026-11-27 (foundation phase); the next integrator
+starts with REE-312 and the arbitration point.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
