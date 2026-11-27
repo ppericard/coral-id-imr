@@ -104,7 +104,8 @@ written with `tools/datajson.py`.
   the push rule. That rule is a strict allowlist, not a reading of where a push goes (every attempt to resolve the
   destination left another bypass in the Codex review of #1631, so that part was cut, rule W27): a command line with
   `push` or `send-pack` as a word beside a `git` word (any position, wrapper, condition or quoting; a git alias for a
-  push; over-refusal is accepted) is refused unless the whole line is exactly `[cd <literal path> && ]git push [-q] [-u]
+  push, or any word of a git command that the shell expands: a variable, a substitution, an unquoted glob or brace, except
+  a commit message; over-refusal is accepted) is refused unless the whole line is exactly `[cd <literal path> && ]git push [-q] [-u]
   origin <branch>`, `… origin HEAD:refs/heads/<branch>` or `… origin <branch>:refs/heads/<branch>`, with `<branch>` a
   literal `claude/*`, `codex/*`, `train/*` or `ccr-*` name, and only when the repository configures no
   `remote.origin.push`, `remote.origin.mirror` or local `push.default` (a configuration it cannot read refuses; REE-346,
