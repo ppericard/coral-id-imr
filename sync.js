@@ -107,6 +107,10 @@ function loadStats() {
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
+      if (anonHeld && sheetKnown()) {
+        anonHeld = false;
+        anonSoon(); // the anonymous answers held for it (sendAnon)
+      }
       if (j && j.ok && j.photos) {
         const st = {
           t: Date.now(),
@@ -321,6 +325,33 @@ function fateUnknown(me) {
   if (SYNC !== me) return;
   me.lg = 1;
   store.set('reefid-account', me);
+}
+// The acknowledgement (docs/spec/answer.md; REE-351): a reply that says log covers the answers of that send the sheet
+// logs, those whose id it takes (core.js logIdOk); they leave the queue L, never an answer queued while the send was on
+// its way. An entry with another id, or none, is never logged: it stays queued and goes again with the next sends, at
+// most REFUSED.TRIES sends in all (counted by id under key k), then leaves the queue with an Events line, never
+// silently. sent: the entries that send carried (the queue's own, before logOut). Returns the queue left.
+const REFUSED = {KEY: 'reefid-refused', ANON: 'reefid-anon-refused', TRIES: 3};
+function logAcked(L, sent, k) {
+  const ok = new Set(sent.filter(x => x && logIdOk(x.id)).map(x => x.id)),
+    bad = new Set(sent.filter(x => !(x && logIdOk(x.id))).map(x => String(x && x.id))),
+    kept = (L || []).filter(x => !(x && ok.has(x.id)));
+  if (!bad.size && !kept.some(x => !(x && logIdOk(x.id)))) {
+    if (store.get(k, null)) store.drop(k);
+    return kept; // none refused: every answer the app makes (answerId, live.js liveAid)
+  }
+  // By id in a map with no prototype: any id is a key of its own, __proto__ or constructor included (Codex review #1636).
+  const n0 = store.get(k, null),
+    n = Object.assign(Object.create(null), n0 && typeof n0 === 'object' && !Array.isArray(n0) ? n0 : {});
+  bad.forEach(id => (n[id] = (Number(n[id]) || 0) + 1));
+  const out = kept.filter(x => x && (logIdOk(x.id) || (Number(n[String(x.id)]) || 0) < REFUSED.TRIES)),
+    gone = kept.length - out.length,
+    left = new Set(out.filter(x => !logIdOk(x.id)).map(x => String(x.id))),
+    still = Object.fromEntries(Object.entries(n).filter(([id]) => left.has(id)));
+  if (gone) ev('sync', {msg: `answers whose id the sheet refuses, dropped after ${REFUSED.TRIES} sends: ${gone}`});
+  if (Object.keys(still).length) store.set(k, still);
+  else store.drop(k);
+  return out;
 }
 const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen), null before they are in; read
@@ -864,6 +895,10 @@ function syncOnce(tries = 0, pulled = null) {
   return (pulled || mine ? Promise.resolve(pulled || mine) : syncGet(me, info))
     .then(j => {
       if (SYNC !== me) return null;
+      // The script that answered the load, read before the save is made (REE-351): a device that had seen no version yet
+      // (its photo statistics' reply not come) would otherwise send its answers trimmed at the floor (logOut), and the
+      // acknowledgement would drop the fields left out for good.
+      if (!mine && j && j.v) sheetSeen(j);
       if (!j.ok) return j;
       if (archivedOf(j, me)) return {ok: false, error: 'archived'}; // nothing pushed: the record is not re-created
       groupsSeen(j, me.name); // the beta groups first: they never depend on the merge
@@ -944,10 +979,10 @@ function syncOnce(tries = 0, pulled = null) {
         me.acct = j.acct;
         store.set('reefid-account', me);
       }
-      // Answers the sheet confirmed are dropped from the queue even when the progress write itself was refused.
+      // Answers the sheet confirmed are dropped from the queue even when the progress write itself was refused; one whose
+      // id it refuses stays, for a few more sends (logAcked).
       if (j.log && log.length) {
-        const done = new Set(log.map(x => x.id));
-        me.log = (me.log || []).filter(x => !done.has(x.id));
+        me.log = logAcked(me.log, log, REFUSED.KEY);
         // Logged, but the progress carrying them not saved: the merge baseline lacks answers the log has (rvAsk).
         if (!j.ok) me.lg = 1;
         store.set('reefid-account', me);
@@ -978,8 +1013,9 @@ function syncOnce(tries = 0, pulled = null) {
         if (!j.log && log.length) me.err = 'net';
         if (me.anon) delete me.anon;
         if (j.log) {
-          const done = new Set(log.map(x => x.id));
-          me.log = (me.log || []).filter(x => !done.has(x.id));
+          // (logAcked has run on this reply above: only the answers it logged, never a refused one counted twice)
+          const done = new Set(log.filter(x => x && logIdOk(x.id)).map(x => x.id));
+          me.log = (me.log || []).filter(x => !(x && done.has(x.id)));
         }
         groupsSeen(j, me.name); // the beta groups, as the load's reply
         treesSeen(j, trees); // the leaderboard trees the sheet now holds (TREE_SHEET)
@@ -1453,7 +1489,8 @@ const anonId = () => {
   return id;
 };
 let anonTimer = 0,
-  anonBusy = false;
+  anonBusy = false,
+  anonHeld = false; // a send held for want of a script version (sendAnon), sent once loadStats has one
 // Catch-up, for answers played without a name that never reached the sheet. Once per ANON_RESEND.ID,
 // every answer this device played without an account (LOG0: up to 2000, kept until sign-in) is queued again for the
 // sheet, which skips the ones it already has (by answer id) and adds the rest under this device's anonymous id. Bump the
@@ -1478,6 +1515,10 @@ const anonSoon = () => {
 function sendAnon() {
   const q = keptGet(ANONQ, []); // read only (keptGet): sliced, its answers copied by logOut
   if (SYNC || !SYNC_URL || LOCAL || anonBusy || !q.length) return;
+  // Held until a reply has said the script's version (REE-351) when an answer of the batch holds a field the floor
+  // trims (logOut): sent before, it would go trimmed and the acknowledgement would drop that field for good. The photo
+  // statistics' reply says the version (loadStats, at launch and every 10 minutes), then sends what was held.
+  if (!sheetKnown() && q.slice(0, 100).some(a => logOut(a, sheetV()) !== a)) return void (anonHeld = true);
   const batch = q.slice(0, 100),
     cut = store.get('reefid-sync-coral-reset', '') || '', // the replay's cutoff, as sent (replayAdopt)
     sk = startKey(replaySubject()), // the replayed subject's first-launch answer (the replay's)
@@ -1527,8 +1568,8 @@ function sendAnon() {
       // Signed in (or signed out, a new anonymous id) while the send was on its way: the queue and the progress are no
       // longer this anonymous player's, so neither is touched, as the signed-in replies check SYNC.
       if (SYNC || store.get(ANONID, '') !== who) return;
-      const done = new Set(batch.map(x => x.id)),
-        left = store.get(ANONQ, []).filter(x => !done.has(x.id));
+      // The answers it logged leave the queue; one whose id it refuses stays, for a few more sends (logAcked).
+      const left = logAcked(store.get(ANONQ, []), batch, REFUSED.ANON);
       store.set(ANONQ, left);
       // A device that never signed in gets its full replay too, its answers still queued on top.
       replayAdopt(j.replay, left, j.v, cut);
@@ -1725,6 +1766,8 @@ function notesSeen(j) {
 // offline first launch plays today's rules, never those of a script long replaced.
 // The full replay checks each reply's own v (replayAdopt).
 const sheetV = () => keptBy(SHEETV, 0, 'sheetV', v => Math.max(Number(v) || 0, SHEET_FLOOR)); // read once (keptBy)
+// Whether a reply ever said the version (sheetSeen), not the floor alone: an anonymous send waits for it (sendAnon).
+const sheetKnown = () => Number(keptGet(SHEETV, 0)) > 0;
 // The genus of a page key, or of a link's address ('#…', core.js routeIn).
 const pvGenus = h => {
   const g = String(h || '').startsWith('#') ? routeIn(h).key || '' : String(h || ''),
@@ -2027,7 +2070,9 @@ function signOutClear(all) {
     NUDGE,
     ANONB,
     ANONID,
-    ANONQ
+    ANONQ,
+    REFUSED.KEY, // the sends of this account's queued answers whose id the sheet refuses (logAcked)
+    REFUSED.ANON // and of the anonymous queue's
   ]
     // And their names before the rename (core.js withOldNames): one left by a migration that could not write it.
     .flatMap(k => withOldNames([k]))

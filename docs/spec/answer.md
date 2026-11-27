@@ -31,7 +31,7 @@ the script does not know is not stored; a key the app does not send is blank.
 
 | Key | Answers column | Built by | The sheet keeps | Replay |
 | --- | --- | --- | --- | --- |
-| `id` | Id | `core.js` `answerId` (16 characters), a live answer's `live.js` `liveAid` | a-z and 0-9 only, its first 20 characters; the dedup key | no |
+| `id` | Id | `core.js` `answerId` (16 characters), a live answer's `live.js` `liveAid` | a-z and 0-9 only (`core.js` `logIdOk`), its first 20 characters; the dedup key | yes |
 | `t` | Time | the moment of the answer (a live answer's own `at`) | a date | yes |
 | `g` | Genus shown | `recordAnswer` `target` | a unit id, 40 characters (an old fish entry renamed: `renameLogEntry`) | yes |
 | `a` | Answered | `recordAnswer` `c` (empty for "I don't know") | as Genus shown | yes |
@@ -68,13 +68,22 @@ A surprise card's entry (`winkAnswer`) has no `e`, `th`, `sc`, `nw` or typed fie
   only the new ones, so a resend uses up nothing.
 - The tab is unique by id, whatever the name: an anonymous send of an id a save already logged adds nothing. A sign-in
   moves the device's `~anon` rows to the name (`relabel_`), ids unchanged.
-- The replay does not check ids: it trusts the tab. The device leaves out of the answers it replays on top those the
-  replay names (`replay.ids`: the last 500, and every one from `pt`, the time of the oldest it queues).
+- The replay counts an id once (REE-351), whatever the tab holds (a hand edit, a restore): every replay reads a
+  player's rows through `Code.gs` `onceById_` (the first row of an id in the tab's order), so its record, `ids` and row
+  count `n` count it once, and `core.js` `replayProgress` skips a row whose id (`LOG_RID`, from `logRow` and `rowOf_`)
+  that player's rows already met (rules version 16, fish 8, sea slugs 5: every device takes that replay once, rule
+  D5). A row without one (the admin's `readAnswers` rows, a study's) counts as it comes. The
+  device leaves out of the answers it replays on top those the replay names (`replay.ids`: the last 500, and every one
+  from `pt`, the time of the oldest it queues).
 
 ## The acknowledgement
 
-- A reply with `log: true` means that every answer of that send is now in the tab, logged by it or before it. The device
-  then drops from its queue the ids it sent in that request, never an answer queued while the send was on its way.
+- A reply with `log: true` means that every answer of that send whose id the sheet takes (`core.js` `logIdOk`: a-z and
+  0-9 only, as every id the app makes) is now in the tab, logged by it or before it. The device then drops from its
+  queue those ids it sent in that request (`sync.js` `logAcked`), never an answer queued while the send was on its way.
+- An entry whose id the sheet refuses (another id, or none) is never logged, so it stays queued (REE-351): sent again
+  with the next sends, at most 3 in all (`REFUSED`), then dropped with an Events line (`sync` "answers whose id the
+  sheet refuses, dropped after 3 sends: N"), never silently.
 - Said by a save once its answers are written, even when the progress write then fails or is refused as stale (`save`
   or `stale` with `log`); by an anonymous send once logged. A capped send (`busy`), a refused code, a lock timeout or a failure before
   logging says no `log`: the queue keeps everything for the next try.
@@ -101,10 +110,14 @@ A surprise card's entry (`winkAnswer`) has no `e`, `th`, `sc`, `nw` or typed fie
 
 - **The app trims to the version the sheet says** (rule D4): `logOut` leaves out a field the sheet's version does not
   store yet, in the copy sent only; the queue keeps it. Today: `pa` from `PA_SHEET` (141), `cv` from `CV_SHEET` (178).
-  The version read is the last `v` a reply said (the photo statistics, a save's or an anonymous send's reply; a load's
-  reply is not read for it), never below `SHEET_FLOOR` (`sync.js` `sheetV`), so a field gated at or below the floor is
-  never trimmed and its gate is removed (`tests/gates.test.js`). A field trimmed is gone for that answer: the
-  acknowledgement drops the entry that held it.
+  The version read is the last `v` a reply said (the photo statistics, a load's, a save's or an anonymous send's reply),
+  never below `SHEET_FLOOR` (`sync.js` `sheetV`), so a field gated at or below the floor is never trimmed and its gate is
+  removed (`tests/gates.test.js`). A field trimmed is gone for that answer: the acknowledgement drops the entry that held
+  it.
+- **Never trimmed for want of a version** (REE-351): a save reads the version from the load before it (`syncOnce`), so
+  a device that has seen no reply yet still sends what its sheet stores; an anonymous send, which no load precedes,
+  holds a batch holding a field the floor trims until a reply has said a version (`sendAnon`, `sheetKnown`), and the
+  photo statistics' reply (`loadStats`) then sends it.
 - **The sheet keeps what it knows**: `logAnswers_` reads only the keys of the table above and checks each; an unknown
   key, or an unknown key of the scoring record, is dropped without a gate. So a new field needs a gate only when the app
   must know it was kept.
@@ -132,13 +145,5 @@ Each is pinned by a test named `GAP …` in `tests/answercontract.test.js` that 
 - **The queue cap drops answers never sent.** Past 2,000 queued answers (a long time offline), `logAnswer` drops the
   oldest: "kept until the sheet confirms it" does not hold. Whether to change it waits for Pierre (the offline
   guarantee, REE-284's arbitration point).
-- **A save before any version is seen trims fields the sheet stores.** On a device that has not yet had a reply say
-  the script's version (a new device whose photo statistics have not come back), `sheetV` is the floor, so the first
-  save leaves out `pa` and `cv` and its acknowledgement drops them for good. The window is narrow: the statistics'
-  reply at launch usually comes first.
-- **An id the sheet refuses is acknowledged, not logged.** An entry with no id, or one outside a-z and 0-9, is skipped by
-  `logAnswers_` while the reply says `log`, so the device drops it. The app's own ids always pass.
-- **The replay does not deduplicate.** `replayProgress` counts a row twice when the tab holds its id twice (a hand edit,
-  a restore); only the intake keeps ids unique.
 - **The fixture writes what the sheet never does.** `tests/anslog.js` writes "I don't know" in Answered, which
   `logAnswers_` writes blank.
