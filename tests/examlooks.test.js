@@ -105,10 +105,10 @@ function played(subject, profile, seed, N, every, {calls = false, cap = 2 * N} =
 }
 
 // The lecture RA's runs go past the first exam entries; the others stay short. When the play first reads the exam's
-// look-alikes depends on the world, and the world's photo draws on every photo in the game data (tools/ratedworld.js
-// world: one stream over the sorted files), so a refill of the candidate photos moves it (seed 1: from 1,250 to 1,450
-// answers on the fish, about 2,000 on the corals). The lecture RA's runs therefore play on past N until that first
-// call, to twice N at most.
+// look-alikes depends on the photos in the game data: since REE-281 a photo added moves no other photo's draw in the
+// world (tools/ratedworld.js world: a stream per file), but the play still draws among a unit's photos, so a refill of
+// the candidate photos can move it (seed 1: from 1,250 to 1,450 answers on the fish, about 2,000 on the corals, when the
+// world was one stream). The lecture RA's runs therefore play on past N until that first call, to twice N at most.
 test('rated-world runs, fish and corals: every examLooks call in play and the units every 200 answers, as before', t => {
   for (const [subject, profile, seed, N, calls] of [
     ['fish', 'lectureRA', 1, 1400, true],

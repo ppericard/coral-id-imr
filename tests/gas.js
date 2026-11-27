@@ -256,8 +256,9 @@ function loadCodeGs(opts = {}) {
   // opts.extend(ctx): a test adds or replaces services (Session, Utilities.formatDate, a throwing SpreadsheetApp…).
   if (opts.extend) opts.extend(ctx);
   vm.createContext(ctx);
+  // opts.source: another build of the script to run (tests/selfupdate.test.js: the code an update installed).
   vm.runInContext(
-    fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8') +
+    (opts.source ?? fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8')) +
       '\n;this.doGet = doGet; this.doPost = doPost; this.autoUpdate = autoUpdate;',
     ctx
   );

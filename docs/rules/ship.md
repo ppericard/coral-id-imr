@@ -136,7 +136,8 @@ fails on a smoke line that names a quiz answer control or answers with a number 
 the choices or a check of one format, says `answer.js: <why>` on or above its line) and on an answer control in `app.js`
 `qAnswers` the helper does not know. Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
-`.github/workflows/checks.yml` (JS syntax, tests in two shards, JSON, `data.json` layout, Python, versions).
+`.github/workflows/checks.yml` (JS syntax, tests in two shards, JSON, `data.json` layout, Python, versions); so does
+`main` after each Candidate photos run, for the Publish and the bot's refill that no train tests (REE-281).
 `.github/workflows/smokes.yml` holds the browser matrix, each Playwright smoke in its own parallel job `smoke (<name>)`
 (pages in four groups and fish in two, `SMOKE_PART`, each group in a job of its own or `tests/smokeparts.test.js` fails;
 admin whole at 390 px and in three groups at 1280, `SMOKE_W` / `SMOKE_PART`), `fail-fast: false` so every failing smoke
