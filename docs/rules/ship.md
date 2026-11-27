@@ -400,7 +400,11 @@ equal the train's, and the train stops if a Publish, an Action or another merge 
 `release` branch (the sheet script's source) to the commit `main` ended on, and nothing else does (rule D3). Green means
 every job the train needs succeeded: `tools/train.py` reads them from the train's own workflow files (every Checks job,
 both unit shards, `browser scope`, `answer cost`, and each `smoke (…)` job unless docs-only), and a job skipped or
-missing is never a pass. A red train merges
+missing is never a pass. A train of one PR whose tree is the one its own PR run tested (GitHub's merge of the same
+head into the same `main` commit) reuses what that run proved: Checks (all three jobs) and `answer cost`, never the
+browser matrix; `tools/train_reuse.py` proves it job by job, and anything missing, stale, cancelled, re-run, partial or
+unreadable runs on the train (`TRAIN_REUSE`: `shadow` first, `on`, `off` to roll back). The Codex reviews are never
+replaced. A red train merges
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
 `Code.gs` rides a train only once its `VERSION` is assigned on its branch (rule D3), one such PR per train (two would
 conflict on the header line). Any other new head (a fix, a catch-up merge of `main`, the `VERSION` assign) waits for
@@ -409,7 +413,8 @@ days, docs/HANDOVER.md); `tools/train.py` sends only GET and PUT to GitHub and
 never force-pushes.
 *Why:* each merge leaves the other PRs behind `main`, and a catch-up merge is a new head, so a CI run and a Codex wait;
 the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to 16 held a single PR). *Source:* Pierre,
-2026-11-08 (Q305); every PR, even alone, 2026-11-16; the browser matrix by train class, 2026-11-26 (REE-121 (b), (d)).
+2026-11-08 (Q305); every PR, even alone, 2026-11-16; the browser matrix by train class, 2026-11-26 (REE-121 (b), (d));
+a train identical to its PR reuses the PR's CI, 2026-11-26 (REE-121 (a): «ok»).
 
 ### W27
 

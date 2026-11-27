@@ -176,11 +176,17 @@ jobs:
   # subject, side by side, then the eighteen counts three at a time: about 4 minutes on a quiet 4-core machine), so each run
   # counts the app as it is, with nothing kept between runs. If that ever outgrows the smokes, keep them in the Actions
   # cache under a key of tools/learnprof.js (docs/spec/tools.md "Per-answer cost"). Playwright as the smokes have it.
+  # One exception (Pierre, 2026-11-26, REE-121 (a)): a one-PR train whose tree its PR run tested, with this job green
+  # there, reuses that result (tools/train_reuse.py): tools/train.py names the branch train/<time>-reuse-cost, and the
+  # `if:` below skips the job there only. "Tested commit" records what the job checked out for that proof.
   answercost:
     name: answer cost
+    if: ${{ !(startsWith(github.ref, 'refs/heads/train/') && contains(github.ref, '-reuse-cost')) }}
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
+      - name: Tested commit
+        run: echo "::notice title=tested commit::commit=$(git rev-parse HEAD) tree=$(git rev-parse 'HEAD^{tree}')"
       - uses: actions/setup-node@v7
         with:
           node-version: '26'

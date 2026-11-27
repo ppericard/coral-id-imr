@@ -408,7 +408,13 @@ test('nightq trains only on a completed security review read for the very head i
 });
 
 // Exercise the queue at the boundary between prstate's review gates and the train. No GitHub or repository writes.
-const runNightq = ({code = "Didn't find any major issues.", security = 'completed ' + SHA, head = SHA, conflict = false} = {}) =>
+const runNightq = ({
+  code = "Didn't find any major issues.",
+  security = 'completed ' + SHA,
+  head = SHA,
+  conflict = false,
+  trainOut = ''
+} = {}) =>
   tmp(d => {
     const log = path.join(d, 'calls');
     const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
@@ -423,7 +429,8 @@ const runNightq = ({code = "Didn't find any major issues.", security = 'complete
     shim(
       'python3',
       'echo "train $TRAIN_REPO $*" >> "$CALLS"\n' +
-        'if [[ "$CONFLICT" = true && "$*" = *--dry-run* ]]; then echo "conflicts with main"; exit 1; fi'
+        'if [[ "$CONFLICT" = true && "$*" = *--dry-run* ]]; then echo "conflicts with main"; exit 1; fi\n' +
+        'if [[ "$*" != *--dry-run* ]]; then echo "$TRAIN_EVIDENCE" > "$CALLS.evidence"; printf "%s" "$TRAIN_OUT"; fi'
     );
     const r = spawnSync('/bin/bash', [path.join(DIR, 'nightq.sh'), '1'], {
       encoding: 'utf8',
@@ -437,14 +444,35 @@ const runNightq = ({code = "Didn't find any major issues.", security = 'complete
         CALLS: log,
         HEAD_SHA: head,
         CONFLICT: String(conflict),
+        TRAIN_OUT: trainOut,
         GATES:
           `#1 open ${SHA.slice(0, 7)} merge=behind [] checks: 24 runs, 0 pending,  failed | codex@head: ${code} | ` +
           `security@head: ${security} | head comments: 0 | open threads: 0 | unanswered@head: 0 | choices: None`
       }
     });
     assert.strictEqual(r.status, 0, r.error || r.stderr);
-    return {out: r.stdout, calls: fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : []};
+    const evidence = fs.existsSync(log + '.evidence') ? fs.readFileSync(log + '.evidence', 'utf8').trim() : null;
+    return {out: r.stdout, calls: fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : [], evidence, dir: d};
   });
+
+test("nightq logs the train's one-line reuse audit and gives it a file for the evidence (REE-121 (a))", () => {
+  const r = runNightq({
+    trainOut:
+      'Train on main 1234567: #1 abcdef0\nReuse audit (on) #1 tree 7654321: Checks reused (PR run 21 attempt 1, 3/3 jobs); answer cost runs (no Smokes run on the PR head); browser scope and matrix on the train.\nTrain green.\nMerged #1 as 89abcde\n'
+  });
+  assert.match(
+    r.out,
+    /^\d\d:\d\d #1 Reuse audit \(on\) #1 tree 7654321: Checks reused .*answer cost runs \(no Smokes run on the PR head\).*$/m
+  );
+  assert.strictEqual(r.evidence, path.join(r.dir, 'train-evidence.jsonl'));
+  // shadow mode: the audit line and the verdict on what it would have reused
+  const s = runNightq({
+    trainOut:
+      'Reuse audit (shadow) #1 tree 7654321: Checks would reuse (…).\nReuse shadow agrees: the train passed every job it would have reused (Checks).\n'
+  });
+  assert.match(s.out, /^\d\d:\d\d #1 Reuse audit \(shadow\)/m);
+  assert.match(s.out, /^\d\d:\d\d #1 Reuse shadow agrees/m);
+});
 
 test('nightq dry-runs and trains the reviewed SHA of a behind PR without editing its branch', () => {
   const r = runNightq();
