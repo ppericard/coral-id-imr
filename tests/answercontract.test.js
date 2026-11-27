@@ -29,7 +29,10 @@ const ROOT = path.join(__dirname, '..'),
 const whole = (src, from, file) => block(src, from, '\n}\n', {through: true, file});
 const RECSRC = whole(QUIZ, 'function recordAnswer({', 'quiz.js'),
   LOGSRC = whole(QUIZ, 'function logAnswer(ans) {', 'quiz.js'),
-  WINKSRC = whole(QUIZ, 'function winkAnswer(n, id, ids, p, tm) {', 'quiz.js');
+  WINKSRC = whole(QUIZ, 'function winkAnswer(n, id, ids, p, tm) {', 'quiz.js'),
+  // The Context field (cxField) and the name forms of Offered (choiceSub, nameForm), from their source too.
+  CXSRC = block(QUIZ, 'const cxField = ', '\n', {file: 'quiz.js'}),
+  FORMSRC = block(QUIZ, 'const choiceSub = ', "\n// A new question's clock", {file: 'quiz.js'});
 
 // The field table of docs/spec/answer.md ("## The fields"): one row per key of a logged answer, its Answers column, and
 // whether the replay reads it. No cell holds a pipe.
@@ -115,10 +118,18 @@ function recorder(SUBJ, SYNC, extra = {}) {
     save() {},
     renamedId: C.renamedId,
     WINK_MODE: C.WINK_MODE,
+    // The Context (quiz.js cxField: core.js ctxOf, rvOf; sync.js appVer, the build stamp app() below reads) and the
+    // Offered (core.js offerOf; app.js uplain and kindOf: a coral genus, a scientific label of no kind).
+    ctxOf: C.ctxOf,
+    rvOf: C.rvOf,
+    appVer: () => '900-abc1234',
+    offerOf: C.offerOf,
+    uplain: () => false,
+    kindOf: () => '',
     ...extra
   };
   vm.createContext(ctx);
-  vm.runInContext(RECSRC + LOGSRC + WINKSRC, ctx);
+  vm.runInContext(RECSRC + LOGSRC + WINKSRC + CXSRC + ';\n' + FORMSRC, ctx);
   return ctx;
 }
 const CORAL = () => C.subjectOf('coral');
@@ -136,7 +147,14 @@ const CORAL_Q = [
     chs: CH,
     ph: ph('porites-wide-2'),
     tm: {rt: 7.5},
-    tap: {f: 'montipora-wide-9'}
+    tap: {f: 'montipora-wide-9'},
+    // its four tiles, the choices (quiz.js answer: SHOWNQ[4].find), the photo of the unit asked among them
+    fx: [
+      {n: 'Acropora', p: {f: 'acropora-wide-4'}},
+      {n: 'Montipora', p: {f: 'montipora-wide-9'}},
+      {n: 'Pocillopora', p: {f: 'pocillopora-wide-5'}},
+      {n: 'Porites', p: {f: 'porites-wide-2'}}
+    ]
   },
   {
     cur: 'quiz',
@@ -157,6 +175,7 @@ const FAM = ['f:Damselfishes', 'f:Wrasses', 'f:Gobies', 'f:Blennies'];
 function fishAnswers(SYNC) {
   const F = recorder(C.subjectOf('fish'), SYNC, {
     rankOf: () => 'family',
+    uplain: () => true, // a fish family: its common name, upright
     unitName: n => n.slice(2),
     speciesShown: () => 'Chromis ternatensis'
   });
@@ -182,9 +201,18 @@ function storage(init = {}) {
 // that never came). v: the script version every reply says (an older sheet); av: false, a page with no build stamp
 // (appVer ''). seen: the device has seen that version in an earlier reply (sync.js SHEETV: the photo statistics at launch,
 // an earlier save), else it knows none (sheetV: the floor). extra: globals replaced (rvOf: the rules this app knows).
-const VERSION = vm.runInContext('VERSION', loadCodeGs().ctx);
-function app({sheet, SYNC = null, P = {}, ls = {}, v, av = true, seen = true, extra = {}} = {}) {
-  if (seen) ls = {'reefid-sheet-v': JSON.stringify(v === undefined ? VERSION : v), ...ls};
+const VERSION = vm.runInContext('VERSION', loadCodeGs().ctx),
+  // The version the device reads in the sheet's replies by default: the script's own, or past every gate when a branch
+  // adds one above it (its gate waits for the integrator's assign, rule D3; the script that stores the field is the
+  // next version, this one's code).
+  SAYS = Math.max(
+    VERSION,
+    ...Object.keys(C)
+      .filter(k => /_SHEET$/.test(k) && Number.isFinite(C[k]))
+      .map(k => C[k])
+  );
+function app({sheet, SYNC = null, P = {}, ls = {}, v = SAYS, av = true, seen = true, extra = {}} = {}) {
+  if (seen) ls = {'reefid-sheet-v': JSON.stringify(v), ...ls};
   const prog = read('progress.js'),
     appjs = read('app.js'),
     groups = /const GROUPS_KEY = [\s\S]*?\nconst subjOpen = .*\n/.exec(appjs)[0],
@@ -279,8 +307,16 @@ const answersTab = s => {
   const [H, ...R] = s.sheets.Answers.rows;
   return {H, R, byId: id => R.find(r => r[H.indexOf('Id')] === id)};
 };
-// What logAnswers_ writes in a field's column, from the entry sent: blank for a field the entry has none of.
-const cellOf = (a, key) => (a[key] === undefined ? '' : key === 'sc' || key === 'rj' ? JSON.stringify(a[key]) : a[key]);
+// What logAnswers_ writes in a field's column, from the entry sent: blank for a field the entry has none of; the Context
+// always, the script's version added (Code.gs context_).
+const cellOf = (a, key) =>
+  key === 'cx'
+    ? JSON.stringify({...C.ctxRec(a.cx), v: VERSION})
+    : a[key] === undefined
+      ? ''
+      : ['sc', 'rj', 'of'].includes(key)
+        ? JSON.stringify(a[key])
+        : a[key];
 const cellIs = (cell, a, key) => (key === 't' ? new Date(cell).getTime() === Date.parse(a.t) : cell === cellOf(a, key));
 
 test('the field table of docs/spec/answer.md names every key the producers build, every column the sheet writes, and what the replay reads', () => {
@@ -326,12 +362,19 @@ test('the field table of docs/spec/answer.md names every key the producers build
   // The fields a version gate trims (core.js logOut below every gate), named in the contract with their gates.
   const full = Object.assign({}, ...SYNC.log);
   const trimmed = Object.keys(full).filter(k => !(k in C.logOut(full, 0)));
-  eq(trimmed.sort(), ['cv', 'pa']);
+  eq(trimmed.sort(), ['cv', 'cx', 'of', 'pa']);
   for (const [k, g] of [
     ['pa', 'PA_SHEET'],
-    ['cv', 'CV_SHEET']
+    ['cv', 'CV_SHEET'],
+    ['cx', 'CX_SHEET'],
+    ['of', 'OF_SHEET']
   ])
-    assert.ok(SPEC.includes('`' + k + '` from `' + g + '` (' + C[g] + ')'), `docs/spec/answer.md names ${k}'s gate ${g} ${C[g]}`);
+    // (a gate this branch adds is above main's VERSION, and the spec names it by the placeholder until the integrator
+    // assigns it: rule D3)
+    assert.ok(
+      [C[g], 'v' + C[g], ...(C[g] > VERSION ? ['v' + 'NEXT'] : [])].some(n => SPEC.includes('`' + k + '` from `' + g + '` (' + n + ')')),
+      `docs/spec/answer.md names ${k}'s gate ${g} ${C[g]}`
+    );
 });
 
 test('one answer end to end: built, queued, sent, logged, replayed and adopted with the same fields and the same id', async () => {
@@ -370,7 +413,7 @@ test('one answer end to end: built, queued, sent, logged, replayed and adopted w
   }
   // Acknowledged: the reply says log, and the queue is empty.
   const reply = A.got.find(j => j && j.log);
-  assert.strictEqual(reply.v, VERSION, 'every reply says the script version');
+  assert.strictEqual(reply.v, SAYS, 'every reply says the script version');
   eq(SYNC.log, []);
   // Replayed: the reply to a save that applied rules 0 carries the corals' replay under the sheet's rules version, over
   // the corals' answers only (the fish answer is the fish replay's, the surprise card nobody's), ids included.
@@ -454,8 +497,9 @@ test('a resend after a lost reply is logged once; the acknowledgement drops from
 
 test('an older sheet: the copy sent leaves out the fields above its version, the queue keeps them; the script keeps only the fields it knows', async () => {
   for (const [v, out] of [
-    [C.CV_SHEET - 1, ['cv']],
-    [C.PA_SHEET - 1, ['cv', 'pa']]
+    [C.CX_SHEET - 1, ['cx', 'of']],
+    [C.CV_SHEET - 1, ['cv', 'cx', 'of']],
+    [C.PA_SHEET - 1, ['cv', 'cx', 'of', 'pa']]
   ]) {
     const s = loadCodeGs(withData()),
       SYNC = {name: 'Ana', pin: '1234', log: []};
@@ -467,11 +511,14 @@ test('an older sheet: the copy sent leaves out the fields above its version, the
     const [body] = saves(A);
     const drop = a => Object.fromEntries(Object.entries(a).filter(([k]) => !out.includes(k)));
     eq(body.answers, queue.map(drop), `v ${v}`);
-    assert.ok(queue.some(a => a.pa) && queue.every(a => a.cv), 'the queue held them until the sheet confirmed');
+    assert.ok(queue.some(a => a.pa) && queue.every(a => a.cv && a.cx && a.of), 'the queue held them until the sheet confirmed');
     const {H, byId} = answersTab(s);
     for (const a of queue) {
-      assert.strictEqual(byId(a.id)[H.indexOf('Content version')], '');
+      assert.strictEqual(byId(a.id)[H.indexOf('Content version')], out.includes('cv') ? '' : a.cv);
       assert.strictEqual(byId(a.id)[H.indexOf('Photo answered')], out.includes('pa') ? '' : a.pa || '');
+      // (this in-memory sheet is today's script answering as an older one: it still writes its own version)
+      assert.strictEqual(byId(a.id)[H.indexOf('Context')], JSON.stringify({v: VERSION}), 'the app part trimmed');
+      assert.strictEqual(byId(a.id)[H.indexOf('Offered')], '');
     }
   }
   // A field this script does not know (an app ahead of it), and one its scoring record does not: the same row as without.
@@ -484,6 +531,106 @@ test('an older sheet: the copy sent leaves out the fields above its version, the
       return answersTab(s).byId(a.id);
     };
   eq(row({...a, zz: 'later', sc: {...a.sc, q9: 1}}), row(a));
+});
+
+test('Context and Offered (REE-311 point 8, REE-26 point 11(b)): every format says what produced it and what it showed; logged only, the replay unchanged', async () => {
+  const SYNC = {name: 'Ana', pin: '1234', log: []};
+  coralAnswers(recorder(CORAL(), SYNC));
+  fishAnswers(SYNC);
+  // A duel (two names), a live answer (its labels alone, live.js liveLog) and a typed species by its scientific name.
+  const D = recorder(CORAL(), SYNC, {kindOf: n => (n === 'Acropora' ? 'sci' : ''), rankOf: n => (n === 'Acropora' ? 'species' : '')});
+  D.recordAnswer({
+    cur: 'quiz-duel',
+    mq: 'quiz-duel',
+    target: 'Porites',
+    c: 'Porites',
+    k: 2,
+    chs: ['Porites', 'Montipora'],
+    ph: ph('porites-wide-2'),
+    at: at(5)
+  });
+  D.recordAnswer({...CORAL_Q[0], cur: 'live', mq: 'live', form: () => 'c', at: at(6)});
+  D.recordAnswer({...CORAL_Q[2], target: 'Acropora', ph: ph('acropora-wide-1'), at: at(7)});
+  const [quiz, find, typed, fish, wink, duel, live, sci] = copy(SYNC.log),
+    T = (u, f) => ['t', u, f],
+    Cs = (L, f) => L.map(u => ['c', u, f]);
+  eq(quiz.of, [T('Acropora', 'acropora-wide-1'), ...Cs(CH, 's')], '4 choices: the photo asked, then the names in order');
+  eq(
+    find.of,
+    [
+      ['a', 'Porites', 's'],
+      ['d', 'Acropora', 'acropora-wide-4'],
+      ['d', 'Montipora', 'montipora-wide-9'],
+      ['d', 'Pocillopora', 'pocillopora-wide-5'],
+      T('Porites', 'porites-wide-2')
+    ],
+    'Find the X: the name asked, then the four tiles, the decoys d'
+  );
+  eq(typed.of, [T('Pocillopora', 'pocillopora-wide-3'), ['r', 'genus', 'names']], 'typed: the option set as its rule');
+  eq(sci.of, [T('Acropora', 'acropora-wide-1'), ['r', 'species:sci', 'names']], 'a species typed by its scientific name');
+  eq(fish.of, [T('f:Damselfishes', 'fi100200300'), ...Cs(FAM, 'c')], 'a fish family by its common name');
+  eq(wink.of, [T('f:Groupers', 'fi100200301'), ...Cs(['f:Groupers', ...FAM.slice(1)], 'c')], 'a surprise card');
+  eq(duel.of, [T('Porites', 'porites-wide-2'), ...Cs(['Porites', 'Montipora'], 's')], 'a duel');
+  eq(live.of, [T('Acropora', 'acropora-wide-1'), ...Cs(CH, 'c')], 'a live answer, its form as given');
+  for (const a of [quiz, find, typed, duel, live, sci])
+    eq(a.cx, {b: '900-abc1234', r: C.rvOf('coral'), f: C.ANS_FMT}, 'the build, the coral rules version, the format');
+  for (const a of [fish, wink]) eq(a.cx, {b: '900-abc1234', r: C.rvOf('fish'), f: C.ANS_FMT}, "the fish's own rules version");
+  assert.notStrictEqual(C.rvOf('fish'), C.rvOf('coral'), 'two rules versions told apart');
+  for (const a of SYNC.log) assert.ok(C.offerRec(a.of), `${a.m}: the sheet keeps it whole`);
+  // Logged: the Context with the script's version added, the Offered as sent.
+  const s = loadCodeGs(withData()),
+    sent = copy(SYNC.log);
+  const A = app({sheet: s, SYNC, P: {}});
+  await A.syncPush();
+  const {H, byId} = answersTab(s),
+    cx = H.indexOf('Context'),
+    of = H.indexOf('Offered');
+  eq(H.slice(-2), ['Context', 'Offered'], 'the two new columns at the end');
+  assert.strictEqual(byId(quiz.id)[cx], JSON.stringify({b: '900-abc1234', r: C.rvOf('coral'), f: C.ANS_FMT, v: VERSION}));
+  for (const a of sent) assert.strictEqual(byId(a.id)[of], JSON.stringify(a.of), a.m);
+  // An old app (no cx, no of): the Context says the script that logged it, the Offered is blank. A Context field that
+  // fails its check is left out; an Offered with one item that fails is blank, never a part of what was shown.
+  const one = (e, x) => {
+    const t = loadCodeGs();
+    t.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [e], av: '900-x'});
+    return answersTab(t).byId(e.id)[LOG.indexOf(x)];
+  };
+  const bare = (({cx: _, of: __, ...x}) => x)(quiz);
+  assert.strictEqual(one(bare, 'Context'), JSON.stringify({v: VERSION}));
+  assert.strictEqual(one(bare, 'Offered'), '');
+  assert.strictEqual(one({...quiz, cx: {b: '=HYPERLINK("x")', r: -1, f: 1, v: 999}}, 'Context'), JSON.stringify({f: 1, v: VERSION}));
+  for (const bad of [
+    [...quiz.of, ['x', 'Acropora', 's']],
+    [...quiz.of, ['c', 'Acropora', 'latin']],
+    [...quiz.of, ['t', '=1+1', 'p1']],
+    [...quiz.of, ['t', 'Acropora', 'a b']],
+    [...quiz.of, ['r', 'Genus', 'names']],
+    [...quiz.of, ['c', 'Acropora']],
+    'not a list',
+    []
+  ])
+    assert.strictEqual(one({...quiz, of: bad}, 'Offered'), '', JSON.stringify(bad));
+  // The caps (core.js OF_MAX), sized for the long readable ids to come (REE-311 point 9: subject:rank:Key, at most 33
+  // characters measured): a Find the X on such ids and 32-character photos is kept whole, far under the cell's cap; a unit
+  // past 80 characters, a 13th item or a cell past 2,000 characters is not.
+  const long = n => ('fish:species:' + n.repeat(40)).slice(0, 33),
+    lf = ['a', 'b', 'c', 'd'].map(x => [long(x), ('fi' + x).padEnd(32, '9')]),
+    big = offer => one({...quiz, of: offer}, 'Offered');
+  const lfx = C.offerOf({t: lf[0][0], tiles: lf, form: () => 'cs'});
+  assert.strictEqual(big(lfx), JSON.stringify(lfx));
+  assert.ok(JSON.stringify(lfx).length < C.OF_MAX.cell / 4, JSON.stringify(lfx).length);
+  assert.strictEqual(big([['t', 'A' + 'x'.repeat(C.OF_MAX.unit), 'p1']]), '');
+  assert.strictEqual(big(Array.from({length: C.OF_MAX.n + 1}, () => ['t', 'Acropora', 'p1'])), '');
+  assert.strictEqual(big(Array.from({length: C.OF_MAX.n}, () => ['t', 'A'.repeat(80), 'p'.repeat(80)])), '', 'past 2,000 characters');
+  // Logged only: the replay of the same answers with and without the two fields is the same (rule D5 untouched).
+  const replay = L => {
+    const t = loadCodeGs(withData());
+    t.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: L, av: '900-x'});
+    return t.get({name: 'Ana', pin: '1234', rv: '0', av: '900-x'}).replay;
+  };
+  const without = sent.map(({cx: _, of: __, ...x}) => x);
+  eq(replay(sent).rec, replay(without).rec);
+  eq(C.logRow(sent[0], 'me'), C.logRow(without[0], 'me'), "the device's own rows too");
 });
 
 test('a device that sends no av: its answers are logged as any; the sheet notes an old app; no rv, no replay', () => {
@@ -596,7 +743,7 @@ test('a device that has seen no version yet: the load before its save says it, s
   eq(B.store.get('reefid-anonq', []), AN.log, 'kept');
   B.loadStats();
   await settle();
-  assert.strictEqual(B.sheetV(), VERSION, 'the photo statistics say the version');
+  assert.strictEqual(B.sheetV(), SAYS, 'the photo statistics say the version');
   assert.ok(later.includes(B.ctx.sendAnon), 'and send what was held (anonSoon)');
   B.sendAnon();
   await settle();

@@ -273,16 +273,93 @@
   // docs/ROADMAP.md "Content versions and duplicate-safe answers"). Sent with cv only once the script's replies say
   // v >= CV_SHEET; below, the copy sent leaves it out (the queue keeps it), as for pa (rule D4).
   const CV_SHEET = 178;
+  // The sync script version that stores an answer's Context (Code.gs: Answers Context, the entry's cx: ctxOf) and its
+  // Offered (Code.gs: Answers Offered, the entry's of: offerOf; REE-311 point 8 and REE-26 point 11(b), Pierre,
+  // 2026-11-27). Sent with them only once the script's replies say v >= the gate; below, the copy sent leaves them out
+  // (the queue keeps them), as for pa and cv (rule D4).
+  const CX_SHEET = 238;
+  const OF_SHEET = 238;
+  // The fields a version gate trims from the copy sent (docs/spec/answer.md "How each sheet version trims an answer").
+  const LOG_GATES = [
+    ['pa', PA_SHEET],
+    ['cv', CV_SHEET],
+    ['cx', CX_SHEET],
+    ['of', OF_SHEET]
+  ];
   const logOut = (a, v) => {
-    // (a reply with no version, NaN, is below both)
-    const pa = !!a && a.pa !== undefined && !(Number(v) >= PA_SHEET),
-      cv = !!a && a.cv !== undefined && !(Number(v) >= CV_SHEET);
-    if (!pa && !cv) return a;
+    // (a reply with no version, NaN, is below every gate)
+    const out = a ? LOG_GATES.filter(([k, g]) => a[k] !== undefined && !(Number(v) >= g)).map(([k]) => k) : [];
+    if (!out.length) return a;
     const o = {...a};
-    if (pa) delete o.pa;
-    if (cv) delete o.cv;
+    out.forEach(k => delete o[k]);
     return o;
   };
+  // The record format of an answer: the keys of a logged entry and what each means (docs/spec/answer.md "The fields").
+  // 1: the first format stamped (2026-11-27, with the Context and Offered columns). Raised by one whenever a key is added
+  // or removed or changes meaning, with its line in docs/spec/answer.md "Record formats", so a reader can tell a blank
+  // that means "not recorded then" from one that means "none".
+  const ANS_FMT = 1;
+  // An answer's Context (the Answers' Context, docs/spec/answer.md): what produced it on the device, b the app build
+  // that recorded it (sync.js appVer: "<build>-<hash>"; left out on a copy that has none), r the rules version of its
+  // subject the device scored it under (rvOf), f the record format (ANS_FMT). The script adds its own version (v) when
+  // it logs it (Code.gs context_). ctxRec: the same, each field checked, as the sheet keeps it ({} when none holds).
+  const CX_B = /^[A-Za-z0-9._-]{1,40}$/;
+  function ctxRec(x) {
+    const o = {},
+      n = v => Number.isInteger(v) && v >= 0 && v <= 99999;
+    if (!isObj(x)) return o;
+    if (typeof x.b === 'string' && CX_B.test(x.b)) o.b = x.b;
+    if (n(x.r)) o.r = x.r;
+    if (n(x.f)) o.f = x.f;
+    return o;
+  }
+  const ctxOf = (b, r) => ctxRec({b, r, f: ANS_FMT});
+  // What a question showed (the Answers' Offered, docs/spec/answer.md "Offered"; REE-26 point 11(b)): every stimulus on
+  // screen with its role, in the order shown, one rule for every format, each item [role, unit, what]:
+  //   t: a photo of the unit asked (a corallites hint seen included, one left closed not): [t, unit, file stem];
+  //   d: a photo of another unit shown beside it as a choice (a Find the X's decoy tile): [d, unit, file stem];
+  //   a: the name asked (a Find the X's prompt): [a, unit, form];
+  //   c: a name offered as a choice (the right one included): [c, unit, form];
+  //   r: a typed answer's option set, as a rule: [r, the class asked (its rank, and its kind of name when it has one),
+  //      'names'] (every name the game knows for a unit of that class in the answer's content, cv: quiz.js typeMatch).
+  // form: how a name showed (OF_FORMS): c a common name, s a scientific one, then the other kind when a line under it
+  // showed one too (cs, sc). A photo without a file id (an iNaturalist candidate not downloaded yet) is there with an
+  // empty stem. In: t the unit asked; ph the file stems of its photos shown; tiles [[unit, stem]] the
+  // photos offered as the choices (a Find the X: t's photo is t, the others d), with the name asked; chs the names
+  // offered; form(unit) their form; rule the class of a typed answer ('' none).
+  const OF_FORMS = ['c', 's', 'cs', 'sc'];
+  function offerOf({t, ph = [], tiles = null, chs = [], form = () => 's', rule = ''}) {
+    const L = [];
+    if (tiles) {
+      L.push(['a', t, form(t)]);
+      tiles.forEach(([n, f]) => L.push([n === t ? 't' : 'd', n, f]));
+    } else ph.forEach(f => L.push(['t', t, f]));
+    chs.forEach(n => L.push(['c', n, form(n)]));
+    if (rule) L.push(['r', rule, 'names']);
+    return L;
+  }
+  // Offered as the sheet keeps it (Code.gs offered_): a list of at most OF_MAX.n items, each checked; null when any
+  // fails (the cell is then written blank, never a part of what was shown). Caps sized for the long readable ids to
+  // come (REE-311 point 9: subject:rank:Key, at most 33 characters measured on 1,359 ids): a unit or a photo at most 80
+  // characters, the cell at most 2,000.
+  const OF_MAX = {n: 12, unit: 80, ph: 80, cell: 2000};
+  const OF_UNIT = /^[A-Za-z][A-Za-z0-9 :_.-]*$/,
+    OF_PH = /^[A-Za-z0-9_.-]*$/,
+    OF_CLASS = /^[a-z]{1,20}(:[a-z]{1,10})?$/;
+  function offerRec(x) {
+    if (!Array.isArray(x) || !x.length || x.length > OF_MAX.n) return null;
+    const ok = it => {
+      if (!Array.isArray(it) || it.length !== 3 || !it.every(s => typeof s === 'string')) return false;
+      const [r, u, w] = it;
+      if (r === 'r') return OF_CLASS.test(u) && w === 'names';
+      if (u.length > OF_MAX.unit || !OF_UNIT.test(u)) return false;
+      if (r === 't' || r === 'd') return w.length <= OF_MAX.ph && OF_PH.test(w);
+      return (r === 'a' || r === 'c') && OF_FORMS.includes(w);
+    };
+    if (!x.every(ok)) return null;
+    const L = x.map(it => it.slice());
+    return JSON.stringify(L).length <= OF_MAX.cell ? L : null;
+  }
   // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random

@@ -688,7 +688,9 @@ function liveLog(S, o) {
         // Its attempt id: the same at every try for this player's answer to this question (liveAid), so the sheet logs it
         // once even if a reload logged it again before it left the queue (liveDone).
         id: liveAid(o.pid, o.qi),
-        at: o.at
+        at: o.at,
+        // Its Offered (core.js offerOf): the class's screen shows each choice by its label alone (liveName), no line under it.
+        form: n => nameForm(n, null, false)
       });
       return 'ok';
     });

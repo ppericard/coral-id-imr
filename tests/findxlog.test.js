@@ -48,7 +48,11 @@ test('Code.gs: Photo answered is the Answers column after Device, before Content
     LOG = vm.runInContext('LOG', s.ctx);
   assert.deepStrictEqual([...H], [...LOG]);
   assert.strictEqual(H[25], 'Photo answered');
-  assert.strictEqual(H.length, 27, 'Content version after it (tests/contentver.test.js)');
+  assert.strictEqual(
+    H.length,
+    29,
+    'Content version, Context and Offered after it (tests/contentver.test.js, tests/answercontract.test.js)'
+  );
   assert.strictEqual(H[24], 'Device');
   assert.strictEqual(LOG.indexOf('Photos'), 6, 'Photos never moves');
 });

@@ -708,6 +708,11 @@ function recApp(P, calls, extra = {}) {
     // core.js answerId (an answer kept without its player id); quiz.js cvField (app.js contentVer: the units in force)
     answerId: C.answerId,
     cvField: () => ({cv: 'clive1'}),
+    // quiz.js cxField (the Context), core.js offerOf and quiz.js nameForm (the Offered: a live game's labels alone)
+    cxField: () => ({cx: {b: '900-x', r: 1, f: 1}}),
+    offerOf: C.offerOf,
+    nameForm: (n, sv, line = true) => (line ? 'sc' : 's'),
+    kindOf: () => '',
     TYPEDQ_RJ: 10,
     rankOf: () => 'genus',
     unitRankOf: () => 'genus',
@@ -790,14 +795,22 @@ test('live.js: a live answer is recorded as the photo quiz records the same answ
     assert.deepStrictEqual(copy(P1), copy(P2), c);
     if (c === 'Acropora') assert.strictEqual(P1.Acropora.cor, 1);
     assert.deepStrictEqual(copy(P1.Acropora.ro), ['acropora-1']);
-    // The same steps in the same order, and the same log row but its mode and attempt id.
+    // The same steps in the same order, and the same log row but its mode, its attempt id and the form of its names
+    // (Offered: the class's screen shows each label alone, the quiz's buttons a line under it where there is one).
     // (live.js's own step first: the mark of a unit the path has not opened, model.js introLive.)
     const rows = calls =>
       calls
         .filter(x => !/^introLive /.test(x))
-        .map(x => (typeof x === 'object' ? {...x, m: '-', id: '-'} : x.replace(/ (quiz|live)$/, ' -')));
+        .map(x =>
+          typeof x === 'object'
+            ? {...x, m: '-', id: '-', of: x.of.map(([r, u, w]) => [r, u, r === 'c' ? '-' : w])}
+            : x.replace(/ (quiz|live)$/, ' -')
+        );
     assert.deepStrictEqual(rows(live), rows(quiz), c);
     assert.ok(live.some(x => x.m === 'live' && x.id === 'l0a1b2c3d4eq3'));
+    const of = calls => copy(calls.find(x => typeof x === 'object').of);
+    assert.deepStrictEqual(of(live), [...ph.map(f => ['t', 'Acropora', f]), ...CHS.map(n => ['c', n, 's'])], 'live: labels alone');
+    assert.deepStrictEqual(of(quiz), [...ph.map(f => ['t', 'Acropora', f]), ...CHS.map(n => ['c', n, 'sc'])], 'quiz: as nameForm says');
     // What the live copy left out before: a right answer clears its variant groups and checks the achievements (with
     // cur live: never a run), a miss drops the quiz's planned questions.
     if (c === 'Acropora') assert.ok(live.includes('varRight Acropora acropora-1 acropora-2-c') && live.includes('achAfter true live'));

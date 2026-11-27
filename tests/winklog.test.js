@@ -39,6 +39,11 @@ function page({signedIn = false} = {}) {
       // core.js answerId (the attempt id); app.js contentVer (the content version of the units in force: quiz.js cvField)
       answerId: C.answerId,
       contentVer: S => (S.id === 'fish' ? 'cfish1' : ''),
+      // its Context (quiz.js cxField: core.js ctxOf, rvOf; sync.js appVer) and Offered (core.js offerOf)
+      ctxOf: C.ctxOf,
+      rvOf: C.rvOf,
+      appVer: () => '900-abc1234',
+      offerOf: C.offerOf,
       store: pg.store,
       keptPush: pg.keptPush
     };
@@ -46,6 +51,7 @@ function page({signedIn = false} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     cut(quiz, 'const cvField = () => {', '\n};\n', {file: 'quiz.js', through: 1}) +
+      cut(quiz, 'const cxField = ', '\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, 'function logAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, 'function winkAnswer(', '\n}\n', {file: 'quiz.js', through: 1}) +
       '\nthis.M = {logAnswer, winkAnswer};',
@@ -77,6 +83,12 @@ test('a wink answer: one entry, marked, with what was shown and answered, nothin
   assert.strictEqual(typeof a.tz, 'number');
   assert.match(a.id, /^[a-z][a-z0-9]{15}$/, 'its attempt id (core.js answerId)');
   assert.strictEqual(a.cv, 'cfish1', 'the content version of the units in force (quiz.js cvField)');
+  assert.deepStrictEqual({...a.cx}, {b: '900-abc1234', r: C.rvOf('fish'), f: C.ANS_FMT}, 'its Context (quiz.js cxField)');
+  assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(a.of)),
+    [['t', WALE, PH.f], ...a.ch.split(' ').map(n => ['c', n, 'c'])],
+    'its Offered: the photo, then its four labels, upright text (core.js offerOf)'
+  );
   for (const k of ['e', 'th', 'nw', 'sc', 'ty', 'tr']) assert.ok(!(k in a), `nothing scored: no ${k}`);
   assert.strictEqual(pg.winkAnswer(WALE, WALE, CH, PH, {rt: null, zm: 0}).ok, 1, 'the right one');
   assert.ok(!('rt' in pg.winkAnswer(WALE, WALE, CH, PH, {rt: null, zm: 0})), 'no seconds when the photo never came in');
