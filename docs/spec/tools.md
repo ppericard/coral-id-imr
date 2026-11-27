@@ -93,6 +93,11 @@ written with `tools/datajson.py`.
   diff (`--no-renames`: deletions and both sides of a rename) against `DOCS`, the PR `paths-ignore` list read with
   GitHub's rules. Only a proven docs-only train answers `browser=false`; anything it cannot prove runs the matrix.
   `train.py` classifies the same diff. See `tests/smokeparts.test.js` and `tests/train.test.js`.
+- **`codeql_scope.py`**: whether a CodeQL run analyses its commit (`.github/workflows/codeql.yml`, its `CodeQL scope`
+  job; REE-121 (c)). A PR's change is GitHub's merge commit against its first parent, its second parent checked to be
+  the PR head; a push to `main` is the change from the commit before the push. Every path (`--no-renames`) must match
+  `EXEMPT`, an explicit list of docs and data, and none `NEVER` (code, workflows, configuration and dependency files)
+  for `analyze=false`; anything unknown is analysed, and so is the weekly run. See `tests/codeql.test.js`.
 - **The session hooks** (`.claude/settings.json`) run tools from a trusted Git revision. SessionStart,
   InstructionsLoaded and SubagentStart each fetch `origin/main` before selecting a script, because eager instruction
   loads can run asynchronously before SessionStart. The fetch is non-interactive, bounded to three seconds and

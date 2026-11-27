@@ -1,0 +1,84 @@
+# CodeQL code scanning in the repository's own file, the advanced setup that replaces GitHub's default setup (Pierre,
+# 2026-11-26 and 2026-11-27, REE-121 (c)). The same analyses as the default setup ran (read 2026-11-27: languages
+# actions, javascript-typescript and python, build mode none, the default query suite, threat model remote, categories
+# /language:<language>, checks "Analyze (<language>)"), on pull requests to main, pushes to main, weekly and by hand,
+# but a commit that changes only docs or data is not analysed: tools/codeql_scope.py and its explicit EXEMPT list decide
+# in the "CodeQL scope" job, whose notice says so; the Analyze jobs then show as skipped, never as a success, and nothing
+# is uploaded. Anything else, an unknown change included, is analysed. No path filter on the triggers: the workflow
+# always runs and reports. The weekly run analyses everything. Merge trains (train/*) are not scanned, as before.
+# GitHub blocks this file's uploads while the default setup is on, so the switch is made in the repository's settings
+# (docs/PAGES.md "Workflow inventory and triggers"). Rollback: Settings > Advanced Security > CodeQL analysis > Set up >
+# Default (languages and query suite as above), which disables this file.
+name: CodeQL
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, the default setup's slot (its last scheduled run: Thursday 2026-11-26 13:43 UTC): the full analysis.
+    - cron: '43 13 * * 4'
+  workflow_dispatch:
+permissions:
+  contents: read
+# A new push to the same PR cancels the run still going on its older commit, as Checks and Smokes do. A push to main, the
+# weekly run and a manual run each get a group of their own (the run's id): never cancelled, never queued.
+concurrency:
+  group: codeql-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  # Whether this run analyses its commit (tools/codeql_scope.py): analyze=false only for a proven docs or data change.
+  scope:
+    name: CodeQL scope
+    runs-on: ubuntu-26.04
+    outputs:
+      analyze: ${{ steps.scope.outputs.analyze }}
+    steps:
+      # The two scripts only, without file contents for the rest: on a PR the commit is GitHub's merge of the PR into
+      # main, so depth 2 brings main (its first parent) and the PR head (its second).
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: |
+            tools/codeql_scope.py
+            tools/smoke_scope.py
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      - name: Docs or data only, or analyse
+        id: scope
+        env:
+          BEFORE: ${{ github.event.before }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 tools/codeql_scope.py
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    needs: scope
+    # Skipped only on an explicit false: a scope job that failed or gave no answer leaves the analysis to run.
+    if: ${{ !cancelled() && needs.scope.outputs.analyze != 'false' }}
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: write
+    strategy:
+      # Every language reports: one failing analysis never hides the others.
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript, python]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
