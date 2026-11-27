@@ -369,7 +369,8 @@ test('the field table of docs/spec/answer.md names every key the producers build
     ['cx', 'CX_SHEET'],
     ['of', 'OF_SHEET']
   ])
-    // (a gate this branch adds is above main's VERSION, written vNEXT until the integrator assigns it: rule D3)
+    // (a gate this branch adds is above main's VERSION, and the spec names it by the placeholder until the integrator
+    // assigns it: rule D3)
     assert.ok(
       [C[g], 'v' + C[g], ...(C[g] > VERSION ? ['v' + 'NEXT'] : [])].some(n => SPEC.includes('`' + k + '` from `' + g + '` (' + n + ')')),
       `docs/spec/answer.md names ${k}'s gate ${g} ${C[g]}`
