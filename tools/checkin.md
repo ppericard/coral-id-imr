@@ -1,5 +1,8 @@
 # Check-in
 
+Mode auto only ([INTEGRATOR "Work modes"](../docs/INTEGRATOR.md#work-modes-auto-and-pilote)): in mode pilote there
+is no check-in and no sweep, and the integrator launches only what Pierre picks.
+
 What every `send_later` check-in of the integrator does, in order (REE-244). The check-in's prompt is the one line
 "Check-in: run `python3 tools/brief.py --checkin` and follow it", never a list of items: the source of work is
 Linear, so a list written into a prompt runs out while decided work remains. `--checkin` prints this text under the

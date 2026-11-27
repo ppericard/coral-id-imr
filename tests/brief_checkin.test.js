@@ -80,6 +80,18 @@ test('--checkin: the time line, the Next view link with an unknown count, PRs, q
   assert.match(run(s, '--at', '09:00').split('\n')[0], / · day: working day \(Rule 0\)/);
 });
 
+// The work mode (docs/INTEGRATOR.md "Work modes"; Pierre, 2026-11-27 11:27): read from the `Mode:` line of
+// docs/STATUS.md, on the time line; no line, or no STATUS, means pilote.
+test('--checkin: the work mode from docs/STATUS.md on the time line; none written means pilote', () => {
+  const s = setup();
+  assert.match(run(s).split('\n')[0], / · Mode: pilote \(no mode line in docs\/STATUS\.md: pilote until Pierre says otherwise\)$/);
+  fs.writeFileSync(path.join(s.root, 'docs/STATUS.md'), '# Status\n\nMode: auto (Pierre, a date)\n');
+  assert.match(run(s).split('\n')[0], / · Mode: auto \(docs\/STATUS\.md\)$/);
+  fs.writeFileSync(path.join(s.root, 'docs/STATUS.md'), '# Status\n\nMode: pilote (Pierre, a date)\n');
+  assert.match(run(s).split('\n')[0], / · Mode: pilote \(docs\/STATUS\.md\)$/);
+  assert.match(read('docs/STATUS.md'), /^Mode: (auto|pilote)\b/m, 'the real STATUS states the mode');
+});
+
 test('--checkin never invents: no log, no checkin.md, each said in its line', () => {
   const s = setup({checkin: false, log: null});
   const out = run(s);

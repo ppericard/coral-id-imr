@@ -31,11 +31,15 @@ only summarises them for the next session and may be incomplete.
 ## Working mode: the integrator and the merge contract (Pierre, 2026-11-05)
 
 **One integrator.** The main agent of the integration session keeps the current understanding, discusses tradeoffs
-with Pierre, synthesizes research, delegates, checks and merges. It orders and launches decided work without waiting
-unless a real dependency prevents it. Each subagent builds, tests and runs the review loop in its own worktree,
+with Pierre, synthesizes research, delegates, checks and merges. In mode auto it orders and launches decided work without
+waiting unless a real dependency prevents it. Each subagent builds, tests and runs the review loop in its own worktree,
 branch and PR. Subagents never merge. Use [the shipping rules](docs/rules/ship.md) and the applicable
 [integration procedures](docs/INTEGRATOR.md#integrator-startup).
 
+- **Two work modes, set by Pierre** (2026-11-27): **auto** and **pilote**. In auto, the integrator launches all
+  decided work as slots allow, with its check-ins and sweeps. In pilote, it launches only the tasks Pierre picks from
+  its numbered proposal, in his order, with no check-in or sweep. Both send an evening summary at about 17:00. Pierre switches with "mode auto" or "mode pilote".
+  STATUS states the mode; without one, pilote. See [Work modes](docs/INTEGRATOR.md#work-modes-auto-and-pilote).
 - **The integrator merges only** when the checks on the current head are green without rerunning a failed job to
   get green, every Codex finding and security alert is fixed or answered, and every review thread is resolved.
   Each choice must be the integrator's call or already decided with Pierre. Cite a standing rule, an issue or

@@ -1,5 +1,8 @@
 # Status
 
+Mode: pilote (Pierre, 2026-11-27 09:52 Manila, the pause; named at 11:27; [INTEGRATOR "Work modes"][modes]): launch
+only the tasks he picks, no scheduled tasks.
+
 **Start with Linear [REE-312](https://linear.app/reef-id/issue/REE-312): the handover of 2026-11-26.** It holds the
 state at handover, the decided work to launch, the studies, the questions not yet asked (with the two Drive dossiers),
 Pierre's hands and how to work with him. Read it first, confirm or correct it in a comment, then use this file.
@@ -99,3 +102,4 @@ The questions above, in Linear.
 starts with REE-312 and the arbitration point.
 
 [home]: https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc
+[modes]: INTEGRATOR.md#work-modes-auto-and-pilote
