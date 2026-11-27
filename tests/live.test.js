@@ -216,7 +216,8 @@ function liveAdmin({v = C.SHEET_FLOOR, rows = [row('A', 1)], reply} = {}) {
         calls.push(JSON.parse(o.body));
         const j = typeof reply === 'function' ? reply(calls.length) : reply || {ok: true, rows: [], last: {}, n: 1, k: 1};
         return Promise.resolve({json: () => Promise.resolve(j)});
-      }
+      },
+      sheetFetch: (u, o) => ctx.fetch(u, o) // admin.js's gate (REE-348), open here: the test's fetch is the sheet's stand-in
     };
   ctx.ANS.at = ctx.now;
   vm.createContext(ctx);
