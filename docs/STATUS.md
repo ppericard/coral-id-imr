@@ -28,15 +28,17 @@ Snapshot of 2026-11-27 ~09:50 Manila.
   script v237, live and on main), #1638, #1628, #1637 (main 88749ba), #1635 (docs, restore), and any later merge (git
   holds them).
 - **Open PRs:**
-  - #1644 (REE-311 point 8, REE-26 11b: the Answers tab's Context and Offered columns), green: in the queue, to merge
-    first.
+  - #1644 (REE-311 point 8, REE-26 11b: the Answers tab's Context and Offered columns), green: held, not queued and no
+    version assigned, until Pierre answers point 1.1 of the global question pass (what the pause covers).
   - #1554 (REE-31, rights step 1), label `needs-pierre`: Q-a and Q-b of 09:43 wait for him; one check was still running
     on its head and Codex was asked again at 09:42 and 09:44.
   - #1642 (REE-121 c, CodeQL advanced setup): its three Analyze checks fail until Pierre's cutover from the default
     setup; it waits for him.
   - #1631 (REE-346, REE-345, the push guard): green, to train by hand.
-  - Green, not yet placed in the order below: #1643 (REE-281), #1641 (REE-352), #1640 (REE-348), #1639 (REE-339), #1630
-    (REE-342).
+  - Merged by the queue after this snapshot: #1640 (REE-348), #1641 (REE-352), #1630 (REE-342, sheet script v238),
+    #1643 (REE-281); #1639 (REE-339) before it.
+- **The global question pass** (written 10:15 Manila): Linear document "Global question pass · 27 November ·
+  coherence-checked" on REE-312, 19 questions in Pierre's order, his actions, the integrator's calls, what is not due.
 - **P2a trial** running since 2026-11-26 22:19 UTC (window to 2026-12-03 22:19 UTC); the register is on REE-229.
 - **Foundation phase:** new feature dispatch is paused. The arbitration point document "Point d'arbitrage · phase
   fondations · 27 novembre" (Linear, on REE-312) holds the points; Pierre's answers of about 08:40 to 08:43 are on the
