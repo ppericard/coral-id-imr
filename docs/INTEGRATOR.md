@@ -37,16 +37,45 @@ Open the relevant section when the operation comes up.
 | Screen PRs, assign a sheet version or run a train | [Merge mechanics](#the-merge-mechanics-what-bites) and [the reviewed queue helpers](../tools/queue/README.md) |
 | Schedule a large wave or long-running checks | [Quota](#quota-rule-w25-lessons-of-2026-11-20) and [machine slots](rules/ship.md#w24) |
 
+## Work modes: auto and pilote
+
+Pierre sets the mode (2026-11-27 11:27 Manila: «ok pour auto et pilote, écris la règle»). It answers his 09:52
+words, «il faut que tu ralentisses […] j'aimerais qu'on arrive globalement à une pause des nouvelles tâches lancées de
+manière à me laisser le temps de trier», and his 11:26 words: «Un mode "autonome" ou "auto" où tu es libre d'avancer
+tant que tu peux, et nécessite donc tous les rappels réguliers, et un mode "pause" ou à la demande […] pour un travail
+où j'ai plus de contrôle dans les taches qui sont lancés, et dans quelle ordre». These work modes are not Claude Code's
+permission mode, also called auto ("Habits" below).
+
+| | **auto** | **pilote** |
+| --- | --- | --- |
+| Launches | Every decided Linear issue without a valid reason, High first, as slots allow ("Linear", rule W24) | Only the tasks Pierre picks ("go 1, 3") from the integrator's numbered proposal, in his order |
+| Scheduled tasks | The hourly check-in and the 90-minute sweep ([tools/checkin.md](../tools/checkin.md)) | None: disabled, not deleted; the session wakes on Pierre's messages and queue results |
+| Merges | Any PR green, reviewed and with no open question | Only the PRs of tasks Pierre launched, or already open and approved when the mode began |
+| Questions | Batched, as in "Working with Pierre" (AGENTS.md) | Only when Pierre asks, or inside the proposal |
+| Studies | Those already decided | None without his request |
+
+**The proposal in pilote** is a short numbered list: one task per line with its Linear issue, a one-line reason and
+what it waits for, in the order the integrator recommends. Nothing on it starts before Pierre's pick.
+
+**In both modes** the integrator handles live pilot incidents and real external deadlines, and answers Codex findings
+on PRs already open, without widening their scope. Rule 0 and "Always ask first" (AGENTS.md) apply unchanged.
+
+**Switching.** Pierre writes "mode auto" or "mode pilote". The integrator records it at once: the line `Mode: auto` or
+`Mode: pilote` at the top of [STATUS.md](STATUS.md) with his dated words, and a comment on the handover issue. Moving
+to pilote, it disables the scheduled tasks. Moving to auto, it creates the check-in and the sweep again with their
+one-line prompts. A session that finds no mode line, after a restart or a handover, works in pilote until Pierre says
+otherwise.
+
 ## Habits
 
 What the integrator does day to day, as it stands now. Rules live in AGENTS.md and docs/rules/; where one covers a habit
 below, the rule wins. Dated stories behind a habit are in git and the PRs.
 
-- **Work comes from the whole queue.** The turn an agent reports, the next decided item starts, before any merge work;
+- **In mode auto, work comes from the whole queue.** The turn an agent reports, the next decided item starts, before any merge work;
   every check-in counts the running agents first. The source is Linear ("Linear" below), then the
   [ROADMAP.md](ROADMAP.md) rows not transferred yet, never a short list half marked "after Pierre" (AGENTS.md "Working
   mode": as many agents as useful; rule W27).
-- **Every turn ends with the next `send_later` check-in.** Its prompt is the one line
+- **In mode auto, every turn ends with the next `send_later` check-in** ("Work modes" above). Its prompt is the one line
   "Check-in: run `python3 tools/brief.py --checkin` and follow it", never a list of items, so a compaction or a new
   session keeps the same driver ([tools/checkin.md](../tools/checkin.md), REE-244). An agent waiting on a permission prompt is reported to
   Pierre in one line and told how to do without it.

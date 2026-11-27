@@ -2432,3 +2432,29 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   modifier pour le futur aussi». Seen the same evening: Astra's Linear plugin reads descriptions but not comments.
   Applied: docs/INTEGRATOR.md, the Astra paragraph (the links to start from, the plugin, a "comments, summarised"
   section in the description, where and under what title to write).
+
+## 2026-11-27
+
+Only the working-mode answers below. The other answers of the day (arbitration points of ~08:40-08:43, the release
+ruleset, the budgets, the CodeQL cutover) are on their Linear issues and come to this ledger in a later PR.
+
+- **09:52, a pause on new launches (REE-312).** «il faut que tu ralentisses un petit peu là dans les tâches parce que
+  j'arrive pas à suivre du tout. Donc ça serait bien que tu arrêtes de lancer de nouvelles tâches et puis qu'on puisse
+  refaire un point à tête reposée […] dans l'ordre correct, c'est-à-dire 1. Le mode de fonctionnement entre nous, 2. Les
+  fondations de l'application et 3. Les fonctionnalités par-dessus.» Applied: no new agent or PR; the question pass
+  (Linear document "Global question pass · 27 November" on REE-312).
+- **~10:50, the question pass (REE-312).** On its 19 questions: «Trop de questions, pas assez de contexte. Mais redis moi
+  d'abord les trucs à faire en priorité.» Applied: his actions first; questions to come back three at a time at most,
+  each with its context.
+- **11:25, scheduled tasks off during the pause (REE-312).** «On peut aussi couper les taches programmées pour
+  l'instant jusqu'à la fin de la pause». Applied: the check-in and the sweep disabled, not deleted.
+- **11:26-11:27, two work modes (REE-312).** «En fait il faut qu'on définisse des modes de travail entre nous. Un mode
+  "autonome" ou "auto" où tu es libre d'avancer tant que tu peux, et nécessite donc tous les rappels réguliers, et un
+  mode "pause" ou à la demande (propose moi des noms) pour un travail où j'ai plus de contrôle dans les taches qui sont
+  lancés, et dans quelle ordre.» To the integrator's proposal (names auto and pilote; in pilote, a numbered proposal and
+  his pick, no scheduled tasks, merges only for what he launched; pilote when no mode is written): «ok pour auto et
+  pilote, écris la règle». The proposal's "one question point each morning" and "a 5-line summary each evening" were
+  the integrator's own ideas, never decided («C'est quoi ça? J'ai pas souvenir», 11:29): left out of the rule. On the
+  check-in and the sweep (11:29): «il faudra repenser les taches programmées. C'est quoi leur coût et la pertinence
+  qu'elles ne soient pas synchronisées?» (an open question, REE-244). Applied: AGENTS.md "Working mode", docs/INTEGRATOR.md "Work modes: auto and pilote" and
+  "Habits", tools/checkin.md, docs/STATUS.md (`Mode: pilote`).
