@@ -126,3 +126,106 @@ test('every request to the sheet in the app’s scripts goes through sheetFetch'
   }
   assert.deepStrictEqual(bad, [], 'a request to the sheet that bypasses sheetFetch');
 });
+
+// The admin page (REE-348) keeps its own sheet address and gate (admin.js: it loads core.js, not app.js), the same boundary:
+// a copy anywhere but the deployed site is local, and every request to the sheet goes through its sheetFetch, which
+// reaches fetch only on the deployed site, or in the demo (?demo: admin-demo.js patches fetch and answers in memory, so
+// nothing leaves the page). Not even ?readonly, which asks the public photo statistics, reaches the real sheet from a copy.
+const ADMIN = read('admin.js'),
+  ADMIN_GATE =
+    block(ADMIN, "const SYNC_URL = 'https://", 'Promise.reject(Object.assign(new Error', {file: 'admin.js'}) + 'Promise.reject(1);';
+
+// admin.html at address href (DEMO as admin.js reads it from ?demo): its LOCAL and every request that reached fetch when the
+// page asked the sheet for the photo statistics (a GET) and for a read with the token (a POST), as its reads do.
+function adminPage(href, {webdriver = false, stub = null} = {}) {
+  const u = new URL(href),
+    sent = [],
+    win = {location: {search: u.search}};
+  if (stub) win.SHEET_STUB = stub;
+  const ctx = {
+    location: {href, origin: u.origin, pathname: u.pathname, search: u.search},
+    navigator: {webdriver},
+    window: win,
+    fetch: (url, o) => (sent.push({url: String(url), method: (o && o.method) || 'GET'}), new Promise(() => {}))
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    `const DEMO = /[?&]demo\\b/.test(window.location.search);\n${ADMIN_GATE}\nthis.LOCAL = LOCAL; this.SYNC_URL = SYNC_URL;\n` +
+      `sheetFetch(SYNC_URL + '?stats=1&av=admin').catch(() => {}); sheetFetch(SYNC_URL, {method: 'POST', body: '{}'}).catch(() => {});`,
+    ctx
+  );
+  return {local: ctx.LOCAL, sent, url: ctx.SYNC_URL};
+}
+
+test('admin: a copy anywhere but the deployed site is local, ?readonly too: its sheet requests never reach fetch', () => {
+  for (const href of [
+    'http://localhost:8000/admin.html?readonly',
+    'http://127.0.0.1:8000/admin.html',
+    'file:///home/dev/coral-id-imr/admin.html?readonly',
+    'http://192.168.1.20:8000/admin.html?readonly',
+    'https://coral.test/admin.html?readonly',
+    'https://someone.github.io/coral-id-imr/admin.html?readonly', // a fork's site
+    'https://ppericard.github.io/coral-id-imr-staging/admin.html?readonly',
+    'https://ppericard.github.io/reefrecall/admin.html'
+  ]) {
+    const r = adminPage(href);
+    assert.strictEqual(r.local, true, `${href}: LOCAL`);
+    assert.deepStrictEqual(r.sent, [], `${href}: a request reached fetch`);
+  }
+});
+
+test('admin: a browser driven by a program is local even on the deployed site', () => {
+  const r = adminPage('https://ppericard.github.io/coral-id-imr/admin.html?readonly', {webdriver: true});
+  assert.strictEqual(r.local, true);
+  assert.deepStrictEqual(r.sent, []);
+});
+
+test('admin: a local copy reads from a test’s SHEET_STUB only', () => {
+  const asked = [];
+  const r = adminPage('http://localhost:8000/admin.html?readonly', {
+    stub: url => (asked.push(String(url).replace(/^[^?]*/, '')), new Promise(() => {}))
+  });
+  assert.deepStrictEqual(r.sent, []);
+  assert.deepStrictEqual(asked, ['?stats=1&av=admin', '']);
+});
+
+test('admin: the demo (?demo) keeps its calls on fetch, which admin-demo.js answers in memory, on a local copy too', () => {
+  for (const href of ['http://localhost:8000/admin.html?demo', 'https://coral.test/admin.html?demo&late']) {
+    const r = adminPage(href);
+    assert.strictEqual(r.local, true, `${href}: LOCAL`);
+    assert.deepStrictEqual(
+      r.sent.map(x => x.method + ' ' + x.url.replace(r.url, '')),
+      ['GET ?stats=1&av=admin', 'POST '],
+      href
+    );
+  }
+});
+
+test('admin: the deployed site reaches the sheet at SYNC_URL, and its address is the app’s', () => {
+  const site = /<meta property="og:url" content="([^"]+)">/.exec(INDEX)[1];
+  assert.strictEqual(/const SHEET_SITE = '([^']+)'/.exec(ADMIN)[1], site, 'admin.js SHEET_SITE is the deployed address');
+  assert.strictEqual(/const SYNC_URL = '([^']+)'/.exec(ADMIN)[1], /const SYNC_URL = '([^']+)'/.exec(APP)[1], 'one sheet address');
+  const r = adminPage(site + 'admin.html?readonly');
+  assert.strictEqual(r.local, false);
+  assert.deepStrictEqual(
+    r.sent.map(x => x.method + ' ' + x.url.replace(r.url, '')),
+    ['GET ?stats=1&av=admin', 'POST ']
+  );
+});
+
+// Every script the admin page loads, the lazy ones included (admin-analyses.js), sends to the sheet through sheetFetch alone.
+test('every request to the sheet in the admin page’s scripts goes through sheetFetch', () => {
+  const html = read('admin.html'),
+    files = [...new Set([...html.matchAll(/<script[^>]*src="([^"?#]+\.js)(?=[?#"])/g)].map(m => m[1]).filter(f => /^admin/.test(f)))];
+  assert.ok(files.includes('admin.js') && files.includes('admin-analyses.js'), files.join(' '));
+  const bad = [];
+  for (const f of files) {
+    if (f === 'admin-demo.js') continue; // the demo answers the sheet's calls in memory (it patches fetch)
+    const lines = read(f).split('\n');
+    lines.forEach((line, i) => {
+      if (!/(^|[^\w$])(fetch|sendBeacon)\(/.test(line.replace(/\/\/.*$/, ''))) return;
+      if (/SYNC_URL|script\.google/.test(line + (lines[i + 1] || ''))) bad.push(`${f}:${i + 1}: ${line.trim().slice(0, 100)}`);
+    });
+  }
+  assert.deepStrictEqual(bad, [], 'a request to the sheet that bypasses sheetFetch');
+});
