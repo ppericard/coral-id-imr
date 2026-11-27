@@ -482,6 +482,19 @@ def status_notes():
     return (last.group(1) if last else None), (checked.group(1).strip() if checked else None)
 
 
+def work_mode():
+    """The work mode Pierre set, from the `Mode:` line of docs/STATUS.md (docs/INTEGRATOR.md "Work modes"): 'auto' or
+    'pilote'; none written, or unreadable, means pilote."""
+    try:
+        text = open(os.path.join(ROOT, 'docs/STATUS.md'), encoding='utf8').read()
+    except OSError:
+        text = ''
+    m = re.search(r'^Mode: (auto|pilote)\b', text, re.M)
+    if m:
+        return 'Mode: %s (docs/STATUS.md)' % m.group(1)
+    return 'Mode: pilote (no mode line in docs/STATUS.md: pilote until Pierre says otherwise)'
+
+
 def tracker_line():
     """Where to start: Linear's Project Home and the Drive Reef_ID folder, as links read from docs/INTEGRATOR.md "Linear"
     (offline: the brief never queries Linear; REE-230)."""
@@ -555,7 +568,7 @@ def queue_line():
 
 
 def checkin(at):
-    lines = [time_line(at), next_line()]
+    lines = [time_line(at) + ' · ' + work_mode(), next_line()]
     if shutil.which('gh') is None:
         lines.append('PRs: not listed (gh not found)')
     else:
@@ -724,7 +737,7 @@ def result(f):
 
 
 def brief(short, at):
-    lines = [time_line(at)]
+    lines = [time_line(at) + ' · ' + work_mode()]
     pool = ThreadPoolExecutor(max_workers=16)
     f_fresh = pool.submit(freshness, ROOT)  # the network step runs beside the others, bounded by LS_LIMIT
     drifted = drift()
