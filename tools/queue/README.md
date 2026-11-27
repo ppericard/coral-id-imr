@@ -25,6 +25,9 @@ Update worktrees go to `.claude/worktrees/` (rule W22, git-ignored).
 | `codex.md` | The `@codex review` comment with its footer. |
 
 The queue passes the same full SHA to both `tools/train.py --dry-run --sha SHA N` and `tools/train.py --sha SHA N`.
+It logs the train's one-line "Reuse audit" (and in shadow mode whether the train agreed) and gives the train
+`TRAIN_EVIDENCE=$QUEUE_DIR/train-evidence.jsonl`, the per-obligation evidence of each pushed train (REE-121 (a),
+`tools/train_reuse.py`).
 Being behind main is fine if the pinned head composes cleanly. A conflict leaves the branch to the integrator. If a fix,
 conflict resolution or VERSION assignment creates a new head, it needs its own checks and reviews.
 
