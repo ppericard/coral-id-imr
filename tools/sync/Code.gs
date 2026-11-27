@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 237 (2026-11-27). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 238 (2026-11-27). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 237;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 238;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -3998,7 +3998,7 @@ function autoUpdate_(){
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
     const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
-    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); selfVersionsRun_(log); } return 'up to date (v' + VERSION + ')'; }
+    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); selfVersionsRun_(log); selfServeRun_(log); } return 'up to date (v' + VERSION + ')'; }
     if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
     const man = get('appsscript.json'), api = selfApi_;
     if (v > VERSION) {
@@ -4010,11 +4010,14 @@ function autoUpdate_(){
     }
     const dv = Math.max(v, pending), ver = api('post', '/versions', {description: 'v' + dv + ' from GitHub ' + branch});
     const deps = (api('get', '/deployments').deployments || []).filter(d => d.deploymentConfig && d.deploymentConfig.versionNumber && (d.entryPoints || []).some(e => e.entryPointType === 'WEB_APP'));
+    const before = deps.map(d => d.deploymentConfig.versionNumber);  // what they served until now (selfServeStart_)
     deps.forEach(d => api('put', '/deployments/' + d.deploymentId, {deploymentConfig: {versionNumber: ver.versionNumber, manifestFileName: 'appsscript', description: 'v' + dv + ' (auto)'}}));
     props.deleteProperty('AUTO_PENDING');
     log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update') + ', from ' + branch);
     try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { log('version count: ' + e.message); selfVersionsFailed_(); }  // the deploy itself is done; the up-to-date runs try again
-    return 'deployed v' + dv;
+    let served = false;
+    try { served = selfServeStart_(dv, ver.versionNumber, deps, before, log); } catch (e) { log('serving check: ' + e.message); }
+    return 'deployed v' + dv + (served ? '' : ' (not verified serving)');
   } catch (e) {
     // Google's 429 at POST /versions is the version limit (RESOURCE_EXHAUSTED, "Cannot create more versions"): said plainly,
     // every run until it is fixed (AUTO_PENDING then finishes the update), and in the Alerts tab once a day.
@@ -4092,6 +4095,73 @@ function selfVersionsRun_(log){
   if (s && !s.failed && typeof s.n === 'number' && s.n < SELF_VERSIONS.WARN) return;
   if (s && Date.now() - s.at < SELF_VERSIONS.RECOUNT) return;
   try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { selfVersionsFailed_(); }
+}
+// The version that answers (REE-342). A deployment the API repointed is no proof that the new build serves: the API can
+// accept the change while the /exec URL still answers an older version, and a build that fails to load answers no JSON.
+// After each deploy the updater asks every web app deployment it repointed (a GET with no parameter, which reads nothing
+// and answers {ok: false, error: 'input', v}: doGet_) and compares the reply's v with the version deployed. The result
+// is the Script Property AUTO_SERVE {v, ver, deps: [{id, url}], before, at, checked, seen, ok, alerted, good}: v the
+// version deployed, ver its Apps Script version, before the version numbers the deployments served until then, seen
+// what each one answered, good {v, ver} the last version seen serving, carried from deploy to deploy. It stays after a
+// success, as the last good version. Fail-closed: until v answers at every deployment the deploy is "not verified",
+// every up-to-date run asks again (one GET a deployment; never a new version, never a deployment change) and the Deploy
+// log says when it answers. An older version still answering GRACE after the deploy, or a reply that is not the
+// script's JSON (a build that fails to load, whose own trigger runs may never come), writes one line to the Alerts tab
+// and the Deploy log, at most once every ALERT, with what answers and the last good version. It never repoints or rolls
+// back: that stays a person's decision (Apps Script editor, Deploy > Manage deployments).
+const SELF_SERVE = {GRACE: 1800000, ALERT: 86400000};
+function selfServeGet_(){
+  try { const s = JSON.parse(PropertiesService.getScriptProperties().getProperty('AUTO_SERVE') || 'null'); return s && typeof s.v === 'number' && Array.isArray(s.deps) ? s : null; } catch (e) { return null; }
+}
+// A web app deployment's /exec URL: the one the API gives (a Workspace account's has its domain in it), else its usual form.
+function selfServeUrl_(d){
+  const e = (d.entryPoints || []).filter(x => x.entryPointType === 'WEB_APP' && x.webApp && typeof x.webApp.url === 'string' && x.webApp.url.indexOf('https://script.google.com/') === 0)[0];
+  return e ? e.webApp.url : 'https://script.google.com/macros/s/' + encodeURIComponent(d.deploymentId) + '/exec';
+}
+// What one web app answers: {v: its VERSION or null, what: 'v236', 'HTTP 500', 'no JSON' or 'no answer: …'}. Never throws.
+function selfServeAsk_(url){
+  try {
+    const r = UrlFetchApp.fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), {muteHttpExceptions: true}), c = r.getResponseCode();
+    if (c !== 200) return {v: null, what: 'HTTP ' + c};
+    let j = null;
+    try { j = JSON.parse(r.getContentText()); } catch (e) {}
+    return j && typeof j.v === 'number' ? {v: j.v, what: 'v' + j.v} : {v: null, what: 'no JSON'};
+  } catch (e) { return {v: null, what: 'no answer: ' + String(e && e.message).slice(0, 100)}; }
+}
+// The deploy just made (dv as Apps Script version ver, to deps, which served the version numbers before): a new
+// AUTO_SERVE, checked at once. True when dv answers at every deployment.
+function selfServeStart_(dv, ver, deps, before, log){
+  const was = selfServeGet_(), good = was ? (was.ok ? {v: was.v, ver: was.ver} : was.good || null) : null;
+  return selfServeCheck_({v: dv, ver: ver, at: Date.now(), before: before, good: good, ok: false,
+    deps: deps.map(d => ({id: String(d.deploymentId), url: selfServeUrl_(d)}))}, log, true);
+}
+// Asks every deployment of s, keeps the result (AUTO_SERVE), logs and alerts as above. first: the run that deployed.
+function selfServeCheck_(s, log, first){
+  const now = Date.now(), seen = s.deps.map(d => ({id: d.id, a: selfServeAsk_(d.url)})), mins = Math.round((now - s.at) / 60000);
+  s.ok = seen.length > 0 && seen.every(x => x.a.v === s.v);
+  s.checked = now;
+  s.seen = seen.length ? seen.map(x => (seen.length > 1 ? '…' + x.id.slice(-6) + ' ' : '') + x.a.what).join(', ') : 'nothing (no web app deployment found)';
+  if (s.ok) { delete s.alerted; log('serving check: v' + s.v + (first ? ' answers' : ' now answers, ' + mins + ' min after the deploy') + ' (' + s.seen + ')'); }
+  else {
+    if (first) log('serving check: v' + s.v + ' NOT verified, the web app answers ' + s.seen + '; asked again at each run');
+    const broken = !seen.length || seen.some(x => x.a.v === null);
+    if ((broken || now - s.at >= SELF_SERVE.GRACE) && now - (s.alerted || 0) >= SELF_SERVE.ALERT) {
+      s.alerted = now;
+      const last = s.good ? 'version ' + s.good.ver + ' (v' + s.good.v + ') was the last seen serving'
+        : s.before && s.before.length ? 'it served version ' + s.before.join(', ') + ' before' : '';
+      const line = 'sheet script: v' + s.v + ' was deployed as version ' + s.ver + ' ' + mins + ' min ago but the web app answers ' + s.seen
+        + (last ? '; ' + last : '') + '; Deploy > Manage deployments in the Apps Script editor shows what each deployment serves';
+      try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), line.slice(0, 500)]); } catch (e) {}
+      log(line);
+    }
+  }
+  PropertiesService.getScriptProperties().setProperty('AUTO_SERVE', JSON.stringify(s));
+  return s.ok;
+}
+// From a run that finds the script up to date: asks again while the last deploy is not verified, for the version now
+// running only (a script replaced by hand since is not this check's). Never throws.
+function selfServeRun_(log){
+  try { const s = selfServeGet_(); if (s && !s.ok && s.v === VERSION) selfServeCheck_(s, log, false); } catch (e) { log('serving check: ' + e.message); }
 }
 
 // One-shot data migrations (rule W3: no backward compatibility): the code that
