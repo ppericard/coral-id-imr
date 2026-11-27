@@ -44,6 +44,7 @@ const SHELL = [
   'picks.json?v=1',
   'calibration-set.json?v=1',
   'data.json?v=38',
+  // The three fish datasets: optional in the install (below, `optional`).
   'fish.json?v=6',
   'fish-photos.json?v=6',
   'fish-game.json?v=1',
@@ -110,13 +111,21 @@ const get = async (c, u, n = 3) => {
     }
   }
 };
+// The fish datasets (fish.json, fish-photos.json, fish-game.json, about 938 kB compressed) are best-effort in the install
+// (REE-339): every device still asks for them (an RA who installs on wifi can open fish offline later), but one of them
+// failing (a 503, a cut line) must not stop the corals' install and its offline copy: the coral shell decides `install`.
+// A missing one is asked for again by the page, in the background at the next start of the app (app.js SETUP[5]) or when
+// fish is first needed (versioned files, cache first: the fetch below keeps each good reply in the shell cache).
+const optional = u => /^fish[\w-]*\.json\?/.test(u);
 self.addEventListener('install', e =>
   e.waitUntil(
     caches
       .open(V)
       // Each file on its own, tried up to 3 times: with addAll, one file failing on an unstable line would fail the whole
       // install, so a phone on such a line would never get the offline copy (tools/perf.js, 1 request in 5 failing).
-      .then(c => Promise.all(SHELL.map(u => get(c, u))))
+      .then(async c => {
+        await Promise.all(SHELL.map(u => (optional(u) ? get(c, u).catch(() => {}) : get(c, u))));
+      })
       .then(() => self.skipWaiting())
   )
 );
