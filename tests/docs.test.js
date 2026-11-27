@@ -788,6 +788,7 @@ const DOC_MARKS = {
   'tools/studies/what-makes-a-5/README.md': [4, 300], // new, 2026-11-24: the "what makes a 5" session page and its data (REE-275)
   'tools/studies/ree255/README.md': [8, 130], // new, 2026-11-25: REE-255's declared method and its study scripts
   'tools/studies/ree241/README.md': [3, 130], // new, 2026-11-26: REE-241's study scripts, what holds for the rule in force
+  'tools/studies/ree284/README.md': [3, 130], // new, 2026-11-27: the fictional-edition probe (REE-284)
   'tools/sync/changes/README.md': [2, 130]
 };
 // A record has no entry of its own (every decision PR would add one): the same mark for each. A sheet script change
