@@ -1479,11 +1479,11 @@
         mem = id => Object.values(S.users).filter(u => (u.gids || []).includes(id)),
         // RIGHTSADM_SHEET: a group that carries rights (Code.gs groupDo_, rightsWrite_)
         rg = d => V >= RIGHTSADM_SHEET && d && d.rights && d.rights.length > 0,
-        // window.DEMO_FAIL = 'server' (tests/admin.smoke.js): the next rights change is saved and its Audit row fails,
-        // as Code.gs answers then; its retry finishes it.
+        // window.DEMO_FAIL = 'server' (tests/admin.smoke.js): the next rights change's Audit rows fail, so nothing is
+        // saved, as Code.gs answers then (rightsWrite_: one write); its retry makes it.
         part = () =>
           window.DEMO_FAIL === 'server'
-            ? ((window.DEMO_FAIL = ''), {ok: false, error: 'server', msg: 'its Audit row was not written'})
+            ? ((window.DEMO_FAIL = ''), {ok: false, error: 'server', msg: 'its Audit rows were not written; nothing changed'})
             : null;
       if (p.userGroup) {
         const g = String(p.group || ''),
@@ -1491,6 +1491,8 @@
         if (!gd(g)) return {ok: false, error: 'group'};
         if (rg(gd(g)) && Array.isArray(p.userGroup)) return {ok: false, error: 'input'};
         if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
+        const fail = rg(gd(g)) && part();
+        if (fail) return fail;
         let n = 0;
         L.forEach(x => {
           const u = S.users[lc(x)];
@@ -1501,7 +1503,7 @@
           u.gids = p.on ? [...(u.gids || []), g] : u.gids.filter(y => y !== g);
           n++;
         });
-        return (rg(gd(g)) && part()) || {ok: true, group: g, n, members: mem(g).length};
+        return {ok: true, group: g, n, members: mem(g).length};
       }
       const id = p.groupMake ? '' : String(p.groupEdit || p.groupDrop),
         cur = id ? gd(id) : null,
@@ -1527,6 +1529,12 @@
         rights = o.rights === undefined || V < RIGHTSADM_SHEET ? was : o.rights;
       if (!Array.isArray(rights) || rights.some(e => !RS.includes(e))) return {ok: false, error: 'input'};
       if (!was.length && rights.length && cur && mem(cur.id).length) return {ok: false, error: 'members'};
+      // Give rights given: asked to confirm first, with how many members would hold it (Code.gs groupDo_ 'confirm').
+      const g0 = 'grant@instance:imr';
+      if (o.rights !== undefined && rights.includes(g0) && !was.includes(g0) && !p.confirm)
+        return {ok: false, error: 'confirm', confirm: 'demo', members: cur ? mem(cur.id).length : 0};
+      const fail = o.rights !== undefined && rg({rights: [...was, ...rights]}) && part();
+      if (fail) return fail;
       const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0),
         d = cur || {id: 'g:' + Math.random().toString(16).slice(2, 10), at: Date.now()};
       Object.assign(d, {
@@ -1536,7 +1544,7 @@
         rights: RS.filter(e => rights.includes(e))
       });
       if (!cur) S.gdefs.push(d);
-      return (o.rights !== undefined && rg({rights: [...was, ...rights]}) && part()) || {ok: true, group: {...d}};
+      return {ok: true, group: {...d}};
     }
     // COHORT_SHEET: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
     if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {

@@ -5642,13 +5642,17 @@ async function lazyPart(b, base, fails) {
           g = await page();
           if (!said.includes('confirm: Give Dio Demo: Host live games, Cohorts?') || g.cards[0].off.join('|') !== 'Ben Demo')
             fails.push(`${w}px rights groups: + Add a player ${JSON.stringify(g.cards[0])}`);
-          // a right given: saved in part (its Audit row failed), then Try again sends the same request and finishes it
+          // a right given whose Audit rows fail: not saved (one write), then Try again sends the same request and makes it
           await q.evaluate(() => (window.DEMO_FAIL = 'server'));
           await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Content'});
           await calm();
           g = await page();
-          if (g.note.indexOf('Saved in part: its Audit record failed. Try again to finish it.') !== 0 || !(await q.$('[data-gretry]')))
-            fails.push(`${w}px rights groups: saved in part ${JSON.stringify(g.note)}`);
+          if (
+            g.note.indexOf('Not done, or saved in part: its Audit record failed. Try again.') !== 0 ||
+            !(await q.$('[data-gretry]')) ||
+            g.cards[0].rights.join('|') !== 'Host live games|Cohorts'
+          )
+            fails.push(`${w}px rights groups: not saved ${JSON.stringify(g.note)} ${JSON.stringify(g.cards[0])}`);
           await q.click('[data-gretry]');
           await calm();
           g = await page();
@@ -5667,6 +5671,24 @@ async function lazyPart(b, base, fails) {
           g = await page();
           if (g.cards[0].rights.join('|') !== 'Host live games|Cohorts')
             fails.push(`${w}px rights groups: × a right ${JSON.stringify(g.cards[0])}`);
+          // Give rights asks the sheet's confirmation first, naming how many members would hold it (Code.gs groupDo_
+          // 'confirm'; decision 3 of 2026-11-26); accepted, the same request goes again with it; then × takes it away
+          await q.selectOption('.adm-gcard:first-child [data-gradd]', {label: 'Give rights'});
+          await calm();
+          g = await page();
+          if (
+            !said.some(x => /^confirm: Give rights to "Trainers"\? Its \d+ members? could then give or take any right in IMR/.test(x)) ||
+            g.cards[0].rights.join('|') !== 'Give rights|Host live games|Cohorts' ||
+            !/"confirm":"demo"/.test((await posts()).slice(-1)[0] || '')
+          )
+            fails.push(
+              `${w}px rights groups: Give rights confirmed ${JSON.stringify({said, g: g.cards[0], P: (await posts()).slice(-2)})}`
+            );
+          await q.click('.adm-gcard:first-child [data-grx][data-e="grant@instance:imr"]');
+          await calm();
+          g = await page();
+          if (g.cards[0].rights.join('|') !== 'Host live games|Cohorts')
+            fails.push(`${w}px rights groups: × Give rights ${JSON.stringify(g.cards[0])}`);
           // A change on its way survives the page being drawn again (the players list read again, away and back): its
           // card shows the pending list and stays off, a second change dispatched at it is not sent, and when the sheet
           // answers the group holds the first change (Content), not the second (Settings) built from the old list.

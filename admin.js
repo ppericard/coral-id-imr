@@ -4690,7 +4690,7 @@ const HELP = {
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the ${ORG.slate}, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and ${ORG.lecture} photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (${ORG.short}, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
   // A getter: GROUPADM_SHEET is declared further down this file.
   get groups() {
-    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app (the general leaderboard shows everyone; to keep someone off every leaderboard, Players › List, Hide); <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it.</p><p><b>Rights</b> (sheet v${RIGHTSADM_SHEET}): a group can carry rights, which its members hold: Manage players, Settings, Give rights, Content, Host live games, Cohorts. Its <b>Rights</b> row shows them, <b>×</b> takes one away, <b>+ Add a right</b> gives one (changing rights needs Give rights). A group that carries rights has a key beside its name and comes first; it takes players one by one, each asked first ("Give X: Host live games?"), with no Add all or Remove all. A group that has members and no rights takes none: make a new group, give it its rights, then add players one by one. <b>rights off: the code changed</b> beside a member: their code changed since they were added, so they hold none of its rights until they are added again. <b>Saved in part</b>: the change is saved but its Audit record failed; <b>Try again</b> sends it again and finishes it. <b>Admins (outside the groups)</b>: the admin list, read-only here.</p>`;
+    return `<p>Every group of players, the newest first (sheet v${GROUPADM_SHEET}; Pierre, 2026-11-18: a player is in any number of groups). <b>New group</b> asks its name, as players see it above its leaderboard (40 characters at most, two groups never share one); <b>Rename</b> the same. Its settings, one click each: <b>Board</b> On = it has its own leaderboard in the app (the general leaderboard shows everyone; to keep someone off every leaderboard, Players › List, Hide); <b>Beta</b> = a subject that opens to a group of players (core.js SUBJECTS open: 'group') opens to its members. In the app, a player sees their own groups' boards first, then All players, every other group's behind "Other groups". Then its members: <b>×</b> takes one out, <b>+ Add a player</b> puts one in; <b>Add all</b> and <b>Remove all</b> ask first. <b>Delete</b> shows once nobody is in it.</p><p><b>Rights</b> (sheet v${RIGHTSADM_SHEET}): a group can carry rights, which its members hold: Manage players, Settings, Give rights, Content, Host live games, Cohorts. Its <b>Rights</b> row shows them, <b>×</b> takes one away, <b>+ Add a right</b> gives one (changing rights needs Give rights). A group that carries rights has a key beside its name and comes first; it takes players one by one, each asked first ("Give X: Host live games?"), with no Add all or Remove all. A group that has members and no rights takes none: make a new group, give it its rights, then add players one by one. <b>rights off: the code changed</b> beside a member: their code changed since they were added, so they hold none of its rights until they are added again. <b>Not done, or saved in part</b>: its Audit record failed; <b>Try again</b> sends the same change again (from the sheet version that writes a change and its record together, nothing was saved). <b>Give rights</b> is given on its own and asks first, naming how many members would hold it. A change that would leave IMR with no admin or no manager (Manage players, Settings and Give rights together) is not done: give the rights to someone else first. <b>Admins (outside the groups)</b>: the admin list, read-only here.</p>`;
   },
   // A getter: GROUPADM_SHEET is declared further down this file.
   get users() {
@@ -11346,17 +11346,39 @@ const gNoteHtml = () =>
   gNote
     ? `<p class="warn adm-gnote" role="status">${esc(gNote.text)}${gNote.body ? ' <button type="button" class="adm-fchip" data-gretry>Try again</button>' : ''} <button type="button" class="adm-fchip plain" data-gnote-no aria-label="Dismiss">×</button></p>`
     : '';
-// A rights request's error in words (Code.gs: token, members, input, server, and the others as they are).
-const rightsErr = e =>
+// A rights request's error in words (Code.gs: token, members, input, server, scope, separate, last with the seat it
+// would empty, and the others as they are). server: from the sheet version that writes a change and its Audit rows in
+// one write (rightsWrite_), nothing was saved; an older script saved the change and Try again finishes it, the same
+// request either way.
+const SEAT_WORDS = {
+  admin: 'no admin (the admin list keeps at least one)',
+  manager: 'no manager (Manage players, Settings and Give rights): first add someone else to a group that holds all three'
+};
+const rightsErr = (e, seat) =>
   e === 'server'
-    ? 'Saved in part: its Audit record failed. Try again to finish it.'
+    ? 'Not done, or saved in part: its Audit record failed. Try again.'
     : e === 'token'
       ? 'Not done: it needs the Give rights right.'
       : e === 'members'
         ? 'Not done: this group has members. Make a new group, give it its rights, then add players one by one.'
         : e === 'input'
           ? 'Not done: the sheet refused the request (one player at a time, known rights only).'
-          : `Not done (${e || 'offline'}).`;
+          : e === 'scope'
+            ? 'Not done: a group holds its rights at the whole instance, or each of them at the same subjects.'
+            : e === 'separate'
+              ? 'Not done: Give rights is given on its own, with no other change.'
+              : e === 'last'
+                ? `Not done: it would leave IMR with ${String(seat || '')
+                    .split(',')
+                    .map(x => SEAT_WORDS[x] || x)
+                    .join(', and ')}.`
+                : `Not done (${e || 'offline'}).`;
+// Give rights given to a group asks the sheet's confirmation first (Code.gs groupDo_ 'confirm', bound to the state the
+// admin saw): the admin is told how many members would hold it, and says yes or no.
+const grantOk = (j, name) =>
+  confirm(
+    `Give rights to ${name ? `"${name}"` : 'this group'}? Its ${j.members} member${j.members === 1 ? '' : 's'} could then give or take any right in IMR, Give rights included.`
+  );
 // Sends a rights request (a group's rights, or one player in or out of a rights group), the only Groups write on its way
 // (rule W27): another is not sent. Whatever the answer, the players are read again, and the next change waits until that
 // read is in (gReread).
@@ -11370,7 +11392,13 @@ function rightsPost(body, ok, name) {
     .then(j => {
       if (j && j.ok) return (toast(ok), after());
       const e = (j && j.error) || 'offline';
-      gNote = {text: rightsErr(e), body: e === 'server' ? body : null, ok, name};
+      // Asked to confirm (the grant right given): yes sends it again with the sheet's confirmation, once.
+      if (e === 'confirm' && j.confirm && !body.confirm) {
+        if (!grantOk(j, (gdefOf(gid) || {}).n)) return (toast('Not given.'), after());
+        rPend = null; // the slot handed to the request sent again
+        return rightsPost({...body, confirm: j.confirm}, ok, name);
+      }
+      gNote = {text: rightsErr(e, j && j.seat), body: e === 'server' ? body : null, ok, name};
       toast(gNote.text);
       return after();
     })
@@ -11941,7 +11969,14 @@ function bindUsers() {
       savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
-    } else toast(j && j.error === 'stale' ? 'The player just synced: try again.' : `Not done (${(j && j.error) || 'offline'}).`);
+    } else
+      toast(
+        j && j.error === 'stale'
+          ? 'The player just synced: try again.'
+          : j && (j.error === 'last' || j.error === 'server')
+            ? rightsErr(j.error, j.seat)
+            : `Not done (${(j && j.error) || 'offline'}).`
+      );
   };
   // Leaderboard (a test account must not show there): hidden by an admin, which the
   // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.

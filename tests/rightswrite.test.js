@@ -1,15 +1,17 @@
 require('./slot.js').testGuard();
-// Groups by scope and the one audited write of every rights change (docs/decisions/2026-11-21-groups-by-scope.md;
-// Code.gs scopeOf_, rightParse_, rightsOf_, can_, rightsWrite_, groupDo_, lvTrainer_). A group's rights are at the
-// instance or at one subject, never both; a right held at a subject holds there only; a scope the script does not know
-// is refused loudly and gives nothing; every write to a rights store goes through rightsWrite_ with its Audit rows.
-// Against the in-memory sheet only (rule D1); made-up names.
+// Groups by scope and the one audited write of every rights change (docs/decisions/2026-11-21-groups-by-scope.md, revised
+// by docs/decisions/2026-11-26-roles-groups-assignments.md, step 1; Code.gs scopeOf_, rightParse_, rightsOf_,
+// groupScope_, can_, rightsWrite_, groupDo_, heirOf_, confirmOk_, auid_, lvTrainer_, lvHost_). A group's rights are at
+// the instance or at a list of subjects, never both; a right held at a subject holds there only; a scope the script does
+// not know is refused loudly and gives nothing; every write to a rights store goes through rightsWrite_, in one write
+// with its Audit rows (Before and After); no change leaves the instance without an admin or a manager. Against the
+// in-memory sheet only (rule D1); made-up names.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, confirmed, failAudit} = require('./gas.js');
 
 const TOK = 'ghp_write000000000000000000',
   IMR = 'instance:imr',
@@ -19,6 +21,7 @@ const TOK = 'ghp_write000000000000000000',
   R = (r, at = IMR) => r + '@' + at;
 const RIGHTS = ['platform', 'grant', 'players', 'settings', 'content', 'live', 'cohorts'],
   SCOPES = ['platform', IMR, AT_CORAL, AT_FISH, AT_SLUG];
+const MGR = [R('players'), R('settings'), R('grant')];
 const save = (s, name, pin = '1234') => assert.ok(s.post({name, pin, data: {}, summary: {}, answers: []}).ok);
 const run = (s, js) => vm.runInContext(js, s.ctx);
 const copy = o => JSON.parse(JSON.stringify(o));
@@ -27,28 +30,33 @@ const rows = (s, tab) =>
     r.map(c => (typeof c === 'string' && c[0] === "'" ? c.slice(1) : c))
   );
 const audit = s => rows(s, 'Audit').map(r => [r[1], r[2], r[3], r[4], r[5]]); // id, action, scope, result, target
+// The same with Before and After.
+const full = s => rows(s, 'Audit').map(r => r.slice(1, 8));
 const aid = (s, n) => run(s, `aid_(${JSON.stringify(n)})`);
+// An account's audit id (Code.gs auid_), read while it exists.
+const auid = (s, n) => run(s, `auid_(${JSON.stringify(n)})`);
 const can = (s, n, right, scope = IMR) =>
   run(s, `can_({name: ${JSON.stringify(n)}, h: hash_(${JSON.stringify(n)}, '1234'), id: 'x'}, '${right}', '${scope}')`);
-const make = (s, n, o = {}, token = TOK) => s.post({groupMake: {n, ...o}, token});
+// A group made or edited as the admin does it: confirmed when the sheet asks (the grant right given).
+const make = (s, n, o = {}, token = TOK) => confirmed(s, {groupMake: {n, ...o}, token});
 const join = (s, who, g, on = true, token = TOK) => s.post({userGroup: who, group: g, on, token});
-const edit = (s, g, o, token = TOK) => s.post({groupEdit: g, ...o, token});
+const edit = (s, g, o, token = TOK) => confirmed(s, {groupEdit: g, ...o, token});
 const defs = s => s.post({users: 1, token: TOK}).groupDefs;
 const deployLog = s => rows(s, 'Deploy log').map(r => String(r[1]));
 // caller_ stubbed so the token 'acct:<name>' is that account (its code 1234), as an account caller will be.
 const asAccounts = s =>
   run(
     s,
-    `caller_ = (c => t => { const m = /^acct:(.+)$/.exec(String(t || '')); return m ? {name: m[1], h: hash_(m[1], '1234'), id: aid_(m[1])} : c(t); })(caller_)`
+    `caller_ = (c => t => { const m = /^acct:(.+)$/.exec(String(t || '')); return m ? {name: m[1], h: hash_(m[1], '1234'), id: auid_(m[1])} : c(t); })(caller_)`
   );
-const failAudit = (s, n = 1) => {
-  run(s, 'sheet_(AUDIT.TAB, AUDIT.HEAD)');
-  const sh = s.sheets.Audit,
-    append = sh.appendRow;
-  sh.appendRow = v => {
-    if (n-- > 0) throw new Error('Service Spreadsheets timed out while accessing document');
-    return append(v);
-  };
+// The seats as the guard counts them (Code.gs seatsOf_).
+const seats = s => copy(run(s, 'seatsOf_(rightsState_())'));
+// A Managers group (the full bundle) and an admin: the instance's two seats, held by these accounts.
+const seat = (s, managers, admins = managers) => {
+  const mg = make(s, 'Managers', {rights: MGR}).group.id;
+  managers.forEach(n => assert.strictEqual(join(s, n, mg).n, 1));
+  admins.forEach(n => assert.strictEqual(s.post({roleGrant: {account: n, role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok'));
+  return mg;
 };
 
 test('a scope is the instance or one of its subjects, by its exact id; anything else is refused, never widened', () => {
@@ -88,13 +96,26 @@ test('a scope is the instance or one of its subjects, by its exact id; anything 
     R('live', AT_FISH)
   ]);
   assert.deepStrictEqual(copy(run(s, `rightsBad_('live@subject:fish, x@y, players@subject:fish')`)), ['x@y', R('players', AT_FISH)]);
+  // A group's one scope: the instance, or a list of subjects (Pierre, 2026-11-26, decision 2), each right at each of them.
   assert.strictEqual(run(s, `groupScope_([])`), '');
+  assert.strictEqual(run(s, `groupScope_(['players@instance:imr', 'live@instance:imr'])`), IMR);
   assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'live@subject:fish'])`), AT_FISH);
   assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'live@instance:imr'])`), null);
-  assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'content@subject:coral'])`), null);
+  assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'content@subject:coral'])`), `${AT_CORAL},${AT_FISH}`);
+  assert.strictEqual(
+    run(s, `groupScope_(['content@subject:seaslug', 'live@subject:seaslug', 'content@subject:coral', 'live@subject:coral'])`),
+    `${AT_CORAL},${AT_SLUG}`,
+    'in SUBJECTS order'
+  );
+  assert.strictEqual(run(s, `groupScope_(['content@subject:fish', 'live@subject:coral'])`), null, 'rights at different subjects');
+  assert.strictEqual(
+    run(s, `groupScope_(['content@subject:fish', 'live@subject:fish', 'content@subject:coral'])`),
+    null,
+    'a right missing at one of its subjects'
+  );
 });
 
-test('a request with an unknown or malformed scope is refused (input), one that mixes scopes too (scope); nothing is written', () => {
+test('a request with an unknown or malformed scope is refused (input), one that is not one scope too (scope); nothing is written', () => {
   const s = loadCodeGs();
   save(s, 'Ana');
   const g = make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]}).group.id;
@@ -113,7 +134,7 @@ test('a request with an unknown or malformed scope is refused (input), one that 
   });
   [
     [R('content', AT_FISH), R('live')],
-    [R('content', AT_FISH), R('content', AT_CORAL)],
+    [R('content', AT_FISH), R('live', AT_CORAL)],
     [R('live', AT_SLUG), R('players')]
   ].forEach(x => {
     assert.strictEqual(make(s, 'X', {rights: x}).error, 'scope', JSON.stringify(x));
@@ -130,16 +151,19 @@ test('a right held at a subject holds there only: never at the instance, another
   ['Ana', 'Ben', 'Cy', 'Dee'].forEach(n => save(s, n));
   const cur = make(s, 'Curators, fish', {rights: [R('content', AT_FISH)]}).group.id,
     tr = make(s, 'Trainers, sea slugs', {rights: [R('live', AT_SLUG), R('cohorts', AT_SLUG)]}).group.id,
-    all = make(s, 'Curators', {rights: [R('content')]}).group.id;
+    all = make(s, 'Curators', {rights: [R('content')]}).group.id,
+    two = make(s, 'Curators, corals and sea slugs', {rights: [R('content', AT_CORAL), R('content', AT_SLUG)]}).group.id;
   join(s, 'Ana', cur);
   join(s, 'Ben', tr);
   join(s, 'Cy', all);
+  join(s, 'Dee', two);
   const want = {
     Ana: [R('content', AT_FISH)],
     Ben: [R('live', AT_SLUG), R('cohorts', AT_SLUG)],
     // The instance's right holds at each of its subjects.
     Cy: [R('content'), R('content', AT_CORAL), R('content', AT_FISH), R('content', AT_SLUG)],
-    Dee: []
+    // A list of subjects: at each of them, never at the others nor at the instance.
+    Dee: [R('content', AT_CORAL), R('content', AT_SLUG)]
   };
   for (const n of Object.keys(want))
     for (const r of RIGHTS) for (const sc of SCOPES) assert.strictEqual(can(s, n, r, sc), want[n].includes(R(r, sc)), `${n} ${r} ${sc}`);
@@ -151,7 +175,8 @@ test('a right held at a subject holds there only: never at the instance, another
   assert.deepStrictEqual(copy(defs(s).map(d => d.rights)), [
     [R('content', AT_FISH)],
     [R('live', AT_SLUG), R('cohorts', AT_SLUG)],
-    [R('content')]
+    [R('content')],
+    [R('content', AT_CORAL), R('content', AT_SLUG)]
   ]);
 });
 
@@ -203,14 +228,12 @@ test('every privileged endpoint refuses a holder of a subject-scoped right; chan
   assert.strictEqual(s.post({groupDrop: tr, token: 'acct:Mia'}).error, 'token', 'the players right alone');
   assert.ok(s.post({groupDrop: tr, token: 'acct:Gus'}).ok);
   assert.deepStrictEqual(
-    audit(s)
-      .filter(x => x[4] === tr && /^(rights|right[+-]) /.test(x[1]))
-      .map(x => x.slice(1, 4)),
+    full(s)
+      .filter(x => x[4] === tr && x[1] === `rights ${tr}`)
+      .map(x => x.slice(2)),
     [
-      [`rights - > ${R('live', AT_FISH)}`, AT_FISH, 'ok'],
-      [`right+ ${R('live', AT_FISH)}`, AT_FISH, 'ok'],
-      [`rights ${R('live', AT_FISH)} > -`, AT_FISH, 'ok'],
-      [`right- ${R('live', AT_FISH)}`, AT_FISH, 'ok']
+      [AT_FISH, 'ok', tr, '-', R('live', AT_FISH)],
+      [AT_FISH, 'ok', tr, R('live', AT_FISH), '-']
     ]
   );
 });
@@ -229,7 +252,7 @@ test("a live game is hosted with live at the game's subject: a fish trainer host
   assert.deepStrictEqual(
     audit(s)
       .filter(x => x[1] === 'live start')
-      .map(x => [x[0] === aid(s, 'Tess') ? 'Tess' : 'Ina', x[2], x[3]]),
+      .map(x => [x[0] === auid(s, 'Tess') ? 'Tess' : 'Ina', x[2], x[3]]),
     [
       ['Tess', AT_FISH, 'ok'],
       ['Tess', AT_CORAL, 'denied'],
@@ -277,61 +300,87 @@ test('a Rights cell written by hand: an entry the script does not take gives not
   assert.ok(deployLog(s).some(l => l.startsWith(`Roles: rights ${g}: entries that gave nothing dropped from its Rights cell`)));
 });
 
-test('the Audit rows say who, what, when, at which scope, about whom, and before and after', () => {
+test('the Audit rows say who, what, when, at which scope, about whom, and before and after (two columns)', () => {
   const s = loadCodeGs();
   ['Ana', 'Ben'].forEach(n => save(s, n));
   const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id;
   join(s, 'Ana', g);
   join(s, 'Ben', g);
   assert.ok(edit(s, g, {rights: [R('live', AT_FISH), R('cohorts', AT_FISH)]}).ok);
+  assert.ok(edit(s, g, {rights: [R('live', AT_FISH), R('live', AT_SLUG)]}).ok, 'a list of subjects');
   assert.ok(edit(s, g, {rights: [R('live'), R('cohorts')]}).ok, 'a group with members moves to the instance: grant');
   join(s, 'Ben', g, false);
-  const [A, B] = [aid(s, 'Ana'), aid(s, 'Ben')];
+  const [A, B] = [auid(s, 'Ana'), auid(s, 'Ben')];
+  assert.match(A, /^u:[A-Za-z0-9]{10}$/, 'an audit id: opaque');
+  assert.ok(A !== aid(s, 'Ana') && A !== B);
   const all = rows(s, 'Audit');
+  assert.deepStrictEqual(copy(s.sheets.Audit.rows[0]), ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id', 'Before', 'After']);
   assert.ok(
     all.every(r => new Date(r[0]).getTime() > 0),
     'when'
   );
   const by = all[0][1];
   assert.match(by, /^gh:/, 'who: the token by its id');
+  const F = R('live', AT_FISH),
+    FC = [F, R('cohorts', AT_FISH)].join(','),
+    FS = [F, R('live', AT_SLUG)].join(','),
+    I = [R('live'), R('cohorts')].join(',');
   assert.deepStrictEqual(
-    audit(s).filter(x => !/^group|^user/.test(x[1])),
+    full(s).filter(x => !/^group|^user/.test(x[1])),
     [
-      [by, `rights - > ${R('live', AT_FISH)}`, AT_FISH, 'ok', g],
-      [by, `right+ ${R('live', AT_FISH)}`, AT_FISH, 'ok', g],
-      [by, `join ${g}`, AT_FISH, 'ok', A],
-      [by, `join ${g}`, AT_FISH, 'ok', B],
-      [by, `rights ${R('live', AT_FISH)} > ${R('live', AT_FISH)},${R('cohorts', AT_FISH)}`, AT_FISH, 'ok', g],
-      [by, `grant cohorts (via ${g})`, AT_FISH, 'ok', A],
-      [by, `grant cohorts (via ${g})`, AT_FISH, 'ok', B],
-      [by, `right+ ${R('cohorts', AT_FISH)}`, AT_FISH, 'ok', g],
-      [by, `rights ${R('live', AT_FISH)},${R('cohorts', AT_FISH)} > ${R('live')},${R('cohorts')}`, IMR, 'ok', g],
-      [by, `grant live (via ${g})`, IMR, 'ok', A],
-      [by, `grant live (via ${g})`, IMR, 'ok', B],
-      [by, `right+ ${R('live')}`, IMR, 'ok', g],
-      [by, `grant cohorts (via ${g})`, IMR, 'ok', A],
-      [by, `grant cohorts (via ${g})`, IMR, 'ok', B],
-      [by, `right+ ${R('cohorts')}`, IMR, 'ok', g],
-      [by, `revoke live (via ${g})`, AT_FISH, 'ok', A],
-      [by, `revoke live (via ${g})`, AT_FISH, 'ok', B],
-      [by, `right- ${R('live', AT_FISH)}`, AT_FISH, 'ok', g],
-      [by, `revoke cohorts (via ${g})`, AT_FISH, 'ok', A],
-      [by, `revoke cohorts (via ${g})`, AT_FISH, 'ok', B],
-      [by, `right- ${R('cohorts', AT_FISH)}`, AT_FISH, 'ok', g],
-      [by, `leave ${g}`, IMR, 'ok', B]
+      [by, `rights ${g}`, AT_FISH, 'ok', g, '-', F],
+      [by, `join ${g}`, AT_FISH, 'ok', A, '-', F],
+      [by, `join ${g}`, AT_FISH, 'ok', B, '-', F],
+      [by, `rights ${g}`, AT_FISH, 'ok', g, F, FC],
+      [by, `rights (via ${g})`, AT_FISH, 'ok', A, F, FC],
+      [by, `rights (via ${g})`, AT_FISH, 'ok', B, F, FC],
+      [by, `rights ${g}`, `${AT_FISH},${AT_SLUG}`, 'ok', g, FC, FS],
+      [by, `rights (via ${g})`, `${AT_FISH},${AT_SLUG}`, 'ok', A, FC, FS],
+      [by, `rights (via ${g})`, `${AT_FISH},${AT_SLUG}`, 'ok', B, FC, FS],
+      [by, `rights ${g}`, IMR, 'ok', g, FS, I],
+      [by, `rights (via ${g})`, IMR, 'ok', A, FS, I],
+      [by, `rights (via ${g})`, IMR, 'ok', B, FS, I],
+      [by, `leave ${g}`, IMR, 'ok', B, I, '-']
     ]
+  );
+  // The rows of a request that is no rights change keep Before and After blank.
+  assert.ok(
+    full(s)
+      .filter(x => /^group|^user/.test(x[1]))
+      .every(x => x[5] === '' && x[6] === '')
   );
   assert.ok(!JSON.stringify(s.sheets.Audit.rows).match(/Ana|Ben/), 'ids only, never a name');
 });
 
-test('a leave or a revoke saved without its Audit row answers an error; its retry writes that row', () => {
+test('an Audit tab of six columns gains Before and After at its end; its rows stay as they are and the readers still read them', () => {
   const s = loadCodeGs();
   ['Ana', 'Pat'].forEach(n => save(s, n));
+  const g = make(s, 'Trainers', {board: 1}).group.id;
+  // The tab as an earlier script left it: six columns, a group's rights given by one row per right (right+), its
+  // Rights cell written with them.
+  const sh = s.sheets.Audit;
+  sh.rows.length = 0;
+  sh.rows.push(['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id']);
+  [R('live'), R('cohorts')].forEach(e => sh.rows.push([new Date(), 'gh:old', `right+ ${e}`, IMR, 'ok', g]));
+  run(s, `gdefTab_().getRange(gdefRows_().findIndex(r => r[0] === '${g}') + 2, 7).setValue('${R('live')}, ${R('cohorts')}')`);
+  const old = copy(sh.rows);
+  assert.deepStrictEqual(copy(run(s, `rightsAudited_('${g}')`)), [R('live'), R('cohorts')], 'the old rows read as they were');
+  assert.strictEqual(join(s, 'Ana', g).n, 1);
+  assert.deepStrictEqual(copy(sh.rows[0]), ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id', 'Before', 'After']);
+  assert.deepStrictEqual(copy(sh.rows.slice(1, old.length)), old.slice(1), 'every earlier row as it was');
+  assert.deepStrictEqual(full(s).at(-2).slice(1), [`join ${g}`, IMR, 'ok', auid(s, 'Ana'), '-', `${R('live')},${R('cohorts')}`]);
+});
+
+test('a change whose Audit rows cannot be written is taken back: nothing changed, an error; its retry makes it with its rows', () => {
+  const s = loadCodeGs();
+  ['Ana', 'Pat', 'Zed'].forEach(n => save(s, n));
+  seat(s, ['Zed']);
   const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id;
   join(s, 'Ana', g);
   failAudit(s);
   assert.strictEqual(join(s, 'Ana', g, false).error, 'server');
-  assert.ok(!can(s, 'Ana', 'live', AT_FISH), 'the right is gone at once');
+  assert.ok(can(s, 'Ana', 'live', AT_FISH), 'the right still held: no change without its row');
+  assert.ok(deployLog(s).some(l => l.startsWith(`Roles: rights change taken back, its Audit rows not written (leave ${g}): Service`)));
   assert.strictEqual(join(s, 'Ana', g, false).n, 1, 'its retry: ok');
   assert.strictEqual(join(s, 'Ana', g, false).n, 0, 'then none');
   assert.deepStrictEqual(
@@ -343,10 +392,10 @@ test('a leave or a revoke saved without its Audit row answers an error; its retr
   assert.strictEqual(s.post({roleGrant: {account: 'Pat', role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
   failAudit(s);
   assert.strictEqual(s.post({roleRevoke: {account: 'Pat', role: 'admin', scope: 'platform'}, token: TOK}).error, 'server');
-  assert.ok(!can(s, 'Pat', 'grant', 'platform'));
+  assert.ok(can(s, 'Pat', 'grant', 'platform'), 'still an admin');
   assert.strictEqual(s.post({roleRevoke: {account: 'Pat', role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
   assert.strictEqual(s.post({roleRevoke: {account: 'Pat', role: 'admin', scope: 'platform'}, token: TOK}).result, 'none');
-  // A delete whose rights row fails stops before anything else of the account goes; its retry finishes it.
+  // A delete whose rights rows fail stops before anything of the account goes; its retry makes it.
   join(s, 'Ana', g);
   failAudit(s);
   assert.ok(!s.post({userDelete: 'Ana', token: TOK}).ok);
@@ -354,23 +403,25 @@ test('a leave or a revoke saved without its Audit row answers an error; its retr
     rows(s, 'RAs').some(r => r[0] === 'Ana'),
     'the account is still there'
   );
-  assert.ok(!can(s, 'Ana', 'live', AT_FISH), 'its right gone');
+  assert.ok(can(s, 'Ana', 'live', AT_FISH), 'its right too');
+  const A = auid(s, 'Ana');
   assert.ok(s.post({userDelete: 'Ana', token: TOK}).ok);
   assert.deepStrictEqual(
     audit(s)
       .filter(x => x[1] === `leave ${g} (account removed)`)
-      .map(x => x[3]),
-    ['ok']
+      .map(x => [x[3], x[4]]),
+    [['ok', A]]
   );
 });
 
-test('a merge or an archive whose rights row fails changes nothing else; its retry finishes it', () => {
+test('a merge or an archive whose rights rows fail changes nothing; its retry makes it', () => {
   const s = loadCodeGs();
   ['Ben', 'Mia', 'Cy'].forEach(n => save(s, n));
   const g = make(s, 'Trainers, fish', {rights: [R('live', AT_FISH)]}).group.id,
     st = make(s, 'Staff', {board: 1}).group.id;
   ['Ben', 'Cy'].forEach(n => (join(s, n, g), join(s, n, st)));
   const inStaff = n => rows(s, 'Groups').some(r => r[0] === st && r[1] === n);
+  const [B, C] = [auid(s, 'Ben'), auid(s, 'Cy')];
   failAudit(s);
   assert.ok(!s.post({userMerge: {from: 'Ben', into: 'Mia', data: {}}, token: TOK}).ok);
   assert.ok(
@@ -378,26 +429,286 @@ test('a merge or an archive whose rights row fails changes nothing else; its ret
     'the merged name is still there'
   );
   assert.ok(!inStaff('Mia'), 'the kept name joined none of its groups');
-  assert.ok(!can(s, 'Ben', 'live', AT_FISH) && !can(s, 'Mia', 'live', AT_FISH), 'the right gone, never moved');
+  assert.ok(can(s, 'Ben', 'live', AT_FISH) && !can(s, 'Mia', 'live', AT_FISH), 'nothing changed, never moved');
   assert.ok(s.post({userMerge: {from: 'Ben', into: 'Mia', data: {}}, token: TOK}).ok);
   assert.ok(inStaff('Mia') && !rows(s, 'RAs').some(r => r[0] === 'Ben'));
+  assert.ok(!can(s, 'Mia', 'live', AT_FISH));
   failAudit(s);
   assert.ok(!s.post({userArchive: {from: 'Cy', into: 'Cy-old'}, token: TOK}).ok);
   assert.ok(
     rows(s, 'RAs').some(r => r[0] === 'Cy'),
     'not archived'
   );
-  assert.ok(!can(s, 'Cy', 'live', AT_FISH));
+  assert.ok(can(s, 'Cy', 'live', AT_FISH));
   assert.ok(s.post({userArchive: {from: 'Cy', into: 'Cy-old'}, token: TOK}).ok);
+  assert.ok(!can(s, 'Cy', 'live', AT_FISH));
   assert.deepStrictEqual(
     audit(s)
       .filter(x => x[1] === `leave ${g} (account removed)`)
       .map(x => [x[3], x[4]]),
     [
-      ['ok', aid(s, 'Ben')],
-      ['ok', aid(s, 'Cy')]
+      ['ok', B],
+      ['ok', C]
     ]
   );
+});
+
+test('the guard: no change takes the last admin or the last manager away; it stops, nothing written but its row', () => {
+  const s = loadCodeGs();
+  ['Pat', 'Ana', 'Ben', 'Max'].forEach(n => save(s, n));
+  // Max holds the manager's seat alone, Ben the admin's.
+  const mg = seat(s, ['Max'], ['Ben']);
+  assert.deepStrictEqual(seats(s), {admin: 1, manager: 1});
+  const tabs = () => JSON.stringify([s.sheets.Roles.rows, s.sheets.Groups.rows, s.sheets['Group settings'].rows, s.sheets.RAs.rows]);
+  const before = tabs();
+  const [M, B] = [auid(s, 'Max'), auid(s, 'Ben')];
+  const stop = (label, r, seat) => (assert.deepStrictEqual(copy(r), {ok: false, error: 'last', seat, v: r.v}, label), label);
+  stop('revoke admin', s.post({roleRevoke: {account: 'Ben', role: 'admin', scope: 'platform'}, token: TOK}), 'admin');
+  stop('leave', join(s, 'Max', mg, false), 'manager');
+  stop('the bundle edited', edit(s, mg, {rights: [R('players'), R('settings')]}), 'manager');
+  stop('delete', s.post({userDelete: 'Max', token: TOK}), 'manager');
+  stop('merge', s.post({userMerge: {from: 'Max', into: 'Ana', data: {}}, token: TOK}), 'manager');
+  stop('archive', s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK}), 'admin');
+  assert.strictEqual(tabs(), before, 'nothing written');
+  assert.deepStrictEqual(
+    full(s)
+      .filter(x => x[3] === 'last')
+      .map(x => x.slice(1)),
+    [
+      ['revoke admin', 'platform', 'last', B, 'admins 1', 'admins 0'],
+      [`leave ${mg}`, IMR, 'last', M, 'managers 1', 'managers 0'],
+      [`rights ${mg}`, IMR, 'last', mg, 'managers 1', 'managers 0'],
+      ['remove (account removed)', IMR, 'last', M, 'managers 1', 'managers 0'],
+      ['remove (account removed)', IMR, 'last', M, 'managers 1', 'managers 0'],
+      ['remove (account removed)', 'platform', 'last', B, 'admins 1', 'admins 0']
+    ]
+  );
+  // One account holding both: its removal empties both.
+  join(s, 'Ben', mg);
+  assert.strictEqual(join(s, 'Max', mg, false).n, 1);
+  assert.strictEqual(s.post({userDelete: 'Ben', token: TOK}).seat, 'admin,manager');
+  // A manager counts only with the full bundle, under its code: Ana with players and settings alone is none.
+  const ps = make(s, 'Helpers', {rights: [R('players'), R('settings')]}).group.id;
+  join(s, 'Ana', ps);
+  assert.deepStrictEqual(seats(s), {admin: 1, manager: 1});
+  // With a second holder, each goes; then the last one stops again (1 + 1 is the hard minimum).
+  join(s, 'Pat', mg);
+  assert.strictEqual(s.post({roleGrant: {account: 'Pat', role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
+  assert.deepStrictEqual(seats(s), {admin: 2, manager: 2});
+  assert.strictEqual(join(s, 'Ben', mg, false).n, 1);
+  assert.strictEqual(s.post({roleRevoke: {account: 'Ben', role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
+  assert.strictEqual(join(s, 'Pat', mg, false).error, 'last');
+  // An admin on the list holds the grant: with players and settings, it counts as a manager.
+  join(s, 'Pat', ps);
+  assert.strictEqual(join(s, 'Pat', mg, false).n, 1, 'Pat stays a manager through Helpers and the admin list');
+  assert.deepStrictEqual(seats(s), {admin: 1, manager: 1});
+  // A code changed: no longer a holder (it cannot be stopped: nothing is written).
+  run(s, `sheet_('RAs', HEAD).getRange(find_(sheet_('RAs', HEAD), 'Pat'), 7).setValue(hash_('Pat', '9999'))`);
+  assert.deepStrictEqual(seats(s), {admin: 0, manager: 0});
+  // A seat already empty stops nothing that does not lower it; the token is no holder.
+  const s2 = loadCodeGs();
+  save(s2, 'Ana');
+  const t = make(s2, 'Trainers', {rights: [R('live')]}).group.id;
+  assert.deepStrictEqual(seats(s2), {admin: 0, manager: 0});
+  assert.strictEqual(join(s2, 'Ana', t).n, 1);
+  assert.strictEqual(join(s2, 'Ana', t, false).n, 1);
+});
+
+test('a handover: the seat given to a successor in the same write, confirmed against the exact state previewed', () => {
+  const s = loadCodeGs();
+  let now = Date.UTC(2026, 10, 27, 1, 0, 0);
+  run(s, 'Date.now = () => globalThis.__now();');
+  s.ctx.__now = () => now;
+  ['Pat', 'Ana', 'Ben'].forEach(n => save(s, n));
+  const mg = seat(s, ['Pat']);
+  const leave = o => s.post({userGroup: 'Pat', group: mg, on: false, token: TOK, ...o});
+  // Named, the successor is shown with the confirmation to send back.
+  const c = leave({heir: 'Ana'});
+  assert.strictEqual(c.error, 'confirm');
+  assert.strictEqual(c.heir, auid(s, 'Ana'));
+  assert.match(c.confirm, /^\d{13}\.[A-Za-z0-9]{24}$/);
+  assert.strictEqual(leave({heir: 'Nobody'}).error, 'user');
+  // Bound to the request: another successor, another change or another caller asks again.
+  assert.strictEqual(leave({heir: 'Ben', confirm: c.confirm}).error, 'confirm');
+  assert.strictEqual(s.post({userDelete: 'Pat', token: TOK, heir: 'Ana', confirm: c.confirm}).error, 'confirm');
+  assert.strictEqual(leave({heir: 'Ana', confirm: c.confirm.replace(/.$/, x => (x === 'a' ? 'b' : 'a'))}).error, 'confirm');
+  // Bound to the state: a member added since asks for a new preview.
+  const t = make(s, 'Trainers', {rights: [R('live')]}).group.id;
+  assert.strictEqual(join(s, 'Ben', t).n, 1);
+  assert.strictEqual(leave({heir: 'Ana', confirm: c.confirm}).error, 'confirm', 'the state changed');
+  // And to a short time.
+  const c2 = leave({heir: 'Ana'});
+  now += 5 * 60e3 + 1;
+  assert.strictEqual(leave({heir: 'Ana', confirm: c2.confirm}).error, 'confirm', 'expired');
+  const c3 = leave({heir: 'Ana'});
+  const r = leave({heir: 'Ana', confirm: c3.confirm});
+  assert.strictEqual(r.n, 1, JSON.stringify(r));
+  assert.deepStrictEqual(seats(s), {admin: 1, manager: 1});
+  assert.ok(can(s, 'Ana', 'grant') && can(s, 'Ana', 'players') && !can(s, 'Pat', 'players'));
+  const [P, A] = [auid(s, 'Pat'), auid(s, 'Ana')],
+    M = MGR.join(',');
+  assert.deepStrictEqual(
+    full(s)
+      .filter(x => /handover|^leave/.test(x[1]))
+      .map(x => x.slice(1)),
+    [
+      [`join ${mg} (handover)`, IMR, 'ok', A, '-', M],
+      [`leave ${mg}`, IMR, 'ok', P, `${M},admin@platform`, 'admin@platform']
+    ]
+  );
+  // The admin's seat the same way; a successor that leaves the seat empty still (the account itself) is refused.
+  const rv = o => s.post({roleRevoke: {account: 'Pat', role: 'admin', scope: 'platform'}, token: TOK, ...o});
+  const self = rv({heir: 'Pat'});
+  assert.strictEqual(rv({heir: 'Pat', confirm: self.confirm}).error, 'heir');
+  const c4 = rv({heir: 'Ben'});
+  assert.strictEqual(rv({heir: 'Ben', confirm: c4.confirm}).result, 'ok');
+  assert.ok(can(s, 'Ben', 'platform', 'platform') && !can(s, 'Pat', 'platform', 'platform'));
+  assert.deepStrictEqual(
+    full(s)
+      .filter(x => /admin/.test(x[1]) && x[3] !== 'last')
+      .slice(-2)
+      .map(x => x.slice(1, 5)),
+    [
+      ['grant admin (handover)', 'platform', 'ok', auid(s, 'Ben')],
+      ['revoke admin', 'platform', 'ok', P]
+    ]
+  );
+  assert.deepStrictEqual(
+    full(s)
+      .filter(x => x[3] === 'heir')
+      .map(x => x.slice(1)),
+    [['revoke admin', 'platform', 'heir', P, 'admins 1', 'admins 0']]
+  );
+});
+
+test("a player's own delete is never trapped: a standby takes the seat over; with none, the seat stays empty, said", () => {
+  const s = loadCodeGs();
+  ['Pat', 'Ana', 'Ben'].forEach(n => save(s, n));
+  const mg = seat(s, ['Pat']);
+  const sb = (n, scope, on = true) => s.post({[on ? 'roleGrant' : 'roleRevoke']: {account: n, role: 'standby', scope}, token: TOK});
+  assert.strictEqual(sb('Ana', IMR).result, 'ok');
+  assert.strictEqual(sb('Ana', IMR).result, 'held');
+  assert.strictEqual(sb('Ben', 'platform').result, 'ok');
+  assert.strictEqual(sb('Ben', 'instance:other').error, 'input');
+  assert.ok(!can(s, 'Ana', 'players') && !can(s, 'Ben', 'grant', 'platform'), 'a standby holds no right');
+  assert.deepStrictEqual(
+    s.post({roles: 1, token: TOK}).grants.map(g => [g.name, g.role, g.scope]),
+    [
+      ['Pat', 'admin', 'platform'],
+      ['Ana', 'standby', IMR],
+      ['Ben', 'standby', 'platform']
+    ]
+  );
+  const [P, A, B] = [auid(s, 'Pat'), auid(s, 'Ana'), auid(s, 'Ben')];
+  assert.ok(s.post({selfDelete: 1, dname: 'Pat', dpin: '1234'}).ok, 'never stopped');
+  assert.deepStrictEqual(seats(s), {admin: 1, manager: 1});
+  assert.ok(can(s, 'Ana', 'players') && can(s, 'Ben', 'platform', 'platform'));
+  assert.deepStrictEqual(
+    rows(s, 'Roles').map(r => [r[0], r[1]]),
+    [['Ben', 'admin']],
+    'the standbys used'
+  );
+  assert.deepStrictEqual(
+    full(s)
+      .filter(x => /\((standby|account removed)\)/.test(x[1]))
+      .map(x => [x[0] === P ? 'Pat' : x[0], ...x.slice(1, 5)]),
+    [
+      ['Pat', 'grant admin (standby)', 'platform', 'ok', B],
+      ['Pat', 'standby admin off (standby)', 'platform', 'ok', B],
+      ['Pat', `join ${mg} (standby)`, IMR, 'ok', A],
+      ['Pat', 'standby manager off (standby)', IMR, 'ok', A],
+      ['Pat', `leave ${mg} (account removed)`, IMR, 'ok', P],
+      ['Pat', 'revoke admin (account removed)', 'platform', 'ok', P]
+    ]
+  );
+  // With no standby left: the delete goes through, the seats stay empty, a row and a Deploy log line say so.
+  const s2 = loadCodeGs();
+  save(s2, 'Pat');
+  seat(s2, ['Pat']);
+  const P2 = auid(s2, 'Pat');
+  assert.ok(s2.post({selfDelete: 1, dname: 'Pat', dpin: '1234'}).ok);
+  assert.deepStrictEqual(seats(s2), {admin: 0, manager: 0});
+  assert.deepStrictEqual(
+    full(s2)
+      .filter(x => x[3] === 'vacant')
+      .map(x => x.slice(1)),
+    [
+      ['seat admin empty (self)', 'platform', 'vacant', P2, 'admins 1', 'admins 0'],
+      ['seat manager empty (self)', IMR, 'vacant', P2, 'managers 1', 'managers 0']
+    ]
+  );
+  assert.ok(deployLog(s2).some(l => /admin and manager seat left empty by a player's own delete, with no standby/.test(l)));
+  // The token still gives them back (the way back is never stored in a tab).
+  save(s2, 'Ana');
+  assert.strictEqual(s2.post({roleGrant: {account: 'Ana', role: 'admin', scope: 'platform'}, token: TOK}).result, 'ok');
+});
+
+test('the grant right is given to a group only by a confirmed request of its own, bound to the state previewed', () => {
+  const s = loadCodeGs();
+  ['Ana', 'Ben'].forEach(n => save(s, n));
+  // A new group: with its making, confirmed (it has no member yet).
+  const mk = s.post({groupMake: {n: 'Granters', rights: [R('grant')]}, token: TOK});
+  assert.deepStrictEqual([mk.error, mk.members], ['confirm', 0]);
+  assert.ok(!defs(s).length, 'nothing made before the confirmation');
+  const tr = make(s, 'Trainers', {rights: [R('live')]}).group.id;
+  join(s, 'Ana', tr);
+  join(s, 'Ben', tr);
+  // An existing group: an edit that changes nothing else.
+  assert.strictEqual(s.post({groupEdit: tr, rights: [R('live'), R('grant'), R('content')], token: TOK}).error, 'separate');
+  assert.strictEqual(s.post({groupEdit: tr, rights: [R('grant')], token: TOK}).error, 'separate', 'live taken away with it');
+  assert.strictEqual(s.post({groupEdit: tr, rights: [R('live'), R('grant')], n: 'Hosts', token: TOK}).error, 'separate');
+  const c = s.post({groupEdit: tr, rights: [R('live'), R('grant')], token: TOK});
+  assert.deepStrictEqual([c.error, c.members], ['confirm', 2]);
+  assert.ok(!can(s, 'Ana', 'grant'));
+  // Bound to the state: a member gone since asks again.
+  join(s, 'Ben', tr, false);
+  const c2 = s.post({groupEdit: tr, rights: [R('live'), R('grant')], token: TOK, confirm: c.confirm});
+  assert.deepStrictEqual([c2.error, c2.members], ['confirm', 1]);
+  assert.ok(s.post({groupEdit: tr, rights: [R('live'), R('grant')], token: TOK, confirm: c2.confirm}).ok);
+  assert.ok(can(s, 'Ana', 'grant'));
+  // Taking it away asks nothing more.
+  assert.ok(s.post({groupEdit: tr, rights: [R('live')], token: TOK}).ok);
+});
+
+test("a live game's host is checked again at each question and reveal: a right taken since ends the game", () => {
+  const s = loadCodeGs();
+  ['Tess', 'Pat'].forEach(n => save(s, n));
+  const g = make(s, 'Trainers, corals', {rights: [R('live', AT_CORAL)]}).group.id;
+  join(s, 'Tess', g);
+  const lv = (step, o = {}) => copy(s.post({lv: step, ...o}));
+  const st = lv('start', {lname: 'Tess', lpin: '1234', s: 'coral', t: 'Group 1', n: 3, lim: 20});
+  assert.ok(st.ok);
+  const me = lv('join', {code: st.code, nick: 'Pat'});
+  const Q = {
+    ph: [{f: 'acropora-1', u: 'img/acropora-1-m.webp', v: 'wide'}],
+    ch: [
+      ['Montipora', 'Montipora'],
+      ['Acropora', 'Acropora'],
+      ['Porites', 'Porites'],
+      ['Pocillopora', 'Pocillopora']
+    ],
+    k: 1
+  };
+  assert.ok(lv('host', {code: st.code, tk: st.tk, act: 'q', q: Q}).ok, 'the first question, the right held');
+  join(s, 'Tess', g, false);
+  assert.strictEqual(lv('host', {code: st.code, tk: st.tk, act: 'rev'}).error, 'role');
+  assert.strictEqual(lv('poll', {code: st.code, pid: me.pid, pk: me.pk}).ph, 'end', 'its students see it ended');
+  assert.strictEqual(lv('host', {code: st.code, tk: st.tk, act: 'q', q: Q}).error, 'role');
+  assert.deepStrictEqual(
+    audit(s)
+      .filter(x => /^live/.test(x[1]))
+      .map(x => [x[1], x[2], x[3]]),
+    [
+      ['live start', AT_CORAL, 'ok'],
+      ['live rev', AT_CORAL, 'denied'],
+      ['live q', AT_CORAL, 'denied']
+    ]
+  );
+  // A code changed since: no longer the host's account either.
+  join(s, 'Tess', g);
+  const st2 = lv('start', {lname: 'Tess', lpin: '1234', s: 'coral', t: 'Group 2', n: 3, lim: 20});
+  run(s, `sheet_('RAs', HEAD).getRange(find_(sheet_('RAs', HEAD), 'Tess'), 7).setValue(hash_('Tess', '9999'))`);
+  assert.strictEqual(lv('host', {code: st2.code, tk: st2.tk, act: 'q', q: Q}).error, 'role');
 });
 
 // Every write to a rights store, and whether rightsWrite_ is on its stack: the Roles tab's rows, the Group settings
@@ -478,18 +789,18 @@ function steps(s, L) {
     const h0 = held(s),
       g0 = groupRights(s),
       n0 = rows(s, 'Audit').length,
-      ids0 = Object.fromEntries(Object.keys(h0).map(k => [k, aid(s, k)]));
+      ids0 = Object.fromEntries(Object.keys(h0).map(k => [k, auid(s, k)]));
     f();
     const h1 = held(s),
       g1 = groupRights(s),
-      A = audit(s).slice(n0);
+      A = full(s).slice(n0);
     for (const k of new Set([...Object.keys(h0), ...Object.keys(h1)])) {
       const a = JSON.stringify(h0[k] || []),
         b = JSON.stringify(h1[k] || []);
       if (a === b) continue;
-      const id = ids0[k] || aid(s, k);
+      const id = ids0[k] || auid(s, k);
       assert.ok(
-        A.some(x => x[4] === id && x[3] === 'ok' && /^(join|leave|grant|revoke) /.test(x[1])),
+        A.some(x => x[4] === id && x[3] === 'ok' && /^(join|leave|grant|revoke|rights \(via) /.test(x[1]) && x[5] !== x[6]),
         `${label}: ${k}'s rights changed (${a} > ${b}) without its Audit row`
       );
     }
@@ -498,7 +809,7 @@ function steps(s, L) {
         b = (g1[g] || []).join(',');
       if (a === b) continue;
       assert.ok(
-        A.some(x => x[4] === g && x[1] === `rights ${a || '-'} > ${b || '-'}` && x[3] === 'ok') || /^r:/.test(g),
+        A.some(x => x[4] === g && x[1] === `rights ${g}` && x[5] === (a || '-') && x[6] === (b || '-') && x[3] === 'ok') || /^r:/.test(g),
         `${label}: group ${g}'s rights changed (${a} > ${b}) without its 'rights' row`
       );
     }
@@ -603,7 +914,7 @@ test("a role group whose Rights cell could not be written is given its rights at
   s.props.ONCE_groups = '1';
   run(s, 'gdefTab_()');
   failWrite(s, 'Group settings', (r, c) => c === 7);
-  assert.throws(() => run(s, 'ONCE_.rights()'), /timed out/);
+  assert.throws(() => run(s, 'ONCE_.rights()'), /it could not be written; nothing changed/);
   assert.ok(!s.props.ONCE_rights);
   assert.match(run(s, 'ONCE_.rights()'), /^0 groups made from the roles \(\), 1 membership added/);
   assert.ok(can(s, 'Eda', 'content'));
@@ -654,8 +965,10 @@ test('only rightsWrite_ writes the Roles tab or reaches the Groups tab for a wri
   assert.match(fns.find(f => f.name === 'gdefPut_').body, /GDEF\.HEAD\.length - 1/);
   assert.deepStrictEqual(
     fns.filter(f => /getRange\([^)]*, 7\)\.setValue/.test(f.body)).map(f => f.name),
-    ['rightsWrite_']
+    [],
+    'no other code writes column 7 of a tab'
   );
+  assert.match(fns.find(f => f.name === 'rightsWrite_').body, /set\(GDEF\.TAB, [^;]*, 7, /, 'rightsWrite_ writes the Rights cell');
 });
 
 test('groupSet_ refuses a group that carries rights, whoever calls it', () => {

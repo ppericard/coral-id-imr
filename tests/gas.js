@@ -294,4 +294,31 @@ function madeBefore(s, f) {
     vm.runInContext('Object.assign(CORE_, CORE_.__nc); delete CORE_.__nc', s.ctx);
   }
 }
-module.exports = {loadCodeGs, makeSheet, bodyOf, madeBefore};
+// A request the admin confirms when the sheet asks (Code.gs confirmOk_: giving the grant right, a handover): sent, and
+// sent again with the confirmation the sheet answered, as the admin page does once the admin says yes. Tests about the
+// confirmation itself post twice by hand.
+function confirmed(s, body) {
+  const j = s.post(body);
+  return j && j.error === 'confirm' && j.confirm ? s.post({...body, confirm: j.confirm}) : j;
+}
+// The Audit tab's next n writes fail, as a Sheets service error does, after skip that are written. A write is one
+// appendRow (Code.gs audit_: a refusal's row) or one setValues below the header (rightsWrite_: a change's rows, all at
+// once).
+function failAudit(s, n = 1, skip = 0) {
+  vm.runInContext('auditTab_()', s.ctx);
+  const sh = s.sheets.Audit,
+    append = sh.appendRow,
+    range = sh.getRange;
+  const fails = () => skip-- <= 0 && n-- > 0;
+  const boom = () => {
+    throw new Error('Service Spreadsheets timed out while accessing document');
+  };
+  sh.appendRow = v => (fails() ? boom() : append(v));
+  sh.getRange = (r, ...a) => {
+    const g = range(r, ...a),
+      set = g.setValues;
+    if (r > 1) g.setValues = v => (fails() ? boom() : set(v));
+    return g;
+  };
+}
+module.exports = {loadCodeGs, makeSheet, bodyOf, madeBefore, confirmed, failAudit};

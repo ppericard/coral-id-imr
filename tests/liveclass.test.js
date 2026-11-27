@@ -9,7 +9,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, confirmed} = require('./gas.js');
 const block = require('./block.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -22,7 +22,7 @@ const save = (s, name, pin = '1234') => s.post({name, pin, data: {}, summary: {}
 const grant = (s, account, role) => {
   const rights = copy(run(s, `ROLES.DEF.${role}.rights`)).map(r => r + '@' + IMR),
     had = s.post({users: 1, token: TOK}).groupDefs.find(d => d.n === role),
-    g = (had || s.post({groupMake: {n: role, rights}, token: TOK}).group).id;
+    g = (had || confirmed(s, {groupMake: {n: role, rights}, token: TOK}).group).id;
   return s.post({userGroup: account, group: g, on: true, token: TOK});
 };
 // A question as the trainer's page sends it (live.js liveBuild): photos, four choices, the right one's index.

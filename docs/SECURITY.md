@@ -176,9 +176,9 @@ The rights (below): a delete, a self-delete, a merge (its from) and an archive d
 that carry rights and its place on the admin list (with its rows of the Roles tab's record) first, through the one
 rights write (`rightsGone_`, `rightsWrite_`), never move them to Into or to the archive name, so whoever takes the name
 later holds nothing (a right also holds only for the code hash it was given under). Each dropped right writes an Audit
-row, by anonymous id; a row that cannot be written stops the removal before anything else of the account goes, and its
-retry finishes it. The Audit tab keeps its rows: they hold anonymous ids only, never a name, and nothing reads them in
-normal operation.
+row, by audit id; rows that cannot be written, or a removal that would leave the instance without an admin or a
+manager (the guard, below), stop it before anything of the account goes. The Audit tab keeps its rows: they hold ids
+only, never a name, and nothing reads them in normal operation.
 
 ## Rights and the Audit tab
 
@@ -190,12 +190,13 @@ rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q40
 - **Where rights live.** An account's rights are the union of two sources:
   - **its groups**: a group carries an instance's rights (the Group settings tab's Rights column; `Code.gs` `RIGHTS`:
     `players` (its players' management), `settings`, `grant` (changing who holds its rights), `content`, `live`
-    (hosting a live game), `cohorts` (roles step 2's)). A group is instance wide or subject specific (Pierre,
-    2026-11-20; Q447; [the decision](decisions/2026-11-21-groups-by-scope.md)): its rights share one scope, written in
-    the Rights column, `right@instance:imr` or, for `content`, `live` and `cohorts` only, `right@subject:<id>` (a subject
-    of `core.js` `SUBJECTS`, its exact id; `rightParse_`). A right held at a subject holds there only, never at the
-    instance nor at another subject; one held at the instance holds at each of its subjects. Any other scope is
-    refused (`input`; mixed scopes `scope`), and an entry written by hand that the script does not take gives nothing
+    (hosting a live game), `cohorts` (roles step 2's)). A group is instance wide or holds its rights at a list of
+    subjects (Pierre, 2026-11-20; Q447; 2026-11-26, decision 2; [the decision](decisions/2026-11-21-groups-by-scope.md)):
+    its rights share one scope, written in the Rights column, `right@instance:imr` or, for `content`, `live` and
+    `cohorts` only, `right@subject:<id>` (a subject of `core.js` `SUBJECTS`, its exact id; `rightParse_`), each right at
+    each of the group's subjects (`groupScope_`). A right held at a subject holds there only, never at the instance nor
+    at another subject; one held at the instance holds at each of its subjects, future ones included. Any other scope is
+    refused (`input`; not one scope: `scope`), and an entry written by hand that the script does not take gives nothing
     and is a line in the Deploy log. A membership of a group that carries
     rights holds the account's code hash (the Groups tab's Code hash column), and gives its rights only while that hash
     is the account's: a name taken again, or a code changed, gives nothing until the membership is made again. Every
@@ -210,11 +211,28 @@ rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q40
   carries rights and the delete of such a group need `grant` there, which reaches its subjects (users_ picks it,
   `usersDo_` and `groupDo_` check it again under the script lock, at each scope changed); the admin list's `roleGrant`
   / `roleRevoke` need `grant` at `platform`, its list `grant` at the instance. A live game asks `live` at its subject.
-- **One write**: every rights change goes through `rightsWrite_`, the only code that writes the admin list (the Roles
-  tab), a group's Rights cell and the memberships of the groups that carry rights (`gdefPut_` writes a group's
-  settings only; `groupSet_` refuses a group that carries rights). It writes each change with its Audit rows.
+- **One write** (Pierre, 2026-11-26, decision 2): every rights change goes through `rightsWrite_`, the only code that
+  writes the admin list and the standbys (the Roles tab), a group's Rights cell and the memberships of the groups that
+  carry rights (`gdefPut_` writes a group's settings only; `groupSet_` refuses a group that carries rights). It
+  simulates the change, writes it, then its Audit rows in one write of the tab; when those rows cannot be written it
+  takes the change back and the request answers an error, so no change stays without its rows.
   `tests/rightswrite.test.js` traces every write to those stores during every kind of request, checks each went
   through it, and checks that every change of anyone's rights has its Audit row.
+- **Never without an admin and a manager** (decision 4; the hard minimum 1 + 1, no permanent warning): the guard
+  (`seatsOf_`) counts, by effect, the live accounts on the admin list under their code (admins) and those holding
+  `players`, `settings` and `grant` at the instance, the admin list's `grant` counting (managers; decision 3: the full
+  bundle). A change that would take either from one or more to none stops: nothing written but its Audit row (Result
+  `last`, Before and After the counts), answer `last` with the seat. The token is no holder: it is the way back. The
+  admin can name a successor (`heir`): the request answers `confirm` with a confirmation, and sent again with it hands
+  the seat over in the same write, the successor first. A player's own delete is never stopped: a standby named for
+  the seat (a `standby` row of the Roles tab, holding no right) takes it over; with none, the seat stays empty, said by
+  an Audit row (`vacant`) and a Deploy log line, until the token fills it. A code changed cannot be stopped (nothing is
+  written): its holder stops counting at once.
+- **Confirmations bound to the state** (decision 7): a confirmation (`confirmOk_`: giving `grant`, a handover) is a
+  keyed hash of the caller, the request, the script's version, the rights state (every right, membership, standby and
+  holder's code hash) and its expiry, 5 minutes; anything changed since asks for a new one. `grant` is given to a group
+  only through a confirmed request of its own (decision 3): to an existing group by an edit that changes nothing else
+  (`separate` otherwise), to a new group with its making; the confirmation says how many members would hold it.
 - **The escalation paths closed.** The `players` right never adds anyone, itself included, to a group that carries
   rights, nor gives a group a right. A group that carries rights takes one name a call (no Add all: a list is refused),
   and its first right is refused while it has members. A merge never moves a right: the merged-away account's groups
@@ -233,7 +251,9 @@ rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q40
   a wrong one counting towards the name's 10-minute lock as a load's does, an archived account refused, then
   `can_(…, 'live', 'subject:<the game's subject>')`, which a group's `live` at the instance or at that subject gives);
   one Audit row a start (`live start`, at that subject), refusals capped as every refusal. The
-  trainer's later calls carry the session's random key, the students' calls their own; a code is 6 random digits, and
+  trainer's later calls carry the session's random key, and each question and reveal asks the trainer's `live` right
+  again (`lvHost_`, decision 7): a right taken since, or a code changed, ends the game for everyone and answers
+  `role` (`live q` / `live rev` denied rows). The students' calls carry their own key; a code is 6 random digits, and
   a guessed one only lets someone join that game with a nickname (40 a session, 400 joins every 6 hours: `lvjoin`).
   What a student is sent never holds the right answer before the reveal, nor another student's key or answers; what
   the trainer sends is filtered (photo addresses by pattern, labels as plain text). Sessions live in the script cache
@@ -249,23 +269,26 @@ rights (Q423, 2026-11-19: no cap on rights by sign-in strength); 2026-11-19 (Q40
   (`rolesSeed_`). A property marks it done, so a revoke, a leave or a delete is never silently undone. It is marked done
   only once every grant and membership has its Audit row: a try that fails part way (a Sheets error) writes a Deploy log
   line, and the admin page's next read finishes it.
-- **The Audit tab**: Time, Admin id, Action, Scope, Result, Target id: who, when, what, at which scope (the right's, a
-  group's for a membership, a live game's subject), about whom. One row per change (the players' management, the
-  Analyses report's put, the admin list's grants and revokes, `join` and `leave` of a group that carries rights, a
-  group's rights given or taken: one `rights <before> > <after>` row (`-` for none), then for each right one `grant` /
-  `revoke … (via <group id>)` row per member and `right+` / `right-`; a self-change marked `(self)`). Before and after
-  of a membership or a place on the admin list are its verb with its Result (`ok` the change made, `held` or `none`
-  nothing to change). Per refusal at most 20 rows every 6 hours (`over_`: anyone can send one; refusals take no
-  script lock). Reads are not written: the admin page reads every minute. Every id is an anonymous id: `aid_` for an
-  account, `gh:` and 8 characters for a token (a salted hash, never the token; blank for a refusal, whose caller is
-  nobody known), `script` for the migration, never a name; the target of a request is written as its id, never the name
-  it carries.
-  No rights change is without its row (`rightsWrite_`): a row that cannot be written fails the request (an error),
-  the change saved, and its next try writes that `ok` row instead of `held` or `none`, or, for a group's rights, the
-  rows its change was saved without (`grantAudited_`, `joinsAudited_`, `rightsAudited_`: the group's last `right+` /
-  `right-` row per right, a role group's rights from the migration counted without one). A right taken away is gone at
-  once, whether or not its row could be written. Any other row that cannot be written is a line in the Deploy log
-  (`roleLog_`, the same line at most once an hour), never silent.
+- **The Audit tab**: Time, Admin id, Action, Scope, Result, Target id, Before, After (the last two from sheet `vNEXT`;
+  Pierre, 2026-11-26, decision 2; the rows before keep them blank): who, when, what, at which scope (the right's, a
+  group's for a membership, a live game's subject), about whom, and the value before and after. One row per change
+  (the players' management, the Analyses report's put, the admin list's grants and revokes, a standby named or not,
+  `join` and `leave` of a group that carries rights, a group's rights given or taken: one `rights <group id>` row, its
+  rights before and after (`-` for none), then one `rights (via <group id>)` row per member whose rights change; a
+  self-change marked `(self)`, a handover `(handover)`, a standby taking over `(standby)`). Each row about an account's
+  rights holds its whole rights before and after (`content@instance:imr,admin@platform`), so its last successful such
+  row says what it could do from then. Per refusal at most 20 rows every 6 hours (`over_`: anyone can send one;
+  refusals take no script lock); a guard's stop always has its row. Reads are not written: the admin page reads every
+  minute. An account is named by its audit id (`auid_`, decision 7: `u:` and a keyed hash of the account's generation,
+  one per account lifetime, never derived from its name, so a name taken again is another id; the rows written before
+  hold its anonymous id `aid_`), a token by `gh:` and 8 characters (a salted hash, never the token; blank for a
+  refusal, whose caller is nobody known), the migration by `script`, never a name; the target of a request is written
+  as its id, never the name it carries.
+  No rights change is without its rows (`rightsWrite_`, one write, above). A change written whose rows never were (the
+  script stopped between the two) is found by its next try, which writes that `ok` row instead of `held` or `none`
+  (`grantAudited_`, `joinsAudited_`, `rightsAudited_`: the group's last `rights <group id>` row and the older
+  `right+` / `right-` rows after it, a role group's rights from the migration counted without one). Any other row that
+  cannot be written is a line in the Deploy log (`roleLog_`, the same line at most once an hour), never silent.
 - **No editor or trainer ever gets a GitHub token that can push** (Q342): their later steps go through this script.
 
 ## The Alerts tab in the admin (v152)

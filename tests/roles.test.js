@@ -9,7 +9,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, confirmed, failAudit} = require('./gas.js');
 
 const TOK = 'ghp_write000000000000000000', // can push: the admin token
   READ = 'ghp_read0000000000000000000'; // a GitHub token that can only read the repository: no admin
@@ -24,6 +24,8 @@ const rows = (s, tab) =>
   );
 const audit = s => rows(s, 'Audit').map(r => ({id: r[1], action: r[2], scope: r[3], result: r[4], target: r[5]}));
 const aid = (s, n) => vm.runInContext(`aid_(${JSON.stringify(n)})`, s.ctx);
+// An account's audit id (Code.gs auid_): the id rights rows name it by.
+const auid = (s, n) => vm.runInContext(`auid_(${JSON.stringify(n)})`, s.ctx);
 const run = (s, js) => vm.runInContext(js, s.ctx);
 // The admin list: the one role still granted.
 const grant = (s, account, role = 'admin', scope = 'platform', token = TOK) => s.post({roleGrant: {account, role, scope}, token});
@@ -32,7 +34,7 @@ const revoke = (s, account, role = 'admin', scope = 'platform', token = TOK) => 
 const RIGHTS_OF = {owner: ['players', 'settings', 'grant'], editor: ['content'], trainer: ['cohorts', 'live']};
 const groupOf = (s, role) => {
   const had = s.post({users: 1, token: TOK}).groupDefs.find(d => d.n === role);
-  return (had || s.post({groupMake: {n: role, rights: RIGHTS_OF[role].map(r => r + '@' + IMR)}, token: TOK}).group).id;
+  return (had || confirmed(s, {groupMake: {n: role, rights: RIGHTS_OF[role].map(r => r + '@' + IMR)}, token: TOK}).group).id;
 };
 const give = (s, account, role, token = TOK) => s.post({userGroup: account, group: groupOf(s, role), on: true, token});
 // The account form can_ takes: a name and its code hash, checked by the caller.
@@ -138,10 +140,11 @@ test('every privileged endpoint: allowed with the admin token (the platform admi
   }
 });
 
-test('the audit of a change: its result and target by anonymous id, never the name sent', () => {
+test('the audit of a change: its result and target by audit id (none for a name with no account), never the name sent', () => {
   const s = loadCodeGs();
   save(s, 'Ana');
   save(s, 'Ben', '5678');
+  const [A, B] = [auid(s, 'Ana'), auid(s, 'Ben')];
   s.post({userBoard: 'Ana', hide: true, token: TOK});
   s.post({userDelete: 'Nobody', token: TOK});
   s.post({userMerge: {from: 'Ana', into: 'Ben', data: {}}, token: TOK});
@@ -149,9 +152,9 @@ test('the audit of a change: its result and target by anonymous id, never the na
   assert.deepStrictEqual(
     a.map(x => [x.action, x.result, x.target]),
     [
-      ['userBoard', 'ok', aid(s, 'Ana')],
-      ['userDelete', 'user', aid(s, 'Nobody')],
-      ['userMerge', 'ok', aid(s, 'Ana') + ' > ' + aid(s, 'Ben')]
+      ['userBoard', 'ok', A],
+      ['userDelete', 'user', ''],
+      ['userMerge', 'ok', A + ' > ' + B]
     ]
   );
   assert.ok(
@@ -219,7 +222,7 @@ test("can_: the token passes every right; an account the admin list's and the un
 const asAccounts = s =>
   run(
     s,
-    `caller_ = t => { const m = /^acct:(.+)$/.exec(String(t || '')); return m ? {name: m[1], h: hash_(m[1], '1234'), id: aid_(m[1])} : null; }`
+    `caller_ = t => { const m = /^acct:(.+)$/.exec(String(t || '')); return m ? {name: m[1], h: hash_(m[1], '1234'), id: auid_(m[1])} : null; }`
   );
 test('every privileged endpoint asks its right: the Managers pass, the Curators, the Trainers or the platform admin alone do not', () => {
   const ADMIN_EP = new Set(['roleGrant', 'roleRevoke']);
@@ -264,10 +267,10 @@ test('an account changing its own rights writes (self); a platform admin may giv
       .slice(-4)
       .map(x => [x.id, x.action, x.result, x.target]),
     [
-      [aid(s, 'Owen'), `join ${cur} (self)`, 'ok', aid(s, 'Owen')],
-      [aid(s, 'Pat'), `join ${cur} (self)`, 'ok', aid(s, 'Pat')],
-      [aid(s, 'Owen'), 'grant admin', 'denied', ''],
-      [aid(s, 'Owen'), `leave ${cur} (self)`, 'ok', aid(s, 'Owen')]
+      [auid(s, 'Owen'), `join ${cur} (self)`, 'ok', auid(s, 'Owen')],
+      [auid(s, 'Pat'), `join ${cur} (self)`, 'ok', auid(s, 'Pat')],
+      [auid(s, 'Owen'), 'grant admin', 'denied', ''],
+      [auid(s, 'Owen'), `leave ${cur} (self)`, 'ok', auid(s, 'Owen')]
     ]
   );
   noName(s, 'Owen', 'Pat');
@@ -295,36 +298,46 @@ test('roleGrant and roleRevoke: the admin list only; checked input, live account
     [['Ana', 'admin', 'platform']],
     'the account as the RAs tab spells it, once'
   );
-  // The list: the admin rows only (the record of the roles before the groups is not the admin list).
+  // The list: the admin rows and the standbys only (the record of the roles before the groups is not the admin list).
   run(s, "sheet_(ROLES.TAB, ROLES.HEAD).appendRow(['Ana', 'owner', 'instance:imr', new Date(), 'x'])");
   const list = s.post({roles: 1, token: TOK});
+  const A = auid(s, 'Ana');
   assert.deepStrictEqual(
-    list.grants.map(g => [g.name, g.id, g.role, g.scope]),
-    [['Ana', aid(s, 'Ana'), 'admin', 'platform']]
+    list.grants.map(g => [g.name, g.id, g.au, g.role, g.scope]),
+    [['Ana', aid(s, 'Ana'), A, 'admin', 'platform']]
   );
+  // The last admin is never revoked (the guard: Code.gs rightsWrite_); with a second one, the revoke goes.
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(revoke(s, 'Ana'))), {ok: false, error: 'last', seat: 'admin', v: list.v});
+  save(s, 'Ben');
+  assert.strictEqual(grant(s, 'Ben').result, 'ok');
   assert.strictEqual(revoke(s, 'Ana').result, 'ok');
   assert.strictEqual(revoke(s, 'Ana').result, 'none');
   assert.deepStrictEqual(
     rows(s, 'Roles').map(r => r[1]),
-    ['owner']
+    ['owner', 'admin']
   );
   assert.strictEqual(s.post({userArchive: {from: 'Ana', into: 'Ana-old'}, token: TOK}).ok, true);
   assert.strictEqual(grant(s, 'Ana-old').error, 'archived', 'an archive holds no right');
   assert.deepStrictEqual(
     audit(s)
-      .filter(x => /^(grant|revoke)/.test(x.action))
+      .filter(x => /^(grant|revoke)/.test(x.action) && x.target !== auid(s, 'Ben'))
       .map(x => [x.action, x.scope, x.result, x.target]),
     [
-      ['grant admin', 'platform', 'user', aid(s, 'Nobody')],
-      ['grant admin', 'platform', 'ok', aid(s, 'Ana')],
-      ['grant admin', 'platform', 'held', aid(s, 'Ana')],
-      ['grant admin', 'platform', 'held', aid(s, 'Ana')],
-      ['revoke admin', 'platform', 'ok', aid(s, 'Ana')],
-      ['revoke admin', 'platform', 'none', aid(s, 'Ana')],
-      ['grant admin', 'platform', 'archived', aid(s, 'Ana-old')]
+      ['grant admin', 'platform', 'user', ''],
+      ['grant admin', 'platform', 'ok', A],
+      ['grant admin', 'platform', 'held', A],
+      ['grant admin', 'platform', 'held', A],
+      ['revoke admin', 'platform', 'last', A],
+      ['revoke admin', 'platform', 'ok', A],
+      ['revoke admin', 'platform', 'none', A],
+      ['grant admin', 'platform', 'archived', auid(s, 'Ana-old')]
     ]
   );
-  noName(s, 'Ana', 'Nobody');
+  // The name taken again is another account's lifetime: another audit id (the archive keeps its record's).
+  save(s, 'Ana', '4321');
+  assert.strictEqual(auid(s, 'Ana-old'), A);
+  assert.ok(auid(s, 'Ana') && auid(s, 'Ana') !== A, 'a new account under the name: a new audit id');
+  noName(s, 'Ana', 'Nobody', 'Ben');
 });
 
 // The rights of an account by its groups' names: [group name, ...] (the users list's gids against its groupDefs).
@@ -348,12 +361,21 @@ test("Pierre's rights: once, to the admin's account, as self-grants by the token
     [['Pat', 'admin', 'platform']]
   );
   assert.deepStrictEqual(groupsOf(s, 'Pat'), ['Managers', 'Curators']);
+  // Each row names the account by its audit id, its rights before and after (the role groups' own rows: none, their
+  // rights from the migration count without one).
   assert.deepStrictEqual(
-    audit(s).map(x => [x.action, x.scope, x.result, x.target]),
+    rows(s, 'Audit').map(r => r.slice(2)),
     [
-      ['grant admin (self)', 'platform', 'ok', aid(s, 'Pat')],
-      ['join r:owner (self)', IMR, 'ok', aid(s, 'Pat')],
-      ['join r:editor (self)', IMR, 'ok', aid(s, 'Pat')]
+      ['grant admin (self)', 'platform', 'ok', auid(s, 'Pat'), '-', 'admin@platform'],
+      ['join r:owner (self)', IMR, 'ok', auid(s, 'Pat'), 'admin@platform', `players@${IMR},settings@${IMR},grant@${IMR},admin@platform`],
+      [
+        'join r:editor (self)',
+        IMR,
+        'ok',
+        auid(s, 'Pat'),
+        `players@${IMR},settings@${IMR},grant@${IMR},admin@platform`,
+        `players@${IMR},settings@${IMR},grant@${IMR},content@${IMR},admin@platform`
+      ]
     ]
   );
   const p = acct(s, 'Pat');
@@ -370,41 +392,26 @@ test("Pierre's rights: once, to the admin's account, as self-grants by the token
   noName(s, 'Pat', 'Ana');
 });
 
-// The Audit tab's next n row writes fail, as a Sheets service error does (a grant written, then its Audit row failing:
-// the error must never be swallowed).
-const failAudit = (s, n = 1) => {
-  run(s, 'sheet_(AUDIT.TAB, AUDIT.HEAD)');
-  const sh = s.sheets.Audit,
-    append = sh.appendRow;
-  sh.appendRow = v => {
-    if (n-- > 0) throw new Error('Service Spreadsheets timed out while accessing document');
-    return append(v);
-  };
-};
 const deployLog = s => rows(s, 'Deploy log').map(r => String(r[1]));
 
-test('a seed that fails after a grant is written is finished by its retry: the rights, one ok Audit row each, the failure logged', () => {
+test('a seed whose Audit rows fail is taken back and done by its retry: the rights, one ok Audit row each, the failure logged', () => {
   const s = loadCodeGs();
   save(s, 'Pat');
   failAudit(s);
   assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok, "never the reader's error");
-  assert.deepStrictEqual(
-    rows(s, 'Roles').map(r => r.slice(0, 3)),
-    [['Pat', 'admin', 'platform']],
-    'the first grant written, then the seed stopped'
-  );
+  assert.deepStrictEqual(rows(s, 'Roles'), [], 'the grant taken back with its rows (one write: Code.gs rightsWrite_)');
   assert.deepStrictEqual(audit(s), []);
   assert.strictEqual(s.props.ROLES_SEED, undefined, 'not marked done');
   const log = deployLog(s);
   assert.ok(
-    log.some(l => /^Roles: Audit row not written \(grant admin \(self\), platform, ok\): Service Spreadsheets/.test(l)),
+    log.some(l => /^Roles: rights change taken back, its Audit rows not written \(grant admin \(self\)\): Service Spreadsheets/.test(l)),
     log.join('\n')
   );
   assert.ok(
-    log.some(l => /^Roles: seed failed, tried again at the next read: grant admin \(self\): its Audit row was not written/.test(l)),
+    log.some(l => /^Roles: seed failed, tried again at the next read: grant admin \(self\): its Audit rows were not written/.test(l)),
     log.join('\n')
   );
-  // The next read: the admin grant held without its row gets its "ok" (never "held"), the memberships are written.
+  // The next read: everything written, each with its row.
   assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok);
   s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'});
   assert.deepStrictEqual(rows(s, 'Roles').length, 1);
@@ -412,9 +419,9 @@ test('a seed that fails after a grant is written is finished by its retry: the r
   assert.deepStrictEqual(
     audit(s).map(x => [x.action, x.scope, x.result, x.target]),
     [
-      ['grant admin (self)', 'platform', 'ok', aid(s, 'Pat')],
-      ['join r:owner (self)', IMR, 'ok', aid(s, 'Pat')],
-      ['join r:editor (self)', IMR, 'ok', aid(s, 'Pat')]
+      ['grant admin (self)', 'platform', 'ok', auid(s, 'Pat')],
+      ['join r:owner (self)', IMR, 'ok', auid(s, 'Pat')],
+      ['join r:editor (self)', IMR, 'ok', auid(s, 'Pat')]
     ]
   );
   assert.ok(s.props.ROLES_SEED, 'marked done once every right has its row');
@@ -422,24 +429,28 @@ test('a seed that fails after a grant is written is finished by its retry: the r
   assert.ok(!deployLog(s).some(l => /pat/i.test(l)), 'no name in the Deploy log');
 });
 
-test('an Audit row that cannot be written is logged; a grant without its row answers an error and its retry audits it', () => {
+test('a grant whose Audit row cannot be written is taken back and answers an error; a grant held without its row gets it', () => {
   const s = loadCodeGs();
   save(s, 'Ana');
+  save(s, 'Ben');
   failAudit(s);
   const r = grant(s, 'Ana');
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.error, 'server');
   assert.deepStrictEqual(audit(s), []);
-  assert.ok(deployLog(s).some(l => /^Roles: Audit row not written \(grant admin, platform, ok\)/.test(l)));
-  assert.strictEqual(grant(s, 'Ana').result, 'ok', 'the retry writes the row the first try left out');
+  assert.deepStrictEqual(rows(s, 'Roles'), [], 'nothing changed');
+  assert.ok(deployLog(s).some(l => /^Roles: rights change taken back, its Audit rows not written \(grant admin\)/.test(l)));
+  assert.strictEqual(grant(s, 'Ana').result, 'ok', 'the retry makes it');
   assert.strictEqual(grant(s, 'Ana').result, 'held');
-  // Granted again after a revoke: its last ok row is the revoke, so a held grant with no row since gets its ok.
+  // A grant held without its row (a try stopped between the two writes, the script killed): its row is written 'ok'.
+  assert.strictEqual(grant(s, 'Ben').result, 'ok');
   assert.strictEqual(revoke(s, 'Ana').result, 'ok');
-  failAudit(s);
-  assert.strictEqual(grant(s, 'Ana').ok, false);
+  run(s, `sheet_(ROLES.TAB, ROLES.HEAD).appendRow(['Ana', 'admin', 'platform', new Date(), hash_('Ana', '1234')])`);
   assert.strictEqual(grant(s, 'Ana').result, 'ok');
   assert.deepStrictEqual(
-    audit(s).map(x => [x.action, x.result]),
+    audit(s)
+      .filter(x => x.target === auid(s, 'Ana'))
+      .map(x => [x.action, x.result]),
     [
       ['grant admin', 'ok'],
       ['grant admin', 'held'],
@@ -447,7 +458,7 @@ test('an Audit row that cannot be written is logged; a grant without its row ans
       ['grant admin', 'ok']
     ]
   );
-  assert.strictEqual(rows(s, 'Roles').length, 1);
+  assert.strictEqual(rows(s, 'Roles').length, 2);
   // A refusal whose row fails is logged too, never thrown: the request answers as it would with the row written.
   failAudit(s);
   assert.strictEqual(s.post({readReports: 1, token: READ}).error, 'token');
@@ -467,17 +478,30 @@ test("rule D7: a deleted, self-deleted, merged or archived account's rights go; 
     const s = loadCodeGs();
     save(s, 'Eda');
     save(s, 'Ben', '5678');
+    save(s, 'Cy');
     give(s, 'Eda', 'editor');
     give(s, 'Eda', 'owner');
     grant(s, 'Eda');
     give(s, 'Ben', 'trainer');
-    const id = aid(s, 'Eda'),
+    // Cy holds the seats too, so no removal here empties one (the guard: tests/rightswrite.test.js).
+    give(s, 'Cy', 'owner');
+    grant(s, 'Cy');
+    const id = auid(s, 'Eda'),
       [ed, ow, tr] = ['editor', 'owner', 'trainer'].map(r => groupOf(s, r));
     assert.ok(f(s).ok, how);
-    assert.deepStrictEqual(rows(s, 'Roles'), [], how + ': off the admin list');
     assert.deepStrictEqual(
-      rows(s, 'Groups').map(r => [r[0], r[1]]),
-      [[tr, 'Ben']],
+      rows(s, 'Roles').map(r => r[0]),
+      ['Cy'],
+      how + ': off the admin list'
+    );
+    assert.deepStrictEqual(
+      rows(s, 'Groups')
+        .map(r => [r[0], r[1]])
+        .sort(),
+      [
+        [ow, 'Cy'],
+        [tr, 'Ben']
+      ].sort(),
       how + ": its memberships gone, never moved (a merge's into keeps only its own)"
     );
     const drops = audit(s).filter(x => /account removed/.test(x.action));

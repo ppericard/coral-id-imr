@@ -139,7 +139,7 @@ function writeData_(name, json, rev){
 // long ids cut). The app keeps what it sent and tries again (sync.js).
 function doGet(e){ timStart_(TIM.EVERY); try { return doGet_(e); } catch (err) { return fail_(err); } finally { timEnd_(); } }
 function doPost(e){ timStart_(TIM.EVERY); try { return doPost_(e); } catch (err) { return fail_(err); } finally { timEnd_(); } }
-const fail_ = err => json_(err && err.lockBusy ? {ok: false, error: 'lock'} : {ok: false, error: 'server', msg: errText_(err)});
+const fail_ = err => json_(err && err.answer ? err.answer : err && err.lockBusy ? {ok: false, error: 'lock'} : {ok: false, error: 'server', msg: errText_(err)});
 const errText_ = err => String((err && err.message) || err || '').replace(/[A-Za-z0-9_-]{25,}/g, '…').replace(/[\u0000-\u001f]+/g, ' ').slice(0, 100);
 // The script lock, waited for at most ms (LOCK_MS by default); thrown as {lockBusy} when another request holds it
 // longer, which doGet / doPost answer as error 'lock'.
@@ -1738,11 +1738,15 @@ function isAdmin_(token){
 //   as the admin rows of the Roles tab (Account, Role 'admin', Scope 'platform', Since, Code hash), changed only by
 //   roleGrant / roleRevoke, each audited. An admin holds the platform and grant at every scope (he may give himself an
 //   instance's rights), never an instance's players or content without a group that carries them.
+// - the standbys: rows of the Roles tab (Role 'standby', Scope 'platform' for the admin's seat, the instance's for the
+//   manager's), each holding no right: the account that takes a seat over when a player's own delete would empty it
+//   (rightsWrite_'s guard).
 // The Roles tab's other rows are the record of the roles before the groups (the rights migration below), read by nothing.
-// Every rights change goes through one write, rightsWrite_, with its Audit rows. A delete, a merge (its from) or an
-// archive drops an account's rights (rightsWrite_ removed; rule D7), never moves them. The player's rights are every
-// account's and are not stored. Scopes: 'platform', 'instance:<id>' (this sheet serves one instance, INSTANCE_), and
-// 'subject:<id>', one subject of the instance (scopeOf_).
+// Every rights change goes through one write, rightsWrite_, with its Audit rows, and never leaves an instance without an
+// admin or a manager (its guard). A delete, a merge (its from) or an archive drops an account's rights (rightsWrite_
+// removed; rule D7), never moves them. The player's rights are every account's and are not stored. Scopes: 'platform',
+// 'instance:<id>' (this sheet serves one instance, INSTANCE_), and 'subject:<id>', one subject of the instance
+// (scopeOf_).
 // The admin token (isAdmin_: a GitHub token that can push to the repository) is the platform admin and passes every
 // right: whoever can push to main can change this script. Every privileged endpoint is reached with the token only for
 // now (caller_), a live game's start with the trainer's account (lvTrainer_).
@@ -1761,9 +1765,10 @@ const ROLES = {TAB: 'Roles', HEAD: ['Account', 'Role', 'Scope', 'Since', 'Code h
   // Pierre's: the admin list, and the Managers and Curators groups of the IMR instance. Given once to the admin's account
   // (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
   SEEDS: ['owner', 'editor']};
-// The rights a group may carry, and their scopes (docs/decisions/2026-11-21-groups-by-scope.md): every right at the
-// instance (INST_SCOPE_), and the rights of RIGHTS_SUBJ (the Curators' and the Trainers') also at one subject of it
-// ('subject:<id>', a CORE_.SUBJECTS id). A group's rights share one scope: it is instance wide or subject specific.
+// The rights a group may carry, and their scopes (docs/decisions/2026-11-21-groups-by-scope.md, revised by
+// docs/decisions/2026-11-26-roles-groups-assignments.md): every right at the instance (INST_SCOPE_), and the rights of
+// RIGHTS_SUBJ (the Curators' and the Trainers') also at subjects of it ('subject:<id>', a CORE_.SUBJECTS id). A group's
+// rights share one scope: the whole instance, or a list of subjects (groupScope_).
 const RIGHTS = ['players', 'settings', 'grant', 'content', 'live', 'cohorts'], RIGHTS_SUBJ = ['content', 'live', 'cohorts'];
 // A role's definition, own entries only: a role named like Object.prototype's members (constructor, __proto__) is none.
 const roleDef_ = role => (Object.prototype.hasOwnProperty.call(ROLES.DEF, String(role)) ? ROLES.DEF[String(role)] : null);
@@ -1801,9 +1806,21 @@ function rightsOf_(x){
   return out.sort((a, b) => RIGHTS.indexOf(a[0]) - RIGHTS.indexOf(b[0]) || (at(a[1]) < at(b[1]) ? -1 : at(a[1]) > at(b[1]) ? 1 : 0)).map(r => r.join('@'));
 }
 const rightsBad_ = x => rightsSplit_(x).filter(e => !rightParse_(e));
-// The one scope of a list of rights: '' for none, null when they mix scopes (a group is instance wide or subject
-// specific, never both nor two subjects).
-const groupScope_ = L => { const S = L.map(e => e.split('@')[1]).filter((s, i, a) => a.indexOf(s) === i); return S.length > 1 ? null : S[0] || ''; };
+// The one scope of a group's rights (decision 2 of docs/decisions/2026-11-26-roles-groups-assignments.md: the whole
+// instance, its future subjects included, or a list of subjects): '' for none, INST_SCOPE_, or its subjects' scopes in
+// SUBJECTS order, comma separated, when each of its rights is held at each of them; null for any other list (the
+// instance and a subject mixed, or rights at different subjects).
+function groupScope_(L){
+  const R = [], S = [];
+  L.forEach(e => { const p = String(e).split('@'); if (R.indexOf(p[0]) < 0) R.push(p[0]); if (S.indexOf(p[1]) < 0) S.push(p[1]); });
+  if (!S.length) return '';
+  if (S.indexOf(INST_SCOPE_) >= 0) return S.length === 1 ? INST_SCOPE_ : null;
+  if (!R.every(r => S.every(s => L.indexOf(r + '@' + s) >= 0))) return null;
+  return CORE_.SUBJECTS.map(x => 'subject:' + x.id).filter(s => S.indexOf(s) >= 0).join(',');
+}
+// May who use the grant right at every scope of these rights (the instance's when there are none)? The instance's grant
+// reaches its subjects.
+const grantAt_ = (who, L) => (L.length ? L.map(e => e.split('@')[1]) : [INST_SCOPE_]).every(sc => can_(who, 'grant', sc));
 // The rights a request sends (an array of "right@scope" strings): the same list, or null when any entry is not one.
 const rightsIn_ = a => (Array.isArray(a) && a.length <= 20 && a.every(e => typeof e === 'string' && rightParse_(e) !== null) ? rightsOf_(a.join(',')) : null);
 // can_(who, right, scope): may this caller use this right in this scope? who: {token: true, id} (the admin token), or
@@ -1830,18 +1847,42 @@ function caller_(token){
   const t = String(token || '');
   return isAdmin_(t) ? {token: true, id: tokId_(t)} : null;
 }
-// The Audit tab: one row per privileged action: Time, Admin id (the caller's: an account's anonymous id aid_, or
-// the token's tokId_; never a name), Action (a fixed word of the code, with a role and "(self)" for a grant), Scope,
-// Result ('ok' or the error answered), Target id (the anonymous id of the account it is about, never a name; blank when
-// none). Every change is written; a read is not (the admin page reads every minute: Players › Activity's readLive writes
-// nothing); a refusal is written at most AUDIT.DENY times every 6 hours (over_; anyone can send one). Nothing reads it
-// in normal operation: it outlives the accounts it names by id only (rule D7).
-const AUDIT = {TAB: 'Audit', HEAD: ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id'], DENY: 20};
+// The Audit tab: one row per privileged action: Time, Admin id (the caller's: an account's audit id auid_, or the
+// token's tokId_; never a name), Action (a fixed word of the code, with a role and "(self)" for a grant), Scope, Result
+// ('ok' or the error answered), Target id (the audit id of the account it is about, or a group's id; never a name; blank
+// when none), Before and After (vNEXT, Pierre 2026-11-26: «ok» to Before/After as columns): a rights change's value
+// before and after it (rightsWrite_: an account's rights, a group's rights; a guard's stop its seat counts), blank on
+// any other row and on every row written before. Every change is written; a read is not (the admin page reads every
+// minute: Players › Activity's readLive writes nothing); a refusal is written at most AUDIT.DENY times every 6 hours
+// (over_; anyone can send one). Nothing reads it in normal operation: it outlives the accounts it names by id only (rule
+// D7). Its columns are positional: the readers below read Action to Target id (3 to 6) by position.
+const AUDIT = {TAB: 'Audit', HEAD: ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id', 'Before', 'After'], DENY: 20, CELL: 1000};
+// The Audit tab, its header widened to Before and After once (a tab made before them keeps every row as it is).
+const auditTab_ = () => headUp_(sheet_(AUDIT.TAB, AUDIT.HEAD), AUDIT.HEAD);
+// One Audit row as the tab holds it (before and after: '' when none), each cell plain text, Before and After cut to
+// AUDIT.CELL characters.
+const auditRow_ = (id, action, scope, result, target, before, after) => [new Date(), safe_(id || ''), safe_(action), safe_(scope), safe_(result), safe_(target || ''),
+  safe_(String(before == null ? '' : before).slice(0, AUDIT.CELL)), safe_(String(after == null ? '' : after).slice(0, AUDIT.CELL))];
 // One Audit row: true once written. A row that could not be written is a line in the Deploy log (roleLog_), never
 // silent and never thrown to the request.
-function audit_(id, action, scope, result, target){
-  try { sheet_(AUDIT.TAB, AUDIT.HEAD).appendRow([new Date(), safe_(id || ''), safe_(action), safe_(scope), safe_(result), safe_(target || '')]); return true; }
+function audit_(id, action, scope, result, target, before, after){
+  try { auditTab_().appendRow(auditRow_(id, action, scope, result, target, before, after)); return true; }
   catch (e) { roleLog_('Audit row not written (' + action + ', ' + scope + ', ' + result + '): ' + errText_(e)); return false; }
+}
+// The audit id of an account (decision 7 of docs/decisions/2026-11-26-roles-groups-assignments.md, Astra's first risk):
+// opaque, one per account lifetime, never derived from its name. It is a keyed hash of the account's generation
+// (_acct, made with the account, kept by every save and a merge's kept name; a name taken again after a delete or an
+// archive is another generation), so two people who held the same name in turn never share one. An account saved
+// before generations existed has none yet: its code hash stands in until its next save (a code change then gives
+// it another id). '' for a name with no account. aid_ (the name's anonymous id) stays the id of a player's answers and
+// of the Audit rows written before.
+function auid_(name){
+  const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra && name ? find_(ra, String(name)) : 0;
+  if (!r) return '';
+  const row = ra.getRange(r, 1, 1, HEAD.length).getValues()[0];
+  let g = '';
+  try { const d = JSON.parse(readData_(String(row[0]), String(row[7] || '')).json || '{}'); g = d && typeof d._acct === 'string' ? d._acct : ''; } catch (e) {}
+  return 'u:' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, anonSalt_() + '|audit|' + (g || '~' + hcell_(row[6])))).replace(/[+/=]/g, '').slice(0, 10);
 }
 // A roles or Audit failure in the Deploy log, the same line at most once an hour; it never fails the request.
 function roleLog_(what){
@@ -1852,44 +1893,53 @@ function roleLog_(what){
     sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), safe_(('Roles: ' + what).slice(0, 500))]);
   } catch (e) {}
 }
-// Does the grant (role, scope) of the account with this anonymous id have its Audit row? The last 'ok' grant or
-// revoke of that role and scope for that id is a grant. A grant held without one was written by a try that failed before
-// its row (rightsWrite_ writes it then).
-function grantAudited_(role, scope, id){
+// The Audit tab's Action, Scope, Result and Target id (columns 3 to 6, by position), [] when it has no row.
+function auditCols_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB);
-  if (!sh || sh.getLastRow() < 2) return false;
-  const v = sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues();  // Action, Scope, Result, Target id
+  return sh && sh.getLastRow() >= 2 ? sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues() : [];
+}
+// Is a Target id cell one of these ids (an account's audit id auid_, and its anonymous id aid_: the rows written before
+// audit ids)?
+const idIn_ = (cell, ids) => ids.indexOf(String(cell).replace(/^'/, '')) >= 0;
+// Does the grant (role, scope) of the account with these ids have its Audit row? The last 'ok' grant or revoke of that
+// role and scope for those ids is a grant. A grant held without one was written by a try stopped before its row, which
+// could not take the grant back (rightsWrite_ writes the row then).
+function grantAudited_(role, scope, ids){
+  const v = auditCols_();
   for (let i = v.length - 1; i >= 0; i--) {
     const m = /^(grant|revoke) (\S+)/.exec(String(v[i][0]));
-    if (m && m[2] === role && String(v[i][1]) === scope && String(v[i][2]) === 'ok' && String(v[i][3]).replace(/^'/, '') === id) return m[1] === 'grant';
+    if (m && m[2] === role && String(v[i][1]) === scope && String(v[i][2]) === 'ok' && idIn_(v[i][3], ids)) return m[1] === 'grant';
   }
   return false;
 }
 // The same for the memberships of groups that carry rights: group id -> 1 for each group whose last 'ok' join or leave
-// for that id is a join (no prototype).
-function joinsAudited_(id){
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB), out = Object.create(null);
-  if (!sh || sh.getLastRow() < 2) return out;
-  sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues().forEach(v => {  // Action, Scope, Result, Target id
+// for those ids is a join (no prototype).
+function joinsAudited_(ids){
+  const out = Object.create(null);
+  auditCols_().forEach(v => {  // Action, Scope, Result, Target id
     const m = /^(join|leave) (\S+)/.exec(String(v[0]));
-    if (m && String(v[2]) === 'ok' && String(v[3]).replace(/^'/, '') === id) { if (m[1] === 'join') out[m[2]] = 1; else delete out[m[2]]; }
+    if (m && String(v[2]) === 'ok' && idIn_(v[3], ids)) { if (m[1] === 'join') out[m[2]] = 1; else delete out[m[2]]; }
   });
   return out;
 }
-const joinAudited_ = (gid, id) => !!joinsAudited_(id)[gid];
-// The same for a group's rights: the rights of this group id as its Audit rows give them, in the fixed order. The last
-// 'ok' 'right+' or 'right-' row of a right with the group as its target decides; a right with no row is the group's when
-// it is a role group's (r:<role>, made with its role's rights without rows: the rights migration, rightsGroup_) and in
-// that role's rights. A right the group holds without its row was saved by a try that failed before the row (groupDo_
-// writes it then).
+const joinAudited_ = (gid, ids) => !!joinsAudited_(ids)[gid];
+// The same for a group's rights: the rights of this group id as its Audit rows give them, in the fixed order. Its last
+// 'ok' 'rights <group id>' row gives them all (its After; '-' for none); a 'right+' or 'right-' row after it (the rows
+// written before Before and After, one per right) adds or takes one. A right with no row is the group's when it is a
+// role group's (r:<role>, made with its role's rights without rows: the rights migration, rightsGroup_) and in that
+// role's rights. A right the group holds without its row was saved by a try stopped before its row (rightsWrite_ writes
+// the row then).
 function rightsAudited_(gid){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB), last = Object.create(null);
-  if (sh && sh.getLastRow() >= 2) sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues().forEach(v => {  // Action, Scope, Result, Target id
-    const m = /^right([+-]) (\S+)$/.exec(String(v[0]));
-    if (m && String(v[2]) === 'ok' && String(v[3]).replace(/^'/, '') === gid) last[m[2]] = m[1];
-  });
   const r = /^r:(.+)$/.exec(gid), role = r && Object.prototype.hasOwnProperty.call(ROLES.GROUP, r[1]) && roleDef_(r[1]) ? r[1] : '';
-  const base = role ? rightsDef_([], role, 0).rights : [];
+  let base = role ? rightsDef_([], role, 0).rights : [];
+  // Action, Scope, Result, Target id, and Before and After once the tab has them (a tab of six columns has no such row)
+  if (sh && sh.getLastRow() >= 2) sh.getRange(2, 3, sh.getLastRow() - 1, Math.max(4, Math.min(6, sh.getLastColumn() - 2))).getValues().forEach(v => {
+    if (String(v[2]) !== 'ok' || String(v[3]).replace(/^'/, '') !== gid) return;
+    const m = /^right([+-]) (\S+)$/.exec(String(v[0]));
+    if (m) last[m[2]] = m[1];
+    else if (String(v[0]) === 'rights ' + gid) { base = rightsOf_(String(v[5]) === '-' ? '' : v[5]); Object.keys(last).forEach(k => delete last[k]); }
+  });
   return rightsOf_(base.filter(e => last[e] !== '-').concat(Object.keys(last).filter(e => last[e] === '+')).join(','));
 }
 const auditOf_ = out => (out && out.ok ? 'ok' : String(out && out.error || 'error'));
@@ -1901,108 +1951,291 @@ function gate_(token, right, action, scope){
   if (!over_('auditdeny', AUDIT.DENY)) audit_(who ? who.id : '', action, sc, 'denied', '');
   return null;
 }
-// The one write of every rights change (docs/decisions/2026-11-21-groups-by-scope.md): the only code that writes the
-// admin list (the Roles tab), a group's Rights cell (the Group settings tab) and the memberships of the groups that
-// carry rights (the Groups tab), each change with its Audit rows (tests/rightswrite.test.js checks every write). A row
-// says who (by: the caller's id, 'script' for the migration), what (Action: the change, its object, why), when (Time),
-// at which scope (Scope: the right's, or the group's for a membership) and about whom (Target id: an anonymous id, or
-// the group's id). Before and after: a membership or a place on the admin list is the Action's verb with its Result
-// ('ok' the change made, 'held' or 'none' nothing to change); a group's rights, the row 'rights <before> > <after>'
-// ('-' for none) before one row per right. A row that cannot be written throws after its Deploy log line (audit_), the
-// change saved: the request answers an error, and its retry, finding the change made without its row (grantAudited_,
-// joinsAudited_, rightsAudited_), writes that row 'ok'. Under the script lock (the caller holds it). op, one of:
+// The two seats every instance keeps (decision 4 of docs/decisions/2026-11-26-roles-groups-assignments.md, Pierre
+// 2026-11-26: the hard minimum is 1 + 1), by the scope a standby of the Roles tab is named at: an admin (the admin
+// list) and a manager (the instance).
+const SEATS_ = {platform: 'admin', [INST_SCOPE_]: 'manager'};
+// The full bundle a manager holds at the instance (decision 3: a manager counts only with players, settings and grant;
+// the admin list's grant counts).
+const MGR_ = ['players', 'settings', 'grant'].map(r => r + '@' + INST_SCOPE_);
+// The rights state the guard and the Audit's Before and After read (rightsWrite_), under the script lock: the live
+// accounts (lower-case name -> {name, h}), the admin list and the standbys of the Roles tab ({k, h}; a standby's seat),
+// every group ({id, rights}) and every membership ({g, k, h}).
+function rightsState_(){
+  const live = Object.create(null), gs = groupState_(), G = grants_();
+  liveRows_().forEach(r => { live[lc_(r[0])] = {name: String(r[0]), h: String(r[6])}; });
+  return {live: live,
+    admins: G.filter(g => scopeOk_(g.role, g.scope)).map(g => ({k: g.name, h: g.h})),
+    standby: G.filter(g => g.role === 'standby' && Object.prototype.hasOwnProperty.call(SEATS_, g.scope)).map(g => ({k: g.name, h: g.h, seat: SEATS_[g.scope]})),
+    defs: gs.defs.map(d => ({id: d.id, rights: d.rights.slice()})),
+    mem: gs.rows.map(r => ({g: r[0], k: lc_(r[1]), h: r[2]}))};
+}
+// An account's rights in a state: its memberships under its code hash give their groups' rights, its place on the admin
+// list 'admin@platform'. rightsOf_'s order; none for an account that is not live.
+function effOf_(st, k){
+  const L = st.live[k];
+  if (!L) return [];
+  const mine = Object.create(null);
+  st.mem.forEach(m => { if (m.k === k && m.h === L.h) mine[m.g] = 1; });
+  const out = rightsOf_(st.defs.filter(d => mine[d.id]).map(d => d.rights.join(',')).join(','));
+  return st.admins.some(a => a.k === k && a.h === L.h) ? out.concat(['admin@platform']) : out;
+}
+const effText_ = L => L.join(',') || '-';
+// The seats' holders in a state, counted by effect (the 2026-11-26 studies, §3 and §5): admins, live accounts on the
+// admin list under their code; managers, live accounts holding MGR_. Never the token: it is the way back, not a holder.
+function seatsOf_(st){
+  const n = {admin: 0, manager: 0};
+  Object.keys(st.live).forEach(k => {
+    const e = effOf_(st, k), a = e.indexOf('admin@platform') >= 0;
+    if (a) n.admin++;
+    if (MGR_.every(x => e.indexOf(x) >= 0 || a && x === MGR_[2])) n.manager++;
+  });
+  return n;
+}
+// One step of a rights change applied to a state (a copy: rightsWrite_ simulates the whole change before it writes).
+function stepApply_(st, x){
+  const k = lc_(x.name);
+  if (x.t === 'admin') { st.admins = st.admins.filter(a => a.k !== k); if (x.on) st.admins.push({k: k, h: String(x.h)}); }
+  else if (x.t === 'mem') { st.mem = st.mem.filter(m => !(m.g === x.g && m.k === k)); if (x.on) st.mem.push({g: x.g, k: k, h: String(x.h)}); }
+  else if (x.t === 'sb') { st.standby = st.standby.filter(s => !(s.seat === x.seat && s.k === k)); if (x.on) st.standby.push({k: k, h: String(x.h), seat: x.seat}); }
+  else if (x.t === 'grp') { const d = st.defs.find(d => d.id === x.g); if (d) d.rights = x.to.slice(); else st.defs.push({id: x.g, rights: x.to.slice()}); }
+  return st;
+}
+const stateCopy_ = st => ({live: st.live, admins: st.admins.slice(), standby: st.standby.slice(), defs: st.defs.map(d => ({id: d.id, rights: d.rights.slice()})), mem: st.mem.slice()});
+// What a confirmation is bound to: the rights state, its accounts' code hashes included (any change to a right, a
+// membership, a standby or a holder's code gives another key).
+function stateKey_(st){
+  const ks = Object.create(null);
+  st.admins.concat(st.standby, st.mem).forEach(x => (ks[x.k] = 1));
+  return JSON.stringify([st.admins, st.standby, st.defs, st.mem, Object.keys(ks).sort().map(k => [k, st.live[k] ? st.live[k].h : ''])]);
+}
+// A confirmation bound to the exact state previewed (decision 7, Astra's third risk): a keyed hash of the caller, the
+// request (what), the script's version, the rights state (stateKey_) and its expiry, CONFIRM_MS after the preview.
+// confirmOk_ answers '' for a confirmation that still matches, else a new one for the request to be sent again with:
+// anything changed since (a right, a member, a code, the version), or expired, asks for a new preview. Under the script
+// lock (the caller holds it).
+const CONFIRM_MS = 5 * 60e3;
+const confirmSig_ = (who, what, exp) => exp + '.' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+  anonSalt_() + '|confirm|' + who.id + '|' + what + '|' + VERSION + '|' + exp + '|' + stateKey_(rightsState_()))).replace(/[+/=]/g, '').slice(0, 24);
+function confirmOk_(tok, who, what){
+  const m = /^(\d{13})\.[A-Za-z0-9]{24}$/.exec(String(tok || '')), now = Date.now();
+  if (m && Number(m[1]) >= now && Number(m[1]) <= now + CONFIRM_MS && confirmSig_(who, what, m[1]) === String(tok)) return '';
+  return confirmSig_(who, what, String(now + CONFIRM_MS));
+}
+// The successor a removal names (p.heir: an account's name) to take, in the same write, the seat it would empty
+// (decision 4: a handover, never an empty seat), once p.confirm is the confirmation of this request (what) and of the
+// state previewed (confirmOk_). Returns null (none named), {name, h}, or the answer: {ok: false, error: 'user' |
+// 'archived'} or {ok: false, error: 'confirm', confirm, heir: its audit id} (send it again with that confirm). Under the
+// script lock (the caller holds it).
+function heirOf_(p, who, what){
+  if (p.heir === undefined) return null;
+  const ra = sheet_('RAs', HEAD), n = String(p.heir || '').trim().slice(0, 40), r = n ? find_(ra, n) : 0, row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
+  if (!row) return {ok: false, error: 'user'};
+  if (archived_(row)) return {ok: false, error: 'archived'};
+  const tok = confirmOk_(p.confirm, who, what + ' heir ' + lc_(row[0]));
+  return tok ? {ok: false, error: 'confirm', confirm: tok, heir: auid_(String(row[0]))} : {name: String(row[0]), h: String(row[6])};
+}
+// An answer thrown out of the script lock (rightsWrite_'s stops): doPost answers it as it is (fail_).
+const answerErr_ = (o, what) => { const e = new Error(what); e.answer = o; return e; };
+// The one write of every rights change (docs/decisions/2026-11-21-groups-by-scope.md, revised by
+// docs/decisions/2026-11-26-roles-groups-assignments.md): the only code that writes the admin list and the standbys (the
+// Roles tab), a group's Rights cell (the Group settings tab) and the memberships of the groups that carry rights (the
+// Groups tab) (tests/rightswrite.test.js checks every write). Under the script lock (the caller holds it).
+// - One write (decision 2): the change is simulated first (stepApply_), then written, then its Audit rows in one write
+//   of the tab; when those rows cannot be written, the change is taken back and the request answers an error: no change
+//   stays without its rows. A try stopped between the two (the script killed) leaves a change without its row: the
+//   retry finds it (grantAudited_, joinsAudited_, rightsAudited_) and writes that row 'ok'.
+// - Its rows say who (by: the caller's id, 'script' for the migration), what (Action), when (Time), at which scope
+//   (Scope: the right's, a group's for a membership), about whom (Target id: an account's audit id auid_, or a group's
+//   id) and, in Before and After, the account's rights (effOf_: every right it holds, '-' for none) or the group's.
+//   An account's last such row tells what it could do from then ('grant', 'revoke', 'join', 'leave' and 'rights (via
+//   <group id>)' rows, Result 'ok'; never a stop or a standby row).
+// - The guard (decision 4): a change that would take a seat (seatsOf_: admins, managers) from one holder or more to
+//   none stops, nothing written but its row (Result 'last', Before and After the counts), and answers {ok: false,
+//   error: 'last', seat: 'admin' | 'manager' | 'admin,manager'}. op.heir {name, h} (heirOf_) hands the seat over in the
+//   same write: the heir is put on the admin list, or in a group holding MGR_, first ('(handover)'), then the change is
+//   made; error 'heir' when that would still leave the seat empty. A player's own delete (op.own) is never stopped: a
+//   standby of that seat (the Roles tab, role 'standby') takes it over ('(standby)'); with none left, the seat stays
+//   empty, a row 'seat <seat> empty (self)' (Result 'vacant') and a Deploy log line say so.
+// op, one of:
 // - {admin: true | false, name, h, self, why}: the account on (bound to the code hash h) or off the admin list
 //   ('grant admin', 'revoke admin', at the platform);
+// - {standby: 'platform' | INST_SCOPE_, on, name, h}: the account named standby of the admin's or the manager's seat, or
+//   no longer ('standby admin' or 'standby manager', ' off'); it holds no right until it takes a seat over;
 // - {join: group id, name, h, self, why, at}: a member of a group that carries rights, bound to the code hash h
 //   ('join <group id>'; at: its Added, now by default). A member whose code changed since is bound to h;
 // - {leave: group id, name, self, why}: out of that group ('leave <group id>');
-// - {rights: group id, to: ["right@scope"]}: the group's rights (rightsIn_'s list, one scope): one 'grant' or
-//   'revoke <right> (via <group id>)' row per member and right, the 'rights' row, then 'right+' or 'right-' and the
-//   entry per right (the mark rightsAudited_ reads; a role group's rights from the migration count without one);
-// - {removed: name}: an account removed from normal operation (deleteAccount_, a merge's from, an archive; rule D7):
-//   its memberships of the groups that carry rights ('leave … (account removed)'), its place on the admin list ('revoke
-//   admin (account removed)') and its rows of the Roles tab's record (none: they give nothing) go, never to another
-//   account.
-// why: '(self)' for the caller's own account (self), '(migration)', '(account removed)'. Returns the Result, or for
-// removed the ids of the groups it left.
+// - {rights: group id, to: ["right@scope"]}: the group's rights (rightsIn_'s list, one scope: groupScope_): the row
+//   'rights <group id>' (Before and After its rights: the mark rightsAudited_ reads; a role group's rights from the
+//   migration count without one), then 'rights (via <group id>)' for each member whose rights change;
+// - {removed: name, own}: an account removed from normal operation (deleteAccount_, a merge's from, an archive; rule
+//   D7): its memberships of the groups that carry rights ('leave … (account removed)'), its place on the admin list
+//   ('revoke admin (account removed)'), its standbys and its rows of the Roles tab's record (none: they give nothing)
+//   go, never to another account. own: the player's own delete (selfDelete_).
+// heir: {name, h} (heirOf_), on any change that can empty a seat.
+// why: '(self)' for the caller's own account (self), '(migration)', '(account removed)'. Returns the Result ('ok',
+// 'held' or 'none': nothing to change), or for removed the ids of the groups it left.
 function rightsWrite_(by, op){
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), st0 = rightsState_(), idm = Object.create(null);
+  // An account's ids: its audit id (Target id), and its anonymous id too for the rows written before audit ids.
+  const ids = name => { const k = lc_(name); if (!idm[k]) idm[k] = [auid_(name), aid_(name)].filter(Boolean); return idm[k]; };
   const why = o => (o.self ? ' (self)' : '') + (o.why ? ' (' + o.why + ')' : '');
-  const put = (act, scope, out, target) => { if (!audit_(by, act, scope, out, target) && out === 'ok') throw new Error(act + ': its Audit row was not written'); };
   // A group's scope as its rows say it: its rights' scope, each of them for a cell that mixes them, the instance's for
   // a group that carries none.
   const scopeIn = L => L.map(e => e.split('@')[1]).filter((s, i, a) => a.indexOf(s) === i).join(',') || INST_SCOPE_;
-  const cellOf = gid => { const r = gdefRows_().find(x => String(x[0]) === gid); return r ? String(r[6] == null ? '' : r[6]) : null; };
-  const admin = o => {
-    const k = lc_(o.name), id = aid_(o.name), act = (o.admin ? 'grant' : 'revoke') + ' admin' + why(o);
-    if (o.admin) {
-      const held = grants_().some(g => g.name === k && scopeOk_(g.role, g.scope) && g.h === String(o.h));
-      const out = held && grantAudited_('admin', 'platform', id) ? 'held' : 'ok';
-      if (!held) sheet_(ROLES.TAB, ROLES.HEAD).appendRow([safe_(o.name), 'admin', 'platform', new Date(), safe_(o.h)]);
-      put(act, 'platform', out, id);
+  const rightsOfG = (st, g) => { const d = st.defs.find(d => d.id === g); return d ? d.rights : []; };
+  const steps = [];
+  let removedFrom = null;
+  if (op.admin !== undefined) steps.push({t: 'admin', on: !!op.admin, name: String(op.name), h: op.h, act: (op.admin ? 'grant' : 'revoke') + ' admin' + why(op)});
+  else if (op.standby !== undefined) {
+    const seat = SEATS_[String(op.standby)];
+    if (!Object.prototype.hasOwnProperty.call(SEATS_, String(op.standby))) throw new Error('standby: no such seat');
+    steps.push({t: 'sb', seat: seat, scope: String(op.standby), on: !!op.on, name: String(op.name), h: op.h, act: 'standby ' + seat + (op.on ? '' : ' off') + why(op)});
+  } else if (op.join !== undefined) {
+    const gid = String(op.join);
+    if (!rightsOfG(st0, gid).length) throw new Error('join ' + gid + ': not a group that carries rights');
+    steps.push({t: 'mem', on: true, g: gid, name: String(op.name), h: op.h, at: op.at, mig: op.why === 'migration', act: 'join ' + gid + why(op)});
+  } else if (op.leave !== undefined) steps.push({t: 'mem', on: false, g: String(op.leave), name: String(op.name), act: 'leave ' + String(op.leave) + why(op)});
+  else if (op.rights !== undefined) {
+    const gid = String(op.rights);
+    if (!gdefRows_().some(x => String(x[0]) === gid)) throw new Error('rights ' + gid + ': no such group');
+    if (!Array.isArray(op.to) || op.to.some(e => !rightParse_(e)) || groupScope_(rightsOf_(op.to.join(','))) === null) throw new Error('rights ' + gid + ': not one scope of known rights');
+    steps.push({t: 'grp', g: gid, to: rightsOf_(op.to.join(',')), act: 'rights ' + gid});
+  } else if (op.removed !== undefined) {
+    const name = String(op.removed), k = lc_(name), I = ids(name), o = {name: name, why: 'account removed'}, R = Object.create(null);
+    st0.defs.forEach(d => { if (d.rights.length) R[d.id] = 1; });
+    // Its memberships, and those a try stopped before their row already took away.
+    removedFrom = [];
+    st0.mem.forEach(m => { if (R[m.g] && m.k === k && removedFrom.indexOf(m.g) < 0) removedFrom.push(m.g); });
+    Object.keys(joinsAudited_(I)).forEach(g => { if (removedFrom.indexOf(g) < 0) removedFrom.push(g); });
+    removedFrom.forEach(g => steps.push({t: 'mem', on: false, g: g, name: name, act: 'leave ' + g + why(o)}));
+    if (st0.admins.some(a => a.k === k) || grantAudited_('admin', 'platform', I)) steps.push({t: 'admin', on: false, name: name, act: 'revoke admin' + why(o)});
+    st0.standby.filter(s => s.k === k).forEach(s => steps.push({t: 'sb', seat: s.seat, scope: s.seat === 'admin' ? 'platform' : INST_SCOPE_, on: false, name: name, act: 'standby ' + s.seat + ' off' + why(o)}));
+    steps.push({t: 'record', name: name, act: 'remove' + why(o)});  // the record of its roles before the groups
+  } else throw new Error('rightsWrite_: no such change');
+  const main = steps.slice();
+
+  // The guard: the whole change simulated; a seat it would empty is handed over, or the change stops.
+  const sim = () => steps.reduce(stepApply_, stateCopy_(st0)), s0 = seatsOf_(st0);
+  const lost = s1 => Object.keys(s0).filter(x => s0[x] > 0 && s1[x] === 0);
+  let L = lost(seatsOf_(sim()));
+  const gone = op.removed !== undefined ? lc_(op.removed) : '';
+  if (L.length && (op.heir || op.own)) {
+    const pre = [], tag = op.heir ? 'handover' : 'standby', after = sim();
+    L.forEach(seat => {
+      const to = op.heir ? op.heir : st0.standby.filter(s => s.seat === seat && s.k !== gone && st0.live[s.k] && st0.live[s.k].h === s.h).map(s => ({name: st0.live[s.k].name, h: s.h}))[0];
+      if (!to) return;
+      if (seat === 'admin') pre.push({t: 'admin', on: true, name: to.name, h: to.h, act: 'grant admin (' + tag + ')'});
+      else {
+        const d = after.defs.filter(d => MGR_.every(x => d.rights.indexOf(x) >= 0)).sort((a, b) => (b.id === 'r:owner') - (a.id === 'r:owner'))[0];
+        if (d) pre.push({t: 'mem', on: true, g: d.id, name: to.name, h: to.h, act: 'join ' + d.id + ' (' + tag + ')'});
+      }
+      if (!op.heir) pre.push({t: 'sb', seat: seat, scope: seat === 'admin' ? 'platform' : INST_SCOPE_, on: false, name: to.name, act: 'standby ' + seat + ' off (' + tag + ')'});
+    });
+    steps.unshift.apply(steps, pre);  // the successor first: the seat is never empty
+    L = lost(seatsOf_(sim()));
+  }
+  const first = main[0], tgt = first.g && first.t === 'grp' ? first.g : first.name ? ids(first.name)[0] || '' : '';
+  const counts = (n, xs) => xs.map(x => x + 's ' + (n ? s0[x] : 0)).join(', ');
+  if (L.length && !op.own) {
+    const act = op.removed !== undefined ? 'remove' + why({why: 'account removed'}) : first.act;
+    audit_(by, act, L.indexOf('manager') >= 0 ? INST_SCOPE_ : 'platform',op.heir ? 'heir' : 'last', tgt, counts(1, L), counts(0, L));
+    throw answerErr_({ok: false, error: op.heir ? 'heir' : 'last', seat: L.join(',')}, (op.heir ? 'heir' : 'last') + ' ' + L.join(','));
+  }
+
+  // The writes, each with what takes it back; then the rows, in one write of the Audit tab.
+  const undo = [], rows = [];
+  const tab = n => (n === ROLES.TAB ? sheet_(ROLES.TAB, ROLES.HEAD) : n === GROUPS.TAB ? groupsTab_() : gdefTab_());
+  const W = {[ROLES.TAB]: ROLES.HEAD.length, [GROUPS.TAB]: GROUPS.HEAD.length, [GDEF.TAB]: GDEF.HEAD.length};
+  const plain = v => (typeof v === 'string' ? safe_(v) : v);
+  // The row of tab n that key(row) names, from the bottom (0: none): rows move as others go, so a row is found by its key.
+  const rowOf = (n, key, want) => { const sh = tab(n), v = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, W[n]).getValues() : [];
+    for (let i = v.length - 1; i >= 0; i--) if (key(v[i]) === want) return i + 2; return 0; };
+  const add = (n, vals, key) => { const sh = tab(n); if (n === ROLES.TAB) sh.appendRow(vals); else sh.getRange(sh.getLastRow() + 1, 1, 1, vals.length).setValues([vals]);
+    undo.push(() => { const r = rowOf(n, key, key(vals.map(x => (typeof x === 'string' ? x.replace(/^'/, '') : x)))); if (r) tab(n).deleteRow(r); }); };
+  const drop = (n, r) => { const sh = tab(n), v = sh.getRange(r, 1, 1, W[n]).getValues()[0]; sh.deleteRow(r);
+    undo.push(() => { const s = tab(n); s.getRange(s.getLastRow() + 1, 1, 1, v.length).setValues([v.map(plain)]); }); };
+  const set = (n, key, want, c, val) => { const r = rowOf(n, key, want), sh = tab(n), old = sh.getRange(r, c).getValue(); sh.getRange(r, c).setValue(val);
+    undo.push(() => { const r2 = rowOf(n, key, want); if (r2) tab(n).getRange(r2, c).setValue(plain(old)); }); };
+  const rkey = v => lc_(v[0]) + '|' + String(v[1]) + '|' + String(v[2]) + '|' + hcell_(v[4]), gkey = v => String(v[0]) + '|' + lc_(v[1]);
+  const row = (act, scope, out, target, b, a) => rows.push(auditRow_(by, act, scope, out, target, b, a));
+  let cur = stateCopy_(st0), result = '';
+  const exec = x => {
+    const k = lc_(x.name), I = x.name ? ids(x.name) : [], b = effOf_(cur, k);
+    let out = 'ok';
+    if (x.t === 'record') {
+      const sh = ss.getSheetByName(ROLES.TAB), v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, ROLES.HEAD.length).getValues() : [];
+      for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) drop(ROLES.TAB, i + 2);
+      return '';
+    }
+    if (x.t === 'admin' || x.t === 'sb') {
+      const role = x.t === 'admin' ? 'admin' : 'standby', scope = x.t === 'admin' ? 'platform' : x.scope;
+      const sh = ss.getSheetByName(ROLES.TAB), v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, ROLES.HEAD.length).getValues() : [];
+      const mine = v.map((r, i) => [r, i + 2]).filter(([r]) => lc_(r[0]) === k && String(r[1]) === role && String(r[2]) === scope);
+      if (x.on) {
+        const held = mine.some(([r]) => hcell_(r[4]) === String(x.h));
+        out = held && (x.t === 'sb' || grantAudited_('admin', 'platform', I)) ? 'held' : 'ok';
+        if (!held) add(ROLES.TAB, [safe_(x.name), role, scope, new Date(), safe_(x.h)], rkey);
+      } else {
+        mine.reverse().forEach(([, r]) => drop(ROLES.TAB, r));
+        out = mine.length || x.t === 'admin' && grantAudited_('admin', 'platform', I) ? 'ok' : 'none';
+      }
+      stepApply_(cur, x);
+      // A standby holds no right: its row says whether it is named, before and after.
+      if (x.t === 'sb') row(x.act, scope, out, I[0] || '', mine.length ? 'on' : 'off', x.on ? 'on' : 'off');
+      else row(x.act, scope, out, I[0] || '', effText_(b), effText_(effOf_(cur, k)));
       return out;
     }
-    const sh = ss.getSheetByName(ROLES.TAB), v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues() : [];
-    let n = 0;
-    for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k && scopeOk_(String(v[i][1]), String(v[i][2]))) { sh.deleteRow(i + 2); n++; }
-    const out = n || grantAudited_('admin', 'platform', id) ? 'ok' : 'none';
-    put(act, 'platform', out, id);
-    return out;
-  };
-  const leave = o => {
-    const gid = String(o.leave), k = lc_(o.name), id = aid_(o.name), sh = ss.getSheetByName(GROUPS.TAB), rows = groupRows_();
-    let n = 0;
-    for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]) === gid && lc_(rows[i][1]) === k) { sh.deleteRow(i + 2); n++; }
-    const out = n || joinAudited_(gid, id) ? 'ok' : 'none';
-    put('leave ' + gid + why(o), scopeIn(rightsOf_(cellOf(gid))), out, id);
-    return out;
-  };
-  if (op.admin !== undefined) return admin(op);
-  if (op.leave !== undefined) return leave(op);
-  if (op.join !== undefined) {
-    const gid = String(op.join), cell = cellOf(gid), L = rightsOf_(cell);
-    if (!L.length) throw new Error('join ' + gid + ': not a group that carries rights');
-    const sh = groupsTab_(), rows = groupRows_(), k = lc_(op.name), id = aid_(op.name);
-    const at = rows.findIndex(r => String(r[0]) === gid && lc_(r[1]) === k), held = at >= 0 && hcell_(rows[at][3]) === String(op.h);
-    const out = held && joinAudited_(gid, id) ? 'held' : 'ok';
-    if (out === 'held' && op.why === 'migration') return out;  // a second try of the migration writes nothing more
-    if (at >= 0 && !held) sh.getRange(at + 2, 4).setValue(safe_(op.h));
-    else if (at < 0) sh.getRange(sh.getLastRow() + 1, 1, 1, GROUPS.HEAD.length).setValues([[gid, safe_(op.name), new Date(op.at || Date.now()), safe_(op.h)]]);
-    put('join ' + gid + why(op), scopeIn(L), out, id);
-    return out;
-  }
-  if (op.rights !== undefined) {
-    const gid = String(op.rights), sh = gdefTab_(), G = gdefRows_(), at = G.findIndex(x => String(x[0]) === gid);
-    if (at < 0) throw new Error('rights ' + gid + ': no such group');
-    if (!Array.isArray(op.to) || op.to.some(e => !rightParse_(e)) || groupScope_(op.to) === null) throw new Error('rights ' + gid + ': not one scope of known rights');
-    const to = rightsOf_(op.to.join(','));
-    const cell = String(G[at][6] == null ? '' : G[at][6]), bad = rightsBad_(cell);
-    if (cell !== to.join(', ')) sh.getRange(at + 2, 7).setValue(to.join(', '));
-    if (bad.length) roleLog_('rights ' + gid + ': entries that gave nothing dropped from its Rights cell: ' + bad.join(', ').slice(0, 200));
-    const base = rightsAudited_(gid), plus = to.filter(e => base.indexOf(e) < 0), minus = base.filter(e => to.indexOf(e) < 0);
-    if (!plus.length && !minus.length) return 'held';
-    const members = groupRows_().filter(r => String(r[0]) === gid && lc_(r[1])).map(r => aid_(String(r[1])));
-    put('rights ' + (base.join(',') || '-') + ' > ' + (to.join(',') || '-'), scopeIn(to.length ? to : base), 'ok', gid);
-    [[plus, '+', 'grant'], [minus, '-', 'revoke']].forEach(([L, s, act]) => L.forEach(e => {
-      const p = e.split('@');
-      members.forEach(m => put(act + ' ' + p[0] + ' (via ' + gid + ')', p[1], 'ok', m));
-      put('right' + s + ' ' + e, p[1], 'ok', gid);
-    }));
+    if (x.t === 'mem') {
+      const scope = scopeIn(rightsOfG(cur, x.g)), G = groupRows_(), at = G.findIndex(r => String(r[0]) === x.g && lc_(r[1]) === k);
+      if (x.on) {
+        const held = at >= 0 && hcell_(G[at][3]) === String(x.h);
+        out = held && joinAudited_(x.g, I) ? 'held' : 'ok';
+        if (out === 'held' && x.mig) return out;  // a second try of the migration writes nothing more
+        if (at >= 0 && !held) set(GROUPS.TAB, gkey, x.g + '|' + k, 4, safe_(x.h));
+        else if (at < 0) add(GROUPS.TAB, [x.g, safe_(x.name), new Date(x.at || Date.now()), safe_(x.h)], gkey);
+      } else {
+        let n = 0;
+        for (let i = G.length - 1; i >= 0; i--) if (String(G[i][0]) === x.g && lc_(G[i][1]) === k) { drop(GROUPS.TAB, i + 2); n++; }
+        out = n || joinAudited_(x.g, I) ? 'ok' : 'none';
+      }
+      stepApply_(cur, x);
+      row(x.act, scope, out, I[0] || '', effText_(b), effText_(effOf_(cur, k)));
+      return out;
+    }
+    // A group's rights: its cell, then its row and its members' (a member's rights that do not change: no row).
+    const G = gdefRows_(), gi = G.findIndex(r => String(r[0]) === x.g), cell = String(G[gi][6] == null ? '' : G[gi][6]), bad = rightsBad_(cell);
+    if (cell !== x.to.join(', ')) set(GDEF.TAB, v => String(v[0]), x.g, 7, x.to.join(', '));
+    if (bad.length) roleLog_('rights ' + x.g + ': entries that gave nothing dropped from its Rights cell: ' + bad.join(', ').slice(0, 200));
+    // Before: the group's rights as its rows give them (a change saved without its rows by a try stopped half way is
+    // written now, its members' rows with it).
+    const base = rightsAudited_(x.g), was = stepApply_(stateCopy_(cur), {t: 'grp', g: x.g, to: base});
+    cur = stepApply_(stateCopy_(cur), x);
+    if (base.join(',') === x.to.join(',')) return 'held';
+    row(x.act, scopeIn(x.to.length ? x.to : base), 'ok', x.g, effText_(base), effText_(x.to));
+    const members = Object.keys(was.mem.filter(m => m.g === x.g).reduce((o, m) => ((o[m.k] = 1), o), Object.create(null)));
+    members.forEach(m => {
+      const b2 = effOf_(was, m), a2 = effOf_(cur, m);
+      if (b2.join(',') !== a2.join(',')) row('rights (via ' + x.g + ')', scopeIn(x.to.length ? x.to : base), 'ok', ids(was.live[m] ? was.live[m].name : m)[0] || '', effText_(b2), effText_(a2));
+    });
     return 'ok';
+  };
+  let stage = 'change';
+  try {
+    steps.forEach(x => { const out = exec(x); if (x === main[0]) result = out; });
+    if (L.length) {  // a player's own delete with no standby left: the seat stays empty, said
+      L.forEach(x => row('seat ' + x + ' empty (self)', x === 'admin' ? 'platform' : INST_SCOPE_, 'vacant', tgt, counts(1, [x]), counts(0, [x])));
+      roleLog_('the ' + L.join(' and ') + ' seat left empty by a player\'s own delete, with no standby: only the admin token can fill it');
+    }
+    stage = 'rows';
+    if (rows.length) { const sh = auditTab_(); sh.getRange(sh.getLastRow() + 1, 1, rows.length, AUDIT.HEAD.length).setValues(rows); }
+  } catch (e) {
+    const what = stage === 'rows' ? 'its Audit rows were not written' : 'it could not be written';
+    roleLog_('rights change taken back, ' + (stage === 'rows' ? 'its Audit rows not written' : 'not written') + ' (' + main[0].act + '): ' + errText_(e));
+    undo.reverse().forEach(f => { try { f(); } catch (x) { roleLog_('rights change not taken back (' + main[0].act + '): ' + errText_(x)); } });
+    throw new Error(main[0].act + ': ' + what + '; nothing changed');
   }
-  if (op.removed !== undefined) {
-    const name = String(op.removed), k = lc_(name), id = aid_(name), R = Object.create(null), out = [];
-    gdefRows_().forEach(r => { if (rightsOf_(r[6]).length) R[String(r[0])] = 1; });
-    // Its memberships, and those a try that failed before their row already took away.
-    groupRows_().forEach(r => { const g = String(r[0]); if (R[g] && lc_(r[1]) === k && out.indexOf(g) < 0) out.push(g); });
-    Object.keys(joinsAudited_(id)).forEach(g => { if (out.indexOf(g) < 0) out.push(g); });
-    out.forEach(g => leave({leave: g, name: name, why: 'account removed'}));
-    if (grants_().some(g => g.name === k && scopeOk_(g.role, g.scope)) || grantAudited_('admin', 'platform', id)) admin({admin: false, name: name, why: 'account removed'});
-    const sh = ss.getSheetByName(ROLES.TAB), v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues() : [];
-    for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) sh.deleteRow(i + 2);  // the record of its roles before the groups
-    return out;
-  }
-  throw new Error('rightsWrite_: no such change');
+  return removedFrom || result;
 }
 // Is this account row the caller's own? An account caller's own account, or, with the token, the admin's (ADMIN_ACCT).
 const selfOf_ = (who, row) => !!row && (who.token ? row[6] === adminAcct_() : lc_(who.name) === lc_(row[0]) && who.h === row[6]);
@@ -2047,33 +2280,43 @@ function rolesSeed_(name, h, who){
     return true;
   } finally { lock.releaseLock(); }
 }
-// The admin list. POST {roles: 1, token} → {ok, grants: [{name, id, role, scope, since}]}: every admin account (the
-// token sees names already). POST {roleGrant: {account, role: 'admin', scope: 'platform'}, token} → {ok, result: 'ok' |
-// 'held'}; {roleRevoke: {…}, token} → {ok, result: 'ok' | 'none'}. Errors: token, input (any other role or scope: an
-// instance's rights are its groups'), user (no such account), archived. Each grant and revoke goes through rightsWrite_,
-// a self-grant marked "(self)": the account's own, or, with the token, the admin's account's (ADMIN_ACCT). No page sends
-// them yet.
+// The admin list and the standbys. POST {roles: 1, token} → {ok, grants: [{name, id, au, role, scope, since}]}: every
+// admin account and every standby (the token sees names already; au: its audit id, the id the Audit tab names it by).
+// POST {roleGrant: {account, role, scope}, token} → {ok, result: 'ok' | 'held'}; {roleRevoke: {…}, token} → {ok,
+// result: 'ok' | 'none'}. role 'admin' at 'platform': the admin list; role 'standby' at 'platform' or the instance: the
+// account named to take the admin's or the manager's seat over when a player's own delete would empty it (decision 4;
+// it holds no right until then). A revoke that would empty a seat answers 'last' (rightsWrite_); sent again with heir
+// (the successor's name) it answers 'confirm' and its confirmation, then, with it, hands the seat over in the same write
+// (heirOf_). Errors: token (the grant right at that scope), input (any other role or scope: an instance's rights are its
+// groups'), user (no such account), archived, last, heir, confirm. Each goes through rightsWrite_, a self-grant marked
+// "(self)": the account's own, or, with the token, the admin's account's (ADMIN_ACCT). No page sends them yet (the
+// Roles page will).
+const roleOk_ = (role, scope) => scopeOk_(role, scope) || role === 'standby' && Object.prototype.hasOwnProperty.call(SEATS_, scope);
 function roles_(p){
   const g = p.roleGrant || p.roleRevoke, act = p.roleGrant ? 'grant' : 'revoke';
   if (!g) {
     if (!gate_(p.token, 'grant', 'roles')) return {ok: false, error: 'token'};
     const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), salt = anonSalt_();
-    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().filter(r => r[0] && scopeOk_(String(r[1]), String(r[2]))) : [];
-    return {ok: true, grants: rows.map(r => ({name: String(r[0]), id: aid_(String(r[0]), salt), role: String(r[1]), scope: String(r[2]), since: new Date(r[3]).getTime() || 0}))};
+    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().filter(r => r[0] && roleOk_(String(r[1]), String(r[2]))) : [];
+    return {ok: true, grants: rows.map(r => ({name: String(r[0]), id: aid_(String(r[0]), salt), au: auid_(String(r[0])), role: String(r[1]), scope: String(r[2]), since: new Date(r[3]).getTime() || 0}))};
   }
   if (typeof g !== 'object') return {ok: false, error: 'input'};
   const role = String(g.role || ''), scope = String(g.scope || ''), name = String(g.account || '').trim().slice(0, 40);
-  if (!scopeOk_(role, scope) || !name) return {ok: false, error: 'input'};
+  if (!roleOk_(role, scope) || !name) return {ok: false, error: 'input'};
   const who = gate_(p.token, 'grant', act + ' ' + role, scope);
   if (!who) return {ok: false, error: 'token'};
   const lock = lock_();
   try {
     const ra = sheet_('RAs', HEAD), r = find_(ra, name), row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null,
       self = selfOf_(who, row);
-    const fail = e => (audit_(who.id, act + ' ' + role + (self ? ' (self)' : ''), scope, e, aid_(name)), {ok: false, error: e});
+    const fail = e => (audit_(who.id, act + ' ' + role + (self ? ' (self)' : ''), scope, e, auid_(name)), {ok: false, error: e});
     if (!row) return fail('user');
     if (archived_(row)) return fail('archived');
-    return {ok: true, result: rightsWrite_(who.id, {admin: !!p.roleGrant, name: String(row[0]), h: row[6], self: self})};
+    const o = {name: String(row[0]), h: row[6], self: self};
+    if (role === 'standby') return {ok: true, result: rightsWrite_(who.id, Object.assign(o, {standby: scope, on: !!p.roleGrant}))};
+    const heir = p.roleRevoke ? heirOf_(p, who, 'revoke admin ' + lc_(row[0])) : null;
+    if (heir && heir.error) return heir;
+    return {ok: true, result: rightsWrite_(who.id, Object.assign(o, {admin: !!p.roleGrant, heir: heir}))};
   } finally { lock.releaseLock(); }
 }
 
@@ -2142,7 +2385,7 @@ function lvTrainer_(p){
   const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0], h = hash_(name, pin);
   if (row[6] !== h) { failed_(name); return {error: 'pin'}; }
   if (archived_(row)) return {error: 'archived'};
-  const who = {name: String(row[0]), h: h, id: aid_(String(row[0]))}, sc = scopeOf_('subject:' + String(p.s || '')) || INST_SCOPE_;
+  const who = {name: String(row[0]), h: h, id: auid_(String(row[0]))}, sc = scopeOf_('subject:' + String(p.s || '')) || INST_SCOPE_;
   if (!can_(who, 'live', sc)) {
     if (!over_('auditdeny', AUDIT.DENY)) audit_(who.id, 'live start', sc, 'denied', '');
     return {error: 'role'};
@@ -2158,8 +2401,10 @@ function lvStart_(p){
   let code = '';
   for (let i = 0; i < 20 && !code; i++) { const c = String(100000 + Math.floor(Math.random() * 900000)); if (!lvGet_(lvKey_(c))) code = c; }
   if (!code) return {ok: false, error: 'busy'};
+  // host: the trainer's account and code hash, so each later host action checks the right again (lvHost_); the cache
+  // is the script's own, never sent.
   const S = {code: code, tk: lvRand_(18), at: Date.now(), s: sid, t: lvText_(p.t, 80),
-    n: n, lim: lim, ph: 'lobby', qi: -1, q: null, op: 0, ends: 0, rev: null, hist: []};
+    n: n, lim: lim, ph: 'lobby', qi: -1, q: null, op: 0, ends: 0, rev: null, hist: [], host: {name: who.name, h: who.h, id: who.id}};
   lvPut_(lvKey_(code), S);
   lvPut_(lvKey_(code, 'r'), []);
   audit_(who.id, 'live start', 'subject:' + sid, 'ok', '');
@@ -2198,8 +2443,17 @@ function lvHost_(p){
   const code = lvCode_(p.code), S = lvSession_(code);
   if (!S) return {ok: false, error: 'gone'};
   if (String(p.tk || '') !== S.tk) return {ok: false, error: 'input'};
-  const now = Date.now();
-  if (String(p.act || '') === 'rev') {
+  const now = Date.now(), act = String(p.act || '');
+  // Each host action that moves the game (a question, a reveal) checks the trainer's right again (decision 7 of
+  // docs/decisions/2026-11-26-roles-groups-assignments.md, Astra's second risk): live at the game's subject, the account
+  // live under the code it started with. A right taken since ends the game for everyone (its students see it ended) and
+  // answers 'role'. Ending it and reading the view stay open. A game started before host was kept goes on until it ends.
+  if ((act === 'q' || act === 'rev') && S.host && !can_({name: S.host.name, h: S.host.h, id: S.host.id}, 'live', 'subject:' + S.s)) {
+    if (!over_('auditdeny', AUDIT.DENY)) audit_(S.host.id || '', 'live ' + act, 'subject:' + S.s, 'denied', '');
+    if (S.ph !== 'end') { S.ph = 'end'; lvPut_(lvKey_(code), S); }
+    return {ok: false, error: 'role'};
+  }
+  if (act === 'rev') {
     // The reveal freezes the answers (lvAct_): the students' records read and the session written under the script lock,
     // as an answer is (lvAnswer_), so every answer accepted is in it and none comes after it.
     const lock = lock_(LV.LOCK);
@@ -3260,14 +3514,17 @@ function groupSet_(ra, names, g, on){
 // rights}} makes a group (its name unique, case aside); {groupEdit: id, n, board, beta, rights} renames it or changes a
 // setting or its rights (a field left out stays; apart is ignored); {groupDrop: id} deletes it, only when nobody is in
 // it. beta: '' or a subject that opens to a group (or the value it holds); rights: the whole list, ["right@scope"]
-// (rightParse_: RIGHTS at the instance, RIGHTS_SUBJ at one of its subjects), all at one scope. A name or a setting asks
-// the players right; the rights, and the delete of a group that carries rights, the grant right at each scope they
-// change (who: the caller, checked here under the lock). The rights are written by rightsWrite_ with their Audit rows; a
-// row that cannot be written answers an error, the change saved, and its retry writes the missing rows. Answers {ok,
-// group: its settings} ({ok, group: id} for a delete); errors 'token' (a right the caller lacks), 'input' (an entry
-// rightParse_ refuses), 'scope' (rights at more than one scope), 'name' (empty, over 40 characters, a control
-// character), 'exists' (another group's name), 'beta', 'group' (no such group), 'members' (a delete while it has
-// members, or a first right given to a group that has members: make a new group, then add them one by one).
+// (rightParse_: RIGHTS at the instance, RIGHTS_SUBJ at one of its subjects), all at one scope: the instance, or a list
+// of subjects, each right at each of them (groupScope_). A name or a setting asks the players right; the rights, and the
+// delete of a group that carries rights, the grant right at each scope they change (who: the caller, checked here under
+// the lock). The rights are written by rightsWrite_ with their Audit rows in one write: rows that cannot be written
+// answer an error, nothing saved. Giving the grant right is an edit of its own, confirmed (confirm). Answers {ok, group:
+// its settings} ({ok, group: id} for a delete); errors 'token' (a right the caller lacks), 'input' (an entry
+// rightParse_ refuses), 'scope' (rights at more than one scope), 'separate' (the grant right given with anything else,
+// or to a group being made), 'confirm' (its confirmation, and members: how many would hold it), 'last' and 'heir'
+// (rightsWrite_'s guard), 'name' (empty, over 40 characters, a control character), 'exists' (another group's name),
+// 'beta', 'group' (no such group), 'members' (a delete while it has members, or a first right given to a group that has
+// members: make a new group, then add them one by one).
 function groupDo_(p, who){
   const gs = groupState_(), sh = gdefTab_(), id = String(p.groupMake ? '' : p.groupEdit || p.groupDrop || '');
   const at = id ? gs.defs.map(d => d.id).indexOf(id) : -1, cur = at >= 0 ? gs.defs[at] : null, o = p.groupMake && typeof p.groupMake === 'object' ? p.groupMake : p;
@@ -3297,6 +3554,19 @@ function groupDo_(p, who){
   const set = !cur || ['n', 'board', 'beta'].some(k => o[k] !== undefined);
   if (set && !can_(who, 'players', INST_SCOPE_) || (plus.length || minus.length) && !(can_(who, 'grant', INST_SCOPE_) && grantOk(plus.concat(minus)))) return {ok: false, error: 'token'};
   if (!was.length && rights.length && members.length) return {ok: false, error: 'members'};
+  // The grant right is given to a group only through a confirmed request of its own (decision 3 of
+  // docs/decisions/2026-11-26-roles-groups-assignments.md): to an existing group by an edit that changes nothing else
+  // (its members hold it at once); to a new group, which has no member yet, with its making. The confirmation is bound
+  // to this change and the state previewed (confirmOk_: answered 'confirm' with it and the number of members who would
+  // hold it, to be sent again with it).
+  if (plus.some(e => e.split('@')[0] === 'grant')) {
+    if (cur && (plus.length !== 1 || minus.length || ['n', 'board', 'beta'].some(k => o[k] !== undefined))) return {ok: false, error: 'separate'};
+    const tok = confirmOk_(p.confirm, who, 'grant ' + (cur ? cur.id : 'new ' + lc_(o.n)) + ' ' + rights.join(','));
+    if (tok) return {ok: false, error: 'confirm', confirm: tok, members: members.length};
+  }
+  // A change of rights that would empty a seat hands it over to heir (heirOf_), or stops (rightsWrite_: 'last').
+  const heir = cur && o.rights !== undefined ? heirOf_(p, who, 'rights ' + cur.id + ' ' + rights.join(',')) : null;
+  if (heir && heir.error) return heir;
   const n = o.n === undefined && cur ? cur.n : gname_(o.n);
   if (!n) return {ok: false, error: 'name'};
   if (o.n !== undefined && gs.defs.some(d => d !== cur && lc_(d.n) === lc_(n))) return {ok: false, error: 'exists'};  // a setting changed alone never asks
@@ -3304,10 +3574,12 @@ function groupDo_(p, who){
   if (beta && groupIds_().indexOf(beta) < 0 && !(cur && cur.beta === beta)) return {ok: false, error: 'beta'};
   const flag = (k, d) => (o[k] === undefined ? d : o[k] ? 1 : 0);
   const d = {id: cur ? cur.id : 'g:' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), n: n, board: flag('board', cur ? cur.board : 0), beta: beta, at: cur ? cur.at : Date.now(), rights: rights};
+  // The rights, written and audited by rightsWrite_ in one write: an existing group's first, so a change the guard
+  // stops changes no setting either; a new group's once its row exists.
+  if (cur && o.rights !== undefined) rightsWrite_(who.id, {rights: d.id, to: rights, heir: heir});
   gdefPut_(sh, cur ? row() : sh.getLastRow() + 1, d);
   boardsDrop_();
-  // The rights, written and audited by rightsWrite_ (a member's row written before a failure may be written twice).
-  if (o.rights !== undefined) rightsWrite_(who.id, {rights: d.id, to: rights});
+  if (!cur && o.rights !== undefined) rightsWrite_(who.id, {rights: d.id, to: rights});
   return {ok: true, group: d};
 }
 // groups-migration: begin
@@ -3422,11 +3694,12 @@ function rightsNow_(){
 }
 // rights-migration: end
 // The rights and groups of a removed account (deleteAccount_, a merge's from, an archive; rule D7): its rights first
-// (rightsWrite_ removed: each audited, dropped, never moved; a row that cannot be written stops the removal before
-// anything else of the account goes, and its retry finishes it), then its other memberships (a group without rights
-// holds no player data). Under the script lock, after rightsNow_ (the caller holds and runs them).
-function rightsGone_(name, by){
-  rightsWrite_(by, {removed: name});
+// (rightsWrite_ removed: each audited, dropped, never moved; rows that cannot be written, or a seat it would empty,
+// stop the removal before anything of the account goes), then its other memberships (a group without rights holds no
+// player data). o: {own: the player's own delete (never stopped: a standby takes a seat over), heir: the successor of a
+// seat it would empty (heirOf_)}. Under the script lock, after rightsNow_ (the caller holds and runs them).
+function rightsGone_(name, by, o){
+  rightsWrite_(by, Object.assign({removed: name}, o || {}));
   groupsLeave_(name);
 }
 // Out of every group without rights (the caller ran rightsWrite_ removed first).
@@ -3472,12 +3745,12 @@ function sxMove_(from, into){ const had = sxPut_(aid_(from), false); if (had && 
 // only) and the reports too, with Verified 0: their content stays (a bad photo stays a bad photo),
 // open ones stay in the admin's Inbox as from a removed account, and nobody is ever thanked for them. Under the script
 // lock (the caller holds it). Returns {ok, answers, reports}: how many rows were deleted or relabelled.
-// by: the id of who deletes (the admin's caller id, or the player's own anonymous id for a
-// self-delete), written in the Audit tab beside each right the account loses (rightsGone_).
-function deleteAccount_(name, all, by){
+// by: the id of who deletes (the admin's caller id, or the player's own audit id for a self-delete), written in the
+// Audit tab beside each right the account loses (rightsGone_, with o: {own, heir}).
+function deleteAccount_(name, all, by, o){
   groupsNow_();  // groups-migration
   rightsNow_();  // rights-migration: the account's roles are its groups' before anything of it goes
-  rightsGone_(name, by || '');  // its rights first (rule D7), each audited, and every group; the Audit tab keeps its rows, by anonymous id only
+  rightsGone_(name, by || '', o);  // its rights first (rule D7), each audited, and every group; the Audit tab keeps its rows, by id only
   const del = '~deleted ' + aid_(name);
   { const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0; if (r) adminDrop_(ra.getRange(r, 7).getValue()); }  // the admin's mark goes with it
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
@@ -3521,7 +3794,8 @@ function selfDelete_(p){
     // archive; this device's account is not this one, so nothing is deleted.
     if (typeof p.dacct === 'string' && p.dacct) { let d = {}; try { d = JSON.parse(readData_(String(row[0]), String(row[7] || '')).json || '{}') || {}; } catch (e) {}
       if (d._acct && d._acct !== p.dacct) return {ok: false, error: 'archived'}; }
-    const n = String(row[0]), out = deleteAccount_(n, true, aid_(n));
+    // Never stopped by the seats (decision 4: a player deleting their own account is never trapped; a standby takes over).
+    const n = String(row[0]), out = deleteAccount_(n, true, auid_(n), {own: true});
     sheet_('Removed', REMOVED).appendRow([safe_(n), h, '', new Date()]);
     return {ok: true, deleted: true, answers: out.answers, reports: out.reports};
   } finally { lock.releaseLock(); }
@@ -3579,7 +3853,7 @@ function users_(p){
   const who = gate_(p.token, rights ? 'grant' : 'players', act);
   if (!who) return {ok: false, error: 'token'};
   if (act === 'users' || act === 'userData' || act === 'mergePlan') return usersDo_(p, who);
-  const id = x => aid_(String(x || '')), m = p.userMerge || {};
+  const id = x => auid_(String(x || '')), m = p.userMerge || {};  // an account by its audit id, read before the change
   const target = act === 'userBoard' ? id(p.userBoard) : act === 'userStart' ? id(p.userStart) : act === 'userDelete' ? id(p.userDelete)
     : act === 'userGroup' ? (Array.isArray(p.userGroup) ? '' : id(p.userGroup)) : act === 'groupEdit' || act === 'groupDrop' ? String(p[act]).slice(0, 60) : act === 'statsExclude' ? (SX_ID.test(String(p.statsExclude)) ? String(p.statsExclude) : '')
     : act === 'userArchive' ? id((p.userArchive || {}).from) : act === 'userMerge' ? id(m.from) + ' > ' + id(m.into) : '';
@@ -3626,8 +3900,11 @@ function usersDo_(p, who){
         const u = row_(names[0]); if (!u) return {ok: false, error: 'user'};
         if (archived_(u.v)) return {ok: false, error: 'archived'};
         const name = String(u.v[0]), self = selfOf_(who, u.v);
-        if (!can_(who, 'grant', groupScope_(d.rights) || INST_SCOPE_)) return {ok: false, error: 'token'};
-        const n = (p.on ? rightsWrite_(who.id, {join: g, name: name, h: u.v[6], self: self}) : rightsWrite_(who.id, {leave: g, name: name, self: self})) === 'ok' ? 1 : 0;
+        if (!grantAt_(who, d.rights)) return {ok: false, error: 'token'};
+        // A leave that would empty a seat hands it over to heir (heirOf_), or stops (rightsWrite_: 'last').
+        const heir = p.on ? null : heirOf_(p, who, 'leave ' + g + ' ' + lc_(name));
+        if (heir && heir.error) return heir;
+        const n = (p.on ? rightsWrite_(who.id, {join: g, name: name, h: u.v[6], self: self}) : rightsWrite_(who.id, {leave: g, name: name, self: self, heir: heir})) === 'ok' ? 1 : 0;
         boardsDrop_();
         return {ok: true, group: g, n: n, members: groupState_().rows.filter(r => r[0] === g).length};
       }
@@ -3741,8 +4018,9 @@ function usersDo_(p, who){
         if (archived_(a.v)) return {ok: false, error: 'archived'};
         if (row_(into)) return {ok: false, error: 'exists'};
         if (nameIssue_(ra, into)) return {ok: false, error: 'exists', why: 'lookalike'};
-        const from = String(a.v[0]);
-        rightsGone_(from, who.id);  // an archive holds no right and is in no group (rule D7): the name is free again at once, so a right kept by name would pass to whoever takes it
+        const from = String(a.v[0]), heir = heirOf_(p, who, 'archive ' + lc_(from));
+        if (heir && heir.error) return heir;
+        rightsGone_(from, who.id, {heir: heir});  // an archive holds no right and is in no group (rule D7): the name is free again at once, so a right kept by name would pass to whoever takes it
         adminDrop_(a.v[6]);  // an archive is no longer the admin's account
         ra.getRange(a.r, 1).setValue(safe_(into));
         ra.getRange(a.r, 10).setValue(ARCHIVED);
@@ -3761,8 +4039,9 @@ function usersDo_(p, who){
       }
       if (p.userDelete) {
         const u = row_(String(p.userDelete)); if (!u) return {ok: false, error: 'user'};
-        const name = String(u.v[0]);
-        const out = deleteAccount_(name, !!p.answers, who.id);
+        const name = String(u.v[0]), heir = heirOf_(p, who, 'delete ' + lc_(name));
+        if (heir && heir.error) return heir;
+        const out = deleteAccount_(name, !!p.answers, who.id, {heir: heir});
         removed_(name, u.v[6], '');
         return out;
       }
@@ -3774,8 +4053,9 @@ function usersDo_(p, who){
       // Its rights go first, never to into (rule D7; a right is given, not merged): its groups with rights, and the
       // admin list; a row that cannot be written stops the merge before anything else changes. The merged name's groups
       // without rights join the kept name's (each once); the kept name keeps its own too.
-      const plan = mergePlan_(from, into);
-      rightsWrite_(who.id, {removed: from});
+      const plan = mergePlan_(from, into), heir = heirOf_(p, who, 'merge ' + lc_(from));
+      if (heir && heir.error) return heir;
+      rightsWrite_(who.id, {removed: from, heir: heir});
       plan.join.forEach(g => groupSet_(ra, [into], g, true));
       groupsLeave_(from);  // only once the kept name joined them, so a retry after a failure finds them
       adminDrop_(a.v[6]);  // the merged-away account is no longer the admin's (the kept one becomes it at the admin's next read)
