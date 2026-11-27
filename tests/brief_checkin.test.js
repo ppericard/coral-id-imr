@@ -75,6 +75,8 @@ test('--checkin: the time line, the Next view link with an unknown count, PRs, q
   assert.strictEqual(lines[4], 'Agent launches today: none logged · running agents: your task list (not visible here)');
   assert.strictEqual(lines.length, 5, head);
   assert.strictEqual('# Check-in\n\n' + text.trim(), read('tools/checkin.md').trim(), 'the reviewed text, verbatim');
+  // REE-318: the rendered body no longer sends agents to the closed REE-230 trial.
+  assert.doesNotMatch(text, /\bREE-230\b/);
   assert.match(run(s, '--at', '09:00').split('\n')[0], / · day: working day \(Rule 0\)/);
 });
 
@@ -119,7 +121,12 @@ test('the check-in text names its source of work and the one-line prompt; INTEGR
   assert.match(t, /Sweep, about every 90 minutes/);
   assert.match(t, /INTEGRATOR "Linear"\]\(\.\.\/docs\/INTEGRATOR\.md#linear\)/);
   assert.match(t, /nightq\.sh/);
-  assert.match(t, /REE-230/);
+  // REE-318: the closed REE-230 trial is no longer a destination; a new recovery failure goes to its open owning issue.
+  assert.doesNotMatch(t, /\bREE-230\b/);
+  assert.match(
+    t,
+    /6\. \*\*Recovery incidents\.\*\* If recovery exposed a new failure, record the evidence on its current open owning issue\./
+  );
   assert.match(t, /send_later/);
   const habits = read('docs/INTEGRATOR.md').split('\n## Habits\n')[1].split('\n## ')[0];
   assert.ok(habits.includes('"Check-in: run `python3 tools/brief.py --checkin` and follow it"'), 'Habits names the one-line prompt');
