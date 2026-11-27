@@ -1,4 +1,4 @@
-// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 236 (2026-11-25). History: tools/sync/HISTORY.md in the repository.
+// IMR Reef ID: progress sync for the RAs, stored in this Google Sheet. VERSION 238 (2026-11-27). History: tools/sync/HISTORY.md in the repository.
 // Setup: Extensions > Apps Script, paste this file, Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. Put the /exec URL in SYNC_URL in app.js.
 // Each RA picks a name and a 4-digit code in the app; the code only stops accidental overwrites.
@@ -66,7 +66,7 @@ function sheet_(name, head){
 function hash_(name, pin){
   return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SALT + '|' + name.toLowerCase() + '|' + pin));
 }
-const VERSION = 236;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
+const VERSION = 238;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
   if (sh.getLastRow() < 1) return 0;  // an empty tab holds no name (a range of no row throws)
@@ -474,9 +474,10 @@ function unzip_(z){ return Utilities.ungzip(Utilities.newBlob(Utilities.base64De
 // Appends new answers to the Answers tab, skipping ids already anywhere in it (a resend after a lost reply).
 // The answers of a send the Answers tab does not have yet (by id): what the flood caps count (a device sending again
 // what it already sent must not use up its quota). The ids read once are handed to logAnswers_. An id met twice in the
-// same send counts once (newIds_), and a send with no answer reads nothing.
+// same send counts once (newIds_), and a send with no answer reads nothing. An entry whose id the tab never takes
+// (core.js logIdOk, as logAnswers_ checks it) is not fresh: never logged, never counted.
 function freshAnswers_(answers){
-  const L = (Array.isArray(answers) ? answers : []).filter(a => a && a.id);
+  const L = (Array.isArray(answers) ? answers : []).filter(a => a && CORE_.logIdOk(a.id));
   if (!L.length) return {seen: null, fresh: []};
   const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), n = sh ? sh.getLastRow() - 1 : 0;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
@@ -503,7 +504,7 @@ function logAnswers_(name, answers, seen0, dev){
   if (!seen0 && n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // the Timings tab
   // A unit may be a family (f:Damselfishes) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a
   // duel's mode; still a letter first, so nothing can start a formula.
-  const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z0-9: ]*$/;
+  const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, CH = /^[A-Za-z0-9: ]*$/;
   // Species shown also takes a species with no name yet by its label, a number after "sp. " (Goniobranchus sp. 5,
   // tools/seaslug_informal.json): a digit only in that number (1 to 3 digits, ending its name), nowhere else; still a
   // letter first, so nothing can start a formula.
@@ -515,7 +516,8 @@ function logAnswers_(name, answers, seen0, dev){
   // CV: a content version as core.js contentVersion makes it ('c' and a hash53, 16 characters at most), else
   // blank: a longer text or anything but a text is never cut or read into one.
   const CV = /^c[a-z0-9]{1,15}$/;
-  const rows = newIds_(answers.filter(a => a && a.id && ID.test(String(a.id))), seen).slice(0, 2000)
+  // An id of a-z and 0-9 only (core.js logIdOk): the device keeps an entry with another one queued (sync.js logAcked).
+  const rows = newIds_(answers.filter(a => a && CORE_.logIdOk(a.id)), seen).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
       sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400), typeof a.cv === 'string' ? word_(a.cv, CV, 40) : '']; });  // Photo answered checked as Photos
   if (!rows.length) return;
@@ -715,11 +717,18 @@ function dataJson_(){
   return {gen: out, slate: slate.length ? slate : null, scale: scale.length ? scale : null};
 }
 // An Answers row as a replay row (core.js replayProgress): [player, time ms, shown, answered, right, mode, photos, e, th,
-// new photos, choices, null, seconds, null ... null, scoring at 22]; blank numbers are null. The seconds (at 12, as in
-// readAnswers rows) weigh a right answer's ability steps (core.js rtWeight); the scoring record (at core.js LOG_SC, null
-// without) has the replay score the answer with what the app scored it with (core.js scoreAnswer).
+// new photos, choices, null, seconds, null ... null, scoring at 22, null, Id at 24]; blank numbers are null. The seconds
+// (at 12, as in readAnswers rows) weigh a right answer's ability steps (core.js rtWeight); the scoring record (at core.js
+// LOG_SC, null without) has the replay score the answer with what the app scored it with (core.js scoreAnswer); the
+// answer's id (at core.js LOG_RID) has it count once (core.js replayProgress, REE-351).
 const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : Number(x);
-const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL])];
+const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL]), ...new Array(CORE_.LOG_RID - CORE_.LOG_SC - 1).fill(null), String(r[7] || '')];
+// A player's Answers rows with each id once (REE-351): the first row of an id in the tab's order is kept, a later one
+// left out (a tab that holds an id twice: a hand edit, a restore; the intake never writes one, newIds_); a row with no id
+// is kept. Every replay reads a player's rows through it (rplMine_, boardRpl_, boardWarm_), so its answers, its ids and
+// its row count n (the Replayed tab's identity, rplFresh_) count an answer once; a cache made over a repeated id is made
+// again. A tab with each id once reads the same.
+const onceById_ = rs => { const got = new Set(); return rs.filter(r => { const k = String(r[7] || ''); if (!k) return true; if (got.has(k)) return false; got.add(k); return true; }); };
 // start: the player's first-launch answer in that subject (core.js startKey, reefid-sync-<subject>-start): the replay
 // steps the ability with the prior it says, as the app does (core.js startPriorAt).
 // sid: the subject replayed. One path for every subject (rule S1): its own rows (subjRows_), units (subjGen_), variant
@@ -776,10 +785,11 @@ function stMain_(q){
 // The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one, and
 // the structure stamp it was made under after a ~ when it is not '' (so a row without one reads the same).
 const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
-// The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
+// The player's rows of the subject replayed since their reset (the Answers tab as read once per request), each id once
+// (onceById_).
 function rplMine_(key, since, sid){
   const who = lc_(key);
-  return subjRows_(sid).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
+  return onceById_(subjRows_(sid).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since));
 }
 // A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for an old floored one); null when broken.
 function rplRead_(row){
@@ -2899,7 +2909,7 @@ function boardRpl_(S, warm){
       if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in kept)) kept[k] = {at: i + 2, r: r}; });
     }
     const since = resetOf_(d, sid), start = startOf_(d, sid), sinceKey = rplSince_(since, start, st || ''),
-      rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
+      rows = onceById_((mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since)), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
     return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) || st ? sinceKey : since, rows: rows, n: rows.length,
       row: c ? c.r : null, rec: prev && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o) : null};
@@ -3919,7 +3929,7 @@ function replayedAll_(users, dcol){
     if (!P || typeof P !== 'object') return;
     // Under the structure stamp in force (the Replayed tab's cache identity, rplSince_, as replay_ keys it)
     const since = resetOf_(data), start = startOf_(data), fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stM),
-      rows = (mine[k] || []).filter(r => (new Date(r[1]).getTime() || 0) > since).map(r => rowOf_(k, r)), n = rows.length, c = cached[k];
+      rows = onceById_((mine[k] || []).filter(r => (new Date(r[1]).getTime() || 0) > since)).map(r => rowOf_(k, r)), n = rows.length, c = cached[k];
     let rec = null;
     if (c && Number(c.r[1]) === CORE_.RV && Number(c.r[2]) === n && String(c.r[3]) === sinceKey) {
       try { rec = JSON.parse(c.r.slice(5).map(String).join('') || '{}'); } catch (e) { rec = null; }
@@ -3988,7 +3998,7 @@ function autoUpdate_(){
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
     const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
-    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); selfVersionsRun_(log); } return 'up to date (v' + VERSION + ')'; }
+    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); selfVersionsRun_(log); selfServeRun_(log); } return 'up to date (v' + VERSION + ')'; }
     if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
     const man = get('appsscript.json'), api = selfApi_;
     if (v > VERSION) {
@@ -4000,11 +4010,14 @@ function autoUpdate_(){
     }
     const dv = Math.max(v, pending), ver = api('post', '/versions', {description: 'v' + dv + ' from GitHub ' + branch});
     const deps = (api('get', '/deployments').deployments || []).filter(d => d.deploymentConfig && d.deploymentConfig.versionNumber && (d.entryPoints || []).some(e => e.entryPointType === 'WEB_APP'));
+    const before = deps.map(d => d.deploymentConfig.versionNumber);  // what they served until now (selfServeStart_)
     deps.forEach(d => api('put', '/deployments/' + d.deploymentId, {deploymentConfig: {versionNumber: ver.versionNumber, manifestFileName: 'appsscript', description: 'v' + dv + ' (auto)'}}));
     props.deleteProperty('AUTO_PENDING');
     log('deployed v' + dv + ' as version ' + ver.versionNumber + ' (' + deps.length + ' web app deployment' + (deps.length === 1 ? '' : 's') + ')' + (v > VERSION ? '' : ', finishing an interrupted update') + ', from ' + branch);
     try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { log('version count: ' + e.message); selfVersionsFailed_(); }  // the deploy itself is done; the up-to-date runs try again
-    return 'deployed v' + dv;
+    let served = false;
+    try { served = selfServeStart_(dv, ver.versionNumber, deps, before, log); } catch (e) { log('serving check: ' + e.message); }
+    return 'deployed v' + dv + (served ? '' : ' (not verified serving)');
   } catch (e) {
     // Google's 429 at POST /versions is the version limit (RESOURCE_EXHAUSTED, "Cannot create more versions"): said plainly,
     // every run until it is fixed (AUTO_PENDING then finishes the update), and in the Alerts tab once a day.
@@ -4082,6 +4095,73 @@ function selfVersionsRun_(log){
   if (s && !s.failed && typeof s.n === 'number' && s.n < SELF_VERSIONS.WARN) return;
   if (s && Date.now() - s.at < SELF_VERSIONS.RECOUNT) return;
   try { selfVersionsSave_(selfVersionsCount_(), log); } catch (e) { selfVersionsFailed_(); }
+}
+// The version that answers (REE-342). A deployment the API repointed is no proof that the new build serves: the API can
+// accept the change while the /exec URL still answers an older version, and a build that fails to load answers no JSON.
+// After each deploy the updater asks every web app deployment it repointed (a GET with no parameter, which reads nothing
+// and answers {ok: false, error: 'input', v}: doGet_) and compares the reply's v with the version deployed. The result
+// is the Script Property AUTO_SERVE {v, ver, deps: [{id, url}], before, at, checked, seen, ok, alerted, good}: v the
+// version deployed, ver its Apps Script version, before the version numbers the deployments served until then, seen
+// what each one answered, good {v, ver} the last version seen serving, carried from deploy to deploy. It stays after a
+// success, as the last good version. Fail-closed: until v answers at every deployment the deploy is "not verified",
+// every up-to-date run asks again (one GET a deployment; never a new version, never a deployment change) and the Deploy
+// log says when it answers. An older version still answering GRACE after the deploy, or a reply that is not the
+// script's JSON (a build that fails to load, whose own trigger runs may never come), writes one line to the Alerts tab
+// and the Deploy log, at most once every ALERT, with what answers and the last good version. It never repoints or rolls
+// back: that stays a person's decision (Apps Script editor, Deploy > Manage deployments).
+const SELF_SERVE = {GRACE: 1800000, ALERT: 86400000};
+function selfServeGet_(){
+  try { const s = JSON.parse(PropertiesService.getScriptProperties().getProperty('AUTO_SERVE') || 'null'); return s && typeof s.v === 'number' && Array.isArray(s.deps) ? s : null; } catch (e) { return null; }
+}
+// A web app deployment's /exec URL: the one the API gives (a Workspace account's has its domain in it), else its usual form.
+function selfServeUrl_(d){
+  const e = (d.entryPoints || []).filter(x => x.entryPointType === 'WEB_APP' && x.webApp && typeof x.webApp.url === 'string' && x.webApp.url.indexOf('https://script.google.com/') === 0)[0];
+  return e ? e.webApp.url : 'https://script.google.com/macros/s/' + encodeURIComponent(d.deploymentId) + '/exec';
+}
+// What one web app answers: {v: its VERSION or null, what: 'v236', 'HTTP 500', 'no JSON' or 'no answer: …'}. Never throws.
+function selfServeAsk_(url){
+  try {
+    const r = UrlFetchApp.fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), {muteHttpExceptions: true}), c = r.getResponseCode();
+    if (c !== 200) return {v: null, what: 'HTTP ' + c};
+    let j = null;
+    try { j = JSON.parse(r.getContentText()); } catch (e) {}
+    return j && typeof j.v === 'number' ? {v: j.v, what: 'v' + j.v} : {v: null, what: 'no JSON'};
+  } catch (e) { return {v: null, what: 'no answer: ' + String(e && e.message).slice(0, 100)}; }
+}
+// The deploy just made (dv as Apps Script version ver, to deps, which served the version numbers before): a new
+// AUTO_SERVE, checked at once. True when dv answers at every deployment.
+function selfServeStart_(dv, ver, deps, before, log){
+  const was = selfServeGet_(), good = was ? (was.ok ? {v: was.v, ver: was.ver} : was.good || null) : null;
+  return selfServeCheck_({v: dv, ver: ver, at: Date.now(), before: before, good: good, ok: false,
+    deps: deps.map(d => ({id: String(d.deploymentId), url: selfServeUrl_(d)}))}, log, true);
+}
+// Asks every deployment of s, keeps the result (AUTO_SERVE), logs and alerts as above. first: the run that deployed.
+function selfServeCheck_(s, log, first){
+  const now = Date.now(), seen = s.deps.map(d => ({id: d.id, a: selfServeAsk_(d.url)})), mins = Math.round((now - s.at) / 60000);
+  s.ok = seen.length > 0 && seen.every(x => x.a.v === s.v);
+  s.checked = now;
+  s.seen = seen.length ? seen.map(x => (seen.length > 1 ? '…' + x.id.slice(-6) + ' ' : '') + x.a.what).join(', ') : 'nothing (no web app deployment found)';
+  if (s.ok) { delete s.alerted; log('serving check: v' + s.v + (first ? ' answers' : ' now answers, ' + mins + ' min after the deploy') + ' (' + s.seen + ')'); }
+  else {
+    if (first) log('serving check: v' + s.v + ' NOT verified, the web app answers ' + s.seen + '; asked again at each run');
+    const broken = !seen.length || seen.some(x => x.a.v === null);
+    if ((broken || now - s.at >= SELF_SERVE.GRACE) && now - (s.alerted || 0) >= SELF_SERVE.ALERT) {
+      s.alerted = now;
+      const last = s.good ? 'version ' + s.good.ver + ' (v' + s.good.v + ') was the last seen serving'
+        : s.before && s.before.length ? 'it served version ' + s.before.join(', ') + ' before' : '';
+      const line = 'sheet script: v' + s.v + ' was deployed as version ' + s.ver + ' ' + mins + ' min ago but the web app answers ' + s.seen
+        + (last ? '; ' + last : '') + '; Deploy > Manage deployments in the Apps Script editor shows what each deployment serves';
+      try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), line.slice(0, 500)]); } catch (e) {}
+      log(line);
+    }
+  }
+  PropertiesService.getScriptProperties().setProperty('AUTO_SERVE', JSON.stringify(s));
+  return s.ok;
+}
+// From a run that finds the script up to date: asks again while the last deploy is not verified, for the version now
+// running only (a script replaced by hand since is not this check's). Never throws.
+function selfServeRun_(log){
+  try { const s = selfServeGet_(); if (s && !s.ok && s.v === VERSION) selfServeCheck_(s, log, false); } catch (e) { log('serving check: ' + e.message); }
 }
 
 // One-shot data migrations (rule W3: no backward compatibility): the code that
@@ -5699,6 +5779,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // The scoring record (scoreRec; column Scoring, W) at index LOG_SC in the sheet's readAnswers rows,
   // its Answers tab rows and the replay rows (Code.gs rowOf_, logRow) alike.
   const LOG_SC = 22;
+  // An answer's id (its attempt id, answerId; column Id) at index LOG_RID of a replay row (logRow, Code.gs rowOf_), past
+  // the readAnswers rows' last column, so a row read for the admin or a study carries none: the replay counts an id
+  // once (replayProgress, REE-351).
+  const LOG_RID = 24;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
   // A surprise card's answer (quiz.js winkShow), logged like every other answer and never counted: mode WINK_MODE in the
@@ -11039,6 +11123,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09; docs/reviews/2026-11-09-level-count-checkpoints.md): the replay's count of the player's answers wins over the device's also when the device counts more (answers counted twice before #824), as every unit's record already did, and a level with no answer in the log keeps none (replayedOf, replayBase); the app's checkpoints count on their own answer clock (model.js tally), which never goes down. A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 16,
+      at: '2026-11-27',
+      why: 'The replay counts each answer id once (REE-351; rule D5): a log that holds an id twice (a hand edit, a restore) counts that answer once (replayProgress, LOG_RID; Code.gs onceById_). A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)',
+      // No card (rule D5).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -11096,6 +11187,13 @@ const CORE_ = (function () { const module = {exports: {}};
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 8,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      // No card (rule D5).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -11123,6 +11221,12 @@ const CORE_ = (function () { const module = {exports: {}};
       v: 4,
       at: '2026-11-23',
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15 and the fish's 7: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      msg: null
+    },
+    {
+      v: 5,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16 and the fish's 8: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       msg: null
     }
   ];
@@ -11176,7 +11280,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
-  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
+  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (logIdOk).
   // Enough random characters that two answers of one millisecond never meet (the sheet would skip the second as a
   // resend). rnd: the random bytes (tests); else crypto.getRandomValues, else Math.random (a runtime without crypto,
   // never a browser the app runs in).
@@ -11185,6 +11289,12 @@ const CORE_ = (function () { const module = {exports: {}};
     const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
       b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
     return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
+  }
+  // Whether the sheet logs an answer of this id (Code.gs logAnswers_, freshAnswers_): one with an id of a-z and 0-9 only,
+  // as answerId makes it. A save's or an anonymous send's acknowledgement (log) covers only these: an entry with another
+  // id, or none, is never logged, so it stays in the device's queue (sync.js logAcked, REE-351).
+  function logIdOk(id) {
+    return !!id && /^[a-z0-9]+$/.test(String(id));
   }
   // The content version of an answer (docs/spec/sync.md "The Answers tab", Content version): a short id of the content
   // its subject's units were built from on this device, so analyses and replays can tell which content an answer saw.
@@ -11435,12 +11545,23 @@ const CORE_ = (function () { const module = {exports: {}};
       String(x || '')
         .split(/\s+/)
         .filter(Boolean);
+    // Each answer once (REE-351): a row that carries its answer id (LOG_RID: logRow, Code.gs rowOf_) counts only the
+    // first time that player's rows meet the id, in time order; a log that holds an id twice (a hand edit, a restore)
+    // counts it once. A row without one (the admin's readAnswers rows, a study's) counts as it comes.
+    const aids = Object.create(null),
+      aidOf = r => (typeof r[LOG_RID] === 'string' ? r[LOG_RID] : '');
     rows
       .filter(r => r && r[0] && r[2])
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
         if (own(since, id) && !(r[1] > own(since, id))) return;
+        const aid = aidOf(r);
+        if (aid) {
+          const met = (aids[id] = aids[id] || new Set());
+          if (met.has(aid)) return;
+          met.add(aid);
+        }
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -11539,7 +11660,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
   // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
   // The seconds rt at index 12 and the scoring record sc at LOG_SC (22), as in the sheet's readAnswers rows (11, their
-  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null).
+  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null), and the answer's id at LOG_RID (24), as
+  // the tab keeps it (its first 20 characters), so the replay counts it once.
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -11555,7 +11677,9 @@ const CORE_ = (function () { const module = {exports: {}};
     null,
     typeof a.rt === 'number' ? a.rt : null,
     ...new Array(LOG_SC - 13).fill(null),
-    scoreRec(a.sc)
+    scoreRec(a.sc),
+    ...new Array(LOG_RID - LOG_SC - 1).fill(null),
+    a.id ? String(a.id).slice(0, 20) : ''
   ];
   // A player's progress as the app holds it after the replay (docs/LEARNING.md "Full replay", What the replay gives and
   // what the device keeps; rule D9). rep: replayProgress's player; saved: the player's reefid-sync-coral-progress (the
@@ -12382,6 +12506,7 @@ const CORE_ = (function () { const module = {exports: {}};
     CV_SHEET,
     logOut,
     answerId,
+    logIdOk,
     contentVersion,
     curPart,
     CUR_SHARED,
@@ -12559,6 +12684,7 @@ const CORE_ = (function () { const module = {exports: {}};
     rvVars,
     LOG_SUBJ,
     LOG_SC,
+    LOG_RID,
     ansSubject,
     rowSubject,
     WINK_MODE,

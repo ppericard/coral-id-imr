@@ -29,8 +29,8 @@ live signals.
    issues.
 5. **Upkeep.** Linear states for what moved. STATUS is refreshed with each sweep, right after its result, so both
    keep the same rhythm of about 90 minutes ([Habits](../docs/INTEGRATOR.md#habits)).
-6. **Compaction.** If the context was compacted since the last check-in, note on REE-230 what was found again
-   without a reminder.
+6. **Recovery incidents.** If recovery exposed a new failure, record the evidence on its current open owning issue.
+   A routine compaction needs no entry.
 7. **Rule 0.** Read the time line above. In quiet hours ask Pierre nothing; questions wait in Linear's Decisions for Pierre
    view. Work goes on.
 8. **Re-arm.** End the turn with the next `send_later` carrying the same one line.

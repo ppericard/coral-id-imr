@@ -129,6 +129,13 @@
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09; docs/reviews/2026-11-09-level-count-checkpoints.md): the replay's count of the player's answers wins over the device's also when the device counts more (answers counted twice before #824), as every unit's record already did, and a level with no answer in the log keeps none (replayedOf, replayBase); the app's checkpoints count on their own answer clock (model.js tally), which never goes down. A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 16,
+      at: '2026-11-27',
+      why: 'The replay counts each answer id once (REE-351; rule D5): a log that holds an id twice (a hand edit, a restore) counts that answer once (replayProgress, LOG_RID; Code.gs onceById_). A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)',
+      // No card (rule D5).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -186,6 +193,13 @@
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 8,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      // No card (rule D5).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -213,6 +227,12 @@
       v: 4,
       at: '2026-11-23',
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15 and the fish's 7: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      msg: null
+    },
+    {
+      v: 5,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16 and the fish's 8: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       msg: null
     }
   ];
@@ -266,7 +286,7 @@
   // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
-  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
+  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (logIdOk).
   // Enough random characters that two answers of one millisecond never meet (the sheet would skip the second as a
   // resend). rnd: the random bytes (tests); else crypto.getRandomValues, else Math.random (a runtime without crypto,
   // never a browser the app runs in).
@@ -275,6 +295,12 @@
     const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
       b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
     return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
+  }
+  // Whether the sheet logs an answer of this id (Code.gs logAnswers_, freshAnswers_): one with an id of a-z and 0-9 only,
+  // as answerId makes it. A save's or an anonymous send's acknowledgement (log) covers only these: an entry with another
+  // id, or none, is never logged, so it stays in the device's queue (sync.js logAcked, REE-351).
+  function logIdOk(id) {
+    return !!id && /^[a-z0-9]+$/.test(String(id));
   }
   // The content version of an answer (docs/spec/sync.md "The Answers tab", Content version): a short id of the content
   // its subject's units were built from on this device, so analyses and replays can tell which content an answer saw.

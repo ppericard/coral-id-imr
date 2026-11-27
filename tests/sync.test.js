@@ -338,17 +338,24 @@ const resp = (code, body) => ({
 });
 // An up-to-date run with no version count kept yet counts the versions (Code.gs selfVersionsRun_), nothing else.
 const COUNT_ONLY = 'get /versions?pageSize=50';
+// The web app deployment WEB serves the version it points at (6 at first, this repository's VERSION): its /exec answers
+// a GET with no parameter as doGet_ does, with that version's v (Code.gs selfServeCheck_, tests/selfupdate.test.js).
 function fakeGoogle(remote) {
-  const calls = [];
+  const calls = [],
+    made = {6: SV};
+  let point = 6;
   return {
     calls,
     fetch: (url, o) => {
       if (url.includes('raw.githubusercontent.com'))
         return url.includes('Code.gs') ? resp(200, remote) : resp(200, '{"timeZone":"Asia/Manila"}');
+      if (url.startsWith('https://script.google.com/macros/s/WEB/exec?')) return resp(200, {ok: false, error: 'input', v: made[point]});
       if (!url.includes('script.googleapis.com')) return null;
       const m = (o.method || 'get').toLowerCase(),
         p = url.replace(/^.*\/projects\/SCRIPT_ID/, '');
       calls.push(m + ' ' + p + (o.payload ? ' ' + o.payload.slice(0, 80) : ''));
+      if (m === 'post' && p === '/versions') made[7] = Number(/"description":"v(\d+)/.exec(o.payload)[1]);
+      if (m === 'put' && p === '/deployments/WEB') point = JSON.parse(o.payload).deploymentConfig.versionNumber;
       if (m === 'get' && p === '/content')
         return resp(200, {
           files: [
@@ -458,7 +465,11 @@ test('versions: 169 kept after a deploy is no alert, and the stats reply carries
   );
   assert.strictEqual(JSON.parse(s.props.AUTO_VERSIONS).n, 169);
   assert.deepStrictEqual(alerts(s), []);
-  assert.strictEqual(deployLog(s).length, 1, 'the deploy line only');
+  assert.deepStrictEqual(
+    deployLog(s).map(l => l.split(' ')[0]),
+    ['deployed', 'serving'],
+    'the deploy line and its serving check only'
+  );
   assert.strictEqual(s.get({stats: '1', av: 'health'}).vers, undefined);
 });
 

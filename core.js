@@ -1245,6 +1245,10 @@
   // The scoring record (scoreRec; column Scoring, W) at index LOG_SC in the sheet's readAnswers rows,
   // its Answers tab rows and the replay rows (Code.gs rowOf_, logRow) alike.
   const LOG_SC = 22;
+  // An answer's id (its attempt id, answerId; column Id) at index LOG_RID of a replay row (logRow, Code.gs rowOf_), past
+  // the readAnswers rows' last column, so a row read for the admin or a study carries none: the replay counts an id
+  // once (replayProgress, REE-351).
+  const LOG_RID = 24;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
   // A surprise card's answer (quiz.js winkShow), logged like every other answer and never counted: mode WINK_MODE in the
@@ -6585,6 +6589,13 @@
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09; docs/reviews/2026-11-09-level-count-checkpoints.md): the replay's count of the player's answers wins over the device's also when the device counts more (answers counted twice before #824), as every unit's record already did, and a level with no answer in the log keeps none (replayedOf, replayBase); the app's checkpoints count on their own answer clock (model.js tally), which never goes down. A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 16,
+      at: '2026-11-27',
+      why: 'The replay counts each answer id once (REE-351; rule D5): a log that holds an id twice (a hand edit, a restore) counts that answer once (replayProgress, LOG_RID; Code.gs onceById_). A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)',
+      // No card (rule D5).
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -6642,6 +6653,13 @@
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       // No card (rule D6).
       msg: null
+    },
+    {
+      v: 8,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      // No card (rule D5).
+      msg: null
     }
   ];
   // The rules versions of the sea slugs' progress replayed by the sheet (SUBJECTS seaslug replayed rvs), their own list
@@ -6669,6 +6687,12 @@
       v: 4,
       at: '2026-11-23',
       why: "The level's answer count follows the log (rule D9; Q322, Q330, Pierre, 2026-11-09), as the corals' rules version 15 and the fish's 7: the replay's count of the player's answers wins over the device's also when the device counts more, and a level with no answer in the log keeps none; the app's checkpoints count on their own answer clock (model.js tally). A device whose count agrees with the log keeps it; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
+      msg: null
+    },
+    {
+      v: 5,
+      at: '2026-11-27',
+      why: "The replay counts each answer id once (REE-351; rule D5), as the corals' rules version 16 and the fish's 8: a log that holds an id twice counts that answer once. A log with each id once replays as before; every device takes the replay once, silently (rule D6), the leaderboard included (rule D8)",
       msg: null
     }
   ];
@@ -6722,7 +6746,7 @@
   // An answer's id, its attempt id: made on the device once per answer, kept with it in the queue and sent as it is at
   // every try, so the sheet logs it once whatever the retries (Code.gs logAnswers_ skips an id the Answers tab already
   // has, or one met earlier in the same send). The time in base 36 (8 characters, a letter first until 2059) and 8 random
-  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (Code.gs logAnswers_ ID).
+  // characters from the device's crypto: 16 characters of a-z and 0-9, under the sheet's 20 (logIdOk).
   // Enough random characters that two answers of one millisecond never meet (the sheet would skip the second as a
   // resend). rnd: the random bytes (tests); else crypto.getRandomValues, else Math.random (a runtime without crypto,
   // never a browser the app runs in).
@@ -6731,6 +6755,12 @@
     const c = typeof crypto !== 'undefined' && crypto && crypto.getRandomValues ? crypto : null,
       b = rnd || (c ? c.getRandomValues(new Uint8Array(8)) : Array.from({length: 8}, () => Math.floor(Math.random() * 256)));
     return Number(now).toString(36) + Array.from(b, x => AID[x % 36]).join('');
+  }
+  // Whether the sheet logs an answer of this id (Code.gs logAnswers_, freshAnswers_): one with an id of a-z and 0-9 only,
+  // as answerId makes it. A save's or an anonymous send's acknowledgement (log) covers only these: an entry with another
+  // id, or none, is never logged, so it stays in the device's queue (sync.js logAcked, REE-351).
+  function logIdOk(id) {
+    return !!id && /^[a-z0-9]+$/.test(String(id));
   }
   // The content version of an answer (docs/spec/sync.md "The Answers tab", Content version): a short id of the content
   // its subject's units were built from on this device, so analyses and replays can tell which content an answer saw.
@@ -6981,12 +7011,23 @@
       String(x || '')
         .split(/\s+/)
         .filter(Boolean);
+    // Each answer once (REE-351): a row that carries its answer id (LOG_RID: logRow, Code.gs rowOf_) counts only the
+    // first time that player's rows meet the id, in time order; a log that holds an id twice (a hand edit, a restore)
+    // counts it once. A row without one (the admin's readAnswers rows, a study's) counts as it comes.
+    const aids = Object.create(null),
+      aidOf = r => (typeof r[LOG_RID] === 'string' ? r[LOG_RID] : '');
     rows
       .filter(r => r && r[0] && r[2])
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
         if (own(since, id) && !(r[1] > own(since, id))) return;
+        const aid = aidOf(r);
+        if (aid) {
+          const met = (aids[id] = aids[id] || new Set());
+          if (met.has(aid)) return;
+          met.add(aid);
+        }
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -7085,7 +7126,8 @@
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
   // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
   // The seconds rt at index 12 and the scoring record sc at LOG_SC (22), as in the sheet's readAnswers rows (11, their
-  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null).
+  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null), and the answer's id at LOG_RID (24), as
+  // the tab keeps it (its first 20 characters), so the replay counts it once.
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -7101,7 +7143,9 @@
     null,
     typeof a.rt === 'number' ? a.rt : null,
     ...new Array(LOG_SC - 13).fill(null),
-    scoreRec(a.sc)
+    scoreRec(a.sc),
+    ...new Array(LOG_RID - LOG_SC - 1).fill(null),
+    a.id ? String(a.id).slice(0, 20) : ''
   ];
   // A player's progress as the app holds it after the replay (docs/LEARNING.md "Full replay", What the replay gives and
   // what the device keeps; rule D9). rep: replayProgress's player; saved: the player's reefid-sync-coral-progress (the
@@ -7928,6 +7972,7 @@
     CV_SHEET,
     logOut,
     answerId,
+    logIdOk,
     contentVersion,
     curPart,
     CUR_SHARED,
@@ -8105,6 +8150,7 @@
     rvVars,
     LOG_SUBJ,
     LOG_SC,
+    LOG_RID,
     ansSubject,
     rowSubject,
     WINK_MODE,

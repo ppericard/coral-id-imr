@@ -772,7 +772,8 @@ fish's `FISH_RVS`, the sea slugs' `SEASLUG_RVS`; rule D5), and every device adop
 `replayAdopt`). The replay's record of a unit and its answer count win over the saved copy, also when the copy holds
 more answers; a unit the log has no answer on loses the answers the copy counts. The level's answer count follows the
 log the same way (rules version 15, fish 7, sea slugs 4); the app's checkpoints count on an answer clock of their own
-(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). There is no floor: a bar may go down.
+(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). The replay counts each answer
+id once, also when the log holds one twice (rules version 16, fish 8, sea slugs 5; REE-351). There is no floor: a bar may go down.
 A recalculation is silent, a learned mark taken away included (rule D6), and every leaderboard follows at once (rule D8).
 
 ### Fish on the same model
@@ -1940,7 +1941,9 @@ are stated). The fish units are built as the app builds them (`core.js` `treeGen
 cut out as `tests/rareease.js` cuts `model.js`): the families in three circles, their scientific genera, every game
 photo. A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the
 player's π (each genus's and species' μ on a stream of its own, keyed by its id: a version with more or fewer units
-plays the same photos and the same other units, so the arms stay paired); the same seed gives the same world, so two
+plays the same photos and the same other units, so the arms stay paired; each photo file's ε, judged ease and time
+intensity likewise, keyed by its file id, since 2026-11-27, REE-281: a refill of the candidate photos moves no other
+photo's draw, where one stream over the sorted files moved them all); the same seed gives the same world, so two
 versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
 genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the

@@ -42,5 +42,5 @@ test('every ?stats=1 request in the repository carries av', () => {
   assert.deepStrictEqual(bad, [], 'a ?stats=1 read without av is logged as an old app');
   // The admin's helper really adds it.
   const admin = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
-  assert.match(admin, /const get = q =>\s*fetch\(SYNC_URL \+ q \+ '&av=admin'\)/);
+  assert.match(admin, /const get = q =>\s*sheetFetch\(SYNC_URL \+ q \+ '&av=admin'\)/);
 });

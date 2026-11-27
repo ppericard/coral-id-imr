@@ -29,7 +29,9 @@ A feature that needs sheet script version N turns on only when the script's repl
 `const X_SHEET = N` in the app's code. Gates stop at `core.js` `SHEET_FLOOR`, a script version already confirmed live:
 it is set only to a version merged at least three days before, never to the build's `VERSION`, because Pages deploys
 before the script updates itself. `sync.js` `sheetV` reads the script's version as at least the floor, also before any
-reply, so a new device or an offline first launch plays today's rules. Every gate at or below the floor is deleted with
+reply, so a new device or an offline first launch plays today's rules. Answers are never sent trimmed for want of a
+version (REE-351): a save reads it from the load before it, and an anonymous send holds a batch with a field the floor
+trims until a reply has said one ([answer.md](answer.md)). Every gate at or below the floor is deleted with
 its old branch: `tests/gates.test.js` lists the gates and fails on one at or below the floor, or on a floor above
 `VERSION`; `tools/sheet_version.py` never moves the floor. A gate this file names (`PA_SHEET`, `CV_SHEET`, `STRUCT_SHEET`,
 `PAIRS_SHEET`, `VIEWPORT_SHEET`, `LIVEGAME_SHEET`) is one of those still above it.
@@ -387,7 +389,8 @@ also pulls and merges, without writing, on start-up, when it comes back to the s
 online, so progress made on another device shows up without answering a question first. Each send carries `at`, the
 sheet revision it merged against; if another device wrote in between, the sheet answers `stale` (the answers still
 logged) and the app pulls, merges and sends again (at most twice). The app keeps unsent answers (2,000 at most) until
-the sheet confirms `log: true`.
+the sheet confirms `log: true`, which covers only the answers whose id the sheet takes (`core.js` `logIdOk`): one it
+refuses stays queued for at most 3 sends, then leaves with an Events line ([answer.md](answer.md), REE-351).
 
 ### Lighter saves on slow lines
 
@@ -1095,7 +1098,15 @@ are lost, as the devices drop them from their queue once the sheet confirms them
   web app deployment at it (the same `/exec` URL); the `Deploy log` tab records each install or error.
   `installAutoUpdate` checks the API at once (a standard Cloud project with the Apps Script API may be needed:
   HANDOVER.md). If the code was replaced but the deployment failed, the Script Property `AUTO_PENDING` makes the next run
-  finish it. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
+  finish it (saving one more version each time). After repointing, the **serving check** (REE-342, `selfServeCheck_`)
+  asks each web app deployment for a reply (a GET with no parameter) and compares its `v` with the version deployed;
+  the Script Property `AUTO_SERVE` keeps the result and the last version seen serving. Until it answers everywhere the
+  deploy reads "NOT verified" in the Deploy log and each up-to-date run asks again (no new version, no deployment
+  change); an older version still answering after 30 minutes, or a reply that is not the script's JSON (a build that
+  cannot load), writes one Alerts line a day naming what answers and the last good version. It never repoints or rolls
+  back: that stays a person's decision (Apps Script editor, Deploy > Manage deployments). `tests/selfupdate.test.js`
+  runs the whole update against doubles of GitHub, the Apps Script API and the web apps (each serving the build it
+  points at), with injected failures. A run that finds the script up to date (`autoUpdate_`) then runs the one-shot migrations (`ONCE_`), the
   leaderboard's replays made ahead (`boardWarmRun_`, which first reads the structure again, `subjStRefresh_`) and the
   pooled statistics' fold (`statsFoldRun_`); every run ends with the Timings trim (`timTrim_`).
 - **The version limit** (`SELF_VERSIONS`; the 2026-11-22 incident): Google keeps at most 200 versions a project and
