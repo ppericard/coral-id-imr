@@ -406,8 +406,11 @@ test("replayProgress goes on from a replay: the sheet's, then this device's answ
     null,
     null,
     ...Array(9).fill(null), // 13-21: enlarged to species shown, unused by the replay
-    null
+    null,
+    null, // 23: rejected tries, unused by the replay
+    'x1' // 24 (LOG_RID): the answer's id, counted once (REE-351)
   ]);
+  assert.strictEqual(C.LOG_RID, 24);
   // The scoring record (core.js scoreRec) at LOG_SC, 22, as in the sheet's readAnswers rows (rules version 6).
   assert.strictEqual(C.LOG_SC, 22);
   assert.deepStrictEqual(C.logRow({...a, sc: {d: 0.5, l: 1}}, 'me')[22], {d: 0.5, l: 1});
@@ -421,7 +424,9 @@ test("replayProgress goes on from a replay: the sheet's, then this device's answ
     null,
     null,
     ...Array(9).fill(null), // 13-21
-    null
+    null,
+    null,
+    'y'
   ]);
 });
 

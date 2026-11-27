@@ -37,7 +37,7 @@ const liveMissed = hist =>
     .map(({tot, ...m}) => m);
 // A live answer's attempt id (core.js answerId): 'l', the player's id in the game (pid, the script's: Code.gs lvJoin_,
 // 10 hex characters), 'q' and the question's number in base 36, so this answer has one id however often it is logged
-// (20 characters at most, Code.gs logAnswers_ ID); a random one when either is missing (an answer kept from before).
+// (20 characters at most, core.js logIdOk); a random one when either is missing (an answer kept from before).
 const liveAid = (pid, qi) =>
   /^[a-z0-9]{8,16}$/.test(String(pid || '')) && Number.isInteger(qi) && qi >= 0 && qi < 1296
     ? 'l' + pid + 'q' + qi.toString(36)

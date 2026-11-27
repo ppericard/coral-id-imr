@@ -814,6 +814,10 @@
   // The scoring record (scoreRec; column Scoring, W) at index LOG_SC in the sheet's readAnswers rows,
   // its Answers tab rows and the replay rows (Code.gs rowOf_, logRow) alike.
   const LOG_SC = 22;
+  // An answer's id (its attempt id, answerId; column Id) at index LOG_RID of a replay row (logRow, Code.gs rowOf_), past
+  // the readAnswers rows' last column, so a row read for the admin or a study carries none: the replay counts an id
+  // once (replayProgress, REE-351).
+  const LOG_RID = 24;
   const ansSubject = a => String((a && a.s) || '') || SUBJECTS[0].id;
   const rowSubject = r => String((r && r[LOG_SUBJ]) || '') || SUBJECTS[0].id;
   // A surprise card's answer (quiz.js winkShow), logged like every other answer and never counted: mode WINK_MODE in the
