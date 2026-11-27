@@ -2456,7 +2456,10 @@ ruleset, the budgets, the CodeQL cutover) are on their Linear issues and come to
   pilote, écris la règle». On the proposal's "a 5-line summary each evening" he asked (11:29): «C'est quoi ça? J'ai
   pas souvenir». A question, not a refusal (11:35: «C'est pas ce que je t'ai dis!!!!!!!!!!!!!!!!!!!!» to the
   integrator's reading that he had dropped it). It and "one question point each morning" came from the integrator's
-  proposal 1.2 of the day and wait for his answer; the rule carries neither until then. On the
+  proposal 1.2 of the day and wait for his answer; the rule carries neither until then. Once the integrator explained
+  the summary (11:37: five lines at about 17:00, merged, running, waiting for him, problems, tonight), he answered
+  (11:53): «ça me va dans les 2 modes». Applied: docs/INTEGRATOR.md "Work modes" (the summary in both modes). The
+  morning question point is still unanswered and stays out of the rule. On the
   check-in and the sweep (11:29): «il faudra repenser les taches programmées. C'est quoi leur coût et la pertinence
   qu'elles ne soient pas synchronisées?» (an open question, REE-244). Applied: AGENTS.md "Working mode", docs/INTEGRATOR.md "Work modes: auto and pilote" and
   "Habits", tools/checkin.md, docs/STATUS.md (`Mode: pilote`).

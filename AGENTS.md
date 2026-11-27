@@ -38,7 +38,7 @@ branch and PR. Subagents never merge. Use [the shipping rules](docs/rules/ship.m
 
 - **Two work modes, set by Pierre** (2026-11-27): **auto** and **pilote**. In auto, the integrator launches all
   decided work as slots allow, with its check-ins and sweeps. In pilote, it launches only the tasks Pierre picks from
-  its numbered proposal, in his order, with no scheduled tasks. Pierre switches with "mode auto" or "mode pilote".
+  its numbered proposal, in his order, with no check-in or sweep. Both send an evening summary at about 17:00. Pierre switches with "mode auto" or "mode pilote".
   STATUS states the mode; without one, pilote. See [Work modes](docs/INTEGRATOR.md#work-modes-auto-and-pilote).
 - **The integrator merges only** when the checks on the current head are green without rerunning a failed job to
   get green, every Codex finding and security alert is fixed or answered, and every review thread is resolved.

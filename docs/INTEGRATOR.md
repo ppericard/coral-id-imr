@@ -49,13 +49,21 @@ permission mode, also called auto ("Habits" below).
 | | **auto** | **pilote** |
 | --- | --- | --- |
 | Launches | Every decided Linear issue without a valid reason, High first, as slots allow ("Linear", rule W24) | Only the tasks Pierre picks ("go 1, 3") from the integrator's numbered proposal, in his order |
-| Scheduled tasks | The hourly check-in and the 90-minute sweep ([tools/checkin.md](../tools/checkin.md)) | None: disabled, not deleted; the session wakes on Pierre's messages and queue results |
+| Scheduled tasks | The hourly check-in and the 90-minute sweep ([tools/checkin.md](../tools/checkin.md)) | None but the evening summary's wake: the others disabled, not deleted; the session wakes on Pierre's messages and queue results |
 | Merges | Any PR green, reviewed and with no open question | Only the PRs of tasks Pierre launched, or already open and approved when the mode began |
 | Questions | Batched, as in "Working with Pierre" (AGENTS.md) | Only when Pierre asks, or inside the proposal |
+| Evening summary | Yes, about 17:00 | Yes, about 17:00 (its one-shot wake is the only scheduled task) |
 | Studies | Those already decided | None without his request |
 
 **The proposal in pilote** is a short numbered list: one task per line with its Linear issue, a one-line reason and
 what it waits for, in the order the integrator recommends. Nothing on it starts before Pierre's pick.
+
+**The evening summary** (both modes; Pierre, 2026-11-27 11:53: «ça me va dans les 2 modes») is one message at about
+17:00 Manila, before Rule 0's 17:30, in five lines: what merged today (by subject, not by PR); what is still running
+or queued and when it should end; what waits for Pierre (questions and actions, with their Linear links); problems
+(incidents, failures, the integrator's own mistakes, or "none"); tonight (what mode auto will do in the quiet hours,
+or "nothing" in pilote). It asks nothing. It goes into the integrator's reply when Pierre is in the session around
+17:00; otherwise a one-shot `send_later` at 17:00 wakes the session to send it.
 
 **In both modes** the integrator handles live pilot incidents and real external deadlines, and answers Codex findings
 on PRs already open, without widening their scope. Rule 0 and "Always ask first" (AGENTS.md) apply unchanged.
