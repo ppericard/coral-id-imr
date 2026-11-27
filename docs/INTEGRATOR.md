@@ -356,7 +356,10 @@ chain. Sources: <https://code.claude.com/docs/en/sub-agents>,
   decided; how the engine integrates it was not, and the response-time design got a study first. For other engine work,
   weigh the same way how much study the change needs.
 - **Waves in arrival order: `bash tools/queue/fifoq.sh N1 N2 …`** (REE-220; README in `tools/queue/`). One call per
-  wave, in the background with the longest limit, from the main checkout. It waits until no train, no other queue
+  wave, in the background with the longest limit (Claude Code `timeout` 7200000 ms; the default 30 minutes is not
+  enough, because a wave waits behind every earlier wave: REE-350, 2026-11-27 07:32, `fifoq.sh 1626` was killed at
+  the default limit while `train.py` waited for CI, which left an orphan `train/*` branch and no merge). The same
+  holds for every `nightq.sh` started as a background command, from the main checkout. It waits until no train, no other queue
   script and no earlier `fifoq.sh` runs (tickets in arrival order, never by process id: ids wrap), then runs
   `nightq.sh N1 N2 …`. Several `nightq.sh` waves started at once race on main ("main moved", 2026-11-23); this is the
   waiter that replaces the integrator's own wrapper script, so nothing needs a file outside the repo.
