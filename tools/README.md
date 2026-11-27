@@ -46,6 +46,7 @@ Conventions that hold across them:
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
 | `train_reuse.py` | For `train.py`: which jobs a one-PR train need not run again, proven from the PR's own CI on the same tree (REE-121 (a)) |
 | `smoke_scope.py` | Whether a Smokes run needs the browser matrix: none on a docs-only train, all on any other (rule W12) |
+| `codeql_scope.py` | Whether a CodeQL run analyses its commit: not a docs- or data-only change on its explicit list, every other one (REE-121 (c)) |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
 | `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |
 | `issue_guard.py` | The same on Linear's `save_issue`: refuses a new issue whose description has no `Searched:` line |
