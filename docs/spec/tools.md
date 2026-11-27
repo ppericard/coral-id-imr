@@ -115,8 +115,18 @@ written with `tools/datajson.py`.
   way out, a shell command carrying code or editing in place (heredoc, `python -c`, `node -e`, `perl -e`, `sed -i`,
   `bash -c`, code piped into an interpreter). Quoted text is not read as a command; a command
   substitution is, and so is the body of a `cat <<EOF` heredoc with a bare delimiter, which the shell expands;
-  `git show origin/main:tools/X.py | python3 -I -` stays allowed; an error in it lets the command through.
-  `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
+  `git show origin/main:tools/X.py | python3 -I -` stays allowed; an error in it lets the command through, except in
+  the push rule. That rule is a strict allowlist, not a reading of where a push goes (every attempt to resolve the
+  destination left another bypass in the Codex review of #1631, so that part was cut, rule W27): a command line with
+  `push` or `send-pack` as a word beside a `git` word (any position, wrapper, condition or quoting; a git alias for a
+  push, or any word of a git command that the shell expands: a variable, a substitution, an unquoted glob or brace, except
+  a commit message; over-refusal is accepted) is refused unless the whole line is exactly `[cd <literal path> && ]git push [-q] [-u]
+  origin <branch>`, `… origin HEAD:refs/heads/<branch>` or `… origin <branch>:refs/heads/<branch>`, with `<branch>` a
+  literal `claude/*`, `codex/*`, `train/*` or `ccr-*` name, and only when the repository configures no
+  `remote.origin.push`, `remote.origin.mirror` or local `push.default` (a configuration it cannot read refuses; REE-346,
+  REE-345). The merge train needs no exception: `tools/train.py` pushes from its own process, not through Bash. The guard
+  is a seat belt: the protection of `main` and `release` is server-side (REE-72's release ruleset, REE-345's deny rules,
+  Pierre's). `--check 'CMD'` by hand; `tests/guard_bash.test.js`.
 - **`agent_guard.py`**: the same on Agent: refuses a launch without `model` or `effort` (a fork passes), naming the
   keys seen; logs each (model, effort, type, description, never the prompt) to `claude-agent-launches.jsonl` in the
   git common dir, counted per day by `brief.py`. `--check JSON`, `--report [DAY]`; `tests/agent_guard.test.js`.
@@ -136,7 +146,8 @@ written with `tools/datajson.py`.
 - **`night.py`**: the night report (17:30 to 04:00 Manila): PRs merged in
   it with their agent time (`effort.py`'s measure) and total, trains run and red, PRs opened and still open with what
   holds them, and STATUS "## Night queue" items (one naming no `#N` did not start); "⚠ Nothing
-  merged" when the night was empty. Follow [Integrator startup](../INTEGRATOR.md#integrator-startup) to decide when to
+  merged" when the night was empty. A PR by anyone but the repository owner or a known agent identity shows as
+  `[outside] by <login>`, with no title (the same in `brief.py`; REE-346; `tests/outside_prs.test.js`). Follow [Integrator startup](../INTEGRATOR.md#integrator-startup) to decide when to
   send it. UserPromptSubmit supplies the clock. It receives technical events too. The legacy `--night-due` flag reports
   uncertainty and leaves the old local marker alone. `--json FILE` reports a saved snapshot. See `tests/night.test.js`.
 - **`effort.py`**: the measured agent effort of the last ~300 merged PRs: agent time is the branch's first
