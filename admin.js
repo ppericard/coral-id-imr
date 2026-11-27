@@ -5540,7 +5540,7 @@ function loadReports(force) {
   }
   if (force) sheetDrop('reports');
   return sheetRead('reports', fresh =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readReports: 1, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readReports: 1, token: TOKEN})})
       .then(r => r.json())
       .then(j => {
         if (!fresh()) return REPS;
@@ -5582,7 +5582,7 @@ function loadEvents(force) {
   if (!TOKEN) return Promise.resolve((EVS = {err: 'Needs the GitHub token'}));
   if (force) sheetDrop('events');
   return sheetRead('events', fresh =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, token: TOKEN})})
       .then(r => r.json())
       .then(j => {
         if (!fresh()) return EVS;
@@ -5615,7 +5615,7 @@ function loadAlerts(force) {
   if (!TOKEN) return Promise.resolve((ALS = {err: 'Needs the GitHub token'}));
   if (force) sheetDrop('alerts');
   return sheetRead('alerts', fresh =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAlerts: 1, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAlerts: 1, token: TOKEN})})
       .then(r => r.json())
       .then(j => {
         if (!fresh()) return ALS;
@@ -5658,7 +5658,7 @@ function loadPages(force) {
   }
   if (force) sheetDrop('pages');
   return sheetRead('pages', fresh =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, pages: 1, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readEvents: 1, pages: 1, token: TOKEN})})
       .then(r => r.json())
       .then(j => {
         if (!fresh()) return PGS;
@@ -6219,7 +6219,7 @@ function loadInfra() {
   if (!TOKEN) return Promise.resolve((INF = {err: 'Needs the GitHub token'}));
   return sheetRead('infra', fresh =>
     Promise.all([
-      fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readInfra: 1, token: TOKEN})})
+      sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readInfra: 1, token: TOKEN})})
         .then(r => r.json())
         .catch(() => null),
       infraRepo()
@@ -9450,6 +9450,19 @@ const lazyAhead = () => {
 
 // Photo difficulty from the sync sheet (?stats=1, tools/sync/Code.gs stats_): [difficulty, answers, right] per photo.
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
+// Rule D1, REE-341, REE-348: the same boundary as the player page (app.js SHEET_SITE, LOCAL, sheetFetch; this page loads
+// core.js, not app.js). Only the deployed site's admin talks to the real sheet; every other copy (a developer's or a review's
+// server, file:, a fork, a browser driven by a program), ?readonly included, has the sheet off: every request to it goes
+// through sheetFetch, answered by a test's window.SHEET_STUB else refused (the page shows its offline notes). ?demo keeps
+// fetch: admin-demo.js patches it and answers in memory, nothing leaves the page.
+const SHEET_SITE = 'https://ppericard.github.io/coral-id-imr/';
+const LOCAL = !(location.origin + location.pathname.toLowerCase()).startsWith(SHEET_SITE) || navigator.webdriver === true;
+const sheetFetch = (url, o) =>
+  !LOCAL || DEMO
+    ? fetch(url, o)
+    : typeof window.SHEET_STUB === 'function'
+      ? window.SHEET_STUB(url, o)
+      : Promise.reject(Object.assign(new Error('local copy: the sheet is off'), {local: true}));
 let STATS = null,
   DIFF_ORDER = store.get('reefid-admin-diff', 'hard');
 
@@ -10432,14 +10445,14 @@ function loadStats(ratingsOnly) {
   // av: never taken for an old app (the sheet logs a photo stats read without it as 'old', which each read-only visit of
   // this page would do).
   const get = q =>
-    fetch(SYNC_URL + q + '&av=admin')
+    sheetFetch(SYNC_URL + q + '&av=admin')
       .then(r => r.json())
       .catch(() => ({}));
   // Per-player numbers (the answer log, players' levels) only with this page's GitHub token, by POST; the caller's own
   // name and code go as aname/apin (never name/pin, which an older script would take for a progress write). An older
   // script answers 'input' to those POSTs: fall back to its public GETs.
   const post = b =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...b, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...b, token: TOKEN})})
       .then(r => r.json())
       .catch(() => ({}));
   const who = me && sy.pin ? `&name=${encodeURIComponent(me)}&pin=${encodeURIComponent(sy.pin)}` : '';
@@ -10673,7 +10686,7 @@ function liveRead() {
   const a0 = ANS;
   liveAt = Date.now();
   return sheetRead('live', fresh =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readLive: 1, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readLive: 1, token: TOKEN})})
       .then(r => r.json())
       .catch(() => null)
       .then(j => {
@@ -10734,7 +10747,7 @@ function loadUsers(force) {
   }
   if (force) sheetDrop('users');
   return sheetRead('users', fresh =>
-    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({users: 1, token: TOKEN})})
+    sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({users: 1, token: TOKEN})})
       .then(r => r.json())
       .then(j => {
         if (!fresh()) return USERS;
@@ -10758,7 +10771,7 @@ function loadUsers(force) {
 // A player's saved data (userData) is read with the new key names whichever app saved it (core.js keysIn); a merged
 // record goes back with the old names too (withLegacy), as the app sends it.
 const userPost = body =>
-  fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})})
+  sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({...body, token: TOKEN})})
     .then(r => r.json())
     .then(j => {
       if (j && j.data) j.data = keysIn(j.data);
@@ -13511,7 +13524,7 @@ function ownRead(j, S) {
 }
 function loadOwnStats(S) {
   return sheetRead('own:' + S.id, fresh =>
-    fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=admin`)
+    sheetFetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=admin`)
       .then(r => r.json())
       .catch(() => null)
       .then(j => {

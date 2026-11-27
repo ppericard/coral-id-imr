@@ -2,7 +2,7 @@
 // The report is computed once, by a GitHub Action (tools/analyses.js, analysis.js), and stored in the sync sheet
 // (analysesGet); this page only draws it, so it opens at once on a phone. "Recompute here" (secondary, on any device)
 // runs the same module in a Web Worker on this page's own answer log; its result stays in this tab. Loaded after
-// admin.js, whose helpers it uses ($v, esc, store, TOKEN, SYNC_URL, loadStats, loadUsers, allPhotos, zoom, img, kpis).
+// admin.js, whose helpers it uses ($v, esc, store, TOKEN, SYNC_URL, sheetFetch, loadStats, loadUsers, allPhotos, zoom, img, kpis).
 // Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in docs/LEARNING.md "Multifactor analyses";
 // the chart helpers in docs/DESIGN.md "Admin charts"; why: docs/decisions/2026-11-18-decisions-from-comments-3.md.
 // One report per subject: ANREPS and ANLOCS by subject id; ANREP and ANLOC are the subject on screen's (anOn).
@@ -37,7 +37,7 @@ const anTitle = k => (AN_VIEWS.find(v => v[1] === k) || [])[2] || k;
 function anLoad(S = ASUBJ) {
   const put = x => ((ANREPS[S.id] = x), S === ASUBJ && (ANREP = x), x);
   if (!TOKEN) return Promise.resolve(put({st: 'err', err: 'Needs the GitHub token'}));
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN, subject: S.id})})
+  return sheetFetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN, subject: S.id})})
     .then(r => r.json())
     .then(j => {
       if (!j || !j.ok) return put({st: 'err', err: j && j.error === 'token' ? 'Token refused' : 'Not available'});

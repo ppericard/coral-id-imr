@@ -13,8 +13,9 @@ without a token `admin.html?demo`, made-up data, or `admin.html?readonly`, the r
 site (`app.js` `SHEET_SITE`, the address in `index.html` `og:url`) talks to the sheet. Any other copy (`localhost`, an
 address on the network, `file:`, a fork, a webdriver browser anywhere) is a local copy that never asks it anything,
 statistics and leaderboards included (`app.js` `LOCAL`, `sheetFetch`: "local copy: the sheet is off" unless a test sets
-`window.SHEET_STUB`); only the R2 photos reach a live service. The admin page has its own sheet calls: use
-`admin.html?demo` locally.
+`window.SHEET_STUB`); only the R2 photos reach a live service. The admin page keeps its own copy of that gate
+(`admin.js` `SHEET_SITE`, `LOCAL`, `sheetFetch`): off outside the deployed site, `?readonly` included, so a local
+`admin.html?readonly` shows no photo statistics; `?demo` answers in memory as before.
 
 ## Deploying
 
