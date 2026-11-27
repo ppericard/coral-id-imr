@@ -199,7 +199,7 @@ test('a new version installs the deployed page, not an HTTP-cached copy, and cop
   const shell = calls.map(c => c[0]),
     fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
   assert.ok(shell.length > 20 && shell.some(fixed) && shell.some(u => !fixed(u)), shell.join(' '));
-  assert.ok(!shell.some(u => FISH_FILE.test(u)), 'a first install downloads no fish dataset (REE-339)');
+  assert.strictEqual(shell.filter(u => FISH_FILE.test(u)).length, 3, 'a first install asks for the three fish datasets (REE-339)');
   calls.length = 0;
   const v2 = worker('reefid-shell-v2', store, [], {fetch});
   await v2.install();
@@ -217,10 +217,11 @@ test('a new version installs the deployed page, not an HTTP-cached copy, and cop
   assert.ok(!store.all.has('reefid-shell-v1'));
 });
 
-// REE-339: the fish datasets (about 938 KB compressed) are optional in the install. A first install of a coral player
-// completes, and the worker takes over, when every one of them fails (Y7L's empty-cache fixture: fish-game.json answered
-// 503 and the install never activated); none is downloaded for a device that never opened fish; one the device holds is
-// carried to the next version, and a newer one is asked for without ever failing the install.
+// REE-339: the fish datasets (about 938 KB compressed) are best-effort in the install. Every device still asks for them (an
+// RA who installs on wifi opens fish offline later), but the install completes, and the worker takes over, when one or
+// every one of them fails (Y7L's empty-cache fixture: fish-game.json answered 503 and the install never activated); the
+// coral shell decides. One the device holds is carried to the next version, a newer one is asked for, and a missing one
+// is fetched again, and kept, when the page needs it.
 const answer = (u, status = 200) => ({
   ok: status === 200,
   status,
@@ -247,19 +248,34 @@ test('REE-339: a first install succeeds and takes over when the fish datasets ca
   await w.activate();
   const kept = [...store.all.get('reefid-shell-v1').keys()].map(u => u.slice(SITE.length));
   for (const u of REQUIRED) assert.ok(kept.includes(u === './' ? '' : u), `the shell holds ${u}`);
-  assert.deepStrictEqual(calls.filter(isFish), [], 'a device that never opened fish asks for no fish dataset');
+  assert.strictEqual(calls.filter(isFish).length, 3 * 3, 'each fish dataset was asked for, 3 tries each');
+  assert.ok(!kept.some(u => FISH_FILE.test(u)), 'none is claimed');
 });
 
-test('REE-339: a fish dataset the page fetches when fish is first needed is kept, and reused by the next version without the network', async () => {
+test('REE-339: a device that never opened fish holds the three datasets after install, and opens fish offline', async () => {
   const store = storage(),
-    net = [];
-  const v1 = worker('reefid-shell-v1', store, net);
+    w = worker('reefid-shell-v1', store, []);
+  await w.install();
+  await w.activate();
+  const kept = [...store.all.get('reefid-shell-v1').keys()].map(u => u.slice(SITE.length));
+  for (const f of FISH) assert.ok(kept.includes(f), `${f} kept at install`);
+  // The line is down: the page's first fetch of each fish dataset is the worker's copy.
+  const off = worker('reefid-shell-v1', store, [], {fetch: async () => Promise.reject(new TypeError('offline'))});
+  for (const f of FISH) assert.strictEqual((await off.get(SITE + f)).body, 'body of ' + f, `${f} served offline`);
+});
+
+test('REE-339: a dataset missing after install is fetched when the page needs it, kept, and reused by the next version without the network', async () => {
+  const store = storage(),
+    net = [],
+    fail = async r => (net.push(urlOf(r)), answer(urlOf(r), isFish(urlOf(r)) ? 503 : 200));
+  const v1 = worker('reefid-shell-v1', store, [], {fetch: fail});
   await v1.install();
   await v1.activate();
   net.length = 0;
-  for (const f of FISH) await v1.get(SITE + f); // the page, on the first switch to fish
+  const w1 = worker('reefid-shell-v1', store, net); // the line is back
+  for (const f of FISH) await w1.get(SITE + f); // the page, on the first switch to fish
   assert.deepStrictEqual(net.sort(), FISH.map(f => SITE + f).sort(), 'fetched from the network once');
-  for (const f of FISH) await v1.get(SITE + f);
+  for (const f of FISH) await w1.get(SITE + f);
   assert.strictEqual(net.length, FISH.length, 'a second visit reads them from the cache');
   const v2 = worker('reefid-shell-v2', store, net);
   net.length = 0;

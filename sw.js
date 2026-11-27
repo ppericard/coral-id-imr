@@ -111,18 +111,12 @@ const get = async (c, u, n = 3) => {
     }
   }
 };
-// The fish datasets (fish.json, fish-photos.json, fish-game.json, about 938 kB compressed) are optional in the install: a
-// player of the corals needs none of them, and one of them failing (a 503, a cut line) must not stop the corals' install
-// and its offline copy (REE-339). The page fetches them when fish is first needed (versioned files, cache first: the
-// fetch below keeps each good reply in the shell cache). A device that already holds them (an older version's shell cache)
-// carries them over, and asks for a newer one now, a failure of which is the page's to meet when fish is next opened.
+// The fish datasets (fish.json, fish-photos.json, fish-game.json, about 938 kB compressed) are best-effort in the install
+// (REE-339): every device still asks for them (an RA who installs on wifi can open fish offline later), but one of them
+// failing (a 503, a cut line) must not stop the corals' install and its offline copy: the coral shell decides `install`.
+// A missing one is asked for again by the page, in the background at the next start of the app (app.js SETUP[5]) or when
+// fish is first needed (versioned files, cache first: the fetch below keeps each good reply in the shell cache).
 const optional = u => /^fish[\w-]*\.json\?/.test(u);
-const holdsOptional = async () => {
-  for (const k of await caches.keys())
-    if (REPLACES.some(s => k.startsWith(s)) && k !== V)
-      for (const req of await (await caches.open(k)).keys()) if (/\/fish[\w-]*\.json$/.test(new URL(req.url).pathname)) return true;
-  return false;
-};
 self.addEventListener('install', e =>
   e.waitUntil(
     caches
@@ -130,8 +124,7 @@ self.addEventListener('install', e =>
       // Each file on its own, tried up to 3 times: with addAll, one file failing on an unstable line would fail the whole
       // install, so a phone on such a line would never get the offline copy (tools/perf.js, 1 request in 5 failing).
       .then(async c => {
-        await Promise.all(SHELL.filter(u => !optional(u)).map(u => get(c, u)));
-        if (await holdsOptional()) await Promise.all(SHELL.filter(optional).map(u => get(c, u).catch(() => {})));
+        await Promise.all(SHELL.map(u => (optional(u) ? get(c, u).catch(() => {}) : get(c, u))));
       })
       .then(() => self.skipWaiting())
   )

@@ -83,7 +83,9 @@ const server = http.createServer((req, res) => {
 // 6b. A first install of a coral player succeeds and takes over although every fish dataset answers 503: the coral
 //    shell is all in the cache and a coral question prepared online is shown offline with its photos; fish says it is
 //    not available until its data arrives, then loads, is kept, and opens offline on the next visit (REE-339).
-// 9.A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
+// 6c. A first install while the fish datasets answer: the three are in the cache for a device that never opened fish, and its
+//    first switch to fish, offline, works.
+// 9. A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
 // 8. Start-up recovers when its scripts, stylesheet and data.json fail once (loader retries, getR).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 //    Auto is Saver on a line the app measures as slow, and Saver never moves a shown photo to a bigger file.
@@ -1090,6 +1092,59 @@ const server = http.createServer((req, res) => {
     }
     OFFLINE = false;
     FAIL = null;
+    if (errs.length) fails.push(at + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
+  // 6c. The same first install with the fish datasets answering (REE-339): a device that never opened fish holds the three after
+  // the install (an RA who installs on wifi can open fish offline later), and its first switch to fish, offline, works.
+  {
+    const at = '6c, a coral player who installs on wifi: ';
+    FAIL = null;
+    OFFLINE = false;
+    const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+    await ctx.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await inatLocal(ctx);
+    await fromR2(ctx);
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    const p = await ctx.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base + '#home');
+    await ready(p);
+    const ok = await p.evaluate(() =>
+      Promise.race([
+        navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready.then(() => true)),
+        new Promise(ok => setTimeout(() => ok(false), 60000))
+      ]).catch(() => false)
+    );
+    if (!ok || !(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
+      fails.push(at + 'the service worker did not install and take the page over');
+    else {
+      const kept = await p.evaluate(async () => {
+        const k = [];
+        for (const u of ['fish.json?v=6', 'fish-photos.json?v=6', 'fish-game.json?v=1']) k.push(!!(await caches.match(u)));
+        return k;
+      });
+      if (!kept.every(Boolean)) fails.push(`${at}the install did not keep the three fish datasets (${kept})`);
+      OFFLINE = true;
+      await p.reload();
+      await ready(p).catch(() => fails.push(at + 'offline, the next visit did not start'));
+      await p.waitForSelector('[data-subj="fish"]', {state: 'attached'});
+      await p.locator('[data-subj="fish"]:visible').first().click();
+      if (!(await p.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 30000}).catch(() => null)))
+        fails.push(at + 'offline, the first switch to fish did not work');
+      if (await p.evaluate(() => [...document.querySelectorAll('.apptoast')].some(t => /not available/.test(t.textContent))))
+        fails.push(at + 'fish said it was not available although its data was kept');
+    }
+    OFFLINE = false;
     if (errs.length) fails.push(at + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }

@@ -1787,7 +1787,15 @@ function subjHello() {
       kick: H.kick,
       title: H.title,
       body: H.body,
-      primary: {text: `Try ${esc(S.name.toLowerCase())}`, on: () => (seen(), setSubject(S.id).then(() => (location.hash = hr('quiz'))))},
+      primary: {
+        text: `Try ${esc(S.name.toLowerCase())}`,
+        on: () => (
+          seen(),
+          setSubject(S.id)
+            .then(() => (location.hash = hr('quiz')))
+            .catch(() => {})
+        )
+      }, // a subject whose data did not come said so (setSubject)
       secondary: {text: 'Later', on: seen},
       esc: 2
     });

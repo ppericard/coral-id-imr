@@ -4448,6 +4448,15 @@ const SETUP = {
   },
   5: () => {
     if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+    // The fish datasets are best-effort in the worker's install (sw.js `optional`, REE-339): one it could not keep is asked for
+    // again here, in the background, at the next start of the app under the worker (which keeps the reply), so fish opens offline.
+    if (navigator.serviceWorker && navigator.serviceWorker.controller && window.caches)
+      ['fish.json?v=6', 'fish-photos.json?v=6', 'fish-game.json?v=1'].forEach(u =>
+        caches
+          .match(u)
+          .then(hit => hit || fetch(u))
+          .catch(() => {})
+      );
   }
 };
 // A later tier's stylesheets (index.html <link data-css=N>, no rel: nothing fetched) become stylesheets where they stand,
