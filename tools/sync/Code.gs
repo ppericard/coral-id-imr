@@ -2149,7 +2149,7 @@ function rightsWrite_(by, op){
   const counts = (n, xs) => xs.map(x => x + 's ' + (n ? s0[x] : 0)).join(', ');
   if (L.length && !op.own) {
     const act = op.removed !== undefined ? 'remove' + why({why: 'account removed'}) : first.act;
-    audit_(by, act, L.indexOf('manager') >= 0 ? INST_SCOPE_ : 'platform',op.heir ? 'heir' : 'last', tgt, counts(1, L), counts(0, L));
+    audit_(by, act, L.indexOf('manager') >= 0 ? INST_SCOPE_ : 'platform', op.heir ? 'heir' : 'last', tgt, counts(1, L), counts(0, L));
     throw answerErr_({ok: false, error: op.heir ? 'heir' : 'last', seat: L.join(',')}, (op.heir ? 'heir' : 'last') + ' ' + L.join(','));
   }
 
