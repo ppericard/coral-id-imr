@@ -63,7 +63,7 @@
       sel: '#prog',
       alt: 'nav [data-tab=progress]',
       t: 'Your progress',
-      d: `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${TAP} to see every genus of the IMR slate: the coral genera IMR records on its reef surveys, plus a few look-alikes.`
+      d: `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${TAP} to see every genus of the ${ORG.slate}: the coral genera ${ORG.short} records on its reef surveys, plus a few look-alikes.`
     },
     help: {
       k: 'help',
@@ -529,7 +529,7 @@
   window.tour = function (at = 0) {
     if (root || typeof DATA === 'undefined' || !DATA) return;
     try {
-      localStorage.setItem(KEY, '1');
+      store.raw(KEY, '1');
     } catch (e) {}
     // What the tour starts with (plan): read back when it comes back after a sign-in's reload (at > 0), else now.
     OPEN = null;

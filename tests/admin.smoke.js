@@ -951,6 +951,101 @@ async function lazyPart(b, base, fails) {
       );
       if (titles.length) fails.push(`${w}px #${h}: a page title ${JSON.stringify(titles)}`);
     }
+    // The course's words (REE-34 PR 4, rule W21): the admin writes them from core.js ORG, so this edition reads as it always
+    // did. Each sentence of the help that holds one, the unit tags and the lists of origins and rights, the lock screen's
+    // two token links (named for the app, from ORG.app), written out here as the admin shows them.
+    if (w === 1280) {
+      const SAID = [
+        ['journey', 'genus in italics, one the IMR course names otherwise with its IMR name), each opening its'],
+        ['journey', "opens by itself after the IMR course's families, circle"],
+        ['journey', 'question (new to corals, IMR coral course, know corals'],
+        ['fishtodo', 'To do (under its All | IMR filter; a click opens'],
+        ['points', 'settle: questions for an IMR trainer (<b>Trainer</b>),'],
+        ['kcov', "whoever took them): the IMR genera and the book's"],
+        ['kcov', 'genera seen at Dauin (Not IMR). Every photo of the view'],
+        ['kcov', 'view counts (field and IMR lecture photos), except'],
+        ['rights', 'or no licence read), <b>IMR</b> IMR lecture photos, <b>book'],
+        ['rights', 'page lists now (field and IMR lecture photos, not hidden),'],
+        ['rights', 'named to the genus, the IMR lecture ones among them).'],
+        ['cov', 'genus a game can ask (the IMR slate, Millepora and the'],
+        ['cov', 'can draw from. Field and IMR lecture photos (no multi-coral,'],
+        ['cov', 'the photos come from (IMR, Pierre, iNat Dauin, Philippines,'],
+        ['statslog', 'and genera (a genus the IMR course names otherwise shows its IMR name), the questions on'],
+        ['statsconf', 'starting from Look-alike (IMR lecture or Coral Finder'],
+        ['statsheat', 'a declared look-alike (IMR lecture or Coral Finder'],
+        ['pstats', 'counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the'],
+        ['pstats', 'every game genus (the IMR slate, Millepora, the'],
+        ['form', '<p>The 7 IMR growth forms (Lecture'],
+        ['fishcov', 'it),<b>Phases</b> shown (an IMR phase not shown yet ends'],
+        ['fishcov', "✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Tree)."],
+        ['fishcov', "waiting to fill the gap (the IMR course's first, then the"],
+        ['fishrev', 'differ: a family with IMR phase lines, or the photos'],
+        ['fishmont', 'row each: the pairs the IMR course compares (its lines,'],
+        [
+          'units',
+          "scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only."
+        ],
+        ['units', 'tag, combined with All / IMR, in both views: a <b>Circle'],
+        ['units', '(every family in a pair the IMR course compares, or one'],
+        ['units', '4-5), every phase the IMR course names. <b>Other'],
+        ['units', 'its Candidates card; its IMR name is kept. Each species'],
+        ['units', "the text players see. <b>IMR</b> marks the IMR course's words: editable,"],
+        ['units', "tag: the fish's are the IMR course, After the course"],
+        ['units', '3 names in force, the IMR name marked; the first'],
+        ['units', 'player but a player at IMR sees first. <b>✎</b> opens'],
+        ['ctree', 'keeps it. <b>Key</b>: the IMR lecture groups (1 to 11),'],
+        ['ctree', 'app shows them; <b>No IMR group</b> holds Millepora,'],
+        ['ctree', "the genera yet. <b>All / IMR</b> shows every genus or the IMR slate's only;"],
+        ['mont', 'look-alikes in force (pairs the IMR lecture or the Coral Finder'],
+        ['mont', 'view, same growth form, IMR then your photos first).'],
+        ['cand', 'genera of the games (the IMR slate, Millepora, the']
+      ];
+      const org = await p.evaluate(() => ({
+        ORG,
+        help: Object.fromEntries(Object.keys(HELP).map(k => [k, typeof HELP[k] === 'function' ? HELP[k]() : HELP[k]])),
+        origin: ORIGIN_T.imr,
+        rights: RIGHTS_L.imr,
+        tag: [fuImr({imr: 'Boxfish'}), fuImr({imrWith: 'Soapfishes'})]
+      }));
+      const want = {
+        short: 'IMR',
+        app: 'IMR Reef ID',
+        course: 'IMR course',
+        lecture: 'IMR lecture',
+        lectureRef: 'IMR Lecture 6',
+        list: 'IMR list',
+        slate: 'IMR slate',
+        trainer: 'IMR trainer'
+      };
+      for (const [k, v] of Object.entries(want))
+        if (org.ORG[k] !== v) fails.push(`ORG.${k} is "${org.ORG[k]}", this edition's word is "${v}"`);
+      for (const [k, s] of SAID) if (!String(org.help[k]).includes(s)) fails.push(`help "${k}" no longer says: ${s}`);
+      if (org.origin !== 'IMR' || org.rights !== 'IMR') fails.push(`origin and rights labels: ${org.origin}, ${org.rights}`);
+      if (
+        org.tag[0] !== '<span class="adm-src adm-imrt" title="IMR course: Boxfish">IMR</span>' ||
+        org.tag[1] !== '<span class="adm-src adm-imrt" title="IMR course: taught with the Soapfishes">IMR</span>'
+      )
+        fails.push(`the unit tag: ${org.tag.join(' ')}`);
+      // The lock screen (no token): the fine-grained and the classic token links carry the app's name, not an older one.
+      const cl = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+      await cl.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      const lp = await cl.newPage();
+      await lp.goto(base + 'admin.html');
+      await lp.waitForSelector('.adm-lock a[href*="github.com/settings"]', {timeout: 15000});
+      const links = await lp.$$eval('.adm-lock a[href*="github.com/settings"]', L => L.map(a => a.getAttribute('href')));
+      if (
+        links.length !== 2 ||
+        !links[0].startsWith(
+          'https://github.com/settings/personal-access-tokens/new?name=IMR%20Reef%20ID%20curation&description=Photo%20curation%20back-office'
+        ) ||
+        links[1] !== 'https://github.com/settings/tokens/new?scopes=repo&description=IMR%20Reef%20ID%20curation'
+      )
+        fails.push(`the lock screen's token links: ${links.join(' ')}`);
+      await cl.close();
+    }
     // The narrowest width of rule U4, 360 px, with the phone run (no job of its own): every view with no
     // page wider than the window, and Coverage's two grids with a view column sorted (its ▲ widens the header), in a
     // context of its own so the sort it leaves behind touches nothing else (Coverage's table.cov-t was 26 px too wide).
@@ -6157,6 +6252,37 @@ async function lazyPart(b, base, fails) {
             fails.push(`${w}px Infrastructure from v${IV}: ${JSON.stringify(i1)}`);
           await q.close();
         }
+        // The answer log read lean (admin.js LEAN_SHEET, leanIn; Code.gs answers_ with lean; core.js rowsPack): before its
+        // version the demo sends rows, from it the lean form (rule D4); either way the log the admin holds is the plain
+        // reply's rows (the demo's reply asked both ways in the page), and Activity draws it.
+        {
+          const LV = await p.evaluate(() => LEAN_SHEET);
+          for (const v of [LV - 1, LV]) {
+            const q = await p.context().newPage();
+            q.on('pageerror', e => fails.push(`${w}px lean answer log page error (v${v}): ${e.message}`));
+            await q.goto(base + `admin.html?demo&v=${v}#players/activity`);
+            await q
+              .waitForFunction(() => ANS && ANS.all && ANS.all.length && document.querySelector('#view .adm-kpis'), null, {timeout: 30000})
+              .catch(() => {});
+            const r = await q.evaluate(async () => {
+              const ask = lean =>
+                fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAnswers: 1, token: TOKEN, ...(lean ? {lean: 1} : {})})}).then(
+                  x => x.json()
+                );
+              const a = await ask(0),
+                b = await ask(1),
+                back = b.lean ? rowsUnpack(b.lean) : b.rows;
+              return {
+                lean: !!b.lean && !b.rows,
+                same: JSON.stringify(back) === JSON.stringify(a.rows),
+                held: !!ANS && !ANS.old && JSON.stringify(ANS.all) === JSON.stringify(a.rows.filter(x => !winkRow(x))),
+                n: ANS && ANS.all ? ANS.all.length : 0
+              };
+            });
+            if (r.lean !== v >= LV || !r.same || !r.held || !r.n) fails.push(`${w}px lean answer log at v${v}: ${JSON.stringify(r)}`);
+            await q.close();
+          }
+        }
         // To do › Reports lists the demo reports; Activity shows the demo players' answers.
         // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
         await go('inbox/todo/errors');
@@ -7808,7 +7934,9 @@ async function lazyPart(b, base, fails) {
               add.push(
                 Object.assign(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''), {
                   15: i % 3 ? 'Chromis' : 'Pomacentruspomacentruspomacentruspomacen',
-                  16: null
+                  16: null,
+                  // the texts refused before it (23, sheet v228): the Refused texts card, most frequent first
+                  23: i % 3 ? null : i ? ['Damselfish'] : ['damselfish ', 'xyz' + 'z'.repeat(37)]
                 })
               );
             // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
@@ -7860,6 +7988,13 @@ async function lazyPart(b, base, fails) {
               tt: [...V.querySelectorAll('.adm-scard')]
                 .filter(x => /^Typed text/.test(x.textContent))
                 .flatMap(x => [...x.querySelectorAll('td .adm-cut')].map(e => e.title)),
+              // the Refused texts card: each text with its count, and the KPI of the typed answers that came after one
+              rf: [...V.querySelectorAll('.adm-scard')]
+                .filter(x => /^Refused texts/.test(x.textContent))
+                .flatMap(x => [...x.querySelectorAll('tr')].slice(1).map(tr => `${tr.cells[0].textContent}=${tr.cells[1].textContent}`)),
+              rfk: [...V.querySelectorAll('.adm-kpis div')]
+                .filter(x => /Typed after refused/.test(x.textContent))
+                .map(x => x.textContent.replace(/\s+/g, ' ').trim()),
               wide: document.documentElement.scrollWidth - innerWidth
             };
           });
@@ -7897,8 +8032,12 @@ async function lazyPart(b, base, fails) {
         }
         if (
           // Typed text: the typed mix-ups above as typed (admin.js typedText), the long one cut in its cell
-          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text' ||
+          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed | Typed text | Refused texts' ||
           pr.tt.join() !== 'pomacentruspomacentruspomacentruspomacen' ||
+          // Refused texts: as typed (lower case, trimmed), most frequent first; the KPI of the typed answers after one
+          // (the fixture above is added for two players: twice each)
+          pr.rf.join() !== `damselfish=4,xyz${'z'.repeat(37)}=2` ||
+          pr.rfk.join() !== '4/8Typed after refused texts' ||
           pr.pair.join() !== 'Look-alike' ||
           pr.key.join() !== 'Key group' ||
           !pr.zo ||
@@ -9648,6 +9787,118 @@ async function lazyPart(b, base, fails) {
         const pub = await sq.evaluate(() => (SAVED.fish || {}).names);
         if (JSON.stringify(pub) !== JSON.stringify({[ids.x]: {[ids.a]: 'often'}})) se.push(`published ${JSON.stringify(pub)}`);
         if (se.length) fails.push(`Shared names: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
+      // Photos › Tree, a species' own common names (admin-content.js cnBox, cnBind; Pierre, 2026-11-21, Q444: "C'est un détail
+      // d'implémentation. Si tu penses que c'est le mieux, oui."), in a context of its own, on a species that lists two names or
+      // more. The box lists them (the IMR name marked); ✎ opens one box per name (3), Save is one draft step (curation.json fish cn:
+      // {species id: [names]}), a refused Save (a name twice) changes nothing and marks the boxes, Undo and Redo, ↺ brings the built
+      // list back; the game reads the draft's list (contentApply); a family has no box; Publish counts the list and the published
+      // fish part carries it; dark theme; no overflow at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => d.accept());
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const F = FISHC.raw,
+            s = F.species.find(
+              x =>
+                (x.cn || []).length >= 2 && Number.isInteger(x.cni) && x.circle && x.family && !F.families.find(f => f.id === x.family).wink
+            );
+          return {id: s.id, fam: s.family, names: s.cn.map(n => n[0]), imr: s.cni};
+        });
+        const cn = () => sq.evaluate(() => (DRAFT.fish || {}).cn || null),
+          box = '#view .adm-ccn',
+          shown = () =>
+            sq.evaluate(s => [...document.querySelectorAll(s + ' .adm-cslot > ul li')].map(x => x.firstChild.textContent.trim()), box);
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.id));
+        await swait(() => document.querySelector('#view .adm-ccn'));
+        if (JSON.stringify(await shown()) !== JSON.stringify(ids.names)) se.push(`the names shown ${JSON.stringify(await shown())}`);
+        const imr = await sq.evaluate(
+          s => [...document.querySelectorAll(s + ' .adm-cslot > ul li')].findIndex(x => x.querySelector('.adm-imrt')),
+          box
+        );
+        if (imr !== ids.imr) se.push(`the IMR mark on ${imr}, not ${ids.imr}`);
+        // ✎: three boxes, the names in them; a name added, the main one changed: one draft step.
+        await sq.click(`${box} [data-cna="edit"]`);
+        await swait(() => document.querySelectorAll('#view .adm-ccn [data-cnin]').length === 3);
+        const vals = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-ccn [data-cnin]')].map(x => x.value));
+        if (JSON.stringify(vals) !== JSON.stringify([...ids.names, ''].slice(0, 3))) se.push(`the boxes ${JSON.stringify(vals)}`);
+        // a name twice: refused, the boxes marked, nothing in the draft
+        await sq.fill(`${box} [data-cnin="2"]`, ids.names[0].toUpperCase());
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn [aria-invalid="true"]'));
+        if (await cn()) se.push(`a refused Save wrote ${JSON.stringify(await cn())}`);
+        // the main name emptied: refused too
+        await sq.fill(`${box} [data-cnin="2"]`, '');
+        await sq.fill(`${box} [data-cnin="0"]`, '');
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn [data-cnin="0"][aria-invalid="true"]'));
+        if (await cn()) se.push(`an empty main name wrote ${JSON.stringify(await cn())}`);
+        await sq.fill(`${box} [data-cnin="0"]`, 'A made-up main name');
+        await sq.fill(`${box} [data-cnin="2"]`, ' A third name ');
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn .is-fresh'));
+        const want = ['A made-up main name', ...ids.names.slice(1), 'A third name'].slice(0, 3);
+        if (JSON.stringify(await cn()) !== JSON.stringify({[ids.id]: want})) se.push(`Save ${JSON.stringify(await cn())}`);
+        if (JSON.stringify(await shown()) !== JSON.stringify(want)) se.push(`the names in force ${JSON.stringify(await shown())}`);
+        // the game reads it (contentApply, as the app's treeBuild), and the first name an IMR player sees follows the IMR name
+        const game = await sq.evaluate(id => {
+          const s = contentApply(FISHS, FISHC.raw, DRAFT).species.find(x => x.id === id);
+          return {names: s.cn.map(n => n[0]), cni: s.cni === undefined ? -1 : s.cni};
+        }, ids.id);
+        if (JSON.stringify(game.names) !== JSON.stringify(want)) se.push(`the game's names ${JSON.stringify(game)}`);
+        if (!(await sq.evaluate(() => /common name list/.test(pubSummary())))) se.push('Publish does not count it');
+        // Undo, Redo, then ↺ Restore: the built list again, the entry gone
+        await sq.click('#undo');
+        await swait(() => !document.querySelector('#view .adm-ccn .is-fresh'));
+        if (await cn()) se.push(`Undo left ${JSON.stringify(await cn())}`);
+        await sq.click('#redo');
+        await swait(() => document.querySelector('#view .adm-ccn .is-fresh'));
+        await sq.click(`${box} [data-cna="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-ccn .is-fresh'));
+        if (await cn()) se.push(`Restore left ${JSON.stringify(await cn())}`);
+        if (JSON.stringify(await shown()) !== JSON.stringify(ids.names)) se.push(`Restore shows ${JSON.stringify(await shown())}`);
+        // a family has no such box
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.fam));
+        await swait(() => document.querySelector('#view .adm-sname'));
+        if (await sq.evaluate(() => !!document.querySelector('#view .adm-ccn'))) se.push('a Common names box on a family');
+        // dark theme and no overflow at 1280 and 390, the editor open
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.id));
+        await swait(() => document.querySelector('#view .adm-ccn'));
+        await sq.click(`${box} [data-cna="edit"]`);
+        await swait(() => document.querySelector('#view .adm-ccn [data-cnin]'));
+        const dk = await darkCards(sq, '#view .adm-ccn .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        for (const w of [1280, 390]) {
+          await sq.setViewportSize({width: w, height: 900});
+          const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+          if (wide > 0) se.push(`${w}px: ${wide}px too wide`);
+        }
+        await sq.setViewportSize({width: 1280, height: 900});
+        // Publish: counted, and the published fish part carries the list and no empty map
+        await sq.fill(`${box} [data-cnin="0"]`, 'A published main name');
+        await sq.click(`${box} [data-cna="save"]`);
+        await swait(() => document.querySelector('#view .adm-ccn .is-fresh'));
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 fish common name list$/m.test(sum)) se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).cn);
+        if (JSON.stringify(pub) !== JSON.stringify({[ids.id]: ['A published main name', ...ids.names.slice(1)]}))
+          se.push(`published ${JSON.stringify(pub)}`);
+        if (se.length) fails.push(`Species common names: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
       // Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, structBar; the structure editor,

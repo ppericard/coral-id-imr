@@ -9,12 +9,20 @@ log() { echo "$(TZ=Asia/Manila date +%H:%M) $*" | tee -a "$LOG"; }
 security_of() { echo "$1" | awk -F' [|] ' '{for (i = 1; i <= NF; i++) if (index($i, "security@head: ") == 1) {print substr($i, 16); exit}}'; }
 # Codex reviews security by itself only when a PR opens or a draft is marked ready; "@codex security review" started a
 # code review instead (#1466, 2026-11-22). So for a head with no security review: draft, then ready (CCR routes, REST
-# only). A PR left a draft is logged: train.py refuses drafts, so nothing merges unseen.
+# only). Every failure is logged, naming the call (REE-299); a PR left a draft is logged too: train.py refuses drafts, so
+# nothing merges unseen. The caller retries a failed ask (a few turns apart) and counts it done only on success. ASK_DRAFTED
+# remembers a PR this function turned to draft but could not mark ready, so a retry goes straight to ready_for_review.
+ASK_DRAFTED=""
 ask_security() {
-  gh api -X POST $R/pulls/$1/ccr/convert_to_draft >/dev/null 2>&1 || return 1
+  if [ "$ASK_DRAFTED" != "$1" ]; then
+    gh api -X POST $R/pulls/$1/ccr/convert_to_draft >/dev/null 2>&1 ||
+      { log "#$1: convert_to_draft refused, Codex's security review not asked"; return 1; }
+    ASK_DRAFTED=$1
+  fi
   gh api -X POST $R/pulls/$1/ccr/ready_for_review >/dev/null 2>&1 ||
     gh api -X POST $R/pulls/$1/ccr/ready_for_review >/dev/null 2>&1 ||
     { log "#$1: left as a draft (ready_for_review refused twice): mark it ready by hand"; return 1; }
+  ASK_DRAFTED=""
 }
 cd "$REPO_DIR" || exit 1
 for n in "$@"; do
@@ -30,6 +38,10 @@ for n in "$@"; do
   i=0
   sm=0
   asked=""
+  tries=0
+  tries_sha=""
+  tries_turn=0
+  ASK_DRAFTED=""
   while [ $i -lt 60 ]; do
     i=$((i + 1))
     line=$(bash "$Q/prstate.sh" "$n")
@@ -40,11 +52,21 @@ for n in "$@"; do
     # the security review settled (completed, findings or failed); running, absent, stale and "?" are waited for
     case "${sec%% *}" in completed|findings|failed:*) secdone=1;; *) secdone=0;; esac
     # a later head (an agent's push, uptodate.sh's merge of main, a VERSION assign) gets no security review by itself:
-    # once per head, once its checks are done, draft then ready (ask_security; REE-232)
+    # once per head, once its checks are done, draft then ready (ask_security; REE-232). A head counts as asked only
+    # when the call succeeded; a failed one is retried at least 2 turns (a minute) later, 3 attempts per head (REE-299)
     case "${sec%% *}" in stale|absent)
       if [ "$pend" = "0" ] && [ "$asked" != "${sec#* }" ]; then
-        asked=${sec#* }
-        ask_security "$n" && log "#$n: draft then ready, so Codex reviews the security of ${asked:0:7}"
+        if [ "$tries_sha" != "${sec#* }" ]; then tries_sha=${sec#* }; tries=0; tries_turn=$((i - 2)); fi
+        if [ $tries -lt 3 ] && [ $((i - tries_turn)) -ge 2 ]; then
+          tries=$((tries + 1))
+          tries_turn=$i
+          if ask_security "$n"; then
+            asked=$tries_sha
+            log "#$n: draft then ready, so Codex reviews the security of ${asked:0:7}"
+          elif [ $tries -ge 3 ]; then
+            log "#$n: security review of ${tries_sha:0:7} not asked after 3 attempts"
+          fi
+        fi
       fi;;
     esac
     if [ "$pend" = "0" ] && [ "$codex" != "none" ] && [ "$codex" != "summary" ] && [ $secdone = 1 ]; then break; fi
@@ -82,10 +104,13 @@ for n in "$@"; do
     log "#$n: SKIPPED (train dry run refused): $out"
     continue
   fi
-  if out=$(TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py --sha "$cur" "$n" 2>&1); then
+  # TRAIN_EVIDENCE: each pushed train's per-obligation reuse evidence, one JSON line (tools/train_reuse.py, REE-121 (a))
+  if out=$(TRAIN_EVIDENCE="$QUEUE_DIR/train-evidence.jsonl" TRAIN_REPO="$QUEUE_REPO_NAME" python3 tools/train.py --sha "$cur" "$n" 2>&1); then
     log "#$n train: $(echo "$out" | tail -4 | tr '\n' ' ')"
   else
     log "#$n train stopped: $out"
   fi
+  # the train's one-line reuse audit, and in shadow mode whether the train agreed, whatever the outcome
+  echo "$out" | grep -E '^Reuse (audit|shadow)' | while IFS= read -r l; do log "#$n $l"; done
 done
 log "queue done"

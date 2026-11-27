@@ -1,5 +1,7 @@
 # Groups carry an instance's rights; one Trainers group and per-cohort trainer lists; Admin outside the groups
 
+Changed by: [2026-11-26, roles, groups and assignments](2026-11-26-roles-groups-assignments.md)
+
 Date: 2026-11-19. PR: #1190. Rules or docs touched: none in this PR (the study's four PRs carry it out).
 
 ## Context

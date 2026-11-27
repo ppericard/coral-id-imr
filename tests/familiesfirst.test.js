@@ -84,7 +84,8 @@ test('app.js setLater: a unit of a set with after, not its auto units, not when 
     c = {Q: {}, setOf: n => (n.startsWith('g:') ? S : n === 'Isopora' ? B : null)};
   vm.createContext(c);
   vm.runInContext(
-    block(app, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}) +
+    block(app, 'const setAuto = ', '\n', {through: 1, file: 'app.js'}) + // a set's auto, a view (here its computation)
+      block(app, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}) +
       block(app, 'const setLater = ', '\n};\n', {through: 1, file: 'app.js'}) +
       '\nthis.setLater = setLater;',
     c

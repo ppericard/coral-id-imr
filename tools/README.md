@@ -28,7 +28,7 @@ Conventions that hold across them:
 | `sheet_version.py` | The sheet script's version rules; `--assign` gives the next version at merge (the integrator) |
 | `stack.json`, `stack_check.py` | The pins of the whole stack (runtimes, tools, APIs); `--check` offline is **CI**, `--latest` lists what is behind |
 | `requirements.txt` | The Python packages CI installs, pinned by hash |
-| `rename_app.py` | Applies the app's names (from `core.js` `ORG`) to the static files; `--check` is **CI** |
+| `rename_app.py` | Applies the app's names and the organisation's bare words (from `core.js` `ORG`) to the static files; `--check` is **CI** |
 | `photos.py` | The four photo sizes and where a photo lives; fills missing sizes; `--check` is **CI** |
 | `build_site.py` | The deploy's build of its staged copy: `curplay.py`, `stamp_versions.py`, `minify.js`, the checks |
 | `curplay.py` | Writes `curation-play.json`, the players' copy of the curation |
@@ -42,7 +42,10 @@ Conventions that hold across them:
 | Tool | What it does |
 |---|---|
 | `brief.py` | The session brief: Manila time and the Rule 0 window, open PRs, questions for Pierre, the links to Linear (where open work is tracked), and whether the local `origin/main` is the remote's main (one bounded `git ls-remote`, nothing fetched). The session hooks run it (`--short`, `--time`); every `send_later` check-in runs `--checkin`, which prints the live signals and then `checkin.md`, the check-in's fixed text |
+| `agent-brief.md` | What every launched agent is told, in any tool: the lines a launch prompt used to repeat, the report, the Linear conventions. A launch prompt says to read it and names the task |
 | `train.py` | The merge train (rule W26): builds `main` plus the ready PRs, waits for the checks, merges them, moves `release` |
+| `train_reuse.py` | For `train.py`: which jobs a one-PR train need not run again, proven from the PR's own CI on the same tree (REE-121 (a)) |
+| `smoke_scope.py` | Whether a Smokes run needs the browser matrix: none on a docs-only train, all on any other (rule W12) |
 | `guard_bash.py` | The Bash guard (a PreToolUse hook): refuses at once, with the way out, a shell command carrying code or editing in place |
 | `agent_guard.py` | The same on Agent: refuses a launch without `model` and `effort`; logs each |
 | `issue_guard.py` | The same on Linear's `save_issue`: refuses a new issue whose description has no `Searched:` line |
@@ -84,7 +87,7 @@ Conventions that hold across them:
 | `apply_coral_apart.py`, `coral_apart.json` | The declared coral pairs' tell-apart lines with their sources (the slate's, and those with a bonus or Key-only genus), into `data.json` `ap` / `apsrc`; `--check` for a test |
 | `apply_imr_corrections.py`, `apply_review_slides.py`, `apply_favites.py`, `apply_some_species.py` | One-time content passes on the lecture notes and the traits of some genera |
 | `apply_imr_forms.py` | The IMR growth-form definitions into `forms.json` |
-| `apply_imr_sources.py`, `imr_sources.json` | Credits the IMR lecture photos traced to their original source |
+| `apply_imr_sources.py`, `instances/imr/imr_sources.json` | Credits the IMR lecture photos traced to their original source |
 | `apply_book_rewrite.py`, `book_rewrite.json` | Rewords the texts that followed a book too closely; `--check` for a test |
 | `apply_no_book.py` | Takes the book's crops out of `data.json` and `data/cand.json` |
 | `apply_skeletons.py` | Marks skeleton photos from `judging/skeletons.json` (rule P6) |
@@ -173,8 +176,9 @@ learning change" (rule L11).
 | `realcheck.js`, `memreplay.js` | Check the model's estimates against the real answer log (rule L12) |
 | `rtprep.js`, `rtdecomp.py` | Response time: prepare the log, decompose the time |
 | `perf.js` | Speed from a player's side: cold and warm start, throttled phone and network |
+| `studies/<issue>/` | A study's scripts go in a folder named for its Linear issue, with a README that names its inputs and whether they are private; its results go to the PR or the study document |
 | `studies/q351/` | The scripts of one batch-model study |
-| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, the Q136 centring check (2C) and the step-2 candidates replayed against today's engine (2B, `replay2b.js`) on the real log; read-only, one 40-minute clock ([README](studies/q316/README.md)) |
+| `studies/q316/` | Q316's offline fit (with Q136): the componential difficulty model by Laplace marginal likelihood, its acceptance test on simulated answers, the Q136 centring check (2C) and the step-2 candidates replayed against today's engine (2B, `replay2b.js`) on the real log; the Gibbs sampler for the small-cluster SDs (`gibbs.py`) and the refit's extract tools (`refit/`); read-only, one 40-minute clock per run ([README](studies/q316/README.md)) |
 | `studies/ree112/`, `studies/ree191/` | The placement shrinkage check's and the pace-for-fast-learners study's scripts, recovered from the integrator's workspace at the 2026-11-22 pause: reference code, not reviewed tools; inputs private ([REE-112](studies/ree112/README.md), [REE-191](studies/ree191/README.md)) |
 | `queue/recovered/` | The integrator's grouped-train queue scripts of 2026-11-21/22, kept as reference, never run by CI ([README](queue/recovered/README.md), REE-220) |
 

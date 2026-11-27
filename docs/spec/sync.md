@@ -18,9 +18,10 @@ prompts the app shows around a game, some of them kept with the progress, are in
   from it, serves the photo statistics, the leaderboard and the admin's reads, and updates itself from GitHub.
 - **Accounts**: a name and a 4-digit code, no Google account. The code only prevents accidental overwrites: it is not a
   password (SECURITY.md).
-- **A local copy never talks to the sheet**: on `localhost`, `file:` or a webdriver browser the app never signs in,
-  saves or sends (`app.js` `LOCAL`, `sheetFetch`, unless a test sets `window.SHEET_STUB`), so tests never reach the real
-  sheet (rule D1).
+- **A local copy never talks to the sheet**: only the deployed site does (`app.js` `SHEET_SITE`); on any other address,
+  `file:` or a webdriver browser the app asks it nothing, the photo statistics, leaderboards and achievements' shares
+  included (`app.js` `LOCAL`; every request through `sheetFetch`, unless a test sets `window.SHEET_STUB`), so tests
+  never reach the real sheet (rule D1, `tests/sheetoff.test.js`).
 
 ### Version gates and the floor
 
@@ -76,7 +77,7 @@ QUERY on A:E): new columns only ever go at the end. A tab with fewer columns rea
 until the next answer adds them (`logAnswers_` inserts the columns before its header check). A row logged before a
 column existed has it blank, and an app that sends no value for a field leaves it blank: the script ignores the fields
 it does not know, so a field that an older script would drop needs no gate (no `*_SHEET`) unless the app must know it
-was kept.
+was kept. One answer's whole path, as one contract with its field table: [answer.md](answer.md).
 
 - **Seconds** and **Enlarged**: the answer's time and whether a photo was enlarged (below, "Answer time and
   enlargement"). `readAnswers` rows carry them at indexes 12 and 13 (null when blank), after the anonymous flag (11).
@@ -96,10 +97,12 @@ was kept.
   when it is replayed, LEARNING.md "The player's time net of the photo's"); read by its
   name (`SC_COL`, column W); `readAnswers` index 22, an object, and the same index in the replay's rows (`rowOf_`,
   `logRow`, `core.js` `LOG_SC`); blank when the app sent none (LEARNING.md "One scorer").
-- **Rejected tries**: the texts a typed answer refused before it, a JSON list. Logged only.
+- **Rejected tries**: the texts a typed answer refused before it, a JSON list (at most 10, each cut to 40 characters).
+  Served by `readAnswers` (and the admin's light read) as index 23: a list of strings, null when none, absent from a
+  script before v228, which the admin reads as none (`admin.js` `typedText`; no gate, rule D4). Nothing else reads it.
 - **Device**: the anonymous id of the device that sent the answer (`sync.js` `devId`, the Device of its Events and Pages
   rows): one `dev` per save or anonymous send, written in each of its rows by `logAnswers_` (`dev_`: 8 to 16 lower-case
-  letters and digits, else blank), signed in or not. Served by no reader (`readAnswers` stops at index 22). Kept
+  letters and digits, else blank), signed in or not. Served by no reader (`readAnswers` stops at index 23). Kept
   through a claim at sign-in, a rename and a merge; blanked when a delete keeps the answers as `~deleted <id>`
   (`devBlank_`, rule D7); gone with them on a delete of everything. `tests/devanswers.test.js`, `tests/adopt.test.js`.
 - **Photo answered**: the file stem of the photo a Find the X answer tapped (`pa`, right answers included), so a view
@@ -219,6 +222,7 @@ released.
   rated with no guess rate. Served from the pooled statistics' snapshot (below); `&s=<subject>` asks another subject's.
 - `POST {readAnswers, token, aname, apin}` the anonymous answers for the admin (admin-only); with the caller's own name
   and code, the reply's `me` is the caller's own anonymous id. The salt is secret, in Script Properties `ANON_SALT`.
+  With `lean`, the same rows in their lean form (below, "The lean answer log").
 - `POST {readStats, token, s}` the admin's statistics with the per-player `ras` (below, "The other readers"). The
   public `?stats=1` keeps only the pooled numbers, so a leaderboard name cannot be matched to an answer history.
 - `POST {reports, rname, rpin}` the players' reports, logged once per id. The reporter goes in `rname` / `rpin`, never
@@ -240,6 +244,32 @@ released.
 
 **Hardening**: user strings never become formulas (`safe_`), answer fields are pattern-checked, 5 wrong codes for a name
 block it for 10 minutes (`wait`), and answers are logged before the progress is written.
+
+### The lean answer log
+
+The answer log is the largest wait of the admin's opening on a phone (Pierre, 2026-11-19; REE-39;
+[record](../decisions/2026-11-25-lean-answer-log.md)). The admin's read asks for it lean (`admin.js` `loadStats`:
+`readAnswers` with `lean: 1`), and from v232 the script sends `lean` in place of `rows` (`Code.gs` `answers_`, `core.js`
+`rowsPack`): the same rows, column by column, each column in the shortest of a few spellings, chosen from its values
+alone (no column is named, so a column added to the rows needs nothing): mostly null as the gaps between its values; whole
+numbers as differences when that is shorter (the times); numbers that are whole once times 10, 100 or 1000 scaled (seconds,
+expectations, abilities); few distinct values as a dictionary, the most frequent first (the ids, units, modes, subjects);
+texts of space-separated words, when there are too many to list whole, word by word (the photos, the choices); objects of
+plain values one column per key, in an order that keeps each object's own (the scoring record); anything else as it is.
+`{f: 1, n, w, c: [column], l?}` (`l`: the rows' lengths, when they differ). The admin reads it back (`admin.js` `leanIn`,
+`core.js` `rowsUnpack`) into exactly the rows the plain reply holds, the same values and the same JSON, key order
+included, so no page reads anything else; a reply it cannot read leaves no rows (error `lean`: the pages show no log, as
+for any unreadable reply, never a part of it).
+- **Gate** (rule D4): the request always asks; an older script ignores `lean` and sends `rows`, read as before. A reply is
+  read as lean only from `LEAN_SHEET` (`admin.js` `leanOn`). A request without `lean` (`tools/analyses.js`, an older admin,
+  the tools that read a saved reply) gets `rows` as before. Nothing stored changes, nor any other reply; `readLive` sends
+  its 50 rows as they are.
+- **Measured** (`tools/ansize.js`, made-up logs of `tests/anslog.js` through the script on the tests' stub): at 7,700
+  answers the reply goes from 1.93 MB (0.40 MB gzipped) to 0.81 MB (0.22 MB gzipped), at 23,100 from 5.77 MB (1.20 MB) to
+  2.36 MB (0.61 MB). The admin's read goes from about 7 ms to 23 ms at 7,700 (JSON.parse, then `rowsUnpack`; Node on a
+  desktop), the script's packing adds about 50 ms (126 ms at 23,100) and writes 6 ms less: bytes are the gain, on a slow
+  line about 0.9 s today if the reply is gzipped on the wire, 5.6 s if not. The script's real time is in the Timings tab
+  (`admin answers`); `node tools/ansize.js --in answers.json` measures a saved reply. `tests/ansrows.test.js`.
 
 ## Report images
 
@@ -491,7 +521,10 @@ as `CORE_`. `tools/sync_core.py --fix` writes it, `--check` runs in CI, and the 
 
 **Replaying.** When `rv` < `CORE_.RV` (`core.js` `RVS`), `replay_` replays the player's rows of the Answers tab since
 their last reset (`core.js` `replayProgress`, with `stats_` `mem` and `conf`, and the units' `look` and `fam` from
-`data.json` on GitHub, `gen_`, cached 6 hours as `gen1`; none when it cannot be read). The reply carries
+`data.json` on GitHub through `subjGen_`, below; none when they cannot be read). One path for every subject (rule S1;
+one-engine audit step 9): `replay_`, `rplMake_`, `boardRpl_` and `board_` take the subject's id and read its own rows,
+units, variant table, rules versions and Replayed tab; the request's unprefixed `rv` is the corals' (`core.js`
+`replaySubject`), and the pooled statistics are read only for a subject with `SUBJECTS` `offsets`. The reply carries
 `replay: {rv, n, rec, ids}`: `rec` the replayed record per unit and `~level`, replayed with today's rules, the known mix-ups term
 included (`core.js` `CF_LOGGED`: the app's own term taken out of the logged `e`), with per unit `lm`, the time of the
 last miss that left its progress below the learned mark's keep rule (`core.js` `mxKeeps`), so `replayedOf` drops a mark
@@ -501,7 +534,8 @@ counted twice. The anonymous request also carries `reset` (the device's `reefid-
 only the answers since. The first-launch answer's prior enters the replay at each answer (`core.js` `replayProgress`
 option `starts`, `startPriorAt`; [cards.md](cards.md#replayed-with-the-progress)).
 
-**Kept.** Replays are stored in the **Replayed** tab: Name (or `~anon <id>`), Rules (rv), Rows (n), Since (the cache
+**Kept.** Replays are stored in the **Replayed** tab (the tab `SUBJECTS` coral `replayed` `tab` names; `Code.gs`
+`rplTab_`): Name (or `~anon <id>`), Rules (rv), Rows (n), Since (the cache
 identity, `rplSince_`: the reset in ms, then `#` and the first-launch history's fingerprint `core.js` `startFp` when
 there is one, then `~` and the structure stamp when it is not `''`, below), Updated, Record
 (JSON in 45,000-character chunks from column F); a row is reused while the rules version, the row count, the reset, the
@@ -535,12 +569,14 @@ Progress).
 ### Other subjects' replays
 
 A subject with `SUBJECTS` `replayed` (the fish and the sea slugs; `core.js` `replayedSubjects`) is replayed by the same
-`replay_` from its own rows (`subjRows_`, from the same read of the Answers tab as `answerRows_`), with its own units:
+`replay_` from its own rows (`subjRows_`, from the same read of the Answers tab as `answerRows_`), into its own tab
+(`Replayed <name>`, `rplTab_`), asked by `rvs` and sent in `replays` (`replays_`), with its own units:
 `replayed.gen` over its `replayed.file`, else its first pool file, read from GitHub (`Code.gs` `subjFile_`). The fish's
 are `core.js` `treeReplayGen` over `fish.json`: the families' and the scientific genera's `look` and family line as the
 app's `treeGen` and `treeGenera` build them (`tests/fishreplay.test.js`), cached 6 hours as `sgen1:fish`; the sea slugs'
-`seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (the
-corals' only); every fish answer is logged with its scoring record and replays as the game scored it.
+`seaslug.json`, `treeReplayGen` at the genus, cached as `sgen1:seaslug`. None of `stats_`'s photo numbers are used (a
+subject with `SUBJECTS` `offsets` only: the corals); every fish answer is logged with its scoring record and replays as
+the game scored it.
 
 **The species by their scientific names** (v198; the app opens them from `SCI_SHEET`, rule D4;
 docs/reviews/2026-11-18-species-step2-plan.md): both subjects' units also hold one unit per species under a genus
@@ -621,7 +657,7 @@ still on the old units cannot send the old tree back into force. When it is not 
 apps sent (`boardUnits_`). The apps keep sending theirs (no gate).
 
 **The corals too.** The subject the sheet replays (`SUBJECTS` `replay`) declares a structure (its look-alike pairs), so
-its units come the same way: `gen_` through `subjRpl_` (`data.json` with the curation's pairs laid over it, `SUBJECTS`
+its units come the same way: `subjGen_` through `subjRpl_` (`data.json` with the curation's pairs laid over it, `SUBJECTS`
 coral `replayed` `gen`: `core.js` `genLooks`, cached as `sgen2:coral:<fingerprint>`, the curation's entries as
 `scur1:coral`), refreshed by the same trigger (`subjStRefresh_`), and none while the curation cannot be read. The app
 says its coral stamp on a load (`st_coral`, `sn_coral`), a save and an anonymous send (`sts.coral`, `stn.coral`;
@@ -643,7 +679,10 @@ of the record the subject's Replayed tab keeps for today's rules, row count and 
 `replay_`'s reuse). The level is the replayed one too (`replayedOf`: the replay's ability and answer count), from
 `ELO_MIN` answers. With no record kept yet, or a player up to date: the saved copy's. The board reads only (one read of
 the Answers tab and of each Replayed tab, only once a player behind is met; nothing fetched, no lock) and stays cached 5
-minutes.
+minutes. One path for every subject (rule S1; one-engine audit step 9): a subject's % is over the units its apps last
+sent (`boardUnits_`), else the tree the sheet makes (`subjTreeKept_`), else, for the save summary's subject (`sumSubj_`:
+the subject of the unprefixed fields, the corals), the "By genus" columns (`sumUnits_`); that subject alone falls back on
+the RAs Progress column when its % cannot be read.
 
 The records are made ahead by the 15-minute trigger (`autoUpdate`, once it finds the script up to date, after the
 one-shot migrations: `boardWarm_`): every listed player (opt-out, admin hide and archive left out) behind the rules
@@ -746,7 +785,8 @@ the log marks every subject's fold; a delete, merge or archive blanks every one.
 admin part the same run writes (`Part` `admin`; both rows carry the run's start in Note, so a reader never mixes two
 runs): each player's ability by admin id (`ras`, rounded as `stats_` does, less the answers of a deleted account, the
 fold's `D`, and less the players archived at the time of the read, `archivedSet_`) and `skip`, with `chk: 1`; never
-cached. The replays (`rplMake_` for the corals, `replayedAll_`) read the pooled statistics through `statsServed_`. Each
+cached. The replays (`rplMake_` for a subject with `SUBJECTS` `offsets`, the corals; `replayedAll_`) read the pooled
+statistics through `statsServed_`. Each
 makes `stats_` itself when the snapshot is not served (missing, older than an hour, another version, older than the last
 delete, merge or archive, or rows 2 and 4 from two runs). The other subjects' replays take no pooled statistics. In
 `tests/gas.js` the snapshot is off unless a test asks for it (`opts.stats`).
@@ -756,6 +796,16 @@ delete, merge or archive, or rows 2 and 4 from two runs). The other subjects' re
 The app queues events (`ev`, `reefid-evq`) and sends them in batches (`sync.js` `evBatch`, `sendEvents`). The sheet's
 `events_` keeps only the kinds it knows (`EVK`: `err`, `photo`, `sync`, `pulse`, `load`, `pages`, `fromhome`) in the
 Events tab, whose admin read (`readEvents`) is the last 3,000 rows. Like every request, never sent from a local copy.
+
+- **An event id is logged once.** Each event carries an id whose first 8 base36 characters are its creation time
+  (`Date.now()`, `sync.js` `ev`). `events_` skips an id already in its tab (Events, or Pages for `pages` events). It
+  reads the Id column of the tab's last 2000 rows (`EV_WINDOW`). When an incoming id was made before the window began
+  (`evIdTime_`, `evWindowTime_`; an id without a time counts as older), the request reads the rows before the window
+  too, so a retry from a device that stayed offline after a lost reply is still skipped however many rows came since.
+  The window began at the median made-time of its first 200 ids plus an hour: rows are appended as they arrive and an
+  old event can arrive late, so the first row's time is no bound. A normal request reads the window only; a tab of 2000
+  rows or fewer is always read whole. The check assumes that most of those 200 rows were written soon after they were
+  made. Answers have their own check over every id (`newIds_`).
 
 - **The one-tap questions and the tips** log as `pulse` events: `r` as text in the Message column and `src` (the item,
   or `tip:<id>`) in the Where column; Detail keeps `r` only for `easy`, `ok`, `hard`, the codes the difficulty items
@@ -933,7 +983,7 @@ betas and rights.
 - **Boards.** `board_` makes its one ranking (the global %, then Elo; rule D8's replays included) and splits it
   (`groupBoards_`): `rows`, the general board, everyone; `groups`, `[{id, n, rows}]`, every group with a board, the
   newest first (by Added), its members. Each keeps the ranking's order and its first 200, and the opt-out, an admin hide
-  and an archive hold on all (`boardRows_`). One cache entry per subject (`board14`, `board14:<subject>`) holds every
+  and an archive hold on all (`boardRows_`). One cache entry per subject (`board15:<subject>`) holds every
   scope; every change to a group or a membership drops every subject's (`boardsDrop_`); with the groups unreadable,
   `rows` is not split.
 - **The app** learns its groups from the load and save replies: `groups` (the subjects in beta the player's groups open)
@@ -1010,6 +1060,39 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   request, under the script lock or in `autoUpdate`: no token, a refused token or a missing authorisation only writes
   one `pCloud backup:` line to the `Deploy log` tab (the file name and size, or the reason; never the token).
   `tests/backup.test.js`.
+
+### Restore rehearsal
+
+`node --test tests/restore.test.js` (under a second, part of the fast tier) rehearses a restore on local doubles only
+(REE-337; no disposable Apps Script project or sheet until Pierre answers REE-100 point B): synthetic accounts, never a
+real backup or the production sheet (rules D1, D2).
+
+1. **The cohort.** Accounts saved through `doPost` on the in-memory sheet (`tests/gas.js`), two devices and a device not
+   signed in; Roles rows from before the groups, then the one-shot migrations (`once_`); a cohort group with its board
+   and a group carrying the players right; the admin list; revocations (a Managers membership, an admin grant, a
+   Curators membership), a hidden board, a player left out of the statistics, an admin delete that keeps the answers and
+   a self-delete; a progress of 50,000 characters.
+2. **The snapshot.** `xlsx_`, the file `backup_` uploads, and what the sheet answered then (every value, the answer ids,
+   each account's rights, the groups, the anonymous ids). Then, on the live sheet, a self-delete, a revocation, a save
+   that moves a revision on and a new account.
+3. **The restore.** The file read back as an import is assumed to read it (shared strings as text, `t="b"`, the date
+   style as a time in the new spreadsheet's zone; not checked against Google, rule W11) into a fresh script whose Script
+   Properties hold only what is carried: `ANON_SALT`, the `ONCE_<name>` marks and `ROLES_SEED` (any non-empty value: the
+   script only tests that they are set).
+4. **Checked.** Every tab and value back, dates to the millisecond; the answer ids of the snapshot and no other; the
+   anonymous ids, every account's rights and every group as at the snapshot; deleted accounts answered `gone`, their
+   names in no tab but `Removed`; the hidden board and the left-out player as they were; `once_` changes nothing; a
+   returning device answered `stale` logs its queue once, and a resend adds nothing.
+
+The tests named `GAP` pin what the rehearsal found unsafe today, so a fix changes them on purpose: a delete or a
+revocation made after the snapshot is undone; a revision number is reused, so a device that saved after the snapshot
+overwrites a newer save without merging; without the `ONCE_` marks every group loses its rights until `autoUpdate`
+runs the one-shots, and the rights migration then writes back a Managers membership revoked long before; without
+`ROLES_SEED` the admin page's first read gives the admin account back the rights it had left; without the old
+`ANON_SALT` every anonymous id changes and a player left out of the statistics counts again; a spreadsheet whose time
+zone is not Manila moves every date. Recovery point: the last weekly backup, at most 7 days; answers confirmed after it
+are lost, as the devices drop them from their queue once the sheet confirms them. Recovery time: not measurable here
+(the import, the redeploy and the app's `SYNC_URL` change are outside the double; about 30 ms locally for this cohort).
 
 ## Versioning and deploy
 

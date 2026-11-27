@@ -38,8 +38,10 @@ side (bots, floods, the sheet script's protections, the Candidate photos workflo
   `manifest.webmanifest` lists the SVG and the four PNGs. Only `icon.svg` is in `sw.js` `SHELL` (the system reads the
   PNGs when the app is installed: no download for players at each new version); the deploy's `V` hashes `icon.svg` and
   the manifest, so a new icon reaches installed apps with the next version.
-- The app's names on these pages come from `core.js` `ORG` through `tools/rename_app.py`
-  ([storage.md › The app's name](storage.md#the-apps-name)).
+- The app's names on these pages, and the bare organisation words of `index.html`, `privacy.html`, `admin.html` and
+  `tools/og/og.html`, come from `core.js` `ORG` through `tools/rename_app.py`
+  ([storage.md › The app's name](storage.md#the-apps-name)). The course's words in the pages built by JS ("the IMR
+  course", "IMR lecture notes") come from `ORG`'s course fields (`ORG.course`, `ORG.lecture`...) in the JS itself.
 
 ## Security model
 

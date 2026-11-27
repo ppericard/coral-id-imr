@@ -179,5 +179,7 @@ test('wired: app.js loads the file with the quiz tier, sw.js keeps it offline, p
   assert.match(app, /json\('calibration-set\.json\?v=\d+'\)/);
   assert.match(cut(app, '2: ([f, q, k, cs]) => {', '\n  },', {file: 'app.js'}), /CALSET = cs \|\| \{\};/);
   assert.match(cut(sw, 'const SHELL = [', '];', {file: 'sw.js'}), /'calibration-set\.json\?v=\d+'/);
-  assert.match(cut(model, 'function photoSet(', '\n}\n', {file: 'model.js'}), /held && Math\.abs\(x\) <= 1 \? setBonus\(p\) : 1/);
+  // the factor of each photo is kept in the draw's data (drawPhotos sb), which photoSet applies under the same condition
+  assert.match(cut(model, 'const drawPhotosCalc = ', '\n};\n', {file: 'model.js'}), /sb: setBonus\(p, sf, a\)/);
+  assert.match(cut(model, 'function photoSet(', '\n}\n', {file: 'model.js'}), /held && Math\.abs\(x\) <= 1 \? e\.sb : 1/);
 });

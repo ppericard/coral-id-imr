@@ -184,7 +184,8 @@ test('no two units of one rank in today’s game share a label: the draw is unch
       treeScoreTree: core.treeScoreTree,
       treeSpUnits: core.treeSpUnits,
       treeGenSets: core.treeGenSets,
-      rankWeights: core.rankWeights
+      rankWeights: core.rankWeights,
+      ORG: core.ORG
     };
   vm.createContext(ctx);
   vm.runInContext(

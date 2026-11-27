@@ -29,20 +29,25 @@ const row = (state, over = {}) => ({
 });
 
 test('states are subject:answers, fish, coral or seaslug', () => {
-  assert.deepStrictEqual(A.parseStates('fish:50,coral:3000,seaslug:500'), [
-    {name: 'fish:50', subject: 'fish', answers: 50},
-    {name: 'coral:3000', subject: 'coral', answers: 3000},
-    {name: 'seaslug:500', subject: 'seaslug', answers: 500}
+  assert.deepStrictEqual(A.parseStates('fish:50,coral:3000,seaslug:500,fish:500:back'), [
+    {name: 'fish:50', subject: 'fish', answers: 50, back: false},
+    {name: 'coral:3000', subject: 'coral', answers: 3000, back: false},
+    {name: 'seaslug:500', subject: 'seaslug', answers: 500, back: false},
+    {name: 'fish:500:back', subject: 'fish', answers: 500, back: true}
   ]);
-  for (const bad of ['fish', 'fish:0', 'goby:50', 'sea:50', 'fish:x', 'fish:50:1'])
+  for (const bad of ['fish', 'fish:0', 'goby:50', 'sea:50', 'fish:x', 'fish:50:1', 'fish:50:', 'fish:50:back:back', 'fish:back'])
     assert.throws(() => A.parseStates(bad), /bad state/, bad);
   assert.deepStrictEqual(A.SUBJECTS, ['fish', 'coral', 'seaslug'], 'every subject the app has');
   assert.deepStrictEqual(A.HISTORIES, [50, 500, 3000], 'a short history, a medium one and a long one');
   assert.deepStrictEqual(
     A.parseStates(A.STATES).map(s => s.name),
-    ['fish:50', 'fish:500', 'fish:3000', 'coral:50', 'coral:500', 'coral:3000', 'seaslug:50', 'seaslug:500', 'seaslug:3000'],
-    'the default is every subject at every history'
+    ['fish:50', 'fish:500', 'fish:3000', 'coral:50', 'coral:500', 'coral:3000', 'seaslug:50', 'seaslug:500', 'seaslug:3000'].flatMap(s => [
+      s,
+      s + ':back'
+    ]),
+    'the default is every subject at every history, in the middle of a session and back after a break'
   );
+  assert.ok(A.BACK >= 86400 && A.BACK_MIN >= 2, 'a break of days, and at least two comeback answers counted');
 });
 
 test('the subjects are the app’s own (core.js SUBJECTS), none left out (rule S1)', () => {
@@ -178,6 +183,104 @@ test('the page’s clock is virtual: it stands still between the tool’s ticks,
   assert.match(src, /__tick\(6000\), document\.getElementById\('next'\)/, 'a pause before Next');
 });
 
+test('a comeback state: the clock a break later, no warm-up, only the comeback’s answers counted, each taken alone', () => {
+  const src = read('tools/answercost.js');
+  assert.match(src, /states\[i\]\.back \? \{clock: BACK, warm: 0\} : \{\}/, 'the clock BACK after the last answer, no warm-up');
+  assert.match(
+    src,
+    /back: typeof CB === 'object' && CB\.r > 0, \.\.\.\(window\.__tick/,
+    'an answer in a comeback (rust left), read before the answer'
+  );
+  assert.match(
+    src,
+    /const keep = !\(expect && expect\.back\) \|\| \(why\.back \|\| 0\) > b;[\s\S]{0,60}await take\(keep\);/,
+    'each answer taken alone, a comeback state’s kept only when it was a comeback’s, a session state’s always'
+  );
+  assert.match(src, /n < BACK_MIN/, 'too few comeback answers fail the run');
+});
+
+test('the heaviest answer: each answer’s calls kept, the largest budgeted as peakCalls and shown in the table', () => {
+  assert.ok(A.BUDGETED.includes('peakCalls'), 'peakCalls has a ceiling');
+  assert.strictEqual(A.metrics(row('fish:50', {peakCalls: 4321})).peakCalls, 4321);
+  assert.strictEqual(A.metrics(row('fish:50', {each: [10, 900, 30]})).peakCalls, 900, 'from `each` when the row has no peakCalls');
+  assert.strictEqual(A.metrics(row('fish:50')).peakCalls, 0, 'none counted: 0');
+  assert.strictEqual(A.ceilings(row('fish:50', {peakCalls: 4000}), 1.25).peakCalls, 5000);
+  assert.deepStrictEqual(
+    A.over(row('fish:50', {peakCalls: 4001}), {states: {'fish:50': {peakCalls: 4000}}}).map(b => [b.metric, b.value]),
+    [['peakCalls', 4001]],
+    'one answer over its ceiling fails, whatever the average'
+  );
+  assert.match(A.table([row('fish:50', {peakCalls: 250000})]), /\| 0\.25 M \|/, 'the table shows it');
+  const src = read('tools/answercost.js');
+  assert.match(src, /peakCalls: each\.length \? Math\.max\(\.\.\.each\) : 0/, 'the row keeps the heaviest answer');
+  assert.match(src, /each\.push\(total - t0\)/, 'each answer’s calls');
+});
+
+test('the page boots on a page that draws no question and is at rest before the numbers start from the seed (REE-281)', () => {
+  const src = read('tools/answercost.js'),
+    at = src.indexOf("await p.goto(base + '#about')"),
+    boot = src.slice(at, src.indexOf('for (let i = 0; i < o.warm; i++)', at));
+  assert.ok(at > 0, 'the page opens on About, which draws no question: a question drawn by the boot is kept and shown again by the quiz');
+  assert.doesNotMatch(src, /p\.goto\(base \+ '#quiz'\)/, 'never booted on the quiz');
+  // Everything the boot started is awaited (every tier set up, the planned questions' photos, the idle tasks), the page's rest
+  // checked, then from the seed: the plans dropped, the numbers started over, the quiz opened, settled, before the warm-up.
+  const order = [
+    'window.APP_READY',
+    'loadTier(5)',
+    'HAVE >= 5',
+    'LAB.pending === 0',
+    'prefetched()',
+    'await settle(p)',
+    'the page was not at rest',
+    '__reseed(0)',
+    'dropPlans()',
+    "go('quiz')",
+    'await settle(p)'
+  ].map((s, i, all) => (i === all.length - 1 ? boot.lastIndexOf(s) : boot.indexOf(s)));
+  assert.ok(
+    order.every((x, i) => x >= 0 && (i === 0 || x > order[i - 1])),
+    `the steps of the restart are out of order: ${order}`
+  );
+  assert.match(
+    boot,
+    /at\.lab \|\| at\.question \|\| at\.seen/,
+    'a Lab file still loading, a question on screen or in the session window at the restart fails the run'
+  );
+  assert.doesNotMatch(
+    boot,
+    /networkidle/,
+    'the rest is the app’s own state (HAVE, LAB.pending), not a quiet network: waiting for it timed out once, the cause not looked into'
+  );
+  assert.match(src, /--throttle N/, 'a CPU throttle to reproduce a loaded machine');
+  assert.match(src, /--trace/, 'a trace of where each random number is drawn');
+  assert.match(src, /--repeat N/, 'a repeat check by hand');
+  assert.match(src, /verdict\(every, budget/, 'with --repeat, every run is held to the budget, not only the first');
+  assert.match(src, /writeBudget\([^\n]*\[\.\.\.every,/, 'with --repeat, a ceiling counts the largest of every run');
+});
+
+test('repeatable(): the runs of one seed ask the same units in the same order and count the same calls', () => {
+  const store = {getCalls: 90, getChars: 83000, setCalls: 8, setChars: 56000},
+    run = (asked, namedCalls, extra = {}) => ({state: 'fish:50', seed: 3, asked, namedCalls, store, ...extra}),
+    ok = A.repeatable([run(['f:A', 'g:B'], 100000), run(['f:A', 'g:B'], 100000), run(['f:A', 'g:B'], 100050)]);
+  assert.deepStrictEqual(ok, {ok: true, why: ''}, 'a few calls of a hundred thousand are the idle tasks’');
+  const other = A.repeatable([run(['f:A', 'g:B'], 100000), run(['f:A', 'f:C'], 100000)]);
+  assert.strictEqual(other.ok, false);
+  assert.match(other.why, /run 2 of fish:50 seed 3 asked f:A, f:C where run 1 asked f:A, g:B/, 'the run and the sequences are named');
+  const more = A.repeatable([run(['f:A'], 100000), run(['f:A'], 100000 * (1 + 2 * A.TOL))]);
+  assert.strictEqual(more.ok, false);
+  assert.match(more.why, /counted .* calls an answer where run 1 counted 100000/);
+  const read = A.repeatable([run(['f:A'], 5), run(['f:A'], 5, {store: {...store, getChars: 83000 * 1.03}})]);
+  assert.strictEqual(read.ok, true, 'the storage read moves a few percent on a throttled machine');
+  const more2 = A.repeatable([run(['f:A'], 5), run(['f:A'], 5, {store: {...store, getChars: 83000 * 1.2}})]);
+  assert.strictEqual(more2.ok, false);
+  assert.match(more2.why, /for getChars where run 1 counted 83000/, 'the storage counts are compared too');
+  const peak = A.repeatable([run(['f:A'], 100000, {peakCalls: 400000}), run(['f:A'], 100000, {peakCalls: 400000 * (1 + 2 * A.TOL)})]);
+  assert.strictEqual(peak.ok, false, 'the same average, the work moved to one answer');
+  assert.match(peak.why, /counted .* calls in its heaviest answer where run 1 counted 400000/);
+  assert.strictEqual(A.repeatable([run(['f:A'], 5)]).ok, true, 'one run repeats itself');
+  assert.strictEqual(A.repeatable([run([], 5), run([], 5)]).ok, true, 'no unit asked, twice');
+});
+
 test('the page holds the state’s history: the warm-up answers played before the read are counted in', () => {
   assert.ok(!A.historyOff(52, 50, 2), 'the default warm-up');
   assert.ok(!A.historyOff(70, 50, 20), 'a longer warm-up (--warm 20) is no reason to reject a state loaded right');
@@ -192,7 +295,21 @@ test("the table is the study's, one line a state", () => {
   const t = A.table([row('fish:50', {namedCalls: 319464})]).split('\n');
   assert.strictEqual(t.length, 3);
   assert.match(t[0], /^\| State \| U \| V \| T \| R \| Calls per answer/);
-  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 20 \| 41 \| 50 \(4,000\) \| 900 \|$/);
+  assert.match(t[2], /^\| fish:50 \| 11 \| 69 \| 1,625 \| 65 \| 0\.32 M \| 0 \| 20 \| 41 \| 50 \(4,000\) \| 900 \| - \|$/);
+});
+
+// The draw's data filled in idle time (app.js drawFillSoon) is counted apart, in a window of its own before the count
+// (the row's fill), and a unit filled idle within an answer counted (fillIn) is named: its calls are that answer's.
+test('the idle fill: apart from the answers, in a column of its own', () => {
+  const r = row('fish:3000', {fill: {units: 347, calls: 412345, top: []}, fillIn: [0, 0, 0]});
+  assert.match(A.table([r]).split('\n')[2], /\| 347 units \(0\.41 M\) \|$/, 'the units and the calls, before the count');
+  assert.match(
+    A.table([{...r, fillIn: [0, 3, 0]}]).split('\n')[2],
+    /\| 347 units \(0\.41 M\), 3 in the answers \|$/,
+    'units filled within the answers named'
+  );
+  assert.match(A.table([row('fish:50')]).split('\n')[2], /\| - \|$/, 'an app without it');
+  assert.match(A.table([r]).split('\n')[0], /\| Filled idle \|$/);
 });
 
 test('several seeds: one row a state and seed, the seed named in the table, the ceiling the largest count', () => {

@@ -29,14 +29,20 @@ const ROOT = path.join(__dirname, '..'),
   QUIZ = src('quiz.js'),
   SYNC = src('sync.js');
 
-// The units in play before the views (app.js before), verbatim but for the names: each reader computed them again.
-const REF = `const bonusList0 = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
-const shareFree0 = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+// The units in play before the views (app.js before), verbatim but for the names: each reader computed them again, and
+// a set's units and auto were asked of the set at every read (autoOf0). The rank classes (rankUnits0), each unit's set
+// (setOf0) and class (kindRank0) before their data views.
+const REF = `const autoOf0 = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? S.auto() : []);
+const bonusList0 = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf0(S)]))];
+const shareFree0 = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf0(S)] : []));
 const pool0 = () => [...slateGenera(), ...bonusList0()].filter(photoAny);
 const sciUp0 = () =>
-  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
+  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf0(S)]))]);
 const sciNow = () =>
-  TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];`;
+  TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];
+const kindRank0 = n => rankOf(n) + (kindOf(n) ? ':' + kindOf(n) : '');
+const rankUnits0 = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => kindRank0(n) === rk);
+const setOf0 = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;`;
 // The scientific genera in the game now (app.js sciNow) are a view too; the sets read them by that name.
 
 const SV = 'reefid-sheet-v',
@@ -58,17 +64,22 @@ const SHARED = [
   line(APP, 'const sciSpAll = ', 'app.js'),
   block(APP, 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
+  block(APP, 'const kidsCalc = ', '// The species units in play', {file: 'app.js'}),
   block(APP, 'function spPlay(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'function sciOpen(', '\n}\n', {through: 1, file: 'app.js'}),
   block(APP, 'const SCI_SP = {', '\n};\n', {through: 1, file: 'app.js'}),
+  line(APP, 'const setAuto = ', 'app.js'),
+  line(APP, 'const setUnits = ', 'app.js'),
   line(APP, 'const autoOf = ', 'app.js'),
   'const SETS_OF = {coral: [{' +
     block(APP, "        k: 'bon',", '\n      }\n    ]', {file: 'app.js'}) +
     '}], fish: [' +
     block(APP, '      // The scientific genera (treeGenera, sciOpen)', '      SCI_SP\n    ],', {file: 'app.js'}) +
     'SCI_SP], seaslug: [SCI_SP]};',
-  'const SETS = () => SETS_OF[SUBJ.id];'
+  'const SETS = () => SETS_OF[SUBJ.id];',
+  block(APP, 'const rankOf = n => {', '\n};\n', {through: 1, file: 'app.js'}),
+  line(APP, 'const kindOf = ', 'app.js')
 ].join('\n');
 // The views (app.js now) and the reference, each under the names its sets read (SCI_SP's auto reads sciUp).
 const NEW = [
@@ -81,10 +92,18 @@ const NEW = [
   line(APP, 'const poolCalc = ', 'app.js'),
   line(APP, 'const pool = stateView(', 'app.js'),
   line(APP, 'const sciNowCalc = ', 'app.js'),
-  line(APP, 'const sciNow = stateView(', 'app.js'),
-  'this.F = {bonusList, pool, sciUp, shareFree, sciNow, store, stateBump, stateNow, VIEW_CHECK, STATE_KEYS, ver: () => STATE_V};'
+  line(APP, 'const sciNow = dataView(', 'app.js'),
+  line(APP, 'const kindRankCalc = ', 'app.js'),
+  line(APP, 'const kindRank = ', 'app.js'),
+  block(APP, 'const rankClassesCalc = ', 'const rankUnits = ', {file: 'app.js'}),
+  line(APP, 'const rankUnits = ', 'app.js'),
+  block(APP, 'const setMapCalc = ', 'const setOf = ', {file: 'app.js'}),
+  line(APP, 'const setOf = ', 'app.js'),
+  'this.F = {bonusList, pool, sciUp, shareFree, sciNow, rankUnits, setOf, kindRank, store, stateBump, stateNow, dataNow, VIEW_CHECK, STATE_KEYS, ver: () => STATE_V, dver: () => DATA_V};'
 ].join('\n');
-const OLD = REF + '\nconst sciUp = sciUp0;\nthis.F = {bonusList: bonusList0, pool: pool0, sciUp: sciUp0, shareFree: shareFree0, sciNow};';
+const OLD =
+  REF +
+  '\nconst sciUp = sciUp0;\nthis.F = {bonusList: bonusList0, pool: pool0, sciUp: sciUp0, shareFree: shareFree0, sciNow, rankUnits: rankUnits0, setOf: setOf0, kindRank: kindRank0};';
 
 // Two pages over one world W (its subject, tree, settings Q, records' readers and storage): the views and the code
 // before them. W's members are read at every use (getters), so a switch or a new Q is seen by both.
@@ -94,6 +113,7 @@ function pages(W, check) {
       C,
       keyGet: C.keyGet,
       SUBJECTS: C.SUBJECTS,
+      ORG: C.ORG,
       subjKey: C.subjKey,
       startKey: C.startKey,
       startEventsOf: C.startEventsOf,
@@ -103,7 +123,10 @@ function pages(W, check) {
       INTRO: {START: W.START},
       window: {VIEW_CHECK_ON: check},
       setTimeout: f => W.later.push(f),
-      UNITS: {fish: {}, seaslug: {}, coral: {}}
+      UNITS: {fish: {}, seaslug: {}, coral: {}},
+      // W.queued: the views' page has tasks (app.js freshNow; endTask ends one), so stateNow and its kept reads compare once
+      // a task; the reference reads the storage at every read
+      ...(W.queued && code === NEW ? {queueMicrotask: f => W.queued.push(f)} : {})
     };
     for (const k of ['SUBJ', 'TREEU', 'Q', 'localStorage'])
       Object.defineProperty(ctx, k, {get: () => W[k], set: v => (W[k] = v), enumerable: true});
@@ -111,7 +134,9 @@ function pages(W, check) {
     ctx.photoAny = n => W.photoAny(n);
     ctx.genScore = n => W.genScore(n);
     ctx.introduced = n => W.introduced(n);
+    ctx.introducedFn = () => n => W.introduced(n); // model.js: introduced for a loop
     ctx.askedOpen = n => W.introduced(n);
+    ctx.unitRankOf = C.unitRankOf;
     ctx.slateGenera = () => W.slate();
     vm.createContext(ctx);
     vm.runInContext(SHARED + '\n' + code, ctx);
@@ -121,17 +146,34 @@ function pages(W, check) {
 }
 const items = v => (v instanceof Set || (v && v.constructor && v.constructor.name === 'Set') ? [...v] : [...v]);
 // Every view against the reference, in a random order, a few times over (the reads after the first are the kept value).
-function same(N, O, r, st, label) {
-  const names = ['bonusList', 'pool', 'sciUp', 'shareFree', 'sciNow'];
+// The views of one argument (rankUnits by class, setOf and kindRank by unit) are read for a few of the classes and units
+// the tree has (st.units of W: every unit of its sets and slate).
+function same(N, O, r, st, label, W) {
+  const names = ['bonusList', 'pool', 'sciUp', 'shareFree', 'sciNow', 'rankUnits', 'setOf', 'kindRank'];
   for (let k = 0; k < 2 + Math.floor(r() * 3); k++) {
     const nm = names[Math.floor(r() * names.length)],
-      v0 = st.ver(),
-      a = items(N[nm]()),
-      b = items(O[nm]());
-    assert.deepStrictEqual(a, b, `${label}: ${nm}`);
+      v0 = st.ver();
+    if (['rankUnits', 'setOf', 'kindRank'].includes(nm)) {
+      const T = W.TREEU || {},
+        all = [...W.slate(), ...(T.sci || []), ...(T.spl || []), ...(T.ssl || []), ...C.BONUS, 'nowhere'];
+      for (let j = 0; j < 6; j++) {
+        const n = pick(r, all),
+          arg = nm === 'rankUnits' ? O.kindRank(n) : n,
+          a = N[nm](arg),
+          b = O[nm](arg);
+        // each page has its own sets: the same set is the same key
+        if (nm === 'setOf') assert.strictEqual(a && a.k, b && b.k, `${label}: setOf ${n}`);
+        else assert.deepStrictEqual(nm === 'rankUnits' ? [...a] : a, nm === 'rankUnits' ? [...b] : b, `${label}: ${nm} ${arg}`);
+        if (nm === 'rankUnits') st.classes = Math.max(st.classes || 0, a.length);
+      }
+    } else {
+      const a = items(N[nm]()),
+        b = items(O[nm]());
+      assert.deepStrictEqual(a, b, `${label}: ${nm}`);
+      if (nm === 'pool') st.units = Math.max(st.units, a.length);
+    }
     st.reads++;
     if (st.ver() === v0) st.kept++;
-    if (nm === 'pool') st.units = Math.max(st.units, a.length);
   }
 }
 const rng = seed => () => ((seed = (seed * 16807) % 2147483647), seed / 2147483647);
@@ -139,9 +181,14 @@ const pick = (r, L) => L[Math.floor(r() * L.length)];
 const SHEETS = [0, 150, 170, 180, 190, 1000];
 
 // The writers between two reads: the settings saved (a set turned on, off, closed on the card, on by hand), the sheet's
-// version or the first-launch record (through store.set, or round it as another tab writes), nothing at all.
+// version or the first-launch record (through store.set, store.raw or store.drop, or round them as another tab writes:
+// between two tasks when the page has tasks), nothing at all. With tasks, a task ends after about a third of the writes.
+const endTask = W => W.queued && W.queued.splice(0).forEach(f => f());
 function write(W, F, r, setK) {
+  if (r() < 0.3) endTask(W);
   const x = r();
+  // another tab, a test: no store method here, between two tasks
+  const round = (k, raw) => (endTask(W), W.localStorage.setItem(k, raw));
   if (x < 0.25) {
     const Q = {...W.Q};
     const y = r();
@@ -158,17 +205,25 @@ function write(W, F, r, setK) {
     return 'settings';
   }
   if (x < 0.4) {
-    const v = pick(r, SHEETS);
-    if (r() < 0.5) F.store.set(SV, v);
-    else W.localStorage.setItem(SV, JSON.stringify(v)); // another tab, a test: no store.set here
+    const v = pick(r, SHEETS),
+      y = r();
+    if (y < 0.4) F.store.set(SV, v);
+    else if (y < 0.55) F.store.raw(SV, JSON.stringify(v));
+    else if (y < 0.65) F.store.drop(SV);
+    else round(SV, JSON.stringify(v));
     return 'sheet';
   }
   if (x < 0.5) {
     const imr = r() < 0.5,
       o = imr ? {c: 'imr', t: 1, h: [['imr', 0, 1, 'card']]} : {c: 'new', t: 1, h: [['new', 0, 1, 'card']]},
-      k = C.startKey(W.SUBJ.id);
-    if (r() < 0.5) F.store.set(k, o);
-    else W.localStorage.setItem(k, JSON.stringify(o));
+      k = C.startKey(W.SUBJ.id),
+      y = r();
+    if (y < 0.4) F.store.set(k, o);
+    else if (y < 0.55)
+      F.store.raw(k, JSON.stringify(o)); // a progress file (progress.js loadData)
+    else if (y < 0.65)
+      F.store.drop(k); // a sign-out (sync.js)
+    else round(k, JSON.stringify(o));
     return 'start';
   }
   return 'none';
@@ -179,7 +234,7 @@ function stats() {
 }
 
 // A rated-world run of subject sub: after each answer (the scorer's caller bumps: quiz.js recordAnswer), some writes
-// and reads; check: VIEW_CHECK on.
+// and reads; check: VIEW_CHECK on. The views' page has tasks (one comparison of the stored texts per task, as the app).
 function played(sub, profile, seed, N, check, st) {
   const U = RW.unitsOf(sub),
     Wd = RW.world(U, seed),
@@ -193,6 +248,7 @@ function played(sub, profile, seed, N, check, st) {
       Q: {},
       localStorage: memStorage(),
       later: [],
+      queued: [],
       START: vm.runInContext('INTRO.START', ctx),
       GX: n => G[n],
       photoAny: n => !!G[n] && VIEWN.some(v => ((U.views(n) || {})[v] || []).length),
@@ -205,11 +261,12 @@ function played(sub, profile, seed, N, check, st) {
   st.ver = Fn.ver;
   for (let i = 0; i < N; i++) {
     pl.step(i);
-    Fn.stateBump(); // the scorer's caller (quiz.js recordAnswer) and the progress saved
+    // the scorer's caller (quiz.js recordAnswer) and the progress saved: the player's records, the data views kept
+    Fn.stateBump('rec');
     for (let j = 0; j < 1 + Math.floor(r() * 3); j++) {
       const op = write(W, Fn, r, U.setK);
       st.ops[op] = (st.ops[op] || 0) + 1;
-      same(Fn, Fo, r, st, `${sub} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`);
+      same(Fn, Fo, r, st, `${sub} ${profile} ${seed} after ${i + 1}, ${op}${check ? ', VIEW_CHECK' : ''}`, W);
     }
   }
   assert.deepStrictEqual(W.later, [], 'no VIEW_CHECK difference thrown later');
@@ -248,6 +305,7 @@ function seaslugX() {
       treeSpUnits: C.treeSpUnits,
       treeGenSets: C.treeGenSets,
       rankWeights: C.rankWeights,
+      ORG: C.ORG,
       unitRankOf: C.unitRankOf,
       typeNormAll: C.typeNormAll,
       SUBJ: SEA,
@@ -276,6 +334,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
         Q: {},
         localStorage: memStorage(),
         later: [],
+        queued: [],
         START: 4,
         GX: n => W.TREEU.gen[n],
         photoAny: n => !!W.TREEU.gen[n] && VIEWN.some(v => (W.TREEU.gen[n].views[v] || []).length) && !n.endsWith('3'),
@@ -298,7 +357,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
           if (r() < 0.7) met.add(n);
           else met.delete(n);
         }
-        Fn.stateBump();
+        Fn.stateBump('rec');
       } else if (y < 0.55) {
         // a subject switch (app.js subjectLoad: its tree, its records and settings, then the bump)
         const fish = W.SUBJ.id !== 'fish';
@@ -307,7 +366,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
         W.Q = {};
         Fn.stateBump();
       } else write(W, Fn, r, W.SUBJ.id === 'fish' ? 'sci' : 'ssp');
-      same(Fn, Fo, r, st, `${W.SUBJ.id} state ${s}${check ? ', VIEW_CHECK' : ''}`);
+      same(Fn, Fo, r, st, `${W.SUBJ.id} state ${s}${check ? ', VIEW_CHECK' : ''}`, W);
     }
     assert.deepStrictEqual(W.later, [], 'no VIEW_CHECK difference thrown later');
   }
@@ -316,7 +375,7 @@ test('made-up states of the sea slugs, and subject switches fish ↔ sea slugs: 
 });
 
 // A small world of made-up units for the checks below: one family, two genera of it in the sci set.
-function tiny(check) {
+function tiny(check, more = {}) {
   const G = {
       f: {views: {wide: [{}]}},
       'g:a': {parent: 'f', views: {wide: [{}]}},
@@ -337,6 +396,7 @@ function tiny(check) {
       slate: () => ['f']
     };
   W.localStorage.setItem(SV, '1000');
+  Object.assign(W, more);
   return {W, ...pages(W, check)};
 }
 
@@ -406,6 +466,50 @@ test('the version: bumped by the inputs’ keys, by their text written round sto
   assert.strictEqual(N.stateNow(), N.stateNow(), 'nothing written: the same version');
 });
 
+test('one comparison per task: stateNow reads the stored texts once a task; this tab’s writes are seen at once, another tab’s at the next task', () => {
+  for (const check of [false, true]) {
+    const {W, N} = tiny(check, {queued: []});
+    let reads = 0;
+    const get = W.localStorage.getItem;
+    W.localStorage.getItem = k => (reads++, get(k));
+    endTask(W);
+    N.bonusList();
+    const r0 = reads;
+    for (let i = 0; i < 20; i++) (N.bonusList(), N.shareFree(), N.stateNow());
+    if (!check) assert.strictEqual(reads, r0, 'forty more reads of a view in the task: no storage read');
+    endTask(W);
+    const v0 = N.stateNow();
+    if (!check) assert.ok(reads > r0, 'the next task compares');
+    // This tab: store.set, store.raw (a progress file) and store.drop (a sign-out) of an input's key, in the task.
+    for (const [w, why] of [
+      [() => N.store.set(SV, 170), 'store.set'],
+      [() => N.store.raw(C.startKey('fish'), '{"c":"imr"}'), 'store.raw'],
+      [() => N.store.drop(C.startKey('fish')), 'store.drop']
+    ]) {
+      const v = N.stateNow();
+      w();
+      assert.ok(N.stateNow() > v, `${why} in the task: a new version`);
+    }
+    assert.ok(N.stateNow() > v0);
+    // Another tab, between two tasks: the next task's first read sees it.
+    endTask(W);
+    N.stateNow();
+    const v1 = N.stateNow();
+    endTask(W);
+    W.localStorage.setItem(SV, '180');
+    assert.ok(N.stateNow() > v1, 'another tab’s write: seen by the next task');
+    // A write of this tab round the store methods (no storeWrote), read in the same task: VIEW_CHECK throws.
+    const v2 = N.stateNow();
+    W.localStorage.setItem(SV, '190');
+    if (check) {
+      assert.throws(() => N.stateNow(), /stateNow: a stored text changed in this task without storeWrote/);
+      W.later.length = 0;
+    } else assert.strictEqual(N.stateNow(), v2, 'unchecked: not seen in the task (so every writer calls storeWrote)');
+    endTask(W);
+    assert.ok(N.stateNow() > v2, 'seen by the next task');
+  }
+});
+
 test('the declared names: sync.js SHEETV and model.js OWN_STATS are the keys app.js lists', () => {
   assert.match(SYNC, /const SHEETV = 'reefid-sheet-v',/);
   assert.match(MODEL, /const OWN_STATS = 'reefid-photo-stats-';/);
@@ -414,29 +518,65 @@ test('the declared names: sync.js SHEETV and model.js OWN_STATS are the keys app
 });
 
 // Every writer the version declares (app.js STATE_V's comment) bumps it after it writes: a test on the code, so a writer
-// that loses its bump fails here, not only in a smoke that happens to read a view after it.
-test('every declared writer bumps the version', () => {
-  const has = (S, from, to, file, n = 1) => {
-    const b = block(S, from, to, {through: 1, file});
-    assert.ok((b.match(/stateBump\(\)/g) || []).length >= n, `${file} ${from.trim()}: ${n} stateBump() at least`);
+// that loses its bump fails here, not only in a smoke that happens to read a view after it. The writers of the player's
+// records and settings bump the state version alone (stateBump('rec')); every other writer bumps the data version too
+// (stateBump(), no argument): the data, the tree, the subject, the photo statistics, a file loaded. A swap of the subject
+// or the tree in force (subjectLoad, inSubject, treeAt's treePull) bumps both too, counted as a swap (swapBump: app.js
+// dataBack, tests/visitview.test.js); the intro map read again with the subject (model.js's hook) the state version
+// alone, counted as a swap too (swapBump('rec')).
+test('every declared writer bumps the version, the data version for every input but the player’s records', () => {
+  const has = (S, from, to, file, n = 1, rec = false) => {
+    const b = block(S, from, to, {through: 1, file}),
+      re = rec === 'swap' ? /swapBump\(\)/g : rec === 'swap rec' ? /swapBump\('rec'\)/g : rec ? /stateBump\('rec'\)/g : /stateBump\(\)/g,
+      what = rec === 'swap' ? 'swapBump()' : rec === 'swap rec' ? "swapBump('rec')" : rec ? "stateBump('rec')" : 'stateBump()';
+    assert.ok((b.match(re) || []).length >= n, `${file} ${from.trim()}: ${n} ${what} at least`);
   };
-  has(APP, 'const st = n =>', ';\n', 'app.js');
-  has(APP, 'function subjectLoad(S, keep) {', '\n}\n', 'app.js', 2);
-  has(APP, 'function inSubject(id, fn) {', '\n}\n', 'app.js', 2);
-  has(APP, 'function treePull() {', '\n}\n', 'app.js');
+  has(APP, 'const st = n =>', ';\n', 'app.js', 1, true);
+  has(APP, 'function subjectLoad(S, keep) {', '\n}\n', 'app.js', 2, 'swap');
+  has(APP, 'function inSubject(id, fn) {', '\n}\n', 'app.js', 2, 'swap');
+  has(APP, 'function treePull(swap) {', '\n}\n', 'app.js');
+  has(APP, 'function treePull(swap) {', '\n}\n', 'app.js', 1, 'swap');
+  assert.match(APP, /\n {2}TREE_AT = id;\n {2}treePull\(true\);\n/, 'treeAt: the tree in force swapped');
   has(APP, 'const treeBuild = () => {', '\n};\n', 'app.js');
   has(APP, 'function build() {', '\n}\n', 'app.js');
   has(APP, 'function rankPhotos() {', '\n}\n', 'app.js');
-  has(APP, "  const rb = document.getElementById('reset');", 'introReset();', 'app.js');
-  assert.match(APP, /if \(STATE_KEYS\.has\(k\)\) stateBump\(\);/, 'store.set: an input key bumps');
-  has(MODEL, 'function mxRecalc(fn, why', '\n}\n', 'model.js');
-  has(MODEL, 'function answeredAt(s, good', '\n}\n', 'model.js');
-  has(MODEL, 'function varRight(n, L) {', '\n}\n', 'model.js');
+  has(APP, "  const rb = document.getElementById('reset');", 'introReset();', 'app.js', 1, true);
+  assert.match(
+    APP,
+    /if \(STATE_KEYS\.has\(k\)\) stateBump\(REC_KEYS\.has\(k\) \? 'rec' : undefined, REC_KEYS\.get\(k\)\);/,
+    'store.set: an input key bumps, a record for its subject'
+  );
+  has(MODEL, 'function mxRecalc(fn, why', '\n}\n', 'model.js', 1, true);
+  has(MODEL, 'function answeredAt(s, good', '\n}\n', 'model.js', 1, true);
+  has(MODEL, 'function varRight(n, L) {', '\n}\n', 'model.js', 1, true);
   has(MODEL, 'function statsJoin(base = PBASE) {', '\n}\n', 'model.js');
-  has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js');
+  has(MODEL, '  SUBJ_HOOKS.push(keep => {', '\n  });\n', 'model.js', 1, 'swap rec'); // the intro map read again: the player's, swapped
   assert.match(MODEL, /\nif \(typeof stateBump === 'function'\) stateBump\(\);\n$/, 'model.js: a bump once loaded');
-  has(QUIZ, 'function recordAnswer({', '\n}\n', 'quiz.js', 2);
-  has(SYNC, 'function replayAdoptS(', '\n}\n', 'sync.js');
-  has(SYNC, 'function mergeSubject(', '\n}\n', 'sync.js', 2);
+  has(QUIZ, 'function recordAnswer({', '\n}\n', 'quiz.js', 2, true);
+  has(SYNC, 'function replayAdoptS(', '\n}\n', 'sync.js', 1, true);
+  has(SYNC, 'function mergeSubject(', '\n}\n', 'sync.js', 2, true);
   assert.match(SYNC, /\nif \(typeof stateBump === 'function'\) stateBump\(\);\n$/, 'sync.js: a bump once loaded');
+});
+
+// The data version: bumped by every writer but the player's records and settings, so the data views (the rank classes,
+// each unit's set and class, the scientific genera in the game) are kept across the answers and made again when the
+// sheet's version changes (here, or written by another tab).
+test('the data version: kept across the player’s writes, moved by the sheet’s version and every other bump', () => {
+  const {W, N} = tiny(false);
+  N.rankUnits('genus'); // the first read compares the stored texts (the sheet's version: data)
+  const d0 = N.dver();
+  for (const k of [C.subjKey('fish', 'progress'), C.subjKey('fish', 'quiz'), C.subjKey('fish', 'intro'), C.startKey('fish')])
+    N.store.set(k, 1);
+  N.stateBump('rec');
+  assert.strictEqual(N.dataNow(), d0, 'the player’s records and settings: the data views kept');
+  N.store.set(SV, 170);
+  const d1 = N.dataNow();
+  assert.ok(d1 > d0, 'the sheet’s version: a new data version');
+  W.localStorage.setItem(SV, '180'); // another tab (no task here: compared at the next read)
+  assert.ok(N.dataNow() > d1, 'the sheet’s version written round store.set');
+  const d2 = N.dataNow();
+  W.localStorage.setItem(C.startKey('fish'), '{"c":"imr"}');
+  assert.ok(N.ver() >= 0 && N.dataNow() === d2, 'a first-launch record written round store.set: the player’s, the data kept');
+  N.stateBump();
+  assert.ok(N.dataNow() > d2, 'a bump with no argument: the data too');
 });

@@ -7,7 +7,8 @@
     gameOf,
     lectureGroup,
     starRefs,
-    starWaits,
+    starAfter,
+    afterWaits,
     PHOTO_BASE,
     photoLocal,
     photoOnR2,
@@ -354,6 +355,11 @@
     treeNames,
     treeTypeNames,
     treeNameIndex,
+    CN_MAX,
+    treeCnClean,
+    treeCnLay,
+    treeCnApply,
+    treeCnLists,
     typeFits,
     typeForms,
     treeGameRow,
@@ -411,7 +417,9 @@
     dataSum,
     sameText,
     dataDelta,
-    dataPatch
+    dataPatch,
+    rowsPack,
+    rowsUnpack
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);

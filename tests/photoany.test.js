@@ -54,6 +54,9 @@ function engine(U, refused) {
     GX: n => U[n],
     imrFormsOf: n => Array.from({length: U[n].forms}, (_, i) => 'f' + i),
     gamePics: (n, v) => U[n].views[v] || [],
+    // the views and the reserve, read by model.js easeMid (a judged photo's prior centred on its unit's mean ease)
+    VIEWS: [['wide'], ['medium'], ['macro']],
+    heldOf: C.heldOf,
     gamePhotoOk: (n, p) => !refused.has(p.f),
     level: () => ['new'],
     rankOf: () => '',

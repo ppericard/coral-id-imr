@@ -319,7 +319,7 @@ const livePhotos = (ph, cls = '') =>
     )
     .join('')}</div>`;
 // Once the answer is out (both pages' reveal): each photo's credit (app.js photoSrc) and the enlarged view with its full
-// credit and its Report button (app.js zoom; rules P5, U14), from the photo's record on this device (photoLook, in the
+// credit and its Report button (zoom.js zoom; rules P5, U14), from the photo's record on this device (photoLook, in the
 // game's subject, its data loaded first). Never before the reveal: no credit or enlarged view gives the answer away.
 function liveCredits(sid, ph, t) {
   const S = subjectOf(sid),

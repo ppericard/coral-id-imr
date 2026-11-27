@@ -502,6 +502,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
       cut('function pgWeight(t, chs, k) {', '\n}') +
       '\n' +
       cut('const aimP = ', ';\n') +
+      cut('const startPCalc = ', ';\n') +
       cut('const startP = ', ';\n') +
       cut('const ability = ', ';\n') +
       'const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());\n' +
@@ -690,7 +691,8 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
     const M = {...C, P: {}, startV: () => C.startVars(), startS: () => C.subjectOf('coral'), GX: () => undefined};
     vm.createContext(M);
     vm.runInContext(
-      cut('const startP = ', ';\n') +
+      cut('const startPCalc = ', ';\n') +
+        cut('const startP = ', ';\n') +
         cut('const ability = ', ';\n') +
         'const abilityStep = (n, s, good, d, k, w = 1) => eloStep(P, n, s, good, d, k, w, startP());\n' +
         '\nthis.T = {ability, abilityStep};',
@@ -848,7 +850,10 @@ test('the first-launch prior in the live ability, as the sheet replays it (Codex
       GX: () => undefined
     };
     vm.createContext(M);
-    vm.runInContext(cut('const startP = ', ';\n') + cut('const ability = ', ';\n') + '\nthis.T = {ability};', M);
+    vm.runInContext(
+      cut('const startPCalc = ', ';\n') + cut('const startP = ', ';\n') + cut('const ability = ', ';\n') + '\nthis.T = {ability};',
+      M
+    );
     return M.T.ability('Pocillopora');
   };
   const P = {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}};

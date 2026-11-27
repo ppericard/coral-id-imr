@@ -279,11 +279,11 @@ test('the assignver commit names no session', () => {
 const SHA = '33f0556dbc1a3bb0125730d2c02b3c6fa4925c10',
   OTHER = '00956cfd4f53c53d42120597ec84ea5962a4a6b2',
   CODEX = {login: 'chatgpt-codex-connector[bot]', type: 'Bot'};
-const summary = (sha, status, {state = status, stateSha = sha, unresolved = null, escape = false} = {}) => {
+const summary = (sha, status, {state = status, stateSha = sha, unresolved = null, escape = false, code = {}} = {}) => {
   let s =
     '<!-- codex-pull-request-review-summary -->\n' +
     `<!-- codex-review-state:v1 ${JSON.stringify({
-      code_review: {commit_sha: sha, has_any_findings: false, has_unresolved_findings: false, status: 'completed'},
+      code_review: {commit_sha: sha, has_any_findings: false, has_unresolved_findings: false, status: 'completed', ...code},
       security_review: {commit_sha: stateSha, has_any_findings: unresolved, has_unresolved_findings: unresolved, status: state}
     })} -->\n` +
     `<!-- codex-security-review:v1 ${JSON.stringify({blockingSeverityThreshold: 'P0', headSha: sha, status, pullRequestNumber: 1})} -->\n` +
@@ -388,8 +388,11 @@ test('nightq trains only on a completed security review read for the very head i
   // code review on #1466): a later head with none is turned to draft and back to ready, once per head
   assert.match(
     t,
-    /case "\$\{sec%% \*\}" in stale\|absent\)\n\s*if \[ "\$pend" = "0" \] && \[ "\$asked" != "\$\{sec#\* \}" \]; then\n\s*asked=\$\{sec#\* \}\n\s*ask_security "\$n"/
+    /case "\$\{sec%% \*\}" in stale\|absent\)\n\s*if \[ "\$pend" = "0" \] && \[ "\$asked" != "\$\{sec#\* \}" \]; then[\s\S]*?if ask_security "\$n"; then\n\s*asked=\$tries_sha/
   );
+  // REE-299: a head is "asked" only after the call succeeded, never before
+  assert.ok(t.indexOf('if ask_security "$n"; then') < t.indexOf('asked=$tries_sha'));
+  assert.doesNotMatch(t, /asked=\$\{sec#\* \}\n\s*ask_security/);
   assert.ok(t.indexOf('asked=""') < t.indexOf('while [ $i -lt 60 ]'), 'reset for each PR');
   assert.doesNotMatch(t, /codex-security\.md|comments -[fF] body="?@codex security review/);
   // a draft is never marked ready by the queue: drafts are skipped before anything else
@@ -405,7 +408,13 @@ test('nightq trains only on a completed security review read for the very head i
 });
 
 // Exercise the queue at the boundary between prstate's review gates and the train. No GitHub or repository writes.
-const runNightq = ({code = "Didn't find any major issues.", security = 'completed ' + SHA, head = SHA, conflict = false} = {}) =>
+const runNightq = ({
+  code = "Didn't find any major issues.",
+  security = 'completed ' + SHA,
+  head = SHA,
+  conflict = false,
+  trainOut = ''
+} = {}) =>
   tmp(d => {
     const log = path.join(d, 'calls');
     const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
@@ -420,7 +429,8 @@ const runNightq = ({code = "Didn't find any major issues.", security = 'complete
     shim(
       'python3',
       'echo "train $TRAIN_REPO $*" >> "$CALLS"\n' +
-        'if [[ "$CONFLICT" = true && "$*" = *--dry-run* ]]; then echo "conflicts with main"; exit 1; fi'
+        'if [[ "$CONFLICT" = true && "$*" = *--dry-run* ]]; then echo "conflicts with main"; exit 1; fi\n' +
+        'if [[ "$*" != *--dry-run* ]]; then echo "$TRAIN_EVIDENCE" > "$CALLS.evidence"; printf "%s" "$TRAIN_OUT"; fi'
     );
     const r = spawnSync('/bin/bash', [path.join(DIR, 'nightq.sh'), '1'], {
       encoding: 'utf8',
@@ -434,14 +444,35 @@ const runNightq = ({code = "Didn't find any major issues.", security = 'complete
         CALLS: log,
         HEAD_SHA: head,
         CONFLICT: String(conflict),
+        TRAIN_OUT: trainOut,
         GATES:
           `#1 open ${SHA.slice(0, 7)} merge=behind [] checks: 24 runs, 0 pending,  failed | codex@head: ${code} | ` +
           `security@head: ${security} | head comments: 0 | open threads: 0 | unanswered@head: 0 | choices: None`
       }
     });
     assert.strictEqual(r.status, 0, r.error || r.stderr);
-    return {out: r.stdout, calls: fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : []};
+    const evidence = fs.existsSync(log + '.evidence') ? fs.readFileSync(log + '.evidence', 'utf8').trim() : null;
+    return {out: r.stdout, calls: fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : [], evidence, dir: d};
   });
+
+test("nightq logs the train's one-line reuse audit and gives it a file for the evidence (REE-121 (a))", () => {
+  const r = runNightq({
+    trainOut:
+      'Train on main 1234567: #1 abcdef0\nReuse audit (on) #1 tree 7654321: Checks reused (PR run 21 attempt 1, 3/3 jobs); answer cost runs (no Smokes run on the PR head); browser scope and matrix on the train.\nTrain green.\nMerged #1 as 89abcde\n'
+  });
+  assert.match(
+    r.out,
+    /^\d\d:\d\d #1 Reuse audit \(on\) #1 tree 7654321: Checks reused .*answer cost runs \(no Smokes run on the PR head\).*$/m
+  );
+  assert.strictEqual(r.evidence, path.join(r.dir, 'train-evidence.jsonl'));
+  // shadow mode: the audit line and the verdict on what it would have reused
+  const s = runNightq({
+    trainOut:
+      'Reuse audit (shadow) #1 tree 7654321: Checks would reuse (…).\nReuse shadow agrees: the train passed every job it would have reused (Checks).\n'
+  });
+  assert.match(s.out, /^\d\d:\d\d #1 Reuse audit \(shadow\)/m);
+  assert.match(s.out, /^\d\d:\d\d #1 Reuse shadow agrees/m);
+});
 
 test('nightq dry-runs and trains the reviewed SHA of a behind PR without editing its branch', () => {
   const r = runNightq();
@@ -466,6 +497,100 @@ test('nightq refuses missing code or security approval, the wrong security SHA, 
     assert.ok(!r.calls.some(s => s.startsWith('train ')), r.calls.join('\n'));
     assert.match(r.out, why);
   }
+});
+
+// ---- prstate: Codex's clean receipt from its review-state marker alone (REE-344) ----
+// prstate.sh run against fixture API answers: a gh shim serves each call from files, no network. The issue comments
+// are the fixture; the head is SHA, checks green, no review comments, no threads.
+const runPrstate = issueComments =>
+  tmp(d => {
+    fs.writeFileSync(
+      path.join(d, 'pr.json'),
+      JSON.stringify({head: {sha: SHA}, state: 'open', mergeable_state: 'clean', body: '## Choices I made\n\nNone\n'})
+    );
+    fs.writeFileSync(path.join(d, 'issue.json'), issueComments.map(p => JSON.stringify(p)).join('\n')); // gh --paginate pages
+    fs.writeFileSync(
+      path.join(d, 'gh'),
+      '#!/bin/bash\ncase "$*" in\n' +
+        '  *"/check-runs"*) echo "25 runs, 0 pending,  failed" ;;\n' +
+        '  *"/issues/1 --jq"*) echo "" ;;\n' +
+        '  *"/issues/1/comments"*) cat "$FX/issue.json" ;;\n' +
+        '  *"/pulls/1/comments"*) echo "[]" ;;\n' +
+        '  *"/pulls/1/ccr/review_threads") echo "[]" ;;\n' +
+        '  *"--jq .commit.committer.date") echo 2026-11-22T09:00:00Z ;;\n' +
+        '  *"/pulls/1") cat "$FX/pr.json" ;;\n' +
+        '  *) exit 1 ;;\nesac\n',
+      {mode: 0o755}
+    );
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'prstate.sh'), '1'], {
+      encoding: 'utf8',
+      timeout: 15000,
+      env: {...process.env, PATH: d + path.delimiter + process.env.PATH, QUEUE_DIR: d, QUEUE_REPO: 'o/r', FX: d}
+    });
+    assert.strictEqual(r.status, 0, r.error || r.stderr);
+    return r.stdout.trim();
+  });
+const codexOf = line => (line.match(/ \| codex@head: ([^|]*) \| /) || [])[1];
+const CLEAN = /^Didn't find any major issues/;
+
+test("prstate: Codex's review-state marker, completed for the full head with no findings, is the clean receipt (REE-344)", () => {
+  // #1622: the summary comment with its markers is Codex's only comment on the head, no "Codex Review:" line
+  const line = runPrstate([[c(summary(SHA, 'completed'))]]);
+  assert.match(codexOf(line), CLEAN, line);
+  assert.match(line, new RegExp(`\\| security@head: completed ${SHA} \\| head comments: 0 \\| open threads: 0 \\| unanswered@head: 0 \\|`));
+  // the same marker, its braces HTML-escaped (secreview.py reads that form too)
+  assert.match(codexOf(runPrstate([[c(summary(SHA, 'completed', {escape: true}))]])), CLEAN);
+  // the textual receipt keeps working, alone or beside the marker
+  assert.strictEqual(codexOf(runPrstate([[receipt]])), "Didn't find any major issues.");
+  assert.strictEqual(codexOf(runPrstate([[c(summary(SHA, 'completed')), receipt]])), "Didn't find any major issues.");
+  // and nightq.sh trains on it
+  const r = runNightq({code: codexOf(line)});
+  assert.deepStrictEqual(r.calls.slice(-2), [
+    `train o/r tools/train.py --dry-run --sha ${SHA} 1`,
+    `train o/r tools/train.py --sha ${SHA} 1`
+  ]);
+});
+
+test('prstate: any other marker, or one not from the Codex bot, is no clean receipt (REE-344)', () => {
+  const notClean = (comments, why) => {
+    const v = codexOf(runPrstate(comments));
+    assert.ok(v !== undefined && !CLEAN.test(v), `${why}: ${v}`);
+  };
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: OTHER}}))]], 'code review of another commit');
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: SHA.slice(0, 10)}}))]], 'a short SHA');
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: SHA.toUpperCase()}}))]], 'not the exact head SHA');
+  notClean([[c(summary(SHA, 'completed', {code: {has_any_findings: true}}))]], 'has_any_findings true');
+  notClean([[c(summary(SHA, 'completed', {code: {has_unresolved_findings: true}}))]], 'has_unresolved_findings true');
+  notClean([[c(summary(SHA, 'completed', {code: {has_any_findings: null}}))]], 'has_any_findings null');
+  notClean([[c(summary(SHA, 'completed', {code: {has_unresolved_findings: null}}))]], 'has_unresolved_findings null');
+  notClean([[c(summary(SHA, 'completed', {code: {has_any_findings: 'false'}}))]], 'findings as a string');
+  notClean([[c(summary(SHA, 'completed', {code: {status: 'running'}}))]], 'code review running');
+  notClean([[c(summary(SHA, 'completed', {code: {status: 'failed'}}))]], 'code review failed');
+  notClean([[c(summary(SHA, 'completed', {code: {status: undefined}}))]], 'no status');
+  notClean([[c(summary(SHA, 'completed').replace(/"code_review":\{[^}]*\},/, ''))]], 'no code_review');
+  notClean([[c(summary(SHA, 'completed', {code: {commit_sha: undefined}}))]], 'no commit_sha');
+  // not the Codex bot: a person, or the bot's login on a User account
+  notClean([[c(summary(SHA, 'completed'), {login: 'someone', type: 'User'})]], 'a person');
+  notClean([[c(summary(SHA, 'completed'), {login: 'chatgpt-codex-connector[bot]', type: 'User'})]], 'bot login, User type');
+  notClean([[c(summary(SHA, 'completed'), {login: 'other-bot[bot]', type: 'Bot'})]], 'another bot');
+  // unreadable: malformed JSON, a marker not closed, the marker twice
+  notClean([[c(summary(SHA, 'completed').replace('"has_any_findings":false', '"has_any_findings":fals'))]], 'malformed JSON');
+  notClean([[c(summary(SHA, 'completed').replace(/(codex-review-state:v1 \{[^\n]*\}) -->/, '$1'))]], 'marker not closed');
+  const twice = summary(SHA, 'completed');
+  notClean([[c(twice + '\n' + twice.split('\n')[1])]], 'marker twice');
+  // a findings receipt on the head beside a clean marker, and a later marker with findings, are not clean
+  const findings = c(`Codex Review: Here are some automated review suggestions.\n\n**Reviewed commit:** \`${SHA.slice(0, 10)}\``);
+  notClean([[c(summary(SHA, 'completed')), findings]], 'findings receipt');
+  notClean(
+    [
+      [
+        c(summary(SHA, 'completed'), CODEX, '2026-11-22T09:10:29Z'),
+        c(summary(SHA, 'completed', {code: {has_any_findings: true, has_unresolved_findings: true}}), CODEX, '2026-11-22T09:20:00Z')
+      ]
+    ],
+    'a later marker with findings'
+  );
+  notClean([[]], 'no comment');
 });
 
 test('ask_security: draft then ready through the CCR routes, a PR left a draft said loudly (REE-232)', () => {
@@ -494,14 +619,87 @@ test('ask_security: draft then ready through the CCR routes, a PR left a draft s
     'api -X POST repos/o/r/pulls/7/ccr/ready_for_review'
   ]);
   assert.strictEqual(r.out, 'rc=0');
-  // converting refused: nothing else is tried
+  // converting refused: nothing else is tried, and the log names the call (REE-299)
   r = run('convert_to_draft');
   assert.strictEqual(r.calls.length, 1);
-  assert.strictEqual(r.out, 'rc=1');
+  assert.match(r.out, /LOG #7: convert_to_draft refused, Codex's security review not asked\nrc=1/);
   // ready refused twice: the PR is left a draft and the log says so
   r = run('ready_for_review');
   assert.strictEqual(r.calls.length, 3);
   assert.match(r.out, /LOG #7: left as a draft \(ready_for_review refused twice\): mark it ready by hand\nrc=1/);
+});
+
+// The wait loop around ask_security (REE-299): a stand-in gh refuses convert_to_draft the first FAILS times, and a stand-in
+// prstate reports the security review stale until ready_for_review was called, then completed.
+const runAskLoop = fails =>
+  tmp(d => {
+    const calls = path.join(d, 'calls');
+    const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
+    shim('sleep', 'exit 0');
+    shim('pgrep', 'exit 1');
+    shim('git', 'echo "git $*" >> "$CALLS"\n[[ "$*" = "pull -q --ff-only" ]]');
+    shim(
+      'gh',
+      'case "$*" in\n' +
+        '  *"--jq .state") echo open ;;\n  *"--jq .draft") echo false ;;\n  *"--jq .head.sha") echo "$HEAD_SHA" ;;\n' +
+        '  *convert_to_draft) echo "convert" >> "$CALLS"; n=$(cat "$D/n" 2>/dev/null || echo 0); echo $((n + 1)) > "$D/n"\n' +
+        '    [ "$n" -lt "$FAILS" ] && exit 1; exit 0 ;;\n' +
+        '  *ready_for_review) echo "ready" >> "$CALLS"; touch "$D/readied"; exit 0 ;;\n  *) exit 1 ;;\nesac'
+    );
+    shim(
+      'bash',
+      'case "$1" in */wait_ready.sh) exit 0 ;; */prstate.sh) [ -e "$D/readied" ] && s=completed || s=stale\n' +
+        '  echo "#1 open ${HEAD_SHA:0:7} merge=clean [] checks: 24 runs, 0 pending,  failed | codex@head: Didn\'t find any major issues. | security@head: $s $HEAD_SHA | head comments: 0 | open threads: 0 | unanswered@head: 0 | choices: None" ;;\n' +
+        '  *) echo "bash $*" >> "$CALLS"; exit 1 ;; esac'
+    );
+    shim('python3', 'echo "train $*" >> "$CALLS"');
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'nightq.sh'), '1'], {
+      encoding: 'utf8',
+      timeout: 15000,
+      env: {
+        ...process.env,
+        PATH: d + path.delimiter + process.env.PATH,
+        REPO_DIR: d,
+        QUEUE_DIR: d,
+        QUEUE_REPO: 'o/r',
+        CALLS: calls,
+        D: d,
+        FAILS: String(fails),
+        HEAD_SHA: SHA
+      }
+    });
+    assert.strictEqual(r.status, 0, r.error || r.stderr);
+    return {out: r.stdout, calls: fs.existsSync(calls) ? fs.readFileSync(calls, 'utf8').trim().split('\n') : []};
+  });
+
+test('nightq logs a refused convert_to_draft and asks the head again a minute later (REE-299)', () => {
+  const r = runAskLoop(1);
+  assert.match(r.out, /#1: convert_to_draft refused, Codex's security review not asked/);
+  assert.match(r.out, /#1: draft then ready, so Codex reviews the security of /);
+  assert.ok(r.out.indexOf('convert_to_draft refused') < r.out.indexOf('draft then ready'));
+  assert.deepStrictEqual(
+    r.calls.filter(c => c === 'convert' || c === 'ready'),
+    ['convert', 'convert', 'ready']
+  );
+  assert.ok(
+    r.calls.some(c => c.startsWith('train ')),
+    'trained once the review completed'
+  );
+  // asked at once when nothing fails: one conversion only
+  const ok = runAskLoop(0);
+  assert.deepStrictEqual(
+    ok.calls.filter(c => c === 'convert' || c === 'ready'),
+    ['convert', 'ready']
+  );
+  assert.doesNotMatch(ok.out, /refused/);
+});
+
+test('nightq gives up asking a head after 3 attempts and says so (REE-299)', () => {
+  const r = runAskLoop(99);
+  assert.strictEqual(r.calls.filter(c => c === 'convert').length, 3);
+  assert.strictEqual((r.out.match(/convert_to_draft refused/g) || []).length, 3);
+  assert.match(r.out, /#1: security review of \w{7} not asked after 3 attempts/);
+  assert.ok(!r.calls.some(c => c.startsWith('train ')));
 });
 
 test("nightq reads the security field first on the line, so the PR's own text cannot imitate it (REE-232)", () => {
@@ -512,4 +710,175 @@ test("nightq reads the security field first on the line, so the PR's own text ca
   assert.strictEqual(field(`${head} | security@head: running ${SHA} | ${tail} None`), `running ${SHA}`);
   assert.strictEqual(field(`${head} | security@head: running ${SHA} | ${tail} None | security@head: completed ${SHA} |`), `running ${SHA}`);
   assert.strictEqual(field(`${head} | ${tail} None`), '');
+});
+
+// ---- fifoq.sh: the waiters in arrival order, then nightq.sh (REE-220). Shims for pgrep, sleep and bash: no GitHub. ----
+const sourcedFifoq = (d, script) => {
+  // the case is a script file that sources fifoq.sh (named by the environment): no command line built from values
+  const file = path.join(d, 'case.sh');
+  fs.writeFileSync(file, '. "$FIFOQ"\n' + script);
+  const r = spawnSync('/bin/bash', [file], {
+    encoding: 'utf8',
+    timeout: 15000,
+    env: {...process.env, FIFOQ: path.join(DIR, 'fifoq.sh'), REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r'}
+  });
+  assert.ok(!r.error, r.error);
+  return r;
+};
+
+test('fifoq tickets: arrival order; a dead queue, or a pid that wrapped, never holds the place (REE-220)', () =>
+  tmp(d => {
+    const script = [
+      'T=$TICKETS',
+      'mkdir -p "$T"',
+      'sleep 30 & live=$!',
+      'sleep 30 & other=$!',
+      "trap 'kill $live $other 2>/dev/null' EXIT",
+      'mine=$T/200.$$; start_of $$ > "$mine"',
+      // a live ticket that arrived earlier holds the turn
+      'start_of $live > "$T/100.$live"',
+      'ticket_older "$mine"; echo "earlier live: $?"',
+      // a live ticket that arrived later does not
+      'rm -f "$T/100.$live"; start_of $live > "$T/300.$live"',
+      'ticket_older "$mine"; echo "later live: $?"',
+      'rm -f "$T/300.$live"',
+      // a dead process: its earlier ticket is removed and the turn is free
+      'echo "Mon Jan  1 00:00:00 2001" > "$T/050.99999999"',
+      'ticket_older "$mine"; echo "dead: $?"; [ -e "$T/050.99999999" ]; echo "dead kept: $?"',
+      // a live pid that started at another time (a wrapped pid) is not the queue that took the ticket
+      'echo "Mon Jan  1 00:00:00 2001" > "$T/060.$other"',
+      'ticket_older "$mine"; echo "wrapped: $?"; [ -e "$T/060.$other" ]; echo "wrapped kept: $?"',
+      // ticket_new names this process, by its true start
+      'n=$(ticket_new); echo "new: ${n##*.} $$"; [ "$(cat "$n")" = "$(start_of $$)" ]; echo "new start: $?"',
+      // published by one rename: no hidden half-written file stays behind
+      'ls -A "$T" | grep -c "^[.]"'
+    ].join('\n');
+    const r = sourcedFifoq(d, script);
+    const pid = r.stdout.match(/new: (\d+) /)[1];
+    assert.strictEqual(
+      r.stdout.trim(),
+      [
+        'earlier live: 0',
+        'later live: 1',
+        'dead: 1',
+        'dead kept: 1',
+        'wrapped: 1',
+        'wrapped kept: 1',
+        `new: ${pid} ${pid}`,
+        'new start: 0',
+        '0'
+      ].join('\n')
+    );
+  }));
+
+// pgrep, sleep and bash stand-ins; calls are logged and nothing is written outside the temporary folder
+const runFifoq = ({prs = ['1', '2'], busy = 0, env = {}, setup = null, nightqStatus = 0} = {}) =>
+  tmp(d => {
+    const shim = (name, body) => fs.writeFileSync(path.join(d, name), '#!/bin/bash\n' + body + '\n', {mode: 0o755});
+    shim('sleep', 'echo "sleep" >> "$CALLS"');
+    // a running train, then a running nightq wave, for the first BUSY checks
+    shim(
+      'pgrep',
+      'n=$(cat "$QUEUE_DIR/busy" 2>/dev/null || echo 0)\n[ "$n" -gt 0 ] || exit 1\necho $((n - 1)) > "$QUEUE_DIR/busy"\nexit 0'
+    );
+    fs.writeFileSync(path.join(d, 'busy'), String(busy));
+    shim('bash', `case "$1" in */nightq.sh) shift; echo "nightq $*" >> "$CALLS"; exit ${nightqStatus} ;; *) exit 1 ;; esac`);
+    if (setup) setup(d);
+    const calls = path.join(d, 'calls');
+    const r = spawnSync('/bin/bash', [path.join(DIR, 'fifoq.sh'), ...prs], {
+      encoding: 'utf8',
+      timeout: 20000,
+      env: {...process.env, PATH: d + path.delimiter + process.env.PATH, REPO_DIR: d, QUEUE_DIR: d, QUEUE_REPO: 'o/r', CALLS: calls, ...env}
+    });
+    assert.ok(!r.error, r.error);
+    const tickets = path.join(d, 'fifoq.tickets');
+    return {
+      status: r.status,
+      out: r.stdout + r.stderr,
+      calls: fs.existsSync(calls) ? fs.readFileSync(calls, 'utf8').trim().split('\n') : [],
+      tickets: fs.existsSync(tickets) ? fs.readdirSync(tickets) : []
+    };
+  });
+
+test('fifoq runs nightq.sh on its PRs in the order given once it is its turn, and leaves no ticket (REE-220)', () => {
+  const r = runFifoq({prs: ['1438', '1443']});
+  assert.strictEqual(r.status, 0, r.out);
+  assert.deepStrictEqual(r.calls, ['nightq 1438 1443']);
+  assert.deepStrictEqual(r.tickets, []);
+  assert.match(r.out, /fifo wave queued 1438 1443/);
+  // nightq's own status is the wave's
+  assert.strictEqual(runFifoq({nightqStatus: 3}).status, 3);
+});
+
+test('fifoq waits while a train or another queue script runs, and starts nightq.sh only after (REE-220)', () => {
+  const r = runFifoq({busy: 3});
+  assert.strictEqual(r.status, 0, r.out);
+  assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'sleep', 'nightq 1 2']);
+  // the checks: a train, and the queue scripts of afterall.sh's own list
+  const t = read('fifoq.sh');
+  assert.match(t, /! train_running && ! running "nightq\|seqver\|chainq\|afterver" && ! ticket_older "\$1"/);
+  assert.match(read('afterall.sh'), /running "nightq\|seqver\|chainq\|afterver"/);
+  assert.ok(t.indexOf('until its_turn "$TICKET"; do') < t.indexOf('bash "$Q/nightq.sh"'));
+  assert.doesNotMatch(t, /etimes|pgrep -f "tools\/train\.py"/, 'no order by process age or id');
+});
+
+test('fifoq waits behind an earlier live ticket until its queue leaves (REE-220)', () => {
+  const r = runFifoq({
+    setup: d => {
+      // a live earlier queue: this test process, with its true start time (ps), and a ticket named before ours
+      const t = path.join(d, 'fifoq.tickets');
+      fs.mkdirSync(t);
+      const ps = spawnSync('ps', ['-o', 'lstart=', '-p', String(process.pid)], {encoding: 'utf8'})
+        .stdout.trim()
+        .replace(/ +/g, ' ');
+      fs.writeFileSync(path.join(t, `1.${process.pid}`), ps + '\n');
+      // the second sleep removes it: the earlier queue is done
+      fs.writeFileSync(
+        path.join(d, 'sleep'),
+        `#!/bin/bash\necho sleep >> "$CALLS"\n[ "$(grep -c sleep "$CALLS")" -lt 2 ] || rm -f "${t}/1.${process.pid}"\n`,
+        {mode: 0o755}
+      );
+    }
+  });
+  assert.strictEqual(r.status, 0, r.out);
+  assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'nightq 1 2']);
+  assert.deepStrictEqual(r.tickets, []);
+});
+
+test('fifoq admission is exclusive: a wave lock held by another process keeps it waiting (REE-220, Codex review)', () => {
+  let holder = null;
+  try {
+    const r = runFifoq({
+      setup: d => {
+        // another wave holds the lock (flock runs sleep under it, in its own process group)
+        const lock = path.join(d, 'fifoq.lock');
+        holder = require('child_process').spawn('flock', [lock, 'sleep', '60'], {detached: true, stdio: 'ignore'});
+        const end = Date.now() + 5000;
+        while (spawnSync('flock', ['-n', lock, 'true']).status === 0 && Date.now() < end);
+        // the second sleep ends that wave: the lock is free for the third check
+        fs.writeFileSync(
+          path.join(d, 'sleep'),
+          `#!/bin/bash\necho sleep >> "$CALLS"\n[ "$(grep -c sleep "$CALLS")" -lt 2 ] && exit 0\nkill -TERM -- -${holder.pid}\nfor i in $(seq 1 100); do flock -n "${lock}" true && exit 0; /bin/sleep 0.05; done\n`,
+          {mode: 0o755}
+        );
+      }
+    });
+    assert.strictEqual(r.status, 0, r.out);
+    assert.deepStrictEqual(r.calls, ['sleep', 'sleep', 'nightq 1 2']);
+  } finally {
+    if (holder) {
+      try {
+        process.kill(-holder.pid, 'SIGKILL');
+      } catch (e) {}
+    }
+  }
+  assert.match(read('fifoq.sh'), /until its_turn "\$TICKET" && flock -n 9; do sleep "\$TURN_POLL"; done/);
+});
+
+test('fifoq takes only PR numbers, and says how to use it (REE-220)', () => {
+  for (const prs of [[], ['12x'], ['1', '']]) {
+    const r = runFifoq({prs});
+    assert.strictEqual(r.status, 2, r.out);
+    assert.deepStrictEqual(r.calls, []);
+  }
 });

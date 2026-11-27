@@ -304,14 +304,51 @@ test('Code.gs v100: Rejected tries, a JSON list, cleaned and capped; blank when 
   assert.strictEqual(col('Scoring'), 22);
 });
 
+test('Code.gs rejectedOut_: the cell as a list of strings, null when blank or unreadable', () => {
+  const s = loadCodeGs(),
+    out = x => JSON.parse(JSON.stringify(vm.runInContext('rejectedOut_', s.ctx)(x)));
+  assert.deepStrictEqual(out('["xyz","brain coral"]'), ['xyz', 'brain coral']);
+  assert.strictEqual(out(''), null);
+  assert.strictEqual(out(undefined), null);
+  assert.strictEqual(out('not json'), null);
+  assert.strictEqual(out('{"a":1}'), null);
+  assert.strictEqual(out('[]'), null);
+  assert.deepStrictEqual(out(JSON.stringify(['a', 5, '', null, 'b'])), ['a', 'b']);
+  assert.strictEqual(out(JSON.stringify(Array(12).fill('q'))).length, 10);
+  assert.strictEqual(out(JSON.stringify(['y'.repeat(60)]))[0].length, 40);
+});
+
 test('Code.gs: no reader counts differently with refused texts logged', () => {
   const a = sheet(false),
     b = sheet(true),
     run = (s, x) => vm.runInContext(x, s.ctx);
   assert.ok(b.sheets.Answers.rows.slice(1).some(r => r[23]));
+  // readAnswers serves them as index 23 (a list of strings, null when none); the rest of each row is the same
+  const ra = a.post({readAnswers: 1, token: TOK}).rows,
+    rb = b.post({readAnswers: 1, token: TOK}).rows;
   assert.deepStrictEqual(
-    b.post({readAnswers: 1, token: TOK}).rows.map(r => r.slice(1)),
-    a.post({readAnswers: 1, token: TOK}).rows.map(r => r.slice(1))
+    rb.map(r => r.slice(1, 23)),
+    ra.map(r => r.slice(1, 23))
+  );
+  assert.ok(
+    ra.every(r => r.length === 24 && r[23] === null),
+    'none logged: null'
+  );
+  assert.deepStrictEqual(
+    rb.map(r => r[23]),
+    Array.from({length: 14}, (_, i) => (i % 2 ? ['xyzcoral', 'brain coral'] : null))
+  );
+  // the lean reply the admin asks for (core.js rowsPack, rowsUnpack) gives the same index 23, the same rows
+  const lb = C.rowsUnpack(JSON.parse(JSON.stringify(b.post({readAnswers: 1, token: TOK, lean: 1}).lean)));
+  assert.deepStrictEqual(lb, rb);
+  assert.deepStrictEqual(
+    lb.map(r => r[23]),
+    Array.from({length: 14}, (_, i) => (i % 2 ? ['xyzcoral', 'brain coral'] : null))
+  );
+  // the admin's light read serves the rows alike
+  assert.deepStrictEqual(
+    b.post({readLive: 1, token: TOK}).rows.map(r => r[23]),
+    rb.map(r => r[23])
   );
   assert.deepStrictEqual(b.get({stats: '1'}), a.get({stats: '1'}));
   assert.deepStrictEqual(b.post({readStats: 1, token: TOK}).photos, a.post({readStats: 1, token: TOK}).photos);

@@ -234,9 +234,7 @@
   const easyCover = (L, d) => easyRank(L, d)[0] || null;
   // A family's look-alike lines' sources (treeGen lsrc), by the other family's id.
   const treeLookSrc = t => {
-    const L =
-        t.lsrc ||
-        Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+    const L = t.lsrc || Object.fromEntries((t.look || []).map(([id]) => [id, ORG.fishPres + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
       E = t.esrc || {};
     return Object.keys(E).some(k => k.startsWith('look/'))
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
@@ -346,8 +344,8 @@
         // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
         fam: [
           (t.sci || []).join(', '),
-          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
-          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+          t.imr && t.imr !== t.name ? ORG.short + ': ' + t.imr : '',
+          t.imrWith ? ORG.course + ': with the ' + t.imrWith : ''
         ]
           .filter(Boolean)
           .join(' · '),
@@ -1065,25 +1063,35 @@
   // names below the entries, read as the entry they lift to, and the words owned by none, read as such ({known}).
   function treeTypeNames(gen, drop = '', known = []) {
     const out = [],
+      // each key of a unit once: key → unit → its entry in out
+      at = new Map(),
       // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
       // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
       add = (k, g, x, i, oft, sc) => {
         if (!k) return;
-        const o = out.find(y => y.k === k && y.g === g);
+        let G = at.get(k);
+        if (!G) at.set(k, (G = new Map()));
+        const o = G.get(g);
         if (o) return typeWiden(o, sc);
-        out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})});
+        const e = {k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})};
+        out.push(e);
+        G.set(g, e);
       },
       scOf = (g, x) => (g.scopes || {})[x],
       oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
+      (g.names || [g.name]).forEach((x, i) => {
+        const k = typeNormAll(x);
+        add(k, g.id, x, i, oftOf(g, k), scOf(g, x));
+      })
     );
     const d = typeNormAll(drop);
     if (!d) return out;
     const cut = new RegExp("^([A-Za-z][A-Za-z '-]*?)[ -]*" + d + '(?:es)?$', 'i'),
       short = out
         .map(o => {
-          const x = typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
+          // a unit's own name (old '') is never read from old: an empty name is no key
+          const x = o.old && typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
             m = String(x || '').match(cut),
             k = m ? typeNormAll(m[1]) : '';
           // the short form and its plural, and the name's own plural or singular ("Triggers", "Triggerfishes",
@@ -1099,9 +1107,46 @@
         })
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
-    short
-      .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
-      .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
+    // A short form is kept unless it is within the tolerance of another unit's name or short form. The names are read by
+    // length, each key once with the units it names (byLen: length → key → units) and its letters (bits: key → a bit per
+    // letter it holds). A distance is never less than the two lengths' difference, so only the lengths within the
+    // tolerance of the short form's are read (lensNear: [length, tolerance]); nor less than the number of letters one
+    // key holds and the other lacks (each needs an edit of its own; a swap brings no new letter), so only the keys within
+    // the tolerance by their letters are measured (tests/typefast.test.js).
+    const byLen = new Map(),
+      bits = new Map(),
+      reach = new Map(),
+      lensNear = n => {
+        if (reach.has(n)) return reach.get(n);
+        const ms = [...byLen.keys()].map(m => [m, TYPE.tol(Math.min(m, n))]).filter(([m, t]) => Math.abs(m - n) <= t);
+        reach.set(n, ms);
+        return ms;
+      },
+      clash = s => {
+        const a = bits.get(s.k);
+        for (const [m, t] of lensNear(s.k.length))
+          for (const [k, gs] of byLen.get(m)) {
+            if (!(gs.size > 1 || !gs.has(s.g))) continue;
+            // the letters of each that the other lacks, t of them cleared (x & (x - 1) clears one): any left, too far
+            let x = a & ~bits.get(k),
+              y = bits.get(k) & ~a;
+            for (let i = 0; i < t; i++) ((x &= x - 1), (y &= y - 1));
+            if (!x && !y && near(s.k, k)) return true;
+          }
+        return false;
+      };
+    [...out, ...short].forEach(o => {
+      if (!byLen.has(o.k.length)) byLen.set(o.k.length, new Map());
+      const L = byLen.get(o.k.length);
+      if (!L.has(o.k)) {
+        L.set(o.k, new Set());
+        let b = 0;
+        for (let i = 0; i < o.k.length; i++) b |= 1 << (o.k.charCodeAt(i) % 32);
+        bits.set(o.k, b);
+      }
+      L.get(o.k).add(o.g);
+    });
+    short.filter(s => !clash(s)).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
     // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
     // scientific name's (a unit of a scientific rank, a family's sciNames: "Zebrasomas" is no plural), which keeps its
     // spelling step.
@@ -1141,7 +1186,16 @@
   // for a word; a name with none, known ({k, g: '', known: 1, w: 1 for a word}), only where it is no unit's name.
   function typeKnown(out, known) {
     const have = new Set(out.filter(o => !o.known).map(o => o.k)),
-      seen = new Set(out.map(o => o.k + '|' + o.g));
+      seen = new Set(out.map(o => o.k + '|' + o.g)),
+      // the first entry of a key and unit that is no known word (key → unit → entry), kept as out grows
+      own = new Map(),
+      keep = o => {
+        if (o.known) return;
+        let G = own.get(o.k);
+        if (!G) own.set(o.k, (G = new Map()));
+        if (!G.has(o.g)) G.set(o.g, o);
+      };
+    out.forEach(keep);
     (known || [])
       .filter(e => e.g)
       .forEach(e =>
@@ -1151,14 +1205,15 @@
           if (seen.has(k + '|' + e.g)) {
             // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it, and
             // the wider reading holds
-            const o = out.find(x => x.k === k && x.g === e.g && !x.known);
+            const G = own.get(k),
+              o = G && G.get(e.g);
             if (o && e.oft && !o.oft) o.oft = e.oft;
             if (o) typeWiden(o, e.sc);
             return;
           }
           seen.add(k + '|' + e.g);
           have.add(k);
-          out.push({
+          const n = {
             k,
             g: e.g,
             old: y,
@@ -1167,7 +1222,9 @@
             ...(e.n ? {n: e.n, of: e.of} : {}),
             ...(e.oft ? {oft: e.oft} : {}),
             ...(e.sc ? {sc: e.sc} : {})
-          });
+          };
+          out.push(n);
+          keep(n);
         })
       );
     (known || [])
@@ -1218,14 +1275,14 @@
     const out = [],
       fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
       C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
-      off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
-      oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
+      // Pierre's word on name x for family g, the name read once
       put = (x, g, vr, n, of, sc) => {
         if (!x || !fam.has(g)) return;
-        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
-        const o = oft(x, g),
+        const c = (C[typeNormAll(x)] || {})[g];
+        if (c === 'off') return out.push({x, g: '', vr: 'w', w: 1, off: g});
+        const o = c === 'often' && fam.get(g) ? [fam.get(g).name, x] : null,
           // Pierre's on or often gives the name to the whole family, whatever part it named
-          whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
+          whole = ['on', 'often'].includes(c);
         out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
       };
     const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
@@ -1239,12 +1296,13 @@
       .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
     // A kind word designates the species that carry it ("razorfish" on a cleaner wrasse is a mistake); Pierre's
     // on or often gives it to the whole family.
-    ((F && F.vn) || []).forEach(([x, owners]) =>
+    ((F && F.vn) || []).forEach(([x, owners]) => {
+      const P = C[typeNormAll(x)] || {};
       (owners || []).forEach(([g, r, n, of, sp]) => {
-        const c = (C[typeNormAll(x)] || {})[g];
+        const c = P[g];
         put(x, g, 'k', n, of, c === 'on' || c === 'often' ? null : sp);
-      })
-    );
+      });
+    });
     // Pierre's own names (on), the index's or not.
     Object.entries(cur || {}).forEach(([x, v]) =>
       Object.entries(v || {}).forEach(([g, c]) => {
@@ -1252,6 +1310,63 @@
       })
     );
     return out;
+  }
+  // A species' own list of common names, as the admin curates it (curation.json <subject's part> cn {species id: [1 to
+  // CN_MAX names, the main name first]}, written only by the admin's draft and Publish): the same list for every tree
+  // subject whose species carry a list of names (cn). treeCnClean: the list as a clean list of names (trimmed, each
+  // with letters, none twice in the reading of typeNormAll), or null when it is not one (not 1 to CN_MAX names).
+  const CN_MAX = 3;
+  function treeCnClean(v) {
+    if (!Array.isArray(v) || v.length < 1 || v.length > CN_MAX) return null;
+    const L = v.map(x => (typeof x === 'string' ? x.trim().replace(/\s+/g, ' ') : '')),
+      k = L.map(x => typeNormAll(x));
+    return k.every(Boolean) && new Set(k).size === k.length ? L : null;
+  }
+  // Species record s (fish.json shape) with its list of names laid over its own: each name of list L (treeCnClean) that
+  // the base lists in some spelling keeps its other spellings (the base's entry [name shown, other spellings]), a new name
+  // has none; cni, the place of the IMR name, follows the IMR name's entry to its place in the list (whichever of its
+  // spellings the list names) and goes when the list drops it; cnr, the regional names typed only, stay.
+  function treeCnLay(s, L) {
+    const was = Array.isArray(s.cn) ? s.cn : [],
+      forms = n => (Array.isArray(n) ? n : [n]).filter(x => typeof x === 'string' && x),
+      taken = new Set(),
+      out = {...s};
+    let at = -1;
+    out.cn = L.map((x, i) => {
+      const k = typeNormAll(x),
+        j = was.findIndex((n, h) => !taken.has(h) && forms(n).some(y => typeNormAll(y) === k));
+      if (j >= 0 && j === s.cni) at = i;
+      if (j < 0) return [x];
+      taken.add(j);
+      return [x, ...forms(was[j]).filter(y => typeNormAll(y) !== k)];
+    });
+    if (at >= 0) out.cni = at;
+    else delete out.cni;
+    return out;
+  }
+  // The names of subject S's species in built file R (fish.json, seaslug.json) with the lists of curation cur laid over
+  // them: a new file sharing every record it does not change, R itself when nothing applies. The base stands for a
+  // species with no entry, an entry that is not a clean list (treeCnClean) and a species the file does not know. A
+  // species with no list in the base is left alone, whatever the entry says: its list would give it a progress unit (the
+  // species level, treeSpUnits, treeScore), a change of structure the admin does not make. Called by contentApply, so the
+  // app, the admin and the sheet's replay read the same names.
+  function treeCnApply(S, R, cur) {
+    const k = S && S.admin && S.admin.cur,
+      P = k && isObj(cur) ? cur[k] : null;
+    return treeCnLists(R, isObj(P) ? P.cn : null);
+  }
+  // The same over the lists themselves, a subject's part's cn map M ({species id: [names]}), for a reader that holds the part.
+  function treeCnLists(R, M) {
+    if (!isObj(M) || !isObj(R) || !Array.isArray(R.species)) return R;
+    let out = null;
+    R.species.forEach((s, i) => {
+      if (!isObj(s) || !Array.isArray(s.cn) || !s.cn.length || !Object.prototype.hasOwnProperty.call(M, s.id)) return;
+      const L = treeCnClean(M[s.id]);
+      if (!L) return;
+      const r = treeCnLay(s, L);
+      if (!eq(r, s)) (out = out || R.species.slice())[i] = r;
+    });
+    return out ? {...R, species: out} : R;
   }
 
   // A unit id the subject renamed (SUBJECTS renamed: a fish entry t01 → its family f:Damselfishes), else the id as it is.

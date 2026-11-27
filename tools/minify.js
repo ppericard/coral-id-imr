@@ -23,7 +23,7 @@ const fs = require('fs'),
   path = require('path'),
   zlib = require('zlib');
 
-const TERSER = '5.51.2';
+const TERSER = '5.51.4';
 // Read by shape by the version tools: never minified.
 const KEEP = new Set(['sw.js', 'proto/lab.js']);
 // A versioned reference, as tools/stamp_versions.py REF finds it.

@@ -200,14 +200,16 @@ const APP = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 const ctx = {
   esc: s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]),
   safeUrl: u => u,
-  stateView: (name, f) => f // app.js's views (the block holds sciNow, which these tests never read): plain computations
+  // app.js's views (the block holds sciNow, which these tests never read): plain computations
+  stateView: (name, f) => f,
+  dataView: (name, f) => f
 };
 vm.createContext(ctx);
 vm.runInContext(
   block(APP, 'const cnList = s =>', '\n};\n', {file: 'app.js', through: 1}) +
     block(APP, "// The photo's own taxon, said in one short line", '// Every unit of a rank in', {file: 'app.js'}) +
     block(APP, 'function treeTypeOther(rk) {', '\n}\n', {file: 'app.js', through: 1}) +
-    '\nvar TREERAW = null, TREEU = null, SUBJ = {id: "s"};\n' +
+    '\nvar TREERAW = null, TREEF = null, TREEU = null, SUBJ = {id: "s"};\n' +
     'var UNITS = {s: {vern: id => treeVern(id), taxon: p => { const t = treeTaxon(TREEU && TREEU.sps, p, false); return t ? {...t, common: vernFirst(t.id)} : t; }}, f: {}};\n' +
     'this.M = {vernOf, vernFirst, vernSrcs, photoTaxon, taxonLine, treeTypeOther};\n' +
     'this.set = (F, k) => { TREERAW = {f: F}; TREEU = {sps: Object.fromEntries(F.species.map(s => [s.id, s]))}; SUBJ = {id: k}; };',

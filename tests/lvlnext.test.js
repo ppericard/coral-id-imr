@@ -65,6 +65,7 @@ function pair(GX, photoAny) {
     [
       block(APP, 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const kidsCalc = ', '// The species units in play', {file: 'app.js'}),
       block(APP, 'function spPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'function sciPlay(', '\n}\n', {through: 1, file: 'app.js'}),
       REF,
@@ -170,7 +171,7 @@ test('rated-world fish runs: spPlay and sciPlay every 50 answers and around each
 test('the corals: no species level, so neither spPlay nor sciPlay reaches them', () => {
   assert.ok(!C.subjectOf('coral').names, 'no species units for the corals');
   assert.match(APP, /auto: \(\) => \(TREEU && typeof genScore === 'function' \? spPlay\(/, 'the sp set needs the tree (TREEU)');
-  assert.match(APP, /auto: \(\) => \(TREEU && sciSpOn\(\) && typeof genScore === 'function' \? sciPlay\(/, 'the ssp set needs the tree');
+  assert.match(APP, /auto: \(\) =>\s*\(?TREEU && sciSpOn\(\) && typeof genScore === 'function' \? sciPlay\(/, 'the ssp set needs the tree');
 });
 
 // The fish units (the rated world's, as app.js treeGenera builds them) and the sea slugs' (app.js treeGenera on

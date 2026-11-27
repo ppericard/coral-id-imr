@@ -67,7 +67,7 @@
     {
       "id": "terser",
       "name": "terser (the deploy's minifier)",
-      "version": "5.51.2",
+      "version": "5.51.4",
       "pins": [
         {"files": [".github/workflows/pages.yml", ".github/workflows/smokes.yml"], "pattern": "terser@{v}", "min": 2},
         {"files": ["tools/minify.js"], "pattern": "const TERSER = '{v}';"}

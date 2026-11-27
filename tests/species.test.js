@@ -27,6 +27,7 @@ const ctx = {
   treeSpUnits: C.treeSpUnits,
   treeGenSets: C.treeGenSets,
   rankWeights: C.rankWeights,
+  ORG: C.ORG,
   LV_AT: [0.5, 0.8, 0.85],
   INTRO: {START: 4},
   photoAny: n => !!(ctx.GXS[n] && ctx.GXS[n].views.wide.length),
@@ -38,6 +39,7 @@ vm.runInContext(
     block(src('app.js'), 'function treeGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}),
     block(src('app.js'), 'function lvlNext(', '\n}\n', {through: 1, file: 'app.js'}),
     block(src('app.js'), 'const metCount = ', '\n};\n', {through: 1, file: 'app.js'}),
+    block(src('app.js'), 'const kidsCalc = ', '// The species units in play', {file: 'app.js'}),
     block(src('app.js'), 'function spPlay(L, score, met, on) {', '\n}\n', {through: 1, file: 'app.js'}),
     'const GX = n => GXS[n];',
     'this.T = {treeGenera, spPlay};'

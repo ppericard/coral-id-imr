@@ -1,0 +1,24 @@
+Paired comparison: app_seaslug_unc_before.json (c8377bcc) -> app_seaslug_unc_after.json (c8377bcc), seaslug, 25 pairs (beginner, casualDiver, lectureRA, strongRA, expert)
+Looks declared: 1 (one-sided bounds at 90.0%, the primary at 0.0500)
+
+**Guardrails** (one-sided 90.0% bound of the paired difference on the side of harm; cell: before -> after, difference [bound], verdict)
+
+| Guardrail | At | Margin | beginner | casualDiver | lectureRA | strongRA | expert |
+|---|---|---|---|---|---|---|---|
+| True knowledge (D*, or knowSlate in the app world) | 300 | -0.020 | 0.363 -> 0.366, +0.004 [-0.008] held | 0.378 -> 0.370, -0.008 [-0.020] held | 0.459 -> 0.456, -0.003 [-0.010] held | 0.493 -> 0.498, +0.005 [-0.010] held | 0.943 -> 0.943, -0.000 [-0.000] held |
+| E = bar - D*, units met | 300 | +0.030 | -0.352 -> -0.356, -0.004 [+0.025] held | -0.320 -> -0.344, -0.024 [-0.005] held | -0.314 -> -0.360, -0.046 [-0.014] held | -0.294 -> -0.327, -0.033 [-0.011] held | -0.458 -> -0.469, -0.012 [-0.001] held |
+| Answers to the first unit at Open Water | run | +18.3 / +11.7 / +10.0 / +10.0 / +10.0 | 91.6 -> 47.4, -44.2 [-2.6] held | 58.6 -> 45.6, -13.0 [+6.1] held | 24.4 -> 30.4, +6.0 [+15.8] unclear | 16.2 -> 19.6, +3.4 [+4.6] held | 15.2 -> 17.8, +2.6 [+3.8] held |
+| Units at Open Water | 300 | -2.0 | 6.4 -> 6.0, -0.4 [-1.5] held | 6.4 -> 5.8, -0.6 [-2.2] unclear | 10.8 -> 8.2, -2.6 [-3.8] breached | 17.4 -> 16.8, -0.6 [-3.2] unclear | 22.8 -> 22.0, -0.8 [-2.8] unclear |
+| Longest plateau of the shown score | run | +12 / +11 / +7 / +7 / +3 | 61 -> 61, -0 [+9] held | 55 -> 54, -1 [+10] held | 37 -> 49, +13 [+20] breached | 33 -> 39, +6 [+16] unclear | 16 -> 15, -0 [+2] held |
+| Share under ease 4 before Open Water | 300 | +0.050 | 0.095 -> 0.100, +0.005 [+0.024] held | 0.111 -> 0.091, -0.020 [+0.009] held | 0.103 -> 0.088, -0.015 [+0.004] held | 0.092 -> 0.114, +0.022 [+0.033] held | 0.103 -> 0.107, +0.004 [+0.031] held |
+| Units met | 100 | -2.0 | 18.4 -> 18.4, +0.0 [-0.5] held | 18.8 -> 18.8, +0.0 [-1.1] held | 19.8 -> 18.4, -1.4 [-2.5] unclear | 19.0 -> 17.8, -1.2 [-3.2] unclear | 19.2 -> 18.8, -0.4 [-1.0] held |
+| Units met | 300 | -2.1 / -2.3 / -2.3 / -2.5 / -2.6 | 42.8 -> 43.4, +0.6 [-1.2] held | 45.8 -> 43.8, -2.0 [-4.0] unclear | 46.0 -> 46.0, +0.0 [+0.0] held | 49.6 -> 50.6, +1.0 [-2.0] held | 52.8 -> 53.2, +0.4 [-0.6] held |
+
+Not held: firstOW@run lectureRA: unclear; unitsOW@300 casualDiver: unclear; unitsOW@300 lectureRA: breached; unitsOW@300 strongRA: unclear; unitsOW@300 expert: unclear; plateau@run lectureRA: breached; plateau@run strongRA: unclear; met@100 lectureRA: unclear; met@100 strongRA: unclear; met@300 casualDiver: unclear (unclear: one step up; breached, or a cost not declared: to Pierre; rule L11).
+Not measured by these files: The global score as shown; Families at Advanced (fish).
+
+**Also measured** (cell: before -> after, paired difference [one-sided 90.0% bounds either side]; no margin is set for these)
+
+| Measure | At | beginner | casualDiver | lectureRA | strongRA | expert |
+|---|---|---|---|---|---|---|
+| Right % since the previous checkpoint | 300 | 77.4 -> 73.4, -4.0 [-7.8, -0.2] | 75.6 -> 76.8, +1.2 [-0.7, +3.1] | 81.2 -> 78.4, -2.8 [-6.7, +1.1] | 81.8 -> 79.8, -2.0 [-4.9, +0.9] | 96.0 -> 96.0, +0.0 [-1.3, +1.3] |

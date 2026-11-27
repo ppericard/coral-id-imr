@@ -81,7 +81,7 @@ jobs:
       - name: Install terser and Playwright (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
-          npm install --no-save --no-audit --no-fund terser@5.51.2 playwright@1.65.1
+          npm install --no-save --no-audit --no-fund terser@5.51.4 playwright@1.65.1
           npx playwright install chromium
       # The build, on the staged copy only (tools/build_site.py): the players' curation
       # (curation-play.json, what the app reads of curation.json; curation.json itself served unchanged, for the admin),

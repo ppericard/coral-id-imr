@@ -11,7 +11,7 @@ const test = require('node:test'),
 const C = require('../core.js');
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'progress.js'), 'utf8'),
-  ctx = {};
+  ctx = {ORG: C.ORG};
 vm.createContext(ctx);
 vm.runInContext(block(SRC, 'const RECALC = {', '\n};\n', {through: true, file: 'progress.js'}) + '\nthis.RECALC = RECALC;', ctx);
 const {RECALC} = ctx,

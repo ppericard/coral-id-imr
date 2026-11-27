@@ -62,8 +62,8 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; checks proportionate to the change, valid statistics, a hard cap of 40 minutes of compute, level 3 never on this machine.
-- **L12** Check algorithm changes on the real log too.
+- **L11** The simplest algorithm that works; checks follow the question (a simulation only for mechanics); a 40-minute cap; level 3 never on this machine.
+- **L12** Check algorithm changes on the real answer log.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
 - **L15** First goal: ID on ideal photos.
@@ -108,8 +108,9 @@ The rules are written for every subject (corals, fish…) unless they say otherw
 - **D9** The answer log is the reference for progress: trust it rather than the device.
 
 **Working with Pierre, and shipping** ([ship.md](ship.md))
-- **W1** Everything produced is in English; only the chat with Pierre is in French, and he is "tu".
-- **W3** Alpha: no backward compatibility.
+- **W1** Everything produced is in English; only the chat with Pierre is in French, and he is "tu"; fish families keep
+  their English names.
+- **W3** Alpha: no backward compatibility; the effort of a refactor is never an argument.
 - **W4** Many prototypes first; Pierre judges by taps.
 - **W6** No work sleeps on a branch; a PR waiting for Pierre is opened ready with `needs-pierre`.
 - **W7** Work autonomously; fix by default; never re-ask what was answered.

@@ -5,7 +5,27 @@
   // static files (index.html, admin.html, privacy.html, manifest.webmanifest, tools/og/og.html, README.md, the docs) are
   // rewritten from it by tools/rename_app.py. The storage keys never depend on it (KEYS), so a fork renames the app
   // without moving any player's data.
-  const ORG = {short: 'IMR', name: 'Institute for Marine Research', app: 'IMR Reef ID', appShort: 'Reef ID'};
+  // The words of the organisation's course, as the players and the admin meet them, each a whole name without its
+  // article (code writes "the " + ORG.course): course, the course; lecture, the coral lecture as a source (its notes,
+  // groups, photos); lectureRef, the lecture as a reference names it (the data's lsrc lines start with it); fishPres,
+  // the fish presentation (the fish families' look-alike lines start with it); list, slate and benthic, the survey's
+  // coral list, its slate and its benthic slate; trainer, who teaches the course. A phrase not listed builds on ORG.short
+  // ("At " + ORG.short + " or elsewhere"). The data's own values and the identifiers keep their words
+  // (docs/decisions/2026-11-25-org-course-words.md). Flat, quoted values only: tools/rename_app.py reads this literal.
+  const ORG = {
+    short: 'IMR',
+    name: 'Institute for Marine Research',
+    app: 'IMR Reef ID',
+    appShort: 'Reef ID',
+    course: 'IMR course',
+    lecture: 'IMR lecture',
+    lectureRef: 'IMR Lecture 6',
+    fishPres: 'IMR fish presentation',
+    list: 'IMR list',
+    slate: 'IMR slate',
+    benthic: 'IMR benthic slate',
+    trainer: 'IMR trainer'
+  };
   // Storage keys (localStorage, sessionStorage): one app-wide prefix that names the app without the organisation, and is
   // distinct from other apps on the shared origin ppericard.github.io.
   //   reefid-<name>        stays on this device (sign-in record, caches, queues, the admin, the Lab);
@@ -209,6 +229,204 @@
       } else return null;
     }
     return out;
+  }
+
+  // The answer log's lean reply (docs/spec/sync.md "The lean answer log"; Code.gs answers_ with lean, admin.js leanOn):
+  // the rows of the admin's readAnswers, column by column, each column in the shortest of a few spellings, so the reply
+  // is about half the bytes and the admin gets back exactly the rows JSON would have given it (rowsUnpack). Generic: no
+  // column is named, so a column added to the rows needs nothing here. A column is one of
+  //   {p: gaps, v: column}    mostly null: the gaps between the values that are not null, then those values;
+  //   {d: deltas}             whole numbers, none null, as the difference from the one before (the times);
+  //   {s: 10|100|1000, r}     numbers (or null) that are whole once times s (seconds, expectations, abilities);
+  //   {k: values, i: indexes} few distinct values (names, ids, units, modes), the most frequent first;
+  //   {t: words, l: column, i: indexes}   texts of space-separated words (photos, choices): l each text's word count;
+  //   {o: keys, c: [column]}  objects of plain values (the scoring record): one column per key, null where absent;
+  //   {r: values}             anything else, as it is.
+  // rowsPack(rows) → {f: 1, n, w, c: [column], l?: column of the row lengths when they differ}, null when the rows are
+  // not arrays (the reply then keeps its rows).
+  const LEAN_F = 1;
+  const leanCell = x =>
+    x === undefined || typeof x === 'function' || typeof x === 'symbol' || (typeof x === 'number' && !isFinite(x)) ? null : x === 0 ? 0 : x;
+  const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  // The kept keys of an object as JSON writes it: its own keys whose value is written; null when the object cannot go in
+  // an object column (no key left, a null value that would read as absent, a __proto__ key).
+  const leanKeys = o => {
+    const K = Object.keys(o).filter(k => {
+      const v = o[k];
+      return v !== undefined && typeof v !== 'function' && typeof v !== 'symbol';
+    });
+    return K.length && !K.includes('__proto__') && K.every(k => leanCell(o[k]) !== null) ? K : null;
+  };
+  // Values by how often they come, the most frequent first, and each one's index: {k, i}.
+  function leanDict(V) {
+    const C = new Map();
+    for (const x of V) C.set(x, (C.get(x) || 0) + 1);
+    const k = [...C.keys()].sort((a, b) => C.get(b) - C.get(a)),
+      ix = new Map(k.map((x, j) => [x, j])),
+      i = new Array(V.length);
+    for (let j = 0; j < V.length; j++) i[j] = ix.get(V[j]);
+    return {k, i};
+  }
+  function leanCol(V0) {
+    const n = V0.length,
+      V = new Array(n);
+    let nul = 0,
+      num = true,
+      int = true,
+      prim = true,
+      str = true,
+      space = false;
+    for (let j = 0; j < n; j++) {
+      const x = (V[j] = leanCell(V0[j]));
+      if (x === null) {
+        nul++;
+        str = false;
+        continue;
+      }
+      const t = typeof x;
+      if (t !== 'number') num = int = false;
+      else if (int && !Number.isSafeInteger(x)) int = false;
+      if (t !== 'string') str = false;
+      else if (!space && x.indexOf(' ') >= 0) space = true;
+      if (t === 'object') prim = false;
+    }
+    if (nul * 2 > n) {
+      const p = [],
+        P = [];
+      let last = -1;
+      for (let j = 0; j < n; j++) if (V[j] !== null) (p.push(j - last - 1), P.push(V[j]), (last = j));
+      return {p, v: leanCol(P)};
+    }
+    if (num && int) {
+      if (!nul && n > 1) {
+        const D = new Array(n);
+        D[0] = V[0];
+        for (let j = 1; j < n; j++) D[j] = V[j] - V[j - 1];
+        if (D.every(Number.isSafeInteger) && JSON.stringify(D).length < 0.8 * JSON.stringify(V).length) return {d: D};
+      }
+      return {r: V};
+    }
+    if (num) {
+      for (const s of [10, 100, 1000]) {
+        const R = new Array(n);
+        let j = 0;
+        for (; j < n; j++) {
+          const x = V[j];
+          if (x === null) R[j] = null;
+          else if (!Number.isSafeInteger((R[j] = Math.round(x * s))) || R[j] / s !== x) break;
+        }
+        if (j === n) return {s, r: R};
+      }
+      return {r: V};
+    }
+    if (prim) {
+      const D = leanDict(V);
+      // Texts too many to list whole (photos, choices) go word by word when that lists fewer.
+      if (str && space && D.k.length >= 256) {
+        const l = new Array(n),
+          F = [];
+        for (let j = 0; j < n; j++) {
+          const W = V[j].split(' ');
+          l[j] = W.length;
+          for (const w of W) F.push(w);
+        }
+        const T = leanDict(F);
+        if (T.k.length < D.k.length) return {t: T.k, l: leanCol(l), i: T.i};
+      }
+      return D.k.length * 2 <= n || D.k.length < 64 ? D : {r: V};
+    }
+    const KS = V.map(x => (x === null ? [] : plain(x) ? leanKeys(x) : null)),
+      o = KS.every(Boolean) ? leanOrder(KS) : null;
+    return o ? {o, c: o.map(k => leanCol(V.map(x => (x !== null && own(x, k) ? x[k] : null))))} : {r: V};
+  }
+  // One order of the keys that keeps each object's own (so every object comes back with its keys in its order), the
+  // first seen first where nothing decides; null when the objects disagree (an object column is then not used).
+  function leanOrder(KS) {
+    const seen = [],
+      after = new Map(),
+      before = new Map();
+    KS.forEach(K =>
+      K.forEach((k, i) => {
+        if (!after.has(k)) (seen.push(k), after.set(k, new Set()), before.set(k, 0));
+        const p = K[i - 1];
+        if (i && !after.get(p).has(k)) (after.get(p).add(k), before.set(k, before.get(k) + 1));
+      })
+    );
+    const o = [];
+    for (let left = seen.slice(); left.length;) {
+      const k = left.find(x => !before.get(x));
+      if (k === undefined) return null;
+      o.push(k);
+      left.splice(left.indexOf(k), 1);
+      after.get(k).forEach(x => before.set(x, before.get(x) - 1));
+    }
+    return o;
+  }
+  function rowsPack(rows) {
+    if (!Array.isArray(rows) || !rows.every(Array.isArray)) return null;
+    const n = rows.length,
+      w = rows.reduce((m, r) => Math.max(m, r.length), 0),
+      out = {f: LEAN_F, n, w, c: []};
+    for (let j = 0; j < w; j++) out.c.push(leanCol(rows.map(r => (j < r.length ? r[j] : null))));
+    if (rows.some(r => r.length !== w)) out.l = leanCol(rows.map(r => r.length));
+    return out;
+  }
+  // One column back (rowsPack), n values; throws on a spelling it does not know.
+  function leanOut(c, n) {
+    if (!plain(c)) throw new Error('lean column');
+    if (c.p) {
+      const out = new Array(n).fill(null),
+        P = leanOut(c.v, c.p.length);
+      let i = -1;
+      for (let j = 0; j < c.p.length; j++) out[(i += c.p[j] + 1)] = P[j];
+      return out;
+    }
+    if (c.d) {
+      let a = 0;
+      return c.d.map(x => (a += x));
+    }
+    if (c.s) return c.r.map(x => (x === null ? null : x / c.s));
+    if (c.r) return c.r;
+    if (c.t) {
+      const L = leanOut(c.l, n),
+        out = new Array(n);
+      let k = 0;
+      for (let i = 0; i < n; i++) {
+        let s = c.t[c.i[k++]];
+        for (let j = 1; j < L[i]; j++) s += ' ' + c.t[c.i[k++]];
+        out[i] = s;
+      }
+      return out;
+    }
+    if (c.k) return c.i.map(x => c.k[x]);
+    if (c.o) {
+      const S = c.c.map(x => leanOut(x, n)),
+        out = new Array(n);
+      for (let i = 0; i < n; i++) {
+        let o = null;
+        for (let j = 0; j < c.o.length; j++) if (S[j][i] !== null) (o = o || {})[c.o[j]] = S[j][i];
+        out[i] = o;
+      }
+      return out;
+    }
+    throw new Error('lean column');
+  }
+  // The rows of a lean reply (rowsPack), exactly as JSON would have given them; throws on a reply it cannot read (another
+  // spelling version f, a column of another length).
+  function rowsUnpack(L) {
+    if (!plain(L) || L.f !== LEAN_F || !Array.isArray(L.c) || L.c.length !== L.w) throw new Error('lean reply');
+    const n = L.n,
+      C = L.c.map(c => leanOut(c, n)),
+      ln = L.l ? leanOut(L.l, n) : null,
+      rows = new Array(n);
+    if (C.some(c => c.length !== n)) throw new Error('lean reply');
+    for (let i = 0; i < n; i++) {
+      const w = ln ? ln[i] : L.w,
+        r = new Array(w);
+      for (let j = 0; j < w; j++) r[j] = C[j][i];
+      rows[i] = r;
+    }
+    return rows;
   }
 
   // Subjects (docs/spec/subjects.md "The registry", which describes every field; docs/ARCHITECTURE.md "Subjects"): what
@@ -452,7 +670,7 @@
       // several: the report dialog's reason for a photo with more than one of them in frame (sync.js REP_WHY, "Several corals").
       several: 'corals',
       card: 'genus',
-      lecture: 'the IMR coral lecture',
+      lecture: `the ${ORG.short} coral lecture`,
       pv: '',
       hash: '',
       zoom: 'the corallites, the detail that often tells look-alikes apart',
@@ -496,11 +714,11 @@
             {k: 'plain', n: 'Plain words', t: 'text'},
             {k: 'qt', n: 'ID tips', t: 'list'},
             {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
-            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'imr', n: `${ORG.lecture} notes`, t: 'list', imr: 1, keep: 1},
             {k: 'sum', n: 'Summary', t: 'text', keep: 1},
             {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
             {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
-            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'check', n: `To check with an ${ORG.trainer}`, t: 'text'},
             {k: 'info', n: 'Other sources', t: 'list'}
           ]
         }
@@ -516,16 +734,18 @@
       },
       // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
       // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
-      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
-      replayed: {gen: d => genLooks(d)},
+      // It stays the subject of the sheet's unprefixed rv and replay (replay), never one of replayedSubjects. tab: the
+      // sheet's tab of its replay records (Code.gs rplTab_), named before there was another subject; the others' take
+      // "Replayed <name>".
+      replayed: {gen: d => genLooks(d), tab: 'Replayed'},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
         q: 'How well do you know corals?',
         opts: {
           new: ['I’m new to corals', 'Start from scratch: the app shows you the basics first.'],
-          imr: ['I had the IMR coral course', 'You have met the genera in the IMR lecture.'],
-          know: ['I know corals well', 'At IMR or elsewhere: you can already name many genera.']
+          imr: [`I had the ${ORG.short} coral course`, `You have met the genera in the ${ORG.lecture}.`],
+          know: ['I know corals well', `At ${ORG.short} or elsewhere: you can already name many genera.`]
         }
       },
       // The admin's part (one subject switch for the whole admin, its address prefix the subject's hash): cur, its part
@@ -540,7 +760,7 @@
         pages: null,
         todo: ['rule', 'sa', 'poor', 'sug'],
         origins: [
-          ['imr', 'IMR lecture', 'IMR'],
+          ['imr', ORG.lecture, ORG.short],
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
@@ -560,7 +780,7 @@
       what: 'Fish',
       several: 'fish species',
       card: 'fish',
-      lecture: 'the IMR fish presentation',
+      lecture: `the ${ORG.fishPres}`,
       pv: 'fish.',
       hash: 'fish/',
       zoom: 'the markings and the fins',
@@ -679,7 +899,7 @@
         q: 'How well do you know reef fish?',
         opts: {
           new: ['I’m new to reef fish', 'Start from scratch: the basics first, then a few easy families.'],
-          imr: ['I’m at IMR (Research Assistant programme)', 'You are learning the IMR survey families.'],
+          imr: [`I’m at ${ORG.short} (Research Assistant programme)`, `You are learning the ${ORG.short} survey families.`],
           know: ['I know reef fish well', 'A diver or a guide: you can already name many families.']
         }
       },
@@ -697,7 +917,7 @@
         // circles: the words the admin's Tree names each circle in, beside its number (admin-content.js circleLab): the
         // players' own, "the IMR course's families", "the family that opens right after the IMR course's" and "the
         // families beyond the IMR course" (docs/spec/fish.md "Circles"). A circle with no words is its number alone.
-        circles: {1: 'IMR course', 2: 'After the course', 3: 'Beyond the course'},
+        circles: {1: ORG.course, 2: 'After the course', 3: 'Beyond the course'},
         // tags: its rubric (judging/FISH.md "Tags"), as treeRubric lays it out: its views (the profile is the good one: said
         // by the judged line only), its light, and the flags Pierre may set (the tool adds p and r itself).
         tags: treeRubric('fish', 'fish', {
@@ -1290,9 +1510,7 @@
   const easyCover = (L, d) => easyRank(L, d)[0] || null;
   // A family's look-alike lines' sources (treeGen lsrc), by the other family's id.
   const treeLookSrc = t => {
-    const L =
-        t.lsrc ||
-        Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+    const L = t.lsrc || Object.fromEntries((t.look || []).map(([id]) => [id, ORG.fishPres + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
       E = t.esrc || {};
     return Object.keys(E).some(k => k.startsWith('look/'))
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
@@ -1402,8 +1620,8 @@
         // then IMR's name when it differs (the IMR tag), or the IMR entry that teaches its species.
         fam: [
           (t.sci || []).join(', '),
-          t.imr && t.imr !== t.name ? 'IMR: ' + t.imr : '',
-          t.imrWith ? 'IMR course: with the ' + t.imrWith : ''
+          t.imr && t.imr !== t.name ? ORG.short + ': ' + t.imr : '',
+          t.imrWith ? ORG.course + ': with the ' + t.imrWith : ''
         ]
           .filter(Boolean)
           .join(' · '),
@@ -2121,25 +2339,35 @@
   // names below the entries, read as the entry they lift to, and the words owned by none, read as such ({known}).
   function treeTypeNames(gen, drop = '', known = []) {
     const out = [],
+      // each key of a unit once: key → unit → its entry in out
+      at = new Map(),
       // sc: the species a name designates when it names part of the unit only; one key of a unit read by two
       // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
       add = (k, g, x, i, oft, sc) => {
         if (!k) return;
-        const o = out.find(y => y.k === k && y.g === g);
+        let G = at.get(k);
+        if (!G) at.set(k, (G = new Map()));
+        const o = G.get(g);
         if (o) return typeWiden(o, sc);
-        out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})});
+        const e = {k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})};
+        out.push(e);
+        G.set(g, e);
       },
       scOf = (g, x) => (g.scopes || {})[x],
       oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
+      (g.names || [g.name]).forEach((x, i) => {
+        const k = typeNormAll(x);
+        add(k, g.id, x, i, oftOf(g, k), scOf(g, x));
+      })
     );
     const d = typeNormAll(drop);
     if (!d) return out;
     const cut = new RegExp("^([A-Za-z][A-Za-z '-]*?)[ -]*" + d + '(?:es)?$', 'i'),
       short = out
         .map(o => {
-          const x = typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
+          // a unit's own name (old '') is never read from old: an empty name is no key
+          const x = o.old && typeNormAll(o.old) === o.k ? o.old : (gen[o.g].names || [gen[o.g].name])[0],
             m = String(x || '').match(cut),
             k = m ? typeNormAll(m[1]) : '';
           // the short form and its plural, and the name's own plural or singular ("Triggers", "Triggerfishes",
@@ -2155,9 +2383,46 @@
         })
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
-    short
-      .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
-      .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
+    // A short form is kept unless it is within the tolerance of another unit's name or short form. The names are read by
+    // length, each key once with the units it names (byLen: length → key → units) and its letters (bits: key → a bit per
+    // letter it holds). A distance is never less than the two lengths' difference, so only the lengths within the
+    // tolerance of the short form's are read (lensNear: [length, tolerance]); nor less than the number of letters one
+    // key holds and the other lacks (each needs an edit of its own; a swap brings no new letter), so only the keys within
+    // the tolerance by their letters are measured (tests/typefast.test.js).
+    const byLen = new Map(),
+      bits = new Map(),
+      reach = new Map(),
+      lensNear = n => {
+        if (reach.has(n)) return reach.get(n);
+        const ms = [...byLen.keys()].map(m => [m, TYPE.tol(Math.min(m, n))]).filter(([m, t]) => Math.abs(m - n) <= t);
+        reach.set(n, ms);
+        return ms;
+      },
+      clash = s => {
+        const a = bits.get(s.k);
+        for (const [m, t] of lensNear(s.k.length))
+          for (const [k, gs] of byLen.get(m)) {
+            if (!(gs.size > 1 || !gs.has(s.g))) continue;
+            // the letters of each that the other lacks, t of them cleared (x & (x - 1) clears one): any left, too far
+            let x = a & ~bits.get(k),
+              y = bits.get(k) & ~a;
+            for (let i = 0; i < t; i++) ((x &= x - 1), (y &= y - 1));
+            if (!x && !y && near(s.k, k)) return true;
+          }
+        return false;
+      };
+    [...out, ...short].forEach(o => {
+      if (!byLen.has(o.k.length)) byLen.set(o.k.length, new Map());
+      const L = byLen.get(o.k.length);
+      if (!L.has(o.k)) {
+        L.set(o.k, new Set());
+        let b = 0;
+        for (let i = 0; i < o.k.length; i++) b |= 1 << (o.k.charCodeAt(i) % 32);
+        bits.set(o.k, b);
+      }
+      L.get(o.k).add(o.g);
+    });
+    short.filter(s => !clash(s)).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
     // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
     // scientific name's (a unit of a scientific rank, a family's sciNames: "Zebrasomas" is no plural), which keeps its
     // spelling step.
@@ -2197,7 +2462,16 @@
   // for a word; a name with none, known ({k, g: '', known: 1, w: 1 for a word}), only where it is no unit's name.
   function typeKnown(out, known) {
     const have = new Set(out.filter(o => !o.known).map(o => o.k)),
-      seen = new Set(out.map(o => o.k + '|' + o.g));
+      seen = new Set(out.map(o => o.k + '|' + o.g)),
+      // the first entry of a key and unit that is no known word (key → unit → entry), kept as out grows
+      own = new Map(),
+      keep = o => {
+        if (o.known) return;
+        let G = own.get(o.k);
+        if (!G) own.set(o.k, (G = new Map()));
+        if (!G.has(o.g)) G.set(o.g, o);
+      };
+    out.forEach(keep);
     (known || [])
       .filter(e => e.g)
       .forEach(e =>
@@ -2207,14 +2481,15 @@
           if (seen.has(k + '|' + e.g)) {
             // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it, and
             // the wider reading holds
-            const o = out.find(x => x.k === k && x.g === e.g && !x.known);
+            const G = own.get(k),
+              o = G && G.get(e.g);
             if (o && e.oft && !o.oft) o.oft = e.oft;
             if (o) typeWiden(o, e.sc);
             return;
           }
           seen.add(k + '|' + e.g);
           have.add(k);
-          out.push({
+          const n = {
             k,
             g: e.g,
             old: y,
@@ -2223,7 +2498,9 @@
             ...(e.n ? {n: e.n, of: e.of} : {}),
             ...(e.oft ? {oft: e.oft} : {}),
             ...(e.sc ? {sc: e.sc} : {})
-          });
+          };
+          out.push(n);
+          keep(n);
         })
       );
     (known || [])
@@ -2274,14 +2551,14 @@
     const out = [],
       fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
       C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
-      off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
-      oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
+      // Pierre's word on name x for family g, the name read once
       put = (x, g, vr, n, of, sc) => {
         if (!x || !fam.has(g)) return;
-        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
-        const o = oft(x, g),
+        const c = (C[typeNormAll(x)] || {})[g];
+        if (c === 'off') return out.push({x, g: '', vr: 'w', w: 1, off: g});
+        const o = c === 'often' && fam.get(g) ? [fam.get(g).name, x] : null,
           // Pierre's on or often gives the name to the whole family, whatever part it named
-          whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
+          whole = ['on', 'often'].includes(c);
         out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
       };
     const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
@@ -2295,12 +2572,13 @@
       .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
     // A kind word designates the species that carry it ("razorfish" on a cleaner wrasse is a mistake); Pierre's
     // on or often gives it to the whole family.
-    ((F && F.vn) || []).forEach(([x, owners]) =>
+    ((F && F.vn) || []).forEach(([x, owners]) => {
+      const P = C[typeNormAll(x)] || {};
       (owners || []).forEach(([g, r, n, of, sp]) => {
-        const c = (C[typeNormAll(x)] || {})[g];
+        const c = P[g];
         put(x, g, 'k', n, of, c === 'on' || c === 'often' ? null : sp);
-      })
-    );
+      });
+    });
     // Pierre's own names (on), the index's or not.
     Object.entries(cur || {}).forEach(([x, v]) =>
       Object.entries(v || {}).forEach(([g, c]) => {
@@ -2308,6 +2586,63 @@
       })
     );
     return out;
+  }
+  // A species' own list of common names, as the admin curates it (curation.json <subject's part> cn {species id: [1 to
+  // CN_MAX names, the main name first]}, written only by the admin's draft and Publish): the same list for every tree
+  // subject whose species carry a list of names (cn). treeCnClean: the list as a clean list of names (trimmed, each
+  // with letters, none twice in the reading of typeNormAll), or null when it is not one (not 1 to CN_MAX names).
+  const CN_MAX = 3;
+  function treeCnClean(v) {
+    if (!Array.isArray(v) || v.length < 1 || v.length > CN_MAX) return null;
+    const L = v.map(x => (typeof x === 'string' ? x.trim().replace(/\s+/g, ' ') : '')),
+      k = L.map(x => typeNormAll(x));
+    return k.every(Boolean) && new Set(k).size === k.length ? L : null;
+  }
+  // Species record s (fish.json shape) with its list of names laid over its own: each name of list L (treeCnClean) that
+  // the base lists in some spelling keeps its other spellings (the base's entry [name shown, other spellings]), a new name
+  // has none; cni, the place of the IMR name, follows the IMR name's entry to its place in the list (whichever of its
+  // spellings the list names) and goes when the list drops it; cnr, the regional names typed only, stay.
+  function treeCnLay(s, L) {
+    const was = Array.isArray(s.cn) ? s.cn : [],
+      forms = n => (Array.isArray(n) ? n : [n]).filter(x => typeof x === 'string' && x),
+      taken = new Set(),
+      out = {...s};
+    let at = -1;
+    out.cn = L.map((x, i) => {
+      const k = typeNormAll(x),
+        j = was.findIndex((n, h) => !taken.has(h) && forms(n).some(y => typeNormAll(y) === k));
+      if (j >= 0 && j === s.cni) at = i;
+      if (j < 0) return [x];
+      taken.add(j);
+      return [x, ...forms(was[j]).filter(y => typeNormAll(y) !== k)];
+    });
+    if (at >= 0) out.cni = at;
+    else delete out.cni;
+    return out;
+  }
+  // The names of subject S's species in built file R (fish.json, seaslug.json) with the lists of curation cur laid over
+  // them: a new file sharing every record it does not change, R itself when nothing applies. The base stands for a
+  // species with no entry, an entry that is not a clean list (treeCnClean) and a species the file does not know. A
+  // species with no list in the base is left alone, whatever the entry says: its list would give it a progress unit (the
+  // species level, treeSpUnits, treeScore), a change of structure the admin does not make. Called by contentApply, so the
+  // app, the admin and the sheet's replay read the same names.
+  function treeCnApply(S, R, cur) {
+    const k = S && S.admin && S.admin.cur,
+      P = k && isObj(cur) ? cur[k] : null;
+    return treeCnLists(R, isObj(P) ? P.cn : null);
+  }
+  // The same over the lists themselves, a subject's part's cn map M ({species id: [names]}), for a reader that holds the part.
+  function treeCnLists(R, M) {
+    if (!isObj(M) || !isObj(R) || !Array.isArray(R.species)) return R;
+    let out = null;
+    R.species.forEach((s, i) => {
+      if (!isObj(s) || !Array.isArray(s.cn) || !s.cn.length || !Object.prototype.hasOwnProperty.call(M, s.id)) return;
+      const L = treeCnClean(M[s.id]);
+      if (!L) return;
+      const r = treeCnLay(s, L);
+      if (!eq(r, s)) (out = out || R.species.slice())[i] = r;
+    });
+    return out ? {...R, species: out} : R;
   }
 
   // A unit id the subject renamed (SUBJECTS renamed: a fish entry t01 → its family f:Damselfishes), else the id as it is.
@@ -2528,8 +2863,13 @@
   // The structure first (structApply: the circles and pairs, so the words of a pair added land on its line), unless o says
   // structure: false (the app before the sheet script that replays under it: rule D4, STRUCT_SHEET); the text slots are
   // then read against it (a pair withdrawn: its words' slot is orphaned, kept and not applied).
+  // The species' own lists of common names (treeCnApply) go over the rest, on every path this function takes.
   function contentApply(S, R, cur, o) {
     if (!(o && o.structure === false)) R = structApply(S, R, cur);
+    return treeCnApply(S, contentText(S, R, cur), cur);
+  }
+  // The text slots' edits over built file R (contentApply, the structure already in R).
+  function contentText(S, R, cur) {
     const Cm = contentOf(cur, S);
     if (!isObj(Cm.nodes) || !Object.keys(Cm.nodes).length) return R; // nothing edited: no node index to build
     const L = contentEntries(S, R, Cm).filter(x => x.state !== 'orphan');
@@ -4425,8 +4765,8 @@
     ['elo1200', 'Elo 1200', 'Reached an Elo of 1200', 2, '⭐', s => s.elo >= 1200],
     ['elo1300', 'Elo 1300', 'Reached an Elo of 1300', 3, '⭐', s => s.elo >= 1300],
     ['elo1400', 'Elo 1400', 'Reached an Elo of 1400', 3, '🌟', s => s.elo >= 1400],
-    ['group', 'Group complete', 'You know a whole IMR lecture group', 3, '🧩', s => s.group],
-    ['bonus', 'Off the list', 'You met a bonus genus, off the IMR list', 2, '🔓', s => s.bonus >= 1],
+    ['group', 'Group complete', `You know a whole ${ORG.lecture} group`, 3, '🧩', s => s.group],
+    ['bonus', 'Off the list', `You met a bonus genus, off the ${ORG.list}`, 2, '🔓', s => s.bonus >= 1],
     // Coral basics done: every step of the module seen (proto/basics.js), a
     // learning milestone like the others (the words the ID tips use), reached in about 5 minutes by those who take it.
     ['basics', 'Coral basics', 'You know the words the ID tips use: polyp, corallite, septa, walls, growth forms', 1, '📖', s => s.basics],
@@ -4459,7 +4799,7 @@
       s => s.basics
     ],
     ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetcore', 'Roll call', `Met every family of the ${ORG.course}`, 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
     ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
     ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
     ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
@@ -4473,7 +4813,7 @@
     [
       'fcoreadv',
       'House reef',
-      'Every family of the IMR course at Advanced level or above (80%+)',
+      `Every family of the ${ORG.course} at Advanced level or above (80%+)`,
       2,
       '🗺️',
       s => s.core.total && s.core.adv >= s.core.total
@@ -4481,7 +4821,7 @@
     [
       'fc2',
       'Supporting cast',
-      'Every family that opens right after the IMR course’s at Advanced level or above',
+      `Every family that opens right after the ${ORG.course}’s at Advanced level or above`,
       2,
       '🗺️',
       s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
@@ -4489,7 +4829,7 @@
     [
       'fc3adv',
       'Muck diver',
-      '20 families beyond the IMR course at Advanced level or above',
+      `20 families beyond the ${ORG.course} at Advanced level or above`,
       3,
       '🗺️',
       s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
@@ -4497,7 +4837,7 @@
     [
       'flearncore',
       'Transect master',
-      'You know every family of the IMR course for sure',
+      `You know every family of the ${ORG.course} for sure`,
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
@@ -4548,7 +4888,7 @@
     [
       'fdauin20',
       'Local legend',
-      "Dauin's top 20 (the 20 species of the IMR course's families most seen around Dauin) at Advanced level or above by their scientific names",
+      `Dauin's top 20 (the 20 species of the ${ORG.course}'s families most seen around Dauin) at Advanced level or above by their scientific names`,
       3,
       '🗺️',
       s => !!(s.top && s.top.total && s.top.adv >= s.top.total)
@@ -5323,10 +5663,14 @@
   // (ig), else, for a ★ genus the lecture doesn't group, the group most of its Coral Finder look-alikes belong to (ties:
   // the first listed); 0 for none (app learn.js shownGroup). starRefs(d, n): the surveyed look-alikes in that group, the
   // genera its card names ("★ look-alike of Turbinaria, Tubastraea", learn.js starNote); [] for any other genus.
-  // starWaits(d, n, list, met): a ★ genus opens only once the genus its card compares it to has been met (its card,
-  // "Like Turbinaria, but corallites about 6 mm", means nothing before Turbinaria): true while
-  // one of n's references is in list (the genera the draw can open) and not met. A reference is always a surveyed genus,
-  // which never waits itself, and one not in the list never holds n back: no genus can wait for ever.
+  // A ★ genus opens only once the genus its card compares it to has been met (its card, "Like Turbinaria, but corallites
+  // about 6 mm", means nothing before Turbinaria). One engine (rule S1; one-engine audit step 4): the flat subject's build
+  // writes the references on the unit's record as data, starAfter(d): `after`, the units it opens after (app.js build,
+  // tools/ratedworld.js coralUnits, last, once its look-alikes, groups and slate are final), and the opening reads that
+  // field on any subject's unit, never the corals' file: afterWaits(u, list, met), true while one of the units u.after
+  // names is in list (the units the draw can open) and not met. A tree unit writes none, so it never waits. A reference
+  // is always a surveyed genus, which never waits itself, and one not in the list never holds n back: no unit can wait
+  // for ever.
   function lectureGroup(d, n) {
     const G = (d && d.gen) || {},
       g = G[n];
@@ -5345,7 +5689,17 @@
     const k = lectureGroup(d, n);
     return (g.look || []).filter(b => G[b] && G[b].n && !X[b] && G[b].ig === k);
   }
-  const starWaits = (d, n, list, met) => starRefs(d, n).some(r => list.includes(r) && !met(r));
+  function starAfter(d) {
+    Object.keys((d && d.gen) || {}).forEach(n => {
+      const g = d.gen[n],
+        R = starRefs(d, n);
+      if (!isObj(g)) return;
+      if (R.length) g.after = R;
+      else delete g.after;
+    });
+    return d;
+  }
+  const afterWaits = (u, list, met) => ((u && u.after) || []).some(r => list.includes(r) && !met(r));
 
   // Photos on R2 (docs/ARCHITECTURE.md "Photos"): the site's photos (img/<f>.webp and its -m, -s,
   // -t files) are read from the Cloudflare R2 bucket that tools/r2_sync.sh mirrors img/ to, same paths under this base;
@@ -7474,7 +7828,8 @@
     gameOf,
     lectureGroup,
     starRefs,
-    starWaits,
+    starAfter,
+    afterWaits,
     PHOTO_BASE,
     photoLocal,
     photoOnR2,
@@ -7821,6 +8176,11 @@
     treeNames,
     treeTypeNames,
     treeNameIndex,
+    CN_MAX,
+    treeCnClean,
+    treeCnLay,
+    treeCnApply,
+    treeCnLists,
     typeFits,
     typeForms,
     treeGameRow,
@@ -7878,7 +8238,9 @@
     dataSum,
     sameText,
     dataDelta,
-    dataPatch
+    dataPatch,
+    rowsPack,
+    rowsUnpack
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = CORE;
   else Object.assign(root, CORE);

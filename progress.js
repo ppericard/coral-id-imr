@@ -185,7 +185,7 @@ function quizBoard() {
       p = cover(g),
       [cl] = lv[n];
     const b = isBonus(n);
-    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="${href(n)}" title="${b ? (g.name ? setOf(n).tag + '. ' : 'Bonus genus, not on the IMR list. ') : isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b && tagged ? `<b class="pbtag">${g.name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwb">${g.name ? `<b>${uname(n)}</b>` : `<i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>`}${pct(n)}</span></a>`;
+    return `<a class="pw ${cl} s${st[n]}${b ? ' bonus' : ''}" href="${href(n)}" title="${b ? (g.name ? setOf(n).tag + '. ' : `Bonus genus, not on the ${ORG.list}. `) : isBenthic(n) ? `Fire coral, on the ${ORG.benthic}. ` : ''}${tip(n)}">${p ? `<img ${thumb(p, '(max-width:599.98px) 100px, 165px')} alt="" loading="lazy">` : ''}${b && tagged ? `<b class="pbtag">${g.name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwb">${g.name ? `<b>${uname(n)}</b>` : `<i>${esc(shyName(n))}${g.n || g.x ? '' : ' ★'}</i>`}${pct(n)}</span></a>`;
   };
   // Your tricky pairs (trickyPairs, above): from the units the board draws, never naming a mystery tile; the chip opens
   // the side-by-side comparison (with "Drill this pair") where the subject has it.
@@ -224,17 +224,17 @@ function quizBoard() {
       const ps = n =>
         myst(n)
           ? mystA('ps', `<b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i>?</i>`, n)
-          : `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
+          : `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? `Fire coral, on the ${ORG.benthic}. ` : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
       const bx = BO.map(n =>
         myst(n)
           ? mystA('ps bonus', '<b>+</b><i>?</i>', n)
-          : `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
+          : `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the ${ORG.list}. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
       // The left column padded to the row count, so 21 always starts the right column, even when the right one (with
       // Millepora) is the longer.
-      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${'<span class="psgap"></span>'.repeat(Math.max(0, rows - L.length))}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}${bx ? `<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the IMR list">${bx}</div>` : ''}</div>`;
+      return `<div class="pslate" style="--rows:${rows}">${L.map(ps).join('')}${'<span class="psgap"></span>'.repeat(Math.max(0, rows - L.length))}${R.map(ps).join('')}${S.length ? '<span class="psgap"></span>' : ''}${S.map(ps).join('')}${bx ? `<div class="psbonus" style="grid-row:${rows + 1}" title="Bonus genera, not on the ${ORG.list}">${bx}</div>` : ''}</div>`;
     },
     groups: () => `<div class="pgroups">${groups
       .map(k => {
@@ -244,7 +244,7 @@ function quizBoard() {
           [mk, t] = gr
             ? [gr.n, esc(gr.t)]
             : L.every(isBenthic)
-              ? ['F', 'IMR benthic slate, not a hard coral']
+              ? ['F', `${ORG.benthic}, not a hard coral`]
               : ['★', 'Not covered in the lecture'];
         return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
         <span class="pseg">${L.map(n => (myst(n) ? mystA('', '<i>?</i>', n) : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
@@ -252,7 +252,7 @@ function quizBoard() {
       .join('')}
       ${
         BO.length
-          ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
+          ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the ${ORG.list}">+</span><span class="pgt">Bonus: not on the ${ORG.list}</span>
         <span class="pseg">${BO.map(n => (myst(n) ? mystA('', '<i>?</i>', n) : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
           : ''
       }</div>`
@@ -267,8 +267,8 @@ function quizBoard() {
       ? UNITS[SUBJ.id].progHelp()
       : `<p class="lede"><b>To learn a genus</b>, keep getting it right: its % is the share of all its photos, easy to hard, you would name alone and typed, as far as your answers on it have shown. Hard photos and typed answers prove the most; a right pick among 2 easy choices proves little. It fills up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
-  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. Their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
-  <p class="lede"><b>Your progress</b> (the ring and the header) is over every genus of the games, the slate's and the bonus genera, whether you have added them or not. <b>IMR slate</b>, under your name, is the same over the IMR slate's genera alone.</p>
+  <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the ${ORG.short} coral list, but it is on the ${ORG.benthic} and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the ${ORG.list} but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. Their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
+  <p class="lede"><b>Your progress</b> (the ring and the header) is over every genus of the games, the slate's and the bonus genera, whether you have added them or not. <b>${ORG.slate}</b>, under your name, is the same over the ${ORG.slate}'s genera alone.</p>
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen (for a player new to corals, a <b>?</b> in place of a genus not met yet: it shows once it opens); the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
@@ -385,7 +385,10 @@ function lvSummary(list = slateGenera(), icons = true) {
 // units opened on the path (a card, an answer, Open all: model.js introduced) out of every unit the progress counts
 // (slateGenera); introLeft is the rest. A unit counts from its card, a couple of answers before the draw asks it (model.js
 // INTRO.GAP). [unlocked, all].
-const unlockN = (list = slateGenera()) => [list.filter(introduced).length, list.length];
+const unlockN = (list = slateGenera()) => [
+  list.filter(typeof introducedFn === 'function' ? introducedFn() : introduced).length,
+  list.length
+];
 const unlockText = (list = slateGenera(), html = false) => {
   const [k, n] = unlockN(list);
   return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
@@ -467,7 +470,7 @@ const progData = () => {
   }
 };
 // A file or a saved account may carry the names from before the rename to IMR Reef ID (core.js keysIn).
-const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && localStorage.setItem(k, v));
+const loadData = d => Object.entries(keysIn(d)).forEach(([k, v]) => k.startsWith(KEYS.SYNC) && store.raw(k, v));
 // A progress file says which app wrote it: 'reefid', or the app's old id, still read.
 const PROG_APP = ['reefid', 'imr-coral-id']; // rename-app: keep
 function bindProgFile() {
@@ -570,7 +573,7 @@ const loadBoard = (S = boardSubj()) => {
     first = S === board0();
   if (!boardP[k] || Date.now() - (boardAt[k] || 0) > 60000) {
     boardAt[k] = Date.now();
-    boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
+    boardP[k] = sheetFetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
       .then(j => (boardOk(j, first, S) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
@@ -765,17 +768,28 @@ const achList = () => slateGenera();
 // The species at Advanced or above (lvStep 3) by every kind of name in names (achSnap both), from the units of the sets
 // sets (each unit's kind and species: app.js treeGenera kind, sp); 0 unless names holds two kinds or more. Pure on its
 // inputs and the levels lv (model.js lvStep, or achSnap's one read of them).
-const achBoth = (sets, names, lv = lvStep) => {
-  if (names.length < 2) return 0;
-  const by = new Map();
+// The units of the sets with a kind of name and a species ([unit, species, kind], in the sets' order) are data: a view of
+// the data version per list of sets (achNamed; computed where a part of this file runs alone), where each snapshot read
+// every unit's record.
+const achNamedCalc = sets => {
+  const out = [];
   sets
     .flatMap(S => (S.all ? S.all() : S.units()))
     .forEach(n => {
       const g = (typeof GX === 'function' && GX(n)) || {};
-      if (!g.kind || !g.sp || lv(n) < 3) return;
-      if (!by.has(g.sp)) by.set(g.sp, new Set());
-      by.get(g.sp).add(g.kind);
+      if (g.kind && g.sp) out.push([n, g.sp, g.kind]);
     });
+  return out;
+};
+const achNamed = typeof dataViewBy === 'function' ? dataViewBy('achNamed', achNamedCalc) : achNamedCalc;
+const achBoth = (sets, names, lv = lvStep) => {
+  if (names.length < 2) return 0;
+  const by = new Map();
+  achNamed(sets).forEach(([n, sp, kind]) => {
+    if (lv(n) < 3) return;
+    if (!by.has(sp)) by.set(sp, new Set());
+    by.get(sp).add(kind);
+  });
   return [...by.values()].filter(K => names.every(k => K.has(k))).length;
 };
 // The subject's core units (UNITS core: the IMR course's fish families), its circles (UNITS circles: the fish families of
@@ -813,7 +827,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     // The Elo moves a lot over the first answers (it starts fast on purpose): its achievements wait for ELO_MIN answers.
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lv(n) >= 5)),
-    bonus: bonusList().filter(introduced).length,
+    bonus: bonusList().filter(typeof introducedFn === 'function' ? introducedFn() : introduced).length, // read once (model.js)
     core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
     circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
     // Its units grouped by the unit above them (GX parent: a sea slug genus's family), those with every unit at Advanced
@@ -1250,7 +1264,7 @@ const loadAchs = () => {
   if (!achsP || Date.now() - achsAt > 300000) {
     achsAt = Date.now();
     // Kept on this device like the leaderboard (BOARD_C): drawn at once, refreshed when the fresh counts arrive.
-    achsP = fetch(SYNC_URL + '?achs=1')
+    achsP = sheetFetch(SYNC_URL + '?achs=1')
       .then(r => r.json())
       .then(j => (j && j.ok && j.counts ? j : null))
       .catch(() => null)
@@ -1391,7 +1405,7 @@ const RECALC = {
       subj: 'coral',
       kind: 'update',
       t: '<i>Millepora</i> now counts in your progress',
-      p: '<i>Millepora</i> (fire coral) is on the IMR benthic slate and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.'
+      p: `<i>Millepora</i> (fire coral) is on the ${ORG.benthic} and very common at Dauin and in ReefCloud photos, so it now counts in your progress, which is now over 40 genera: your % may be a little lower.`
     },
     // A new game mode announced the same way (its text is Pierre's validated wording). k, b: the card's kicker and button
     // when this note is the latest due.

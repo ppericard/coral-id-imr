@@ -402,8 +402,9 @@ opens one with the chance `openChance` ("One opening rule"), drawn by `model.js`
    then its member, each with the weight exp(−`OPEN.T` × trust × (genus offset − the lowest)) × the commonness factor
    (`model.js` `easyWeights`): the easiest first, softly, and the most common first ("Common first").
 
-**Trusted only as far as the data goes.** `model.js` `easyTrust`: the weighed answers behind the photo ratings, plus
-`PDIFF.W` per judged photo, over `OPEN.DATA`, at most 1. Without data every genus offset is 0 and the order is random.
+**Trusted only as far as the data goes.** `model.js` `easyTrust`: the weighed answers behind the photo ratings over
+`OPEN.DATA`, at most 1 (the judged ease adds nothing: it never ranks units). Without data every genus offset is 0 and
+the order is random.
 
 ### One opening rule
 
@@ -429,8 +430,9 @@ hold the rest of the path back. Every subject.
 
 One estimate of a unit's difficulty everywhere (`model.js` `genusDiff`: the draw weight, shaky, the comeback's
 stability, the opening's order, the bar's population): the sheet's genus offset (`?stats=1` `gd`, the hierarchical photo
-Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), plus, for a unit with judged photos, the
-mean of their judged-ease priors. Adding or curating out a photo never moves it; 0 before the sheet's first reply.
+Elo's shared part of its photos' difficulty: "Hierarchical photo Elo" below), alone, for every subject: the judged ease
+places a photo among its own unit's photos and never ranks units ("The judged ease, within its unit"). Adding or
+curating out a photo never moves it; kept for the data version. 0 before the sheet's first reply.
 
 ### Common first
 
@@ -442,8 +444,11 @@ without cm counts as the median.
 ### Starred genera after their reference
 
 A ★ genus (a look-alike on the slate that the IMR surveys do not track: rule L5) opens only once the surveyed genera its
-card compares it to are met (`core.js` `starWaits`, `starRefs`, from data.json `look`); its card names them ("★
-look-alike of …", `model.js` `starNote`). Should every unit left wait, they all open, so nothing is blocked for good.
+card compares it to are met (`core.js` `starRefs`, from data.json `look`); its card names them ("★
+look-alike of …", `model.js` `starNote`). The corals' build writes them on the genus's record as data (`after`:
+`core.js` `starAfter`, in `app.js` `build`), and the opening reads that field on any subject's unit (`core.js`
+`afterWaits`, `model.js` `openPick`): a fish or sea slug unit has none, so the rule names no subject (rule S1). Should
+every unit left wait, they all open, so nothing is blocked for good.
 
 ### Confusion groups
 
@@ -794,13 +799,14 @@ The fish run on the same engine, with no fish-specific code (rules L6, S1); what
 - **The starter core**: the families whose record says `first` (fish.json `start`: the Butterflyfishes, Angelfishes,
   Damselfishes and Surgeonfishes) open before any other (`model.js` `openPick`).
 - **Fish photos judged**: every fish photo carries a judged ease from 1 (hard) to 5 (very easy) (judging/FISH.md). It is
-  the photo's prior before any answer: its genus offset + (`PDIFF.MID` − ease) × the subject's `calib.ease`, fading as
-  answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `PDIFF = {W: 5, MID: 3}`). The weight is **one
+  the photo's prior before any answer: its unit's offset + (its unit's mean ease − ease) × the subject's `calib.ease`,
+  fading as answers come, weighing `PDIFF.W` answers (`model.js` `photoDiff`, `easeMid`, `PDIFF = {W: 5, MID: 3}`;
+  "The judged ease, within its unit" below). The weight is **one
   shared value, 0.3 logit an ease point** (`core.js` `CALIB.ease`; "The judged ease weight, measured" below), read by
   every subject whose photos carry a judged ease: today the fish and the sea slugs. A subject may set its own in its
   `SUBJECTS` `calib` only with a declared reason (rule S1); none does. The corals' photos carry no judged ease, so their
-  prior has no ease term. The same prior gives each unit its difficulty, so judged units open easiest first from the
-  first card, and no photo is ever walled off.
+  prior has no ease term. Its mean over a unit is 0, so every unit opens by its offset and commonness, never by its
+  photos' ease; within a unit the easy photos come first; no photo is ever walled off.
 - **The first questions on a unit** lean towards its easy photos: the target sits `calib.early` logits lower, fading as
   `PDIFF.W` / (`PDIFF.W` + the answers on it) (`model.js` `photoSet`). The fish's `calib` = {ref: 3, early: 1.5, u:
   0.25, pool: 30}; the sea slugs' the same with pool 20; the corals keep the shared `core.js`
@@ -874,6 +880,45 @@ profile × 3,000 answers, one profile per check (the five-profile check was cut 
   for the casual diver and the strong RA and the beginner's plateau is 16 answers longer; in a world where it is worth
   0.3, 0.3 is faster (−16, −63) and only E rises (casual diver). The direction follows whichever world is true; the
   real log points to about 0.3 within a family.
+
+### The judged ease, within its unit
+
+A judged photo's prior is centred on the mean judged ease of the unit asked, not on the scale's middle (`model.js`
+`easeMid`, `photoDiff`; the decision: `docs/decisions/2026-11-26-judged-ease-within-unit.md`): the unit's offset +
+(the unit's mean ease − the photo's ease) × 0.3. One rule for every subject and every rank (rule S1): a fish family, a
+fish genus or species, a sea slug genus or species each centre on their own photos (the reserve included); a photo
+shared by a family and its genus is centred on the unit asked. The corals' photos carry no judged ease. Its mean over a
+unit is 0, so a unit's difficulty is its offset alone (`genusDiff`), learned from answers as every coral genus's
+already is, and the units open by their offsets and commonness, never by their photos' ease.
+
+- **Why.** The rubric judges a photo against its own taxon's reference look ("Judge what the photo shows, not the
+  species": judging/FISH.md, judging/SEASLUG.md), so a clear photo of a hard family is a 5 as is one of an easy family.
+  On the fish answers (the REE-85 study, 3,349 family questions, 9 players), the ease ranks photos within a family
+  (−0.22 logit a point [−0.39, −0.18]) and predicts nothing between families (−0.03 [−0.15, +0.04]). Below the family,
+  nothing measured: there the rule rests on the rubric.
+- **The level is the sheet's.** A unit's mean prior was (3 − its mean ease) × 0.3; it is now its offset. The sea slug
+  photos average ease 3.58, so their units start about 0.17 logit harder than before; the fish (2.89) 0.03 easier.
+- **The real log** (rule L12; the fish answers of 2026-11-06 to 2026-11-22 as REE-240 prepared them, 3,349 family
+  questions of 9 players; `tools/studies/ree241/replay.py`): each answer's logged expectation with the ease's part at
+  0.3, centred on the scale's middle (unc) or on the family's mean ease (cen). A fish family is its own unit, so this
+  holds for this rule's family questions. These are the answers REE-85 found the between-family null on: a
+  consistency check, not an independent test. Genus, species and sea slug answers are too few: not measured.
+
+| Replay | cen − unc, all answers | Players better | p |
+| --- | --- | --- | --- |
+| Ability as logged | −0.0022 [−0.0034, −0.0009] | 7 of 9 | 0.02 |
+| Ability following the difficulties it met | −0.0007 [−0.0011, −0.0002] | 8 of 9 | 0.01 |
+| Each arm's level per player refitted | −0.0012 [−0.0022, −0.0002] | 7 of 9 | 0.04 |
+
+- **No effect simulation** (rules L11 and L12, set aside by Pierre, 2026-11-26 09:16: «on a tellement peu de données
+  réelles sur les nudibranches que toutes les simulations du monde ne pourront pas savoir si c'est ok ou pas. Je
+  propose de juste implémenter sans simuler. Et de revenir simuler une fois qu'on aura un nombre suffisant de
+  réponses»). Regression checks only: the prior's unit tests (`tests/priordiff.test.js`), same-seed `learnsim` runs on
+  the corals and the fish against main (PR #1571), the smokes and the answer cost. A first build centred each photo on
+  its family's mean (the same level); its app-world runs (`tools/studies/ree241/out`) found the level alone delayed the
+  sea slug beginner's and casual diver's first unit at Open Water by about 26 answers and lengthened the lectureRA's
+  plateau by 14. That is the cost to expect until real sea slug answers move their offsets; it is measured again once
+  they exist.
 
 ### Fish: easy, reference-like photos first, whoever took them
 
@@ -1221,8 +1266,8 @@ the photo (a fish photo shown at several ranks; a coral genus moved or renamed),
 offset and keeps the photo's own P (`model.js` `photoDiff`).
 
 **In the app** (`model.js` `photoDiff`): a photo's difficulty is (n × rating + `PDIFF.W` × prior) / (n + `PDIFF.W`), n
-its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior ("Fish photos
-judged"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
+its weighed answers, the prior its unit's `gd` offset plus, for a judged photo, its judged-ease prior centred on its
+unit's mean ease ("Fish photos judged", "The judged ease, within its unit"); a photo nobody has answered is its prior, and every prior is 0 before the sheet's first reply. The photo's
 time term is added on top of that blend ("The photo's time term", below). A unit's difficulty is read from the same
 offsets ("One genus difficulty"). The real-log replay that dropped the former Easy /
 Medium / Hard photo sets and set `GENUS_K`, and its simulation, are in the notebook. The planned next step, one
@@ -1230,7 +1275,10 @@ difficulty split into rank, family, genus, species and photo components, is in R
 offline fit on the real log and the replay of the step-2 candidates (2026-11-21) are in
 [reviews/2026-11-21-q316-offline-fit.md](reviews/2026-11-21-q316-offline-fit.md): the coral genus SD and the fish family
 SD measured (about 0.8 logits each), the photo, the fish genus and species and Q136's τ not estimable yet; whether the
-shared chain predicts the fish answers better or worse than today: the measure cannot tell.
+shared chain predicts the fish answers better or worse than today: the measure cannot tell. Its refit on 1,042 more
+answers with a Gibbs sampler for the small clusters (2026-11-25,
+[reviews/2026-11-25-q316-refit.md](reviews/2026-11-25-q316-refit.md)): on the corals, Q136's τ (about 0.9) and the genus
+SD (about 0.9) measured, the photo SD large (about 1.1-1.2) but resting on the prior; nothing measurable for the fish.
 
 ### The photo's time term
 
@@ -1741,13 +1789,14 @@ and clear, with the players as the unit it is wide, reaches both sides of 0, and
 
 ## Validating a learning change (rule L11)
 
-A change to what players see or learn is checked in proportion to its possible effect, in simulated worlds where the
-truth is known, and on the real answer log (rule L12, "Real-answer replay"). Rule L11 (`docs/rules/learning.md`) states
-the requirements; this section is the method behind them: the levels, the two worlds, the profiles, the measures, the
-margins and the commands.
+A change to what players see or learn is checked by the question it asks (rule L11, `docs/rules/learning.md`): the unit
+tests and the CI smokes always; a simulation only for a mechanics question; effects and values by the real answer log
+(rule L12, "Real-answer replay"). This section is the method for the rare mechanics run that needs a measure, in
+simulated worlds where the truth is known: the run sizes, the two worlds, the profiles, the measures, the margins and
+the commands.
 
-**Levels.** The PR declares its level with one line of why; the integrator checks it and may raise it; in doubt, the
-higher one. Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12).
+**Run sizes (the levels).** A run is sized by what its question touches; the PR says why. A run that rule L11 allows
+reads the table below, and its figures stay the minimum; a change the table's level 0 describes needs no simulation.
 
 | Level | The change | App world | Rated world |
 | --- | --- | --- | --- |
@@ -1763,7 +1812,8 @@ cannot tell", never a level 3 by itself.
 **The cap.** Every check has a hard cap of 40 minutes of compute, at every level; when an agent reaches it, it stops
 and returns what it has. Level 3 never runs on this machine: only with Pierre's explicit go, on GitHub runners ("On a
 GitHub runner" below), with its duration announced first. An unclear result is reported as "the measure cannot tell",
-never escalated automatically. A guardrail breached, or a cost not declared, goes to Pierre.
+never escalated automatically. A breach goes to Pierre only when it is failure-sized (rule L11), otherwise it is
+reported in the PR.
 
 The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js` in both worlds; Pierre, Q405 and Q415):
 
@@ -1796,7 +1846,7 @@ The tools enforce it (`tools/checkbudget.js`, built into `node tools/learnsim.js
   the mark in its report and compares the complete pairs only. A cut result that is clear stands; one short of the level's
   seeds is "the measure cannot tell", never read as no effect. A run cut before any job finished still writes its
   `--out`, with the cut and no runs, and exits 3.
-- **Level 2's figures stay the minimum** (rule L11): the defaults are not lowered to fit. When they do not fit in 40
+- **Level 2's figures stay the minimum** for a run rule L11 allows: the defaults are not lowered to fit. When they do not fit in 40
   minutes, the check is split or its worlds narrowed to the ones the change touches, never shortened below them.
 - **Level 3** (more than 20 seeds, or more than 10,000 answers in the rated world: level 2's ceilings above) **refuses to
   run** unless `--pierre-go "Q number or message, date"` (the reference of his go) is given **and**
@@ -1819,8 +1869,8 @@ looks declared, k of them: each look reads the one-sided bound at 1 − 0.10/k (
 - The primary is tested pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact
   up to 20 pairs, else 100,000 draws from a fixed seed); only if that passes, per profile under Holm.
 - A guardrail ("Guardrails and margins" below) is held when the one-sided 90% bound of the paired difference stays
-  inside its margin; unclear goes one step up within the cap, then is reported "the measure cannot tell"; breached,
-  or a cost not declared, goes to Pierre.
+  inside its margin; unclear goes one step up within the cap, then is reported "the measure cannot tell"; a breach
+  goes to Pierre only when it is failure-sized (rule L11), otherwise it is reported in the PR.
 - Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
   9% of cells with no effect).
 - On real data (rule L12) the inference is per player, never per answer. A multifactor design (profile × parameter ×

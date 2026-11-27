@@ -247,7 +247,7 @@
   // genus records with the pairs in force (sheetFile): the base's less those withdrawn (a withdrawal the ★ rule holds
   // stays), plus every pair he added, whatever its source (its row says when the public page does not show it). The same
   // order and the same test as the page players see (learn.js classics).
-  const CLASSIC = /^(IMR|Coral Finder p)/;
+  const isClassicSrc = s => String(s).startsWith(C.ORG.short) || String(s).startsWith('Coral Finder p');
   // The pairs the sources compare in so many words, in the genus records G (a map by name: gen and x.gen merged), each
   // {k, A, B, src}: the IMR lecture's (lsrc "IMR Lecture 6...") and the Coral Finder text's ("Coral Finder p. ..."), the
   // IMR ones first, then by the slate's order. B, when given, is the base's records: a pair G holds that B does not is
@@ -266,14 +266,14 @@
           k = b ? C.contentPairKey(a, b) : '';
         if (!k || !G[b] || b === a || seen.has(k)) return;
         const s = src(a, b),
-          ok = CLASSIC.test(s),
+          ok = isClassicSrc(s),
           add = !!B && !has(B, a, b);
         if (!ok && !add) return;
         seen.add(k);
         out.push({k, A: k.split('|')[0], B: k.split('|')[1], src: s, ...(add ? {added: true, deck: ok} : {})});
       })
     );
-    const tier = p => (/^IMR/.test(p.src) ? 0 : 1);
+    const tier = p => (String(p.src).startsWith(C.ORG.short) ? 0 : 1);
     return out.sort((x, y) => tier(x) - tier(y) || Math.min(idx(x.A), idx(x.B)) - Math.min(idx(y.A), idx(y.B)));
   }
   // montPairs: the pairs in force of subject S's built file R under content map Cm, by the data shape S declares (flat: the
@@ -373,8 +373,42 @@
     else delete out[key];
     return out;
   }
+  // ---- A species' own common names (Pierre, 2026-11-21, Q444): 1 to CN_MAX curated names per species ----
+  // curation.json <part> cn {species id: [names, the main first]} (core.js treeCnApply: the game, the sheet and the admin read
+  // it through contentApply). Only a species whose built file lists names (cn) has a box, and the list is never emptied: a
+  // species gaining or losing its list would add or take away its progress unit.
+  // The species record of id in built file R when it lists names, else null.
+  const cnSpecies = (R, id) => {
+    const s = R && Array.isArray(R.species) ? R.species.find(x => x && x.id === id) : null;
+    return s && Array.isArray(s.cn) && s.cn.length ? s : null;
+  };
+  // The names a record lists, the name shown of each.
+  const cnNames = s => (s.cn || []).map(n => (Array.isArray(n) ? n[0] : n));
+  // Species id's list under names map cur, built file R: {base (the built names), v (the names in force: his while it is a
+  // clean list, else the built ones), imr (the place in v of the IMR name, -1 none), e (his list applies)}; null for a species
+  // with no list in R.
+  function cnRow(R, cur, id) {
+    const s = cnSpecies(R, id);
+    if (!s) return null;
+    const L = isObj(cur) && Object.prototype.hasOwnProperty.call(cur, id) ? C.treeCnClean(cur[id]) : null,
+      lay = L ? C.treeCnLay(s, L) : s;
+    return {base: cnNames(s), v: cnNames(lay), imr: Number.isInteger(lay.cni) ? lay.cni : -1, e: !!L};
+  }
+  // Names map cur with species id's list set to the names L (a clean list, C.treeCnClean), a new map; a list equal to the
+  // built one removes his entry, a list that is not clean changes nothing.
+  function cnPut(cur, id, L, R) {
+    const out = {...(isObj(cur) ? cur : {})},
+      s = cnSpecies(R, id),
+      list = C.treeCnClean(L);
+    if (!s || !list) return out;
+    if (JSON.stringify(list) === JSON.stringify(cnNames(s))) delete out[id];
+    else out[id] = list;
+    return out;
+  }
   if (node) {
     module.exports = {
+      cnRow,
+      cnPut,
       namesRows,
       namesFams,
       namesPut,
@@ -472,7 +506,7 @@
         : orphan
           ? shVal(isObj(r.e) && (Array.isArray(r.e.v) || typeof r.e.v === 'string') ? r.e.v : null)
           : `${shVal(r.v)}${r.e ? shSrc(r.e.src) : ''}${r.e && r.state === 'fresh' ? `<details class="adm-csorig"><summary>Original</summary>${shVal(r.base)}</details>` : ''}`;
-    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? '<span class="adm-src adm-imrt">IMR</span>' : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
+    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? `<span class="adm-src adm-imrt">${C.ORG.short}</span>` : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
   }
   // The box on node id's page (R: fish.json as built; nameOf: a node's name), '' for a node with no sheet in the app.
   function sheetBox(S, R, id, nameOf) {
@@ -811,12 +845,23 @@
       also = r.owners.filter(x => x.g !== o.g).map(x => x.name);
     return `${role}${also.length ? ` · also ${also.join(', ')}` : ''}`;
   };
-  function namesBox(S, R, id, tag) {
+  // Built file R with the draft's species lists of names laid over it (core.js treeCnLists), the file the shared names are
+  // read from: a name two species of different families are given is shared as the game reads it. One computation per file
+  // and per lists.
+  let NF_MEMO = null;
+  function namesFile(R) {
+    const M = (DRAFT[TK] || {}).cn,
+      k = JSON.stringify(M || null);
+    if (!NF_MEMO || NF_MEMO.R !== R || NF_MEMO.k !== k) NF_MEMO = {R, k, F: C.treeCnLists(R, M)};
+    return NF_MEMO.F;
+  }
+  function namesBox(S, R0, id, tag) {
     // TK: the curation part of the tree subject on screen (admin.js), where the exceptions are written
-    if (!R || !TK || !Array.isArray(R.vn)) return '';
-    const rows = namesRows(R, (DRAFT[TK] || {}).names)
-      .map(r => ({r, o: r.owners.find(o => o.g === id)}))
-      .filter(x => x.o);
+    if (!R0 || !TK || !Array.isArray(R0.vn)) return '';
+    const R = namesFile(R0),
+      rows = namesRows(R, (DRAFT[TK] || {}).names)
+        .map(r => ({r, o: r.owners.find(o => o.g === id)}))
+        .filter(x => x.o);
     if (!rows.length) return '';
     const can = mayContent(),
       ne = rows.filter(x => x.o.v).length,
@@ -853,7 +898,100 @@
         })
     );
   }
+  // ---- A species' own common names on its page (Common names): its list in force, ✎ opens one box per name (the first is
+  // the main name, the one every player but a player at IMR sees first), ↺ brings the built list back. Save is one draft
+  // step (rule A2, Undo steps back); Publish sends it (curation.json <part> cn, rule A1). ----
+  const CN_KEY = 'reefid-admin-ccn';
+  // CN_ED, this tab: the species whose list is open in the editor, {id, vals: what was typed in each box so far, bad: the
+  // last Save was refused}, so a redraw meanwhile keeps what he typed.
+  let CN_ED = null;
+  function cnBox(S, R, id) {
+    if (!R || !TK) return '';
+    const cur = (DRAFT[TK] || {}).cn,
+      r = cnRow(R, cur, id);
+    if (!r) return '';
+    const can = mayContent(),
+      ed = can && !!CN_ED && CN_ED.id === id,
+      open = ed || store.get(CN_KEY, true) !== false,
+      max = C.CN_MAX,
+      vals = ed ? CN_ED.vals : r.v,
+      list = `<ul class="adm-csv">${r.v.map((x, i) => `<li>${esc(x)}${i === r.imr ? ` <span class="adm-src adm-imrt">${C.ORG.short}</span>` : ''}</li>`).join('')}</ul>`,
+      keys = Array.from({length: max}, (_, i) => C.typeNormAll(vals[i] || '')),
+      // the boxes a refused Save points at: the main name left empty, a name with no letter, a name twice
+      wrong = i => !!CN_ED && CN_ED.bad && (i === 0 ? !keys[0] : !keys[i] ? !!(vals[i] || '').trim() : keys.indexOf(keys[i]) !== i),
+      boxes = `<div class="adm-csed">${keys
+        .map(
+          (_, i) =>
+            `<input type="text" data-cnin="${i}" value="${esc(vals[i] || '')}" aria-label="${i ? `Name ${i + 1}` : 'Main name'}" autocomplete="off"${wrong(i) ? ' aria-invalid="true"' : ''}>`
+        )
+        .join(
+          ''
+        )}<span class="adm-acts"><button type="button" data-cna="save" class="on">Save</button><button type="button" data-cna="cancel">Cancel</button></span></div>`,
+      acts =
+        !can || ed
+          ? ''
+          : `<button type="button" data-cna="edit" title="Edit">✎</button>${r.e ? '<button type="button" data-cna="drop" title="Restore">↺</button>' : ''}`;
+    return `<details class="adm-row adm-csheet adm-ccn" data-cnid="${esc(id)}"${open ? ' open' : ''}><summary><h3>Common names${r.e ? ' <small>yours</small>' : ''}</h3></summary><div class="adm-cslots"><div class="adm-cslot${r.e ? ' is-fresh' : ''}"><div class="adm-cshd"><b>Names</b>${r.e ? '<span class="adm-src adm-cschip c-fresh">Edited</span>' : ''}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${ed ? boxes : list}${r.e && !ed ? `<details class="adm-csorig"><summary>Original</summary><ul class="adm-csv">${r.base.map(x => `<li>${esc(x)}</li>`).join('')}</ul></details>` : ''}</div></div></details>`;
+  }
+  function cnBind(scope, S, R, id) {
+    const box = scope.querySelector(`.adm-ccn[data-cnid="${CSS.escape(id)}"]`);
+    if (!box || !R) return;
+    const sm = box.querySelector('summary');
+    if (sm) sm.addEventListener('click', () => store.set(CN_KEY, !box.open));
+    // What he types is kept with the open editor (CN_ED), so a redraw never loses it.
+    box.querySelectorAll('[data-cnin]').forEach(
+      x =>
+        (x.oninput = () => {
+          if (CN_ED && CN_ED.id === id) CN_ED.vals[Number(x.dataset.cnin)] = x.value;
+        })
+    );
+    const put = f => {
+      if (!mayContent()) return;
+      const part = {...(DRAFT[TK] || {})},
+        names = f(part.cn);
+      if (Object.keys(names).length) part.cn = names;
+      else delete part.cn;
+      DRAFT[TK] = part;
+      CN_ED = null;
+      saveDraft();
+      render();
+    };
+    box.querySelectorAll('[data-cna]').forEach(
+      b =>
+        (b.onclick = () => {
+          const a = b.dataset.cna;
+          if (a === 'edit') {
+            const r = cnRow(R, (DRAFT[TK] || {}).cn, id);
+            CN_ED = {id, vals: r ? r.v.slice() : [], bad: false};
+            render();
+            const t = scope.querySelector(`.adm-ccn[data-cnid="${CSS.escape(id)}"] input`);
+            if (t) t.focus();
+            return;
+          }
+          if (a === 'cancel') {
+            CN_ED = null;
+            return render();
+          }
+          if (a === 'drop') return put(m => cnPut(m, id, cnRow(R, null, id).base, R));
+          if (a === 'save') {
+            const vs = (CN_ED && CN_ED.vals) || [],
+              L = (vs[0] || '').trim() ? C.treeCnClean(vs.filter(x => x && x.trim())) : null;
+            // no main name, or a name twice: the boxes stay open as they are
+            if (!L) {
+              if (CN_ED) CN_ED.bad = true;
+              return render();
+            }
+            put(m => cnPut(m, id, L, R));
+          }
+        })
+    );
+  }
   Object.assign(root, {
+    cnRow,
+    cnPut,
+    cnBox,
+    cnBind,
+    namesFile,
     namesRows,
     namesFams,
     namesPut,

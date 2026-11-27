@@ -3,7 +3,7 @@ LAB.add({
   id: 'map',
   icon: '✺',
   title: 'Mind map',
-  blurb: 'A radial map of the genera, regrouped live by family, IMR lecture group, wall type or corallite size.',
+  blurb: `A radial map of the genera, regrouped live by family, ${ORG.lecture} group, wall type or corallite size.`,
   lede: 'Switch the grouping and watch where each genus lands. A genus that shows up in several branches can take several forms of that feature.',
   render(root, mode = 'ig') {
     // [id, name, groups of a genus, long label, short label on the map, colour]
@@ -11,7 +11,7 @@ LAB.add({
     const MODES = [
       [
         'ig',
-        'IMR lecture group',
+        `${ORG.lecture} group`,
         n => [DATA.gen[n].ig || 0],
         k => (k ? `${k}. ${DATA.imrg[k - 1].t}` : '★ Not in the lecture'),
         k => (k ? 'Group ' + k : '★'),
@@ -141,7 +141,7 @@ LAB.add({
         const g = DATA.gen[n];
         sel = n;
         focus(n);
-        side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><i>${esc(n)}</i></h3><p class="note">${esc(tag(n))} · ${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}</p>
+        side.innerHTML = `<img src="${thumbSrc(n, 'macro', 'l')}" alt="${esc(n)} corallites"><h3><i>${esc(n)}</i></h3><p class="note">${esc(tag(n))} · ${esc(altName(g.fam))}${g.ig ? ` · ${ORG.short} group ${g.ig}` : ''}</p>
           <p>${whyLine(n)}</p><p class="note">In ${keysOf(n).length} branch${keysOf(n).length > 1 ? 'es' : ''} here.</p><a class="next" href="${genLink(n)}">Open the genus sheet</a>`;
       };
       const showGroup = k => {

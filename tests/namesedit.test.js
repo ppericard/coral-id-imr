@@ -114,6 +114,6 @@ test('the Names box and the Shared names filter are wired into the Tree page, an
   const src = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8');
   assert.match(src, /namesBox\(S, C\.base, sel, tag && tag\.k\)/);
   assert.match(src, /namesBind\(\$v, S, C\.base\)/);
-  assert.match(src, /namesFams\(FISHC\.raw, F\.names\)/);
+  assert.match(src, /namesFams\(namesFile\(FISHC\.raw\), F\.names\)/);
   assert.match(src, /nDiff\(D\.names, V\.names\)/);
 });

@@ -37,8 +37,8 @@ reserved ([LICENSE](LICENSE)).
 6. **Keep real names out**: no real player or staff name anywhere in the repository (rule D2). Everything produced is in
    English (rule W1).
 7. **Update the docs in the same PR** (rule W19): the doc that describes what you changed, the README if a newcomer
-   would notice, Linear (team REE) for an idea discussed and not built. When the PR carries out a decision, add a
-   [decision record](docs/decisions/README.md). History stays in git and the PRs, never in the docs.
+   would notice, Linear (team REE) for a problem or idea discussed and not solved. When the PR carries out a decision,
+   add a [decision record](docs/decisions/README.md). History stays in git and the PRs, never in the docs.
 8. **Open a PR** from `origin/main` with the [template](.github/pull_request_template.md): what and why, where each
    choice was decided, the choices that still need Pierre, what changes for players, the tests, the sheet script, the
    docs. When bringing a PR up to date, merge `origin/main`. Never rebase a pushed branch or force-push (rule W18).
@@ -56,6 +56,26 @@ reserved ([LICENSE](LICENSE)).
 - A choice that is costly to undo (a data format, a migration, content IMR owns, anything about money, accounts or
   access) waits for Pierre; put it under "Choices I made" in the PR.
 
+## Contributing from outside the integrator session
+
+For a person, Codex, ChatGPT or any agent that reads GitHub, Drive and Linear but not the integrator's chat. Everything
+you need is in those three places; if it is not, say so on the issue.
+
+1. Read [AGENTS.md](AGENTS.md), then [the agent brief](tools/agent-brief.md): the lines every launched agent is told.
+2. Find who integrates now in [docs/STATUS.md](docs/STATUS.md) "Now", with what is in flight and any area another team
+   is working in. Only the integrator merges.
+3. Find work from [Project Home](https://linear.app/reef-id/document/project-home-reef-id-d5a0fef1ecbc) (the Next view),
+   or take the issue you were given. Read its description and every comment, and reconcile them with the code and the
+   open PRs.
+4. Claim it with a Linear comment "Executor: <team>, branch <prefix>/<name>", using your team's branch prefix. Before
+   building, check the open PRs and the other teams' branches for the same sensitive files (rule W27).
+5. Build as "Make a change" above. Open the PR ready, not draft, with "Part of REE-N" when it is partial, and leave the
+   draft and ready toggling to the queue (rule W6).
+6. Hand back as the brief's report says, in a signed Linear comment: the PR, the figures with links, the limits, what
+   remains. Never merge and never write to the sheet.
+7. The integrator reviews and merges, then answers on the issue. Notes for you arrive there as comments addressed to
+   your team; nobody asks Pierre to relay them.
+
 ## Decisions
 
 A decision is written down where it is taken: a short record in [docs/decisions/](docs/decisions/README.md) (context,
@@ -65,6 +85,7 @@ retell a decision in another document; link it.
 ## Reporting problems
 
 - A wrong credit, or a photo that should be removed: use the "Rights holder" issue form.
-- A bug or an idea: open an issue; the integrator tracks the ideas discussed and not built in Linear (team REE).
+- A bug or an idea: open an issue; the integrator tracks the problems and ideas discussed and not solved in Linear
+  (team REE).
 - A security problem: report it privately through GitHub's "Report a vulnerability" on the repository's Security tab,
   not in a public issue. [docs/SECURITY.md](docs/SECURITY.md) says what is exposed and what protects it.

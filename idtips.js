@@ -16,7 +16,7 @@ const notesList = (g, cls = '') =>
         .map(x => `<li>${x}</li>`)
         .join(
           ''
-        )}</ul><p class="tref">IMR Lecture 6${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
+        )}</ul><p class="tref">${ORG.lectureRef}${g.sl && g.sl.length ? ', ' + slideRef(g.sl.length > 1 ? 'slides' : 'slide', g.sl) : ''}</p>`
     : `<p class="note">Not on the lecture slides: see the Coral ID Key criteria below.</p>`;
 // A source the content editor gave with an edit ({t, u}: core.js contentApply esrc; rule C2), as HTML: its words,
 // a link when it has an address. esrcTag: the source of his edit of slot k of record g, a few words after its text ('' when
@@ -62,8 +62,8 @@ const altName = s => {
 };
 // The ID tips view of the Genera page: the 4 lecture questions and the glossary on top, then 2-3 short cues per genus.
 const tipsHead =
-  () => `<div class="tiphead"><ol class="qtiles" aria-label="IMR Lecture 6: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
-  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="${esc(hr('lab-anatomy'))}"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from IMR Lecture 6 where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
+  () => `<div class="tiphead"><ol class="qtiles" aria-label="${ORG.lectureRef}: questions to ask">${DATA.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol>
+  <details class="gloss"><summary>Coral anatomy terms</summary><a class="glink" href="${esc(hr('lab-anatomy'))}"><span class="hpv art">${window.homeArt ? homeArt('anatomy') : ''}</span><span><b>Corallite anatomy</b><small>Explore the parts of a corallite on a diagram ›</small></span></a><dl>${DATA.terms.map(t => `<dt>${esc(t[0])}</dt><dd>${termDef(t)}</dd>`).join('')}</dl><p class="note">Wording from ${ORG.lectureRef} where the lecture defines the term; otherwise the <a href="https://www.coralsoftheworld.org/page/glossary/" target="_blank" rel="noopener">Corals of the World glossary</a>.</p></details></div>`;
 // The corals' card there: its look-alikes, each a link to their Compare page.
 const tipCard = n =>
   listCard(

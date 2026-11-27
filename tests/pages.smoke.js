@@ -108,9 +108,11 @@ const left = (p, from, timeout = 10000) =>
     .then(() => drawn(p))
     .catch(() => false);
 // (3 photos enlarged ends the zoom tip; the basics tip's two showings used, since "new", this page's default player, is its
-// audience; the typed-answers tip's too, since a smoke that answers "I don't know" to typed questions meets its run.)
+// audience; the typed-answers tip's too, since a smoke that answers "I don't know" to typed questions meets its run; the
+// hint tip's too, since a smoke that misses questions with the hint closed counts toward it.)
 const TIPS_OFF = () =>
-  localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0],"typed":[0,0]}}');
+  localStorage.getItem('reefid-tips') ||
+  localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0],"typed":[0,0],"hint":[0,0]}}');
 // One overlay at a time, and each one closable. Returns the failures.
 async function overlays(b, base) {
   const fails = [];
@@ -3289,8 +3291,18 @@ async function tipsCheck(b, base) {
   // player, whom the basics tip is for), s, the tips shown (default: the basics tip's two showings used, so only the tip
   // under test is in play), basics and ach, the Coral basics record and the achievements (default none), v, the visit
   // (default: open, 12 answers, no tip yet). The player has opened the Coral ID Key (u.i 1) unless u says otherwise.
+  // x.toasts false: no achievement toast on this page (achPop does nothing), for a check that names the one Next a tip must
+  // take. An achievement the decisive answer earns (Explorer at the 10th genus met, Look-alike slayer on a duel won)
+  // rightly holds the tip (never over a toast: checked with the zoom tip), so that Next would bring none, by the draw's
+  // luck (REE-301). The steps clear a toast left from before the answer; this one comes with the answer itself.
   const open = async (w, h, u, at = '#practice/quiz', intro = false, x = {}) => {
-    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
+    // x.touch: a touch screen (no hover, a coarse pointer), as a phone or a tablet reports itself.
+    const c = await b.newContext({
+      viewport: {width: w, height: h},
+      serviceWorkers: 'block',
+      intro,
+      ...(x.touch ? {hasTouch: true, isMobile: true} : {})
+    });
     await c.route(
       x => !x.href.startsWith(base),
       r => r.abort()
@@ -3307,7 +3319,7 @@ async function tipsCheck(b, base) {
             'reefid-tips',
             JSON.stringify({
               u: {i: 1, ...u},
-              s: x.s || {basics: [0, 0], typed: [0, 0]},
+              s: x.s || {basics: [0, 0], typed: [0, 0], hint: [0, 0]},
               v: x.v ? {...x.v, t: Date.now()} : {t: Date.now(), n: 12, tip: 0}
             })
           );
@@ -3319,6 +3331,7 @@ async function tipsCheck(b, base) {
     p.on('pageerror', e => errs.push(String(e)));
     await p.goto(base + at);
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    if (x.toasts === false) await p.evaluate(() => (achPop = () => {}));
     return [c, p, errs];
   };
   // One question answered (wrong unless right), toasts and genus cards closed as a player would; then Next, unless
@@ -3455,7 +3468,7 @@ async function tipsCheck(b, base) {
       const [c, p] = await open(w, h, {q: 25, z: 0});
       await p.evaluate(() => {
         const t = Date.now();
-        localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {basics: [0, 0]}, v: {t, n: 2, tip: 0}}));
+        localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 25, z: 0}, s: {basics: [0, 0], hint: [0, 0]}, v: {t, n: 2, tip: 0}}));
         // The one-tap question's session in the corals: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
         localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7, s: 'coral'}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
@@ -3881,7 +3894,10 @@ async function tipsCheck(b, base) {
       return null;
     };
     {
-      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {
+        s: {basics: [0, 0], hint: [0, 0]},
+        toasts: false
+      });
       await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
       const up = [];
       for (let i = 0; i < 3; i++) up.push(await typedStep(p, ''));
@@ -3934,7 +3950,10 @@ async function tipsCheck(b, base) {
       await c.close();
     }
     {
-      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {
+        s: {basics: [0, 0], hint: [0, 0]},
+        toasts: false
+      });
       await p.evaluate(() => Object.assign(TYPED, {from: 0, at: [[0, 1]]}));
       // Two "I don't know", a wrong text, two more: the text ended the run, so no tip and a run of 2 ...
       const seq = ['', '', 'text', '', ''],
@@ -3955,7 +3974,7 @@ async function tipsCheck(b, base) {
     }
     // Not for these: two in a row (k 2, and no typed answer), the Duel tab (no typed question).
     {
-      const [c, p] = await open(w, h, {q: 60, z: 3, c: 1, d: 1, m: 1, k: 2}, '#practice/quiz', false, {s: {basics: [0, 0]}});
+      const [c, p] = await open(w, h, {q: 60, z: 3, c: 1, d: 1, m: 1, k: 2}, '#practice/quiz', false, {s: {basics: [0, 0], hint: [0, 0]}});
       let n = 0;
       for (let i = 0; i < 12; i++) if ((await play(p)).next) n++;
       if (n) fails.push(`${W} typed tip shown to a player with two "I don't know" in a row`);
@@ -3973,6 +3992,263 @@ async function tipsCheck(b, base) {
       let n = 0;
       for (let i = 0; i < 12; i++) if ((await play(p, {right: true})).next) n++;
       if (n) fails.push(`${W} mix-ups tip shown to ${JSON.stringify({u, pairs})}`);
+      await c.close();
+    }
+    // The hint tip (g): a player with 9 misses on questions that offered the corallites hint and left it closed (u.w) gets the
+    // card at the Next after the 10th, and only after such a miss (never after a question with no hint link, nor after a right
+    // answer), with Got it alone, no tap at once, the link's own words; logged. The reveal after an answer is no opening (u.h
+    // stays 0), the player's own tap on the link is one, and it ends the audience for good.
+    // One question answered wrong (right: right), the hint link tapped first when open. Returns {hinted, up}: whether the
+    // question had the link, and whether the tip is up after Next (null: none came).
+    const hintStep = async (p, {open = false, right = false} = {}) => {
+      await qa.ready(p, {timeout: 10000});
+      const hinted = await p.evaluate(
+        ([open, right]) => {
+          document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          const hb = document.getElementById('hintb');
+          if (hb && open) hb.click();
+          smokeAnswer(right);
+          document.getElementById('next').click();
+          return !!hb;
+        },
+        [open, right]
+      );
+      await p
+        .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {
+          timeout: 10000
+        })
+        .catch(() => {});
+      return {hinted, up: !!(await p.$('.tipcard'))};
+    };
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, w: 9}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0]},
+        toasts: false
+      });
+      let shown = null,
+        rightUp = 0;
+      for (let i = 0; i < 40 && !shown; i++) {
+        // The second answer is right: never the moment, whatever the question (u.w stays 9). A miss on a question with no
+        // link neither (the card names the link).
+        const right = i === 1,
+          r = await hintStep(p, {right});
+        if (right && r.up) rightUp++;
+        if (r.up) shown = r;
+        else if (r.hinted && !right) {
+          fails.push(`${W} hint tip: a miss with the hint link left closed brought no card (the 10th)`);
+          break;
+        }
+      }
+      const st = await tips(p);
+      if (!shown || rightUp || !shown.hinted || st.u.w !== 10 || st.u.h !== 0 || (st.s.hint || []).length !== 1)
+        fails.push(
+          `${W} hint tip: shown at the Next after the miss that made 10, link in view: ${JSON.stringify({shown, rightUp, u: st.u, s: st.s})}`
+        );
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent,
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        const tapWord = (await p.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches)) ? 'Click' : 'Tap';
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Stuck? Show the corallites' ||
+          k.body !==
+            `${tapWord} “Show the corallites (hint)” under the photos before you answer: it adds a close-up of the corallites, the detail that often tells look-alikes apart.` ||
+          k.btns.join() !== 'Got it' ||
+          !k.dis ||
+          k.wide
+        )
+          fails.push(`${W} hint tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b]');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} hint tip: Got it did not go on to the next question`);
+        const ev = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+            .filter(x => /^tip:/.test(x.src || ''))
+            .map(x => `${x.k}:${x.src}:${x.r}`)
+        );
+        if (ev.join() !== 'pulse:tip:hint:shown,pulse:tip:hint:ok') fails.push(`${W} hint tip events: ${JSON.stringify(ev)}`);
+        for (let i = 0; i < 6; i++) if ((await hintStep(p)).up) fails.push(`${W} hint tip: shown again in the same visit`);
+      }
+      if (errs.length) fails.push(`${W} hint tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // Opened by the player's own tap: counted once (u.h 1) and not as a miss with the link closed (w stays), and the tip never
+    // comes after it, however many more misses.
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, w: 12}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0]}
+      });
+      let opened = 0,
+        n = 0;
+      for (let i = 0; i < 40 && !opened; i++) {
+        const r = await hintStep(p, {open: true});
+        opened = r.hinted ? 1 : 0;
+        if (r.up) n++;
+      }
+      const st = await tips(p);
+      if (!opened || st.u.h !== 1 || st.u.w !== 12)
+        fails.push(
+          `${W} hint tip: the player's tap on the link was not counted once, or counted as a miss with it closed: ${JSON.stringify({opened, u: st.u})}`
+        );
+      for (let i = 0; i < 12; i++) if ((await hintStep(p)).up) n++;
+      if (n) fails.push(`${W} hint tip shown to a player who opened the hint`);
+      await c.close();
+    }
+    // The keys tip (h): a player with 30 answers picked with a mouse click (u.p) and no number key ever (u.y) gets the card at
+    // the Next after the 30th, on a device with a keyboard and a mouse; Got it alone, no tap at once, logged. The counters
+    // follow how the answer was picked: a number key is u.y, a real mouse click u.p, a tap on a touch screen and a script's
+    // click (smokeAnswer) neither. A touch screen never gets the tip, however many answers.
+    // One question answered by hand: how is 'click' (a real mouse click on the first answer), 'key' (the number key 1) or
+    // 'tap' (a touch tap), then Next. Returns whether the tip is up after Next, or null for a question with no numbered
+    // answer (a surprise, a typed question): it is answered by script and counts for neither.
+    const pickStep = async (p, how) => {
+      await qa.ready(p, {timeout: 10000});
+      // answer.js: how a numbered answer is picked (a real click, the key, a tap), which smokeAnswer's script click cannot do
+      const sel = '#view .q:not(.done) [data-c]',
+        has = await p.evaluate(sel => {
+          document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          document.querySelectorAll('.achpop').forEach(x => x.remove());
+          achQ.length = 0;
+          achBusy = false;
+          smokeTiles();
+          return !!document.querySelector(sel);
+        }, sel);
+      if (!has) await p.evaluate(() => smokeAnswer(true));
+      // answer.js: the number key itself
+      else if (how === 'key') await p.keyboard.press('1');
+      else if (how === 'tap') await p.locator(sel).first().tap();
+      else await p.locator(sel).first().click();
+      await p.waitForSelector('#view .q.done', {timeout: 10000});
+      await p.evaluate(() => {
+        document.querySelectorAll('.achpop').forEach(x => x.remove());
+        achQ.length = 0;
+        achBusy = false;
+        document.getElementById('next').click();
+      });
+      await p
+        .waitForFunction(() => document.querySelector('.tipcard') || document.querySelector('#view .q:not(.done)'), null, {
+          timeout: 10000
+        })
+        .catch(() => {});
+      return has ? !!(await p.$('.tipcard')) : null;
+    };
+    {
+      const [c, p, errs] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 29}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]},
+        toasts: false
+      });
+      // The device shows the key marks, as the CSS does for a keyboard and a mouse.
+      const kbd = await p.evaluate(() => [
+        matchMedia('(hover: none), (pointer: coarse)').matches,
+        getComputedStyle(document.querySelector('.ans kbd, .fxt kbd') || document.body).display
+      ]);
+      if (kbd[0] || kbd[1] === 'none') fails.push(`${W} keys tip: this context is not a mouse device: ${JSON.stringify(kbd)}`);
+      let up = null;
+      for (let i = 0; i < 6 && up === null; i++) up = await pickStep(p, 'click');
+      const st = await tips(p);
+      if (up !== true || st.u.p !== 30 || st.u.y !== 0 || (st.s.keys || []).length !== 1)
+        fails.push(`${W} keys tip: shown at the Next after the 30th clicked answer: ${JSON.stringify({up, u: st.u, s: st.s})}`);
+      else {
+        const k = await p.evaluate(() => {
+          const d = document.querySelector('.tipcard'),
+            card = d.querySelector('.ulcard').getBoundingClientRect();
+          return {
+            kick: d.querySelector('.ulkick').textContent,
+            title: d.querySelector('h3').textContent,
+            body: [...d.querySelectorAll('p')].pop().textContent,
+            btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+            dis: [...d.querySelectorAll('[data-b]')].every(x => x.disabled),
+            wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth
+          };
+        });
+        if (
+          k.kick !== 'Did you know?' ||
+          k.title !== 'Answer faster with the keyboard' ||
+          k.body !== 'Press the number shown on an answer to pick it, then Enter for the next question: no need to click.' ||
+          k.btns.join() !== 'Got it' ||
+          !k.dis ||
+          k.wide
+        )
+          fails.push(`${W} keys tip card: ${JSON.stringify(k)}`);
+        await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
+        await p.click('.tipcard [data-b]');
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
+        if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} keys tip: Got it did not go on to the next question`);
+        const ev = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+            .filter(x => /^tip:/.test(x.src || ''))
+            .map(x => `${x.k}:${x.src}:${x.r}`)
+        );
+        if (ev.join() !== 'pulse:tip:keys:shown,pulse:tip:keys:ok') fails.push(`${W} keys tip events: ${JSON.stringify(ev)}`);
+        for (let i = 0; i < 4; i++) if (await pickStep(p, 'click')) fails.push(`${W} keys tip: shown again in the same visit`);
+      }
+      if (errs.length) fails.push(`${W} keys tip: page errors ${errs.slice(0, 3).join(' | ')}`);
+      await c.close();
+    }
+    // How each answer is counted: a number key is u.y, a real mouse click u.p, a script's click (smokeAnswer) neither; the
+    // first number key ends the audience at once, with 40 clicks behind it.
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]}
+      });
+      const seen = [];
+      for (const how of ['key', 'click', 'script', 'click', 'key']) {
+        let r = null;
+        for (let i = 0; i < 6 && r === null; i++) {
+          if (how === 'script') {
+            await play(p);
+            r = false;
+          } else r = await pickStep(p, how);
+        }
+        const u = (await tips(p)).u;
+        seen.push(`${how}:${u.y}/${u.p}`);
+      }
+      if (seen.join() !== 'key:1/0,click:1/1,script:1/1,click:1/2,key:2/2') fails.push(`${W} keys tip counters (key:y/p): ${seen.join()}`);
+      await c.close();
+    }
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 40}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]}
+      });
+      // A number key at the 41st answer: the player knows the keys, so no card now nor at the clicks after it.
+      let n = 0;
+      for (const how of ['key', 'click', 'click', 'click']) if (await pickStep(p, how)) n++;
+      const st = await tips(p);
+      if (n || st.u.y < 1 || (st.s.keys || []).length)
+        fails.push(`${W} keys tip shown to a player who pressed a number key: ${JSON.stringify({n, u: st.u})}`);
+      await c.close();
+    }
+    // A touch screen: the key marks are hidden, a tap counts nowhere, and the tip never comes, however many answers.
+    {
+      const [c, p] = await open(w, h, {q: 30, z: 3, c: 1, d: 1, m: 1, p: 40}, '#practice/quiz', false, {
+        s: {basics: [0, 0], typed: [0, 0], hint: [0, 0]},
+        touch: true
+      });
+      const touch = await p.evaluate(() => [
+        matchMedia('(hover: none), (pointer: coarse)').matches,
+        getComputedStyle(document.querySelector('.ans kbd, .fxt kbd') || document.body).display
+      ]);
+      if (!touch[0] || touch[1] !== 'none')
+        fails.push(`${W} keys tip: the touch context is no touch screen or shows the key marks: ${JSON.stringify(touch)}`);
+      let n = 0;
+      for (let i = 0; i < 8; i++) if (await pickStep(p, 'tap')) n++;
+      const st = await tips(p);
+      if (n || st.u.p !== 40 || st.u.y !== 0 || (st.s.keys || []).length)
+        fails.push(`${W} keys tip on a touch screen: ${JSON.stringify({n, u: st.u, s: st.s})}`);
       await c.close();
     }
     // Not for these players: 5 questions (still under 20 after 12 misses), 3 photos enlarged, the Custom quiz opened, the
@@ -4017,7 +4293,7 @@ async function customLeftCheck(b, base) {
         localStorage.setItem('reefid-nudge', '1');
         // Not a "Did you know?" tip's player (3 photos enlarged): only this card may take a break.
         localStorage.getItem('reefid-tips') ||
-          localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {basics: [0, 0]}, v: {}}));
+          localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {basics: [0, 0], hint: [0, 0]}, v: {}}));
         if (intro) {
           localStorage.getItem('reefid-sync-coral-intro') ||
             localStorage.setItem('reefid-sync-coral-intro', JSON.stringify(Object.fromEntries(M.map(n => [n, [0, 1, 1, 's']]))));
@@ -6323,15 +6599,19 @@ async function subjTour(b, base) {
         }
       } catch (e) {}
       const g = mode === 'plain' || mode === 'all' || mode === 'names' ? [] : ['fish'];
+      // The account's calls only. The public reads (statistics, leaderboard, achievements) fail as offline: their reply
+      // would carry this stub's version (sync.js sheetSeen), below the one 'names' set for the species level.
       window.SHEET_STUB = (url, o) =>
-        Promise.resolve({
-          json: () =>
-            Promise.resolve(
-              o && o.method === 'POST'
-                ? {ok: true, log: true, rev: 2, v: 56, groups: g}
-                : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 56, groups: g}
-            )
-        });
+        /[?&](stats|board|achs)=1/.test(String(url))
+          ? Promise.reject(new TypeError('Failed to fetch'))
+          : Promise.resolve({
+              json: () =>
+                Promise.resolve(
+                  o && o.method === 'POST'
+                    ? {ok: true, log: true, rev: 2, v: 56, groups: g}
+                    : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 56, groups: g}
+                )
+            });
     }, mode);
     const p = await c.newPage();
     p.on('pageerror', e => errs.push(`${mode}: ${e.message}`));
@@ -6901,7 +7181,7 @@ async function noUpscaleCheck(b, base) {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0],"hint":[0,0]}}');
       // The player's id seeds the per-player reserve (core.js reserveOf: photos kept off this player's sheets and games).
       // The app makes a random id, so each run was another player: the Tubastraea sheet, whose only lecture photos sit
       // behind the "more" fold and can be reserved, had none for about 1 id in 1000 ("shows no IMR lecture photo", the
@@ -7071,7 +7351,7 @@ async function comparedLayoutCheck(b, base) {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0]}}');
+      localStorage.setItem('reefid-tips', '{"u":{"q":0,"z":3},"s":{"basics":[0,0],"hint":[0,0]}}');
     });
     const p = await c.newPage();
     await p.goto(base);

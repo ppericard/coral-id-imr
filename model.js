@@ -98,12 +98,13 @@ const nAnswers = p => {
   const o = PSTAT[p.f];
   return o ? (o[3] ?? o[1]) : 0;
 };
-const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
+// a: nAnswers(p), passed in by a caller that reads it once for the photo's several factors (drawPhotosCalc), as calSd's.
+const calBonus = (p, a = nAnswers(p)) => 1 + CAL.B / (1 + a / CAL.N);
 // The prior's variance: the subject's (SUBJECTS calib u, core.js calibOf), else CAL.U (the corals). Fish photos carry a
 // judged ease, so a narrower targeting lets it lead while answers are few (docs/LEARNING.md "The fish draw in big pools").
 const calU = () => calibOf(SUBJ).u ?? CAL.U;
-// u: calU(), passed in by a caller that reads it once for many photos (photoSet).
-const calSd = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
+// u: calU(), passed in by a caller that reads it once for many photos (drawPhotosCalc); a: nAnswers(p), as calBonus's.
+const calSd = (p, u = calU(), a = nAnswers(p)) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + a / CAL.N));
 // The calibration set (calibration-set.json, written by tools/calibset.js, read by app.js into CALSET: {subject id:
 // {unit: [photo files]}}; docs/LEARNING.md "The calibration set"): a fixed set of game photos, each weighing CSET.B
 // times as much while the sheet's plain count of its answers is under CSET.N, so each gathers the answers that measure
@@ -120,7 +121,9 @@ const setFiles = () => {
     SETF = {s: SUBJ.id, c: CALSET, f: new Set(Object.values((CALSET && CALSET[SUBJ.id]) || {}).flat())};
   return SETF.f;
 };
-const setBonus = p => (setFiles().has(p.f) && nAnswers(p) < CSET.N ? CSET.B : 1);
+// F: setFiles() and a: nAnswers(p), passed in by a caller that reads them once (drawPhotosCalc); each is read only where
+// it was (the answers only for a member of the set).
+const setBonus = (p, F = null, a) => ((F || setFiles()).has(p.f) && (a === undefined ? nAnswers(p) : a) < CSET.N ? CSET.B : 1);
 // The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals), so in a big pool the floor's
 // mass does not drown the prior's lean.
@@ -173,6 +176,50 @@ function leastRecent(L, photosOf, ages = seenAges()) {
   const m = Math.max(...ag);
   return L.filter((x, i) => ag[i] === m);
 }
+// The draw's data of unit n (photoSet), what depends on the data alone: the photos each view it needs may show, and each
+// photo's values. The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up.
+// Except for a genus with a single IMR growth form: the form is no question there, so the photo still works as a colony.
+// Bonus genera: Research Grade only (gamePhotoOk). A two-level genus's close-ups may still sit in "medium" (extra genera
+// from tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is
+// reachable. Each photo's values (d, by the photo object): its difficulty (d: photoDiff), its targeting's width (sd:
+// calSd), the calibration's factors (cb: calBonus; sb: setBonus), whether it is a reference-level photo (ref: refLevel),
+// its variant kind (k: varKindOf on its home's juvenile classes) and its mimicry entry (m: mimIn, varOf). A view of the
+// data version per unit (drawPhotos; computed where a part of this file runs alone): every draw on the unit weighed each
+// photo again, several times a draw. The player's part (the target, the memory, the ramps) stays in photoSet.
+// What reads the same for every photo of the unit is read once (calU, photoDiffOf, setFiles), and each photo's answers
+// (nAnswers) once for its three factors: a fish family's first draw in a visit weighed its thousand photos or more.
+const drawPhotosCalc = n => {
+  const g = GX(n),
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
+    oneForm = imrFormsOf(n).length === 1,
+    calu = calU(),
+    dc = photoDiffOf(n),
+    sf = setFiles(),
+    home = GX(varHome(n)) || {},
+    pics = {},
+    d = new Map();
+  for (const v of need) {
+    pics[v] = [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])].filter(
+      p => (v !== 'wide' || p.form !== 'x' || oneForm) && gamePhotoOk(n, p)
+    );
+    for (const p of pics[v])
+      if (!d.has(p)) {
+        const a = nAnswers(p);
+        d.set(p, {
+          d: photoDiff(n, p, dc),
+          sd: calSd(p, calu, a),
+          cb: calBonus(p, a),
+          sb: setBonus(p, sf, a),
+          ref: refLevel(p),
+          k: varKindOf(p, home.juv),
+          m: home.mim ? mimIn(home.mim, p) : null
+        });
+      }
+  }
+  return {pics, d};
+};
+const drawPhotos = typeof dataViewBy === 'function' ? dataViewBy('drawPhotos', drawPhotosCalc) : drawPhotosCalc;
 // skip: a photo file left out when the colony has others to show (the photo of the genus card just shown).
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
@@ -183,19 +230,10 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
   const shownV = two ? ['wide', 'macro'] : ['wide', 'medium'];
-  // The Colony slot never gets a photo whose growth form is "x" (too close to see it): that is a close-up. Except for a
-  // genus with a single IMR growth form: the form is no question there, so the photo still works as a colony.
-  const oneForm = imrFormsOf(n).length === 1,
-    ok = v => p => v !== 'wide' || p.form !== 'x' || oneForm;
-  // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
-  // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
-  const gameOk = p => gamePhotoOk(n, p);
+  // The unit's photos by view and each photo's data values (drawPhotos), read once for the whole draw.
+  const {pics: base, d: D} = drawPhotos(n);
   // all: every photo the unit may show, before keep (the variants' count of observations at full weight, below).
-  const pics = (v, all = false) =>
-    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
-      .filter(ok(v))
-      .filter(gameOk)
-      .filter(p => p.f !== skip && (all || !keep || keep(p)));
+  const pics = (v, all = false) => base[v].filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   // The calibration set's factor (setBonus, in w below) holds to the same condition, and to a photo within one width of
@@ -208,7 +246,6 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     ro = s.ro || [],
     // The subject's calibration, read once for the whole draw (calibOf builds a new object; w reads it per photo).
     cal = calibOf(SUBJ),
-    calu = cal.u ?? CAL.U,
     // The start's lean (SUBJECTS calib early): the target sits `early` logits lower on a unit with few answers, so the
     // easy photos come first, fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals.
     lean = cal.early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
@@ -220,7 +257,8 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   // with fewer than PICKD.VARIETY observations at full weight among all its photos (keep aside).
   const V = varOf(
     n,
-    need.flatMap(v => pics(v, true))
+    need.flatMap(v => pics(v, true)),
+    D
   );
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
@@ -229,15 +267,16 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     hard = () => 0;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
-    const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
+    const e = D.get(p),
+      x = (e.d + off - tgt) / e.sd,
       k = mem[p.o || p.f];
-    let r = Math.exp((-x * x) / 2) * calBonus(p) * (held && Math.abs(x) <= 1 ? setBonus(p) : 1);
+    let r = Math.exp((-x * x) / 2) * e.cb * (held && Math.abs(x) <= 1 ? e.sb : 1);
     // Photo memory (docs/LEARNING.md "Photo memory"): a photo already shown weighs e^offset of its memory bucket (core.js
     // MEM, the subject's pmem), dividing out the odds memory adds to a right answer on it: soft, the least remembered
     // come first. A reference-level photo never seen (core.js refLevel: judged ease 4 or 5 with the reference look,
     // whatever its source) weighs the subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1 for the
     // corals), whoever took it: no photo weighs more for its source (rule P1).
-    if (!k) r *= (1 + 1.5 * hot) * (refLevel(p) ? cal.ref : 1);
+    if (!k) r *= (1 + 1.5 * hot) * (e.ref ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     if (V.on) r *= V.f(p);
     return hardF < 1 ? r * (1 - hard(p) * (1 - hardF)) : r;
@@ -341,7 +380,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const has = need.filter(v => (o[v] || []).length);
   if (single || has.length === 1) {
     // A calibration question shows the view whose photo the players have answered least.
-    const v = !has.length ? null : calQ ? wpick(has, x => Math.max(...o[x].map(p => w(p) * calBonus(p) ** 2))) : pick(has);
+    const v = !has.length ? null : calQ ? wpick(has, x => Math.max(...o[x].map(p => w(p) * D.get(p).cb ** 2))) : pick(has);
     if (v) {
       const p = one(v);
       return {shown: [{...p, view: lab(v)}], hint: null, reveal: has.filter(x => x !== v).map(x => ({...pick(o[x]), view: lab(x)}))};
@@ -371,6 +410,12 @@ function photoAny(n) {
     )
   );
 }
+// photoAny kept per unit and per data version (it reads the data alone: the unit's photos and their forms, its growth
+// forms, gamePhotoOk), for the units in play (app.js poolCalc), which asked it of every unit at every answer. Where a part
+// of this file runs alone, photoAny itself. photoAnyFn(): for a loop with nothing written during it (the version read
+// once, then each unit a lookup: app.js keyView's fn).
+const photoAnyBy = typeof dataViewBy === 'function' ? dataViewBy('photoAny', photoAny) : photoAny;
+const photoAnyFn = () => (photoAnyBy.fn ? photoAnyBy.fn() : photoAnyBy);
 // The photo variants of unit n (core.js varKindOf, VAR_AT): a unit's home, the record at its subject's unit rank
 // it hangs from (itself for a family; a fish genus's or species' family, a fish species by its scientific name through its
 // genus), holds its juvenile classes (juv) and its thresholds' overrides (varAt); a unit's own varAt wins over its home's
@@ -404,25 +449,29 @@ const mimAt = (m, n) => (m.m.some(id => id !== n && id !== varHome(n) && GX(id) 
 // The variant factors of unit n over its photos L (photoSet's, examSet's): kind(p), its kind; f(p), its weight now, its
 // kind's ramp on the unit's bar (genScore), a photo of the mimicry class its own ramp (mimOf, mimAt), 1 for a photo with
 // no variant; on, whether anything is held back: false when nothing is, or when fewer than PICKD.VARIETY observations of L
-// are at full weight (the fallback: nothing held back, f then 1 everywhere).
-function varOf(n, L) {
+// are at full weight (the fallback: nothing held back, f then 1 everywhere). D: the draw's data of n (drawPhotos d),
+// whose kind and mimicry entry a photo of it takes from there; any other photo computes them.
+function varOf(n, L, D = null) {
   const juv = (GX(varHome(n)) || {}).juv,
     F = {},
     ML = (GX(varHome(n)) || {}).mim,
     MF = new Map(),
     kind = p => varKindOf(p, juv),
     f0 = p => {
-      const m = ML ? mimIn(ML, p) : null;
+      const e = D && D.get(p),
+        m = e ? e.m : ML ? mimIn(ML, p) : null;
       if (m && !m.m.includes(n)) {
         if (!MF.has(m)) MF.set(m, varRamp(genScore(n), mimAt(m, n)));
         return MF.get(m);
       }
-      const v = kind(p);
+      const v = e ? e.k : kind(p);
       if (!v) return 1;
       if (!(v in F)) F[v] = varRamp(genScore(n), varAtOf(n, v));
       return F[v];
     };
-  const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
+  // Each photo's factor computed once: some held back, and enough observations at full weight.
+  const fs = L.map(f0),
+    on = fs.some(x => x < 1) && new Set(L.filter((p, i) => fs[i] >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
   return {on, kind, f: on ? f0 : () => 1};
 }
 // The mimicry class drilled (docs/LEARNING.md "The mimicry class"). mimUnit: on a question about unit t, the unit at t's
@@ -529,7 +578,7 @@ function varRight(n, L) {
   const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
   s.vl = s.vl.filter(g => !got.has(g));
   if (!s.vl.length) delete s.vl;
-  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
+  if (typeof stateBump === 'function') stateBump('rec'); // the records: an input of the views (app.js)
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
@@ -625,27 +674,22 @@ const weight = n => {
 // unit still shaky after STUCK of its own answers stops taking a place among the K. Every subject.
 const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200};
 // How much the easy-first order is trusted: the players' weighed answers behind the photo ratings over OPEN.DATA, up to
-// 1; without them every genus offset is 0 and the order stays random. A judged photo (p.e, the fish: judging/FISH.md)
-// counts PDIFF.W answers, its prior's weight in photoDiff, so judged entries open easiest first from the first card.
-const easyTrust = () =>
-  Math.min(
-    1,
-    (Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) +
-      PDIFF.W * slateGenera().reduce((t, n) => t + VIEWS.reduce((u, [v]) => u + gamePics(n, v).filter(p => p.e).length, 0), 0)) /
-      OPEN.DATA
-  );
+// 1; without them every genus offset is 0 and the order stays random. Answers only: the judged ease never ranks units
+// (genusDiff), so it adds nothing to how far their offsets are trusted.
+const easyTrust = () => Math.min(1, Object.values(PSTAT).reduce((t, o) => t + (o[1] || 0), 0) / OPEN.DATA);
 // Difficulty of a genus (docs/LEARNING.md "One genus difficulty"): the sheet's genus offset (PGD, ?stats=1 gd: the
 // hierarchical photo Elo's estimate of the part of a photo's difficulty its genus shares), the one estimate everywhere
-// (drawW, shaky, stability, openPick); adding or curating out a photo never moves it. A unit with judged photos (p.e,
-// the fish) adds the mean of their judged-ease priors (photoDiff's), so it opens easiest first. 0 offline before the
-// sheet's first reply. Cleared when the photo stats change.
+// (drawW, shaky, stability, openPick), for every subject; adding or curating out a photo never moves it. The judged
+// ease (p.e) places a photo among its own unit's photos only and never ranks units (photoDiff, easeMid): its prior's
+// mean over the unit is 0. 0 offline before the sheet's first reply. Kept per unit (GDIFF) for the data version it was
+// made in (app.js DATA_V, GDV): the photo statistics, the data and the tree in force and the subject each move that
+// version. Where model.js runs without app.js (the tools, the unit tests), it is cleared by hand.
 let GDIFF = {};
+let GDV = null;
 const genusDiff = n => {
+  if (typeof DATA_V === 'number' && GDV !== DATA_V) ((GDIFF = {}), (GDV = DATA_V));
   if (n in GDIFF) return GDIFF[n];
-  // its reserved photos too (g.held: core.js heldOf), so a player's reserve does not move it
-  const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e),
-    ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
-  return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
+  return (GDIFF[n] = Math.round(((PGD[n] || [0])[0] || 0) * 100) / 100);
 };
 // Shaky: met, not mastered, and the expected success on an average photo of the genus (4 choices, at its genusDiff)
 // still under OPEN.P. The genus ability allows for how hard the questions were and starts from the global level
@@ -691,15 +735,17 @@ const sharesNow = () => {
     free = new Set(typeof shareFree === 'function' ? shareFree() : []),
     lv = new Map(L.map(n => [n, free.has(n) ? null : shareLv(n, inPool)])),
     cap = {},
-    w = {};
+    w = {},
+    // nothing is written in this pass: the units met and their readiness read once (introducedFn, introReadyFn)
+    met = typeof introducedFn === 'function' ? introducedFn() : introduced;
   new Set([...lv.values()].filter(x => x !== null)).forEach(k => {
-    const up = L.filter(u => (typeof rankOf === 'function' ? rankOf(u) : '') === k && (introduced(u) || mayOpen(u))),
+    const up = L.filter(u => (typeof rankOf === 'function' ? rankOf(u) : '') === k && (met(u) || mayOpen(u))),
       at = u => (typeof (GX(u) || {}).shareAt === 'number' ? GX(u).shareAt : LV_AT[SHARE.AT]),
       m = up.length ? up.filter(u => genScore(u) >= at(u)).length / up.length : 0;
     cap[k] = Math.pow(m, SHARE.POW);
   });
   // The draw's weights of the units met (drawW), by level hung from ('' key for those hanging from none: '~').
-  L.filter(introReady).forEach(n => {
+  L.filter(typeof introReadyFn === 'function' ? introReadyFn() : introReady).forEach(n => {
     const k = lv.get(n) === null ? '~' : lv.get(n);
     w[k] = (w[k] || 0) + drawW(n);
   });
@@ -741,10 +787,17 @@ const shareRoom = n => {
 // (the first cards, or one of their own) in the last OPEN.WIN answers, as at `at` (the answers count at which the
 // question will show). The window counts the answers since each card on the answer clock (tally, introMark), so a count
 // gone down (rule D9) does not bring an old card back into it.
+// The genera opened on a card, each with its mark on the answer clock, in the intro map's order (cardsCalc): a view of the
+// state version in the app (the intro map is its input); the window, on the clock, is read at each call.
+const cardsCalc = () =>
+  Object.entries(introMap())
+    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n))
+    .map(([n, e]) => [n, introMark(e)]);
+const cardsNow = typeof stateView === 'function' ? stateView('cards', cardsCalc) : cardsCalc;
 const openRecent = (at = answersSoFar()) => {
   const c = tally() + at - answersSoFar();
-  return Object.entries(introMap())
-    .filter(([n, e]) => /^[sc]$/.test(e[3] || (e[1] ? 's' : 'c')) && !closed(n) && c - introMark(e) < OPEN.WIN)
+  return cardsNow()
+    .filter(([, m]) => c - m < OPEN.WIN)
     .map(([n]) => n);
 };
 // No new genus while one opened in the last OPEN.WIN answers has not been asked yet (its card read, its question still
@@ -778,10 +831,13 @@ function openRight(at = answersSoFar()) {
 const imrOf = o =>
   startEventsOf(o).some(x => x[0] === 'imr' && x[3] !== 'ease' && x[3] !== 'inferred') ||
   Object.keys((o && typeof o.fb === 'object' && o.fb) || {}).some(k => k.split('-')[0] === 'imr');
-const imrSaid = () => {
+const imrSaidCalc = () => {
   const k = startKey(SUBJ.id);
   return typeof keptBy === 'function' ? keptBy(k, null, 'imrSaid', imrOf) : imrOf(store.get(k, null));
 };
+// In the app, a view of the state version (app.js stateView: the subject and its first-launch record are inputs): the
+// names shown read it once per unit.
+const imrSaid = typeof stateView === 'function' ? stateView('imrSaid', imrSaidCalc) : imrSaidCalc;
 // Families met first: while a unit of the slate in play is still to open (in fresh: those not met that may open now),
 // the units of a set that opens after the slate (app.js setLater: the fish scientific genera once accepted) wait. After
 // Open all (openedAll: a unit opened by it and not closed again) nothing waits.
@@ -807,23 +863,105 @@ const declared = (t, n) => declaredOf(t).includes(n) || declaredOf(n).includes(t
 // The pair's pooled score for grouping: pooledConf's, on the declared test (the same score for the corals and the fish
 // families, whose `look` is what a teacher declared; for the fish genera, siblings start at the family prior).
 const groupConf = (t, n) => confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, declared(t, n)));
+// A unit's part of a pair's group score: its declared look-alikes (declaredOf), its data look-alikes (dataSeed) and its
+// family, a view of the data version per unit (computed where a part of this file runs alone); its growth forms are
+// formsOf's. groupsOfRank scores every pair of a rank (tens of thousands on a long fish history) whenever the units in play
+// or the pooled stats change, and each pair read its two records and their forms again. null for a name with no record.
+const groupUnitCalc = n => {
+  const g = GX(n);
+  return g ? {decl: g.decl || g.look || [], dl: g.dl || [], fam: g.fam} : null;
+};
+const groupUnit = typeof dataViewBy === 'function' ? dataViewBy('groupUnit', groupUnitCalc) : groupUnitCalc;
+// declared and groupConf for a loop with nothing written during it (groupsOfRank): the views read once, then each pair from
+// its two units' parts, the same tests in the same order; a pair with a unit that has no record as declared and
+// groupConf compute it. pairs(L): the pairs of L (sorted) that may be an edge of the groups, below.
+function groupPairFn() {
+  const U = groupUnit.fn ? groupUnit.fn() : groupUnit,
+    F = typeof formsOf === 'function' ? (formsOf.fn ? formsOf.fn() : formsOf) : imrFormsOf;
+  return {
+    // The pairs [a, b] of L (sorted) that may be declared or score CONF.TRAP or more, in the order of the loop over every
+    // pair (a's place in L, then b's). Without a pooled count a pair's score is its prior (confScore), and of the priors
+    // only a look-alike's (CONF.LOOK) reaches CONF.TRAP: so the pairs that may be an edge are the declared and data
+    // look-alikes (each unit's decl and dl) and the pairs the pooled stats count (PCONF's keys, each read at every '|').
+    // Any other pair is never declared and scores its family's, form's or base prior, under CONF.TRAP. Every pair when that
+    // does not hold: a unit with no record or lists of another shape, a name twice in L, a lower prior that would reach
+    // CONF.TRAP. A long fish history holds about 25,000 pairs, a few hundred of them look-alikes or counted.
+    pairs: L => {
+      const N = L.length,
+        at = new Map(L.map((n, i) => [n, i])),
+        every = () => L.flatMap((a, i) => L.slice(i + 1).map(b => [a, b]));
+      if (
+        at.size !== N ||
+        !PCONF ||
+        typeof PCONF !== 'object' ||
+        [CONF.FAM, CONF.FORM, CONF.BASE].some(p => confScore(undefined, p) >= CONF.TRAP) ||
+        L.some(n => {
+          const u = U(n);
+          return !u || !Array.isArray(u.decl) || !Array.isArray(u.dl);
+        })
+      )
+        return every();
+      const S = new Set(),
+        add = (x, y) => {
+          const i = at.get(x),
+            j = at.get(y);
+          if (i !== undefined && j !== undefined && i !== j) S.add(i < j ? i * N + j : j * N + i);
+        };
+      L.forEach(n => {
+        const u = U(n);
+        u.decl.forEach(m => add(n, m));
+        u.dl.forEach(m => add(n, m));
+      });
+      for (const k of Object.keys(PCONF))
+        for (let x = k.indexOf('|'); x >= 0; x = k.indexOf('|', x + 1)) add(k.slice(0, x), k.slice(x + 1));
+      return [...S].sort((x, y) => x - y).map(c => [L[Math.floor(c / N)], L[c % N]]);
+    },
+    decl: (t, n) => {
+      const a = U(t),
+        b = U(n);
+      return a && b ? a.decl.includes(n) || b.decl.includes(t) : declared(t, n);
+    },
+    conf: (t, n) => {
+      const a = U(t),
+        b = U(n);
+      if (!a || !b) return groupConf(t, n);
+      return confScore(
+        PCONF[t < n ? t + '|' + n : n + '|' + t],
+        a.decl.includes(n) || b.decl.includes(t) || a.dl.includes(n) || b.dl.includes(t)
+          ? CONF.LOOK
+          : b.fam === a.fam
+            ? CONF.FAM
+            : F(n).some(f => F(t).includes(f))
+              ? CONF.FORM
+              : CONF.BASE
+      );
+    }
+  };
+}
 // The groups of the units L (one rank): {unit: its group, members in alphabetical order}; a lone unit has none.
 function groupsOfRank(L) {
+  // declared and groupConf below: the loop's own (groupPairFn), the same values
+  const {decl: declared, conf: groupConf, pairs} = groupPairFn();
   L = [...L].sort();
+  // sc: each pair's score (a < b), computed when first read: the edges' below, the others' only when the average linkage
+  // reads a pair inside two groups an edge joins.
   const cl = new Map(L.map(n => [n, [n]])),
-    sc = {},
-    s = (a, b) => sc[a < b ? a + '|' + b : b + '|' + a],
+    sc = new Map(),
+    s = (a, b) => {
+      const k = a < b ? a + '|' + b : b + '|' + a;
+      if (!sc.has(k)) sc.set(k, a < b ? groupConf(a, b) : groupConf(b, a));
+      return sc.get(k);
+    },
     merge = (A, B) => {
       const C = [...A, ...B].sort();
       C.forEach(n => cl.set(n, C));
     },
     edges = [];
-  L.forEach((a, i) =>
-    L.slice(i + 1).forEach(b => {
-      const v = (sc[a + '|' + b] = groupConf(a, b));
-      if (declared(a, b) || v >= CONF.TRAP) edges.push([a, b, v]);
-    })
-  );
+  // Only the pairs that may be an edge are scored here (groupPairFn pairs), in the order of the loop over every pair.
+  pairs(L).forEach(([a, b]) => {
+    const v = s(a, b);
+    if (declared(a, b) || v >= CONF.TRAP) edges.push([a, b, v]);
+  });
   // 1. Declared pairs, the most confused first.
   edges
     .filter(([a, b]) => declared(a, b))
@@ -876,8 +1014,9 @@ const matesLeft = n => groupMates(n).filter(m => !introduced(m) && mayOpen(m));
 // 2. otherwise a new group or lone unit, drawn with the weight below on the group's means (genusDiff, cm), then its
 //    member by the same weight. The first cards (introStart, first: true) are drawn unit by unit, no partner first.
 // The weight: the easiest first, softly (OPEN.T, as far as easyTrust allows), and the most common near Dauin
-// (commonFactor). A ★ genus waits while a genus its card compares it to is in the list and not met (core.js starWaits),
-// partners included; should every genus left wait, they all open.
+// (commonFactor). A unit waits while a unit its record says it opens after (`after`: a ★ genus's references, written by
+// the corals' build, core.js starAfter) is in the list and not met (core.js afterWaits), partners included; should every
+// unit left wait, they all open.
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
 const easyWeights = (gd, cm) => {
   const lo = Math.min(...gd),
@@ -914,7 +1053,7 @@ function openPick(fresh, list = fresh, met = introduced, {first: firstCards = fa
     const tagged = fresh.filter(n => (GX(n) || {}).imrName);
     if (tagged.length) fresh = tagged;
   }
-  const free = n => !starWaits(DATA, n, list, met),
+  const free = n => !afterWaits(GX(n), list, met),
     ok = fresh.filter(free);
   if (ok.length) fresh = ok;
   if (firstCards) return easyDraw(fresh);
@@ -958,15 +1097,25 @@ function openPick(fresh, list = fresh, met = introduced, {first: firstCards = fa
 //   of its class nearest to it (the same parent, then the same grandparent, then any), each drawn as the first cards are.
 // - levelTop(list): a level holding units met but fewer than it needs (a group left half-way, a record from before the
 //   groups) gets the rest of its group at once, as the first cards are completed, with what is ready to open.
-const lvlAll = (k, list) => (typeof rankUnits === 'function' ? rankUnits(k) : list).filter(n => rankKind(n) === k && photoAny(n));
-const lvlNeed = (k, list) => {
+// In the app (app.js rankUnits, dataViewBy) a class's units with a photo are a view of the data version (lvlAllCalc, read
+// by class), and its need a view of the state version (lvlNeedCalc): the planner asks them several times a question.
+// Outside it (the rated world, the tests), computed from list.
+const lvlAllCalc = (k, list) => (typeof rankUnits === 'function' ? rankUnits(k) : list).filter(n => rankKind(n) === k && photoAny(n));
+const lvlNeedCalc = (k, list) => {
   if (!k) return 0;
   const L = lvlAll(k, list);
-  return Math.max(0, Math.min(INTRO.START, L.length) - L.filter(introduced).length);
+  return Math.max(0, Math.min(INTRO.START, L.length) - L.filter(introducedFn()).length);
 };
+const lvlViews =
+  typeof dataViewBy === 'function' && typeof rankUnits === 'function'
+    ? {all: dataViewBy('lvlAll', k => lvlAllCalc(k)), need: stateViewBy('lvlNeed', k => lvlNeedCalc(k))}
+    : null;
+const lvlAll = (k, list) => (lvlViews ? lvlViews.all(k) : lvlAllCalc(k, list));
+const lvlNeed = (k, list) => (lvlViews ? lvlViews.need(k) : lvlNeedCalc(k, list));
 const openFresh = (fresh, list) => {
-  const by = new Map();
-  fresh.forEach(n => by.set(rankKind(n), [...(by.get(rankKind(n)) || []), n]));
+  const by = new Map(),
+    kr = rankKindFn();
+  fresh.forEach(n => by.set(kr(n), [...(by.get(kr(n)) || []), n]));
   return [...by].flatMap(([k, U]) => {
     const w = lvlNeed(k, list),
       ok = U.filter(n => shareRoom(n));
@@ -999,13 +1148,14 @@ const openGroup = (u, fresh, list) => {
     : [u];
 };
 const levelTop = list => {
-  const ks = [...new Set(list.filter(introduced).map(rankKind))].filter(Boolean);
+  const kr = rankKindFn(),
+    ks = [...new Set(list.filter(introducedFn()).map(kr))].filter(Boolean);
   for (const k of ks) {
     const w = lvlNeed(k, list),
-      U = w ? list.filter(n => rankKind(n) === k && !introduced(n) && mayOpen(n)) : [];
+      U = w ? list.filter(n => kr(n) === k && !introduced(n) && mayOpen(n)) : [];
     if (!U.length) continue;
     // Nearest to a unit of the class already met (its group's), the first drawn as the first cards are.
-    const m = list.find(n => rankKind(n) === k && introduced(n)),
+    const m = list.find(n => kr(n) === k && introduced(n)),
       T = lvlNear(m, U),
       u = openPick(T, T, introduced, {first: true});
     return lvlFill([u], U, Math.min(w, U.length));
@@ -1086,13 +1236,81 @@ const introLive = n => {
   m[n] = [answersSoFar(), 0, 0, 'b'];
   store.set(INTRO.KEY, m);
 };
-const introduced = n => !closed(n) && (asked(n) || n in introMap());
-const introReady = n => {
-  if (closed(n)) return false;
+const introducedCalc = n => !closed(n) && (asked(n) || n in introMap());
+// In the app, the units met are a view of the state version (app.js stateView): metCalc names them once per version, from
+// the only units that can be (a record's key or an intro map entry), and a read is one lookup. The same answer as
+// introducedCalc by construction; a name only the prototype of an object holds ('constructor') is computed when read.
+const metCalc = () => {
+  const m = introMap();
+  return new Set([...Object.keys(P), ...Object.keys(m)].filter(introducedCalc));
+};
+// With VIEW_CHECK on, each read is compared with introducedCalc (metCheck): the value read, not the whole Set.
+const metNow = typeof stateView === 'function' ? stateView('met', metCalc, true) : null;
+const metCheck = (S, n) => {
+  const v = S.has(n);
+  if (v !== introducedCalc(n)) viewDiff('state', 'met');
+  return v;
+};
+// introducedFn: introduced for a loop over many units with nothing written during it (the sets' units in play, a level's
+// need, the wrong choices): one read of the view for the whole loop (as lvSteps).
+const introducedFn = () => {
+  if (!metNow) return introducedCalc;
+  const S = metNow();
+  return n => (typeof n !== 'string' || n in Object.prototype ? introducedCalc(n) : VIEW_CHECK.on ? metCheck(S, n) : S.has(n));
+};
+const introduced = metNow
+  ? n => (typeof n !== 'string' || n in Object.prototype ? introducedCalc(n) : VIEW_CHECK.on ? metCheck(metNow(), n) : metNow().has(n))
+  : introducedCalc;
+// Whether unit n is ready to be asked, as far as its record and its intro map entry say (readyPart): true (asked since its
+// card, or ready at once), the mark on the answer clock from which it is (its card's gap, INTRO.GAP), or undefined
+// (closed, or never met). The clock itself (tally) is read at each read for a unit that waits, as before: it moves with
+// the answer count, which no version follows, and its first read in an answer may write the comeback's record.
+const readyPart = n => {
+  if (closed(n)) return undefined;
   if (askedOpen(n)) return true;
   const e = introMap()[n];
-  return !!e && (!!e[1] || tally() >= introMark(e) + INTRO.GAP);
+  return !e ? undefined : e[1] ? true : introMark(e) + INTRO.GAP;
 };
+const introReadyCalc = n => {
+  const v = readyPart(n);
+  return v === true || (typeof v === 'number' && tally() >= v);
+};
+// In the app, the units' parts are a view of the state version (app.js stateView), as the units met (metCalc): readyCalc
+// keeps them for the only units that can be ready (a record's key or an intro map entry), and a read is one lookup and,
+// for a unit that waits, the clock. The same answer as introReadyCalc by construction; a name only the prototype of an
+// object holds is computed when read. With VIEW_CHECK on, each read compares its part with readyPart (readyCheck).
+const readyCalc = () => {
+  const M = new Map();
+  for (const n of new Set([...Object.keys(P), ...Object.keys(introMap())])) {
+    const v = readyPart(n);
+    if (v !== undefined) M.set(n, v);
+  }
+  return M;
+};
+const readyNow = typeof stateView === 'function' ? stateView('ready', readyCalc, true) : null;
+const readyCheck = (M, n) => {
+  const v = M.get(n);
+  if (!viewSame(v, readyPart(n))) viewDiff('state', 'ready');
+  return v;
+};
+// introReadyFn: introReady for a loop over many units with nothing written during it (unlocked, the rank share's weights,
+// the photo quiz's units met): one read of the view for the whole loop, as introducedFn.
+const introReadyFn = () => {
+  if (!readyNow) return introReadyCalc;
+  const M = readyNow();
+  return n => {
+    if (typeof n !== 'string' || n in Object.prototype) return introReadyCalc(n);
+    const v = VIEW_CHECK.on ? readyCheck(M, n) : M.get(n);
+    return v === true || (typeof v === 'number' && tally() >= v);
+  };
+};
+const introReady = readyNow
+  ? n => {
+      if (typeof n !== 'string' || n in Object.prototype) return introReadyCalc(n);
+      const v = VIEW_CHECK.on ? readyCheck(readyNow(), n) : readyNow().get(n);
+      return v === true || (typeof v === 'number' && tally() >= v);
+    }
+  : introReadyCalc;
 // "I've had the IMR lecture": an RA has seen every genus in the lecture, so one card at a time would hold them back. On
 // the first cards and in My progress, one tap opens at once, without cards, every unit the lecture teaches (app.js
 // UNITS core: the fish circle 1; the corals' whole slate). The bonus genera (opt-in, app.js BONUS) and the later fish
@@ -1103,12 +1321,12 @@ const introLeft = () => slateCore().filter(n => !introduced(n));
 // Whether a unit may open now (app.js UNITS gate: the fish circles 2 and 3 wait for their thresholds) and, for a part of
 // the slate opened by choice, once the player said yes (app.js UNITS opens, openShut: fish circle 3); always for a
 // subject with neither. The opening's candidates only (quiz.js introStart, planPhoto): a unit already open stays open.
-const mayOpen = n => !(typeof openShut === 'function' && openShut(n)) && (!unitsNow().gate || unitsNow().gate(n));
+const mayOpen = n => !(typeof openShut === 'function' && openShut(n)) && (U => !U.gate || U.gate(n))(unitsNow());
 // One progression path for every game (docs/LEARNING.md "One progression path for every game"): the genera this player
 // has unlocked, met on the path (a card, an answer, Open all) and ready (introReady), among those in play. The photo
-// quiz opens genera one at a time (its cards, the ★ rule: core.js starWaits); every other game draws from these only and
+// quiz opens genera one at a time (its cards, the ★ rule: core.js afterWaits); every other game draws from these only and
 // opens none, so the ★ rule holds there by construction.
-const unlocked = (list = pool()) => list.filter(introReady);
+const unlocked = (list = pool()) => list.filter(introReadyFn());
 // via: where the player opened them ('card' the first cards, 'progress' My progress; 'offer' in an older record, the
 // offer card), kept for the admin's player journey.
 // n: how many opened at once; h: the drop since then (holdStep, below); a choice already made on the back card (bk, bat,
@@ -1497,17 +1715,42 @@ const lastAt = () => {
   } catch (e) {}
   return (L.length && Date.parse(L[L.length - 1].t)) || 0;
 };
-// Recall of genus n at time t (a genus with no time of its own: the player's last answer).
-const recallAt = (n, t = Date.now(), last = lastAt()) => {
+// Recall of genus n at time t (a genus with no time of its own: the player's last answer). stab: its stability (rustAdd
+// reads it once for two times).
+const recallAt = (n, t = Date.now(), last = lastAt(), stab = stability) => {
   const a = (P[n] || {}).at || last;
-  return a && t > a ? recallOf((t - a) / DAY, stability(n)) : 1;
+  return a && t > a ? recallOf((t - a) / DAY, stab(n)) : 1;
 };
-const rustOf = R => (1 - 1 / 4) * (1 - R) * sig(aimOff(4) - Math.log(R));
+// o: the aim's offset for 4 choices (aimOff(4)), read once by a loop with nothing written during it.
+const rustOf = (R, o = aimOff(4)) => (1 - 1 / 4) * (1 - R) * sig(o - Math.log(R));
+// The rust the genera A gathered from time `from` to `now` (rustNow): each one's stability and the aim read once, the sum
+// as it always was (in A's order, each genus's two terms in turn). Reads the clock, so never a view.
+const rustAdd = (A, from, now, last) => {
+  const o = aimOff(4);
+  return A.reduce((t, n) => {
+    let S;
+    const st = () => (S === undefined ? (S = stability(n)) : S);
+    return t + rustOf(recallAt(n, now, last, st), o) - rustOf(recallAt(n, from, last, st), o);
+  }, 0);
+};
+// Outside a visit and a comeback the rust is not counted (rustNow). The genus difficulties its sum would read are still
+// made (genusDiff), so the memo (GDIFF) holds what the sum would leave in it. Its values do not depend on it: the memo
+// follows the data version (genusDiff). The units: those asked whose recall a stability reads (a time of their own or the
+// player's last answer, before now), not learned.
+const rustSkip = (now, last) =>
+  cbPlay().forEach(n => {
+    const s = P[n] || {},
+      a = s.at || last;
+    if ((s.ok || s.ko) && a && now > a && !s.mx && !(typeof GDIFF === 'object' && n in GDIFF)) genusDiff(n);
+  });
 // The genera in play (the slate, and the bonus genera when the player has them on): those a comeback measures and asks.
 // A unit closed (a live game's answers before its card, model.js introLive; One at a time) is neither: its answers do not
 // start a comeback, whose floor would hold back the first cards while no unit is open (rule L4).
-const cbPlay = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
-const cbGenera = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
+// In the app, both are views of the state version (app.js stateView): the comeback asks them several times an answer.
+const cbPlayCalc = () => [...slateGenera(), ...bonusList()].filter(n => !closed(n));
+const cbGeneraCalc = () => cbPlay().filter(n => (P[n] || {}).ok > 0);
+const cbPlay = typeof stateView === 'function' ? stateView('cbPlay', cbPlayCalc) : cbPlayCalc;
+const cbGenera = typeof stateView === 'function' ? stateView('cbGenera', cbGeneraCalc) : cbGeneraCalc;
 // Brings the comeback up to now (when a question is planned or answered): a new visit sets the floor, and the rust of
 // its gap starts a comeback; a gap during a comeback adds to it.
 // Returns true when a new visit starts here (a gap of SESSION.GAP or more since the last answer): questions planned or
@@ -1524,16 +1767,16 @@ function rustNow(now = Date.now()) {
     floor = () => (CB.f = Math.max(CB.f, tally() + COMEBACK.FLOOR));
   const visit = now - last >= SESSION.GAP;
   if (visit) floor();
-  if (now > from) {
-    const A = cbPlay().filter(asked),
-      add = A.reduce((t, n) => t + rustOf(recallAt(n, now, last)) - rustOf(recallAt(n, from, last)), 0);
+  // The rust counts only in a comeback or at a new visit; any other answer reads none of it (rustSkip).
+  if (now > from && (on || visit)) {
+    const add = rustAdd(cbPlay().filter(asked), from, now, last);
     if (on) CB.r += add;
-    else if (visit && add > 0) {
+    else if (add > 0) {
       CB.r = add;
       CB.ok = 0;
       floor();
     }
-  }
+  } else if (now > from) rustSkip(now, last);
   CB.t = now;
   cbSave();
   return visit;
@@ -1580,7 +1823,7 @@ function answeredAt(s, good, now = Date.now()) {
     s.dl = d;
   }
   if (P[LEVEL]) P[LEVEL].at = Math.max(Number(P[LEVEL].at) || 0, now);
-  if (typeof stateBump === 'function') stateBump(); // the records: an input of the views (app.js)
+  if (typeof stateBump === 'function') stateBump('rec'); // the records: an input of the views (app.js)
 }
 function weighted(list) {
   const w = shareW(list, list.map(weight)); // the rank share (SHARE)
@@ -1620,7 +1863,10 @@ const misses = h => [...h].filter(x => x === '0').length;
 // steps both through core.js scoreAnswer. A genus never answered starts from the global level shrunk towards the
 // first-launch answer's level (startV().p, core.js playerStart); the sheet replays that prior too, so an adopted replay
 // never takes back what the game did live.
-const startP = () => startV().p;
+// In the app, a view of the state version (app.js stateView: the subject and its first-launch record are inputs), read
+// once per unit by ability.
+const startPCalc = () => startV().p;
+const startP = typeof stateView === 'function' ? stateView('startP', startPCalc) : startPCalc;
 // A unit whose record names the unit it starts from (from: a fish species, its family; core.js treeSpUnits) starts from
 // that unit's ability when never answered (core.js abilityOf).
 const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
@@ -1760,7 +2006,7 @@ const mxMarks = () =>
 function mxRecalc(fn, why = 'bkt') {
   const m0 = mxMarks();
   fn();
-  if (typeof stateBump === 'function') stateBump(); // the records recalculated: an input of the views (app.js)
+  if (typeof stateBump === 'function') stateBump('rec'); // the records recalculated: an input of the views (app.js)
   const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
   // Silent for now (MXL.QUIET): no mxLost, so no card and no achievement taken back.
   if (lost.length && !MXL.QUIET)
@@ -1790,9 +2036,10 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // A photo's difficulty: the sheet's rating (its genus's offset + its own residual) blended with the genus's offset as
 // prior, weighing PDIFF.W answers (partial pooling: the photo keeps n / (n + W) of its residual); a photo nobody has
 // answered is its genus's offset (docs/LEARNING.md "Hierarchical photo Elo"). A judged photo (p.e, its ease 1-5: the
-// fish, judging/FISH.md) adds its own prior: (PDIFF.MID - ease) x the subject's calibration ease (SUBJECTS calib,
-// core.js calibOf), so the 5 steps span the spread real photos show; it fades likewise as answers come. No wall: every
-// photo can be drawn from the first question (docs/LEARNING.md "Fish: the starter core and judged photos").
+// fish, the sea slugs; judging/FISH.md, judging/SEASLUG.md) adds its own prior: (its unit's mean ease, easeMid - ease) x
+// the subject's calibration ease (SUBJECTS calib, core.js calibOf), so the 5 steps span the spread real photos show
+// within a unit; it fades likewise as answers come. No wall: every photo can be drawn from the first question
+// (docs/LEARNING.md "Fish: the starter core and judged photos").
 // A photo shared by units of different ranks (a fish family and its scientific genus) is rated under the last unit that
 // rated it, which the sheet names (o[4], from v189): its offset is swapped for the offset of the unit asked, so the rating
 // keeps only the photo's own residual. A coral photo has one genus (o[4] is n), unless it was rated last under a genus it
@@ -1802,10 +2049,36 @@ const sig = x => 1 / (1 + Math.exp(-x));
 // "The photo's time term"); 0 for a photo without one or before a script that serves them.
 const PDIFF = {W: 5, MID: 3};
 const gdOff = n => (PGD[n] || [0])[0] || 0;
-function photoDiff(n, p) {
-  const prior = gdOff(n) + (p.e ? (PDIFF.MID - p.e) * calibOf(SUBJ).ease : 0),
+// The judged ease within its unit only (docs/decisions/2026-11-26-judged-ease-within-unit.md; docs/LEARNING.md "The
+// judged ease, within its unit"): a judged photo's prior is centred on the mean judged ease of the unit asked (easeMid),
+// not on the middle of the scale, so the ease places a photo among the photos of its own unit and never ranks one unit
+// against another; a unit's difficulty is its offset, learned from answers (genusDiff). One rule for every subject and
+// every rank (the fish, the sea slugs; the corals' photos carry none). The unit's photos (judgedOf): its game photos
+// with a judged ease, its reserved ones too (core.js heldOf), so a player's reserve does not move it; PDIFF.MID when none
+// has one (its judged photo then gets (PDIFF.MID - ease) x the step). Kept per unit record (EMID: photoDiff reads it for
+// every photo it rates) for the data version it was made in (app.js DATA_V, EMV), as genusDiff's: a tree's new photos
+// make it again; without app.js (the tools, the unit tests), a data build makes the records, so the memo, again.
+const judgedOf = n => [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...heldOf(GX(n))])].filter(p => p.e);
+let EMID = new WeakMap(),
+  EMV = null;
+const easeMid = n => {
+  if (typeof DATA_V === 'number' && EMV !== DATA_V) ((EMID = new WeakMap()), (EMV = DATA_V));
+  const g = GX(n);
+  if (!g) return PDIFF.MID;
+  if (!EMID.has(g)) {
+    const L = judgedOf(n);
+    EMID.set(g, L.length ? L.reduce((t, p) => t + p.e, 0) / L.length : PDIFF.MID);
+  }
+  return EMID.get(g);
+};
+// du: what photoDiff reads the same for every photo of unit n (photoDiffOf: the unit's offset, its mean judged ease, the
+// subject's ease, the time term of a photo without one), passed in by a caller that reads it once for the unit's photos
+// (drawPhotosCalc).
+const photoDiffOf = n => ({gd: gdOff(n), mid: easeMid(n), ease: calibOf(SUBJ).ease, tm0: ptimeOff(undefined, PDIFF.W)});
+function photoDiff(n, p, du = null) {
+  const prior = (du ? du.gd : gdOff(n)) + (p.e ? ((du ? du.mid : easeMid(n)) - p.e) * (du ? du.ease : calibOf(SUBJ).ease) : 0),
     o = PSTAT[p.f],
-    tm = ptimeOff(PTM[p.f], PDIFF.W);
+    tm = du && PTM[p.f] === undefined ? du.tm0 : ptimeOff(PTM[p.f], PDIFF.W);
   if (!o) return prior + tm;
   const d = o[4] && o[4] !== n ? o[0] - gdOff(o[4]) + gdOff(n) : o[0];
   return (o[1] * d + PDIFF.W * prior) / (o[1] + PDIFF.W) + tm;
@@ -1866,23 +2139,26 @@ const examLooks = n => {
   const own = (GX(n) || {}).look || [],
     R = Array.isArray(own) ? lookRev() : null,
     sl = R && slateGenera();
+  const C = R && new Set([...own, ...(R.by.get(n) || [])].filter(x => x !== n));
   if (R && sl.every(x => R.K.has(x) || !GX(x))) {
-    const C = new Set([...own, ...(R.by.get(n) || [])].filter(x => x !== n)),
-      S = new Set(sl);
+    const S = new Set(sl);
     if ([...C].every(x => S.has(x))) return [...S].filter(x => C.has(x));
   }
-  const on = new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])]);
-  return [...on].filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
+  const on = [...new Set([...slateGenera(), ...(typeof bonusList === 'function' ? bonusList() : [])])];
+  // The index holds every record GX reads (a unit with none lists nothing): its look-alikes are C, read in on's order.
+  if (R && on.every(x => R.K.has(x) || !GX(x))) return on.filter(x => C.has(x));
+  return on.filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
 };
 // For examLooks, the units whose record lists a unit as its look-alike, over every record app.js GX reads (DATA.gen,
-// DATA.x.gen, TREEU.gen; K their ids, by: a unit to the ids whose look lists it). Made at most once per task, again
-// when one of those maps is replaced; null outside the app (no TREEU: the rated world, a test's stubs) or when a
-// record's look is not a list, and examLooks then reads every unit in play.
+// DATA.x.gen, TREEU.gen; K their ids, by: a unit to the ids whose look lists it). In the app, a view of the data version
+// (app.js dataView: the data and the tree in force are its inputs): made once per data version. Where there is no data
+// view, made at most once per task, again when one of those maps is replaced. Null outside the app (no TREEU: the
+// rated world, a test's stubs) or when a record's look is not a list, and examLooks then reads every unit in play.
 let LOOKREV = null;
-const lookRev = () => {
+const lookRevCalc = () => {
   if (typeof TREEU === 'undefined' || typeof DATA !== 'object' || !DATA) return null;
   const M = [DATA.gen, (DATA.x || {}).gen, TREEU && TREEU.gen];
-  if (LOOKREV && LOOKREV.M.every((G, i) => G === M[i])) return LOOKREV.R;
+  if (!lookView && LOOKREV && LOOKREV.M.every((G, i) => G === M[i])) return LOOKREV.R;
   const K = new Set(M.flatMap(G => (G && typeof G === 'object' ? Object.keys(G) : []))),
     by = new Map();
   let ok = true;
@@ -1893,20 +2169,24 @@ const lookRev = () => {
     L.forEach(y => (by.has(y) ? by.get(y).push(x) : by.set(y, [x])));
   });
   const R = ok ? {K, by} : null;
-  if (typeof queueMicrotask === 'function') {
+  if (!lookView && typeof queueMicrotask === 'function') {
     LOOKREV = {M, R};
     queueMicrotask(() => (LOOKREV = null));
   }
   return R;
 };
+const lookView = typeof dataView === 'function' ? dataView('lookRev', lookRevCalc) : null;
+const lookRev = lookView || lookRevCalc;
 const lookLeft = n => looksLeft(P, n, examLooks(n));
 // And its confusion group met (docs/LEARNING.md "Confusion groups"): the exam opens once the unit's group partners that
 // can open (matesLeft) are met; an exam already under way (s.ex) goes on. A unit whose record says noex has no mastery
 // exam (a fish species: docs/reviews/2026-11-14-species-step1.md; its bar tops out at 95%).
-const examOn = n => {
+// In the app, a view of the state version per unit (app.js stateViewBy), as the bar.
+const examOnCalc = n => {
   const s = P[n] || {};
   return !s.mx && !(GX(n) || {}).noex && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
 };
+const examOn = typeof stateViewBy === 'function' ? stateViewBy('examOn', examOnCalc) : examOnCalc;
 // The gap since the exam's last question (s.ex.at, quiz.js answer) counts on the answer clock (tally).
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || tally() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
@@ -1938,7 +2218,9 @@ function missing(n) {
 }
 // Progress of a genus, 0 to 1 (core.js scoreOf): the domain score up to 95% (barOf), each exam question passed fills a
 // fifth of what is left, the passed exam makes it 100%.
-const genScore = n => scoreOf(P[n], P, n); // the false-alarm correction reads the whole record (core.js faOf)
+// In the app, a unit's bar is a view of the state version (app.js stateViewBy, per unit): computed once per version.
+const genScoreCalc = n => scoreOf(P[n], P, n); // the false-alarm correction reads the whole record (core.js faOf)
+const genScore = typeof stateViewBy === 'function' ? stateViewBy('genScore', genScoreCalc) : genScoreCalc;
 // Mastery levels (named steps on the way, a diver's ladder every RA knows; docs/ARCHITECTURE.md): the step of a genus
 // from its % (genScore), the same colours on My progress. 0 not seen; 1 Snorkeler under 50%; 2 Open Water from 50%;
 // 3 Advanced from 80%; 4 Divemaster from the mastery exam's entry (examOn: core.js examOpen, DOM.EX, and pair coverage);
@@ -2052,14 +2334,45 @@ const confPrior = (t, n, look) =>
       : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
         ? CONF.FORM
         : CONF.BASE;
-function pooledConf(t, n) {
-  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, isLook(t, n)));
+// A pair's prior reads each unit's part of it: its declared look-alikes, its data look-alikes (dataSeed) and its family
+// (confUnit), and its growth forms (formsOf), views of the data version per unit (computed where a part of this file
+// runs alone): every pair read its two records and computed their forms again, many pairs a question. null for a name
+// with no record (its pair is computed as confPrior is).
+const confUnitCalc = n => {
+  const g = GX(n);
+  return g ? {look: g.look, dl: g.dl || [], fam: g.fam} : null;
+};
+const confUnit = typeof dataViewBy === 'function' ? dataViewBy('confUnit', confUnitCalc) : confUnitCalc;
+const formsOf = typeof dataViewBy === 'function' ? dataViewBy('imrForms', n => imrFormsOf(n)) : n => imrFormsOf(n);
+// U, F: confUnit and formsOf, or one read of each for a loop (pooledConfFn). The prior is confPrior(t, n, isLook(t, n)).
+function pooledConf(t, n, U = confUnit, F = formsOf) {
+  const k = PCONF[t < n ? t + '|' + n : n + '|' + t],
+    a = U(t),
+    b = U(n);
+  if (!a || !b) return confScore(k, confPrior(t, n, isLook(t, n)));
+  return confScore(
+    k,
+    a.look.includes(n) || b.look.includes(t) || a.dl.includes(n) || b.dl.includes(t)
+      ? CONF.LOOK
+      : b.fam === a.fam
+        ? CONF.FAM
+        : F(n).some(f => F(t).includes(f))
+          ? CONF.FORM
+          : CONF.BASE
+  );
 }
-function confOf(t, n) {
-  return confScore(pairConf(P, t, n), pooledConf(t, n));
+// pooledConf for a loop with nothing written during it: the units' parts read through one read of each view.
+const pooledConfFn = () => {
+  const U = confUnit.fn ? confUnit.fn() : confUnit,
+    F = formsOf.fn ? formsOf.fn() : formsOf;
+  return (t, n) => pooledConf(t, n, U, F);
+};
+// pc: pooledConf, or pooledConfFn's for a loop.
+function confOf(t, n, pc = pooledConf) {
+  return confScore(pairConf(P, t, n), pc(t, n));
 }
 // Traps = the genera most confused with the target (a little shuffle among close scores, so every likely pair gets tried).
-const confusable = (t, n) => confOf(t, n) >= CONF.TRAP;
+const confusable = (t, n, pc) => confOf(t, n, pc) >= CONF.TRAP;
 // Known mix-ups (docs/LEARNING.md "Known mix-ups"): a question on t among choices that hold a
 // genus this player mixes up with t more than everyone does is that much harder for them (core.js confGap, in logits:
 // the player's own score of the pair against the pooled one; the most over the choices). The expected success, the Elo
@@ -2112,53 +2425,72 @@ const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map
 // about t, an "Again" included (quiz.js planPhoto).
 const choiceNames = (o, t) => o !== t && choiceKeys(t).has(choiceKey(o));
 // The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
-const choiceApart = (L, taken = []) => {
-  const seen = new Set(taken.map(choiceKey));
-  return L.filter(n => !seen.has(choiceKey(n)) && seen.add(choiceKey(n)));
+// key: choiceKey, or choiceKeyFn's for a loop.
+const choiceApart = (L, taken = [], key = choiceKey) => {
+  const seen = new Set(taken.map(key));
+  return L.filter(n => !seen.has(key(n)) && seen.add(key(n)));
+};
+// The labels for a loop with nothing written during it (distractors): a view of the data version per unit and per IMR
+// answer, the answer in the key (imrNow, read once): a species named by its common name is labelled with the player's
+// first common name (app.js treeGenera name, cnFirst), the IMR name for a player at IMR, so each key's label is computed
+// under its answer. Only a subject that names its species by their common names (SUBJECTS names cn: its tree's species
+// units) has such labels; another reads no answer (0). Where a part of this file runs alone, choiceKey itself.
+const choiceKeyView = typeof dataViewBy === 'function' ? dataViewBy('choiceKey', k => choiceKey(k.slice(2))) : null;
+const choiceKeyFn = () => {
+  if (!choiceKeyView) return choiceKey;
+  const imr = (SUBJ.names || []).includes('cn') && typeof imrNow === 'function' && imrNow() ? 1 : 0,
+    f = choiceKeyView.fn();
+  return n => f(imr + ':' + n);
 };
 // The class of unit n a question's choices, groups and traps stay in (app.js kindRank: its rank and its kind of name, a
 // species by its scientific name apart from one by its common name); its rank alone (rankOf) where app.js is not loaded.
 // mimUnit, mimMix and groupsNow, above, read it too (once the file is in).
 const rankKind = n => (typeof kindRank === 'function' ? kindRank(n) : typeof rankOf === 'function' ? rankOf(n) : '');
+// rankKindFn(): rankKind for a loop with nothing written during it (app.js keyView fn: the data version read once, then
+// each unit's class a lookup).
+const rankKindFn = () => (typeof kindRank === 'function' ? (kindRank.fn ? kindRank.fn() : kindRank) : rankKind);
 // wide: false keeps a ranked target's choices to list (the custom quiz's selection: it names no unit of its rank outside).
-function distractors(t, list, traps = trapsFor(t), known = introduced, wide = true) {
+function distractors(t, list, traps = trapsFor(t), known = introducedFn(), wide = true) {
   // Choices of the target's class only (rankKind: its rank and kind of name): a fish scientific genus among genera, an
   // entry among entries, a species by its scientific name among the scientific names.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (a family with one genus in play still gets three choices).
   // Never a choice of the target's label or of another name it lists (choiceKeys), nor two of one label (choiceApart):
   // of two units of one label, the one the rules below rank first is kept and the next one takes the other's place.
+  // The loops below write nothing: each view they read is read once for all of them (rankKindFn, choiceKeyFn,
+  // pooledConfFn, formsOf.fn), as known is (introducedFn); where a part of this file runs alone, the functions themselves.
   const rk = rankKind(t),
-    tk = choiceKeys(t);
-  list = list.filter(n => rankKind(n) === rk);
+    tk = choiceKeys(t),
+    kr = rankKindFn(),
+    ck = choiceKeyFn(),
+    pc = typeof pooledConfFn === 'function' ? pooledConfFn() : pooledConf,
+    fm = typeof formsOf === 'function' ? (formsOf.fn ? formsOf.fn() : formsOf) : imrFormsOf;
+  list = list.filter(n => kr(n) === rk);
   if (rk && wide) list = [...new Set([...list, ...rankUnits(rk)])];
-  list = list.filter(n => n === t || !tk.has(choiceKey(n)));
+  list = list.filter(n => n === t || !tk.has(ck(n)));
   const ranked = list
     .filter(n => n !== t)
-    .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
+    .map(n => [n, confOf(t, n, pc) * (0.8 + 0.4 * Math.random())])
     .sort((a, b) => b[1] - a[1])
     .map(x => x[0]);
   // A player who tells every look-alike apart (an expert) still gets the hardest choices the level asks for: the traps
   // left over come from the pairs other players confuse most, then the declared look-alikes, instead of easy genera.
   // Traps only among the genera met (`known`): a look-alike never seen is no trap for a beginner, only a name to guess.
-  const mine = ranked.filter(n => known(n) && confusable(t, n)),
-    pooled = list
-      .filter(n => n !== t && known(n) && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
-      .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
-    look = choiceApart([...mine, ...pooled]),
+  const mine = ranked.filter(n => known(n) && confusable(t, n, pc)),
+    pooled = list.filter(n => n !== t && known(n) && !mine.includes(n) && pc(t, n) >= CONF.TRAP).sort((a, b) => pc(t, b) - pc(t, a)),
+    look = choiceApart([...mine, ...pooled], [], ck),
     out = look.slice(0, traps),
     left = list.filter(n => n !== t && !look.includes(n));
   // Exactly `traps` traps when other genera met exist; genera never met only to make up the three.
   if (traps >= 2)
-    return choiceApart([
-      ...out,
-      ...ranked.filter(n => known(n) && !look.includes(n)),
-      ...look.slice(traps),
-      ...ranked.filter(n => !known(n))
-    ]).slice(0, 3);
+    return choiceApart(
+      [...out, ...ranked.filter(n => known(n) && !look.includes(n)), ...look.slice(traps), ...ranked.filter(n => !known(n))],
+      [],
+      ck
+    ).slice(0, 3);
   const T = GX(t);
-  const tf = imrFormsOf(t),
-    apart = n => !imrFormsOf(n).some(f => tf.includes(f));
+  const tf = fm(t),
+    apart = n => !fm(n).some(f => tf.includes(f));
   const easy = left.filter(apart),
     far = easy.filter(n => GX(n).ig !== T.ig);
   // Easy choices spread over different growth forms too: three mushroom corals beside a massive target would give the
@@ -2173,13 +2505,13 @@ function distractors(t, list, traps = trapsFor(t), known = introduced, wide = tr
   ];
   const met = rank(left.filter(known)),
     other = rank(left.filter(n => !known(n))),
-    used = new Set(out.flatMap(imrFormsOf)),
+    used = new Set(out.flatMap(n => fm(n))),
     res = [...out];
   const add = (L, spread) =>
     L.forEach(n => {
-      if (res.length >= 3 || !choiceApart([n], res).length || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
+      if (res.length >= 3 || !choiceApart([n], res, ck).length || (spread && fm(n).some(f => used.has(f)))) return;
       res.push(n);
-      imrFormsOf(n).forEach(f => used.add(f));
+      fm(n).forEach(f => used.add(f));
     });
   add(met, true);
   add(met, false);
@@ -2340,7 +2672,10 @@ const lsrcOf = (a, b) => (GX(a).lsrc || {})[b] || (GX(b).lsrc || {})[a] || '';
 // Classic look-alikes: the pairs a source compares in so many words, the IMR lecture (lsrc "IMR Lecture 6...") or the
 // Coral Finder text ("Coral Finder p. ..."): the Look-alikes deck (learn.js classics) and a duel's weight (quiz.js
 // duelPick).
-const isClassic = (a, b) => /^(IMR|Coral Finder p)/.test(lsrcOf(a, b));
+const isClassic = (a, b) => {
+  const s = String(lsrcOf(a, b));
+  return s.startsWith(ORG.short) || s.startsWith('Coral Finder p');
+};
 // How many times this player gave one of a and b for the other, both ways (P conf).
 const mixedUp = (a, b) => ((P[a] && P[a].conf && P[a].conf[b]) || 0) + ((P[b] && P[b].conf && P[b].conf[a]) || 0);
 // The two photos of two genera that make the best side by side (the quiz's mix-up montage, quiz.js; the Look-alikes
@@ -2373,7 +2708,8 @@ domRecalcAll(); // a non-replayed subject's units, under the domain-score bar
 if (typeof SUBJ_HOOKS !== 'undefined')
   SUBJ_HOOKS.push(keep => {
     INTROS = null;
-    if (typeof stateBump === 'function') stateBump(); // the intro map read again: an input of the views (app.js)
+    // the intro map read again: the player's, an input of the state views (app.js), swapped with the subject (swapBump)
+    if (typeof swapBump === 'function') swapBump('rec');
     HOLDS = Number(store.get(HOLDK(), 0)) || 0;
     CB = cbLoad();
     GDIFF = {};
@@ -2382,6 +2718,19 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     last = null;
     memRecalcAll();
     domRecalcAll();
+  });
+// The subject on screen's memos the hook resets, after a visit that came back to the data version (app.js memoPut): each
+// unit's difficulty put back (made for the version before it: GDV then the version now, an alias of it). The intro map
+// is never put back: read again from the device, as before (another tab may have written it, and introAdd writes the
+// whole map back). With the state version kept, it is read at once and compared with the map the views were made from
+// (its text at the visit's start): another text is a write of nobody's known, so the state version moves.
+if (typeof SUBJ_MEMOS !== 'undefined')
+  SUBJ_MEMOS.push({
+    get: () => ({t: INTROS ? JSON.stringify(INTROS) : null, GDIFF, GDV, dv: DATA_V}),
+    put: (m, back) => {
+      if (m.GDV === m.dv) ((GDIFF = m.GDIFF), (GDV = DATA_V));
+      if (back.state && INTROS === null && m.t !== null && JSON.stringify(introMap()) !== m.t) stateBump('rec', null);
+    }
   });
 // The functions the views read (genScore, introduced, photoAny, imrSaid) are here now: a view made before this file came
 // (app.js stateView) is made again.

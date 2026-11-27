@@ -4,23 +4,28 @@
 // Storage read once (REE-263; docs/reviews/2026-11-24-per-answer-cost.md, fix 5): the keys an answer's work reads many
 // times (sheetV, model.js startV and imrSaid, once for every unit; the answer logs LOG0 and ANONQ, about 600 KB each at
 // their cap, read whole several times an answer by quiz.js) are parsed once and kept, with what is read from them, as
-// long as the key's stored text stays the same. Every read still asks the storage for the text (core.js keyGet, as
-// app.js store.get does: about a microsecond, a log's too, measured in Chromium) and compares it with the text kept; any
-// write (store.set, a removeItem, a sign-out, another tab of the app, a test) changes the text the next read sees, so a
-// kept value is never older than the storage and no storage event is needed. As store.get: d when the storage throws,
-// holds nothing or holds no JSON (d is never kept). A kept value is shared, not a copy: keptGet only for readers that
-// never change it; keptBy keeps a value read from it (f: a function of the stored value alone, one per name).
-// KEPT_CHECK.on (the smokes: tests/facheck.js): every kept value is checked against a fresh store.get, and a difference
-// throws.
+// long as the key's stored text stays the same. The first read of a key in a task asks the storage for the text (core.js
+// keyGet, as app.js store.get does) and compares it with the text kept; the task's later reads trust that comparison
+// (app.js freshSeen: one check per task), unless this tab wrote the key since (app.js storeWrote: every write of this
+// tab, store.set, store.drop, store.raw, keptPush), so a kept value is never older than the storage.
+// Another tab's write is seen by the next task's first read. As store.get: d when the storage throws, holds nothing or
+// holds no JSON (d is never kept). A kept value is shared, not a copy: keptGet only for readers that never change it;
+// keptBy keeps a value read from it (f: a function of the stored value alone, one per name).
+// KEPT_CHECK.on (the smokes: tests/facheck.js): every kept value is checked against a fresh store.get, the reads that
+// trust the task's comparison included, and a difference throws.
+// Without app.js's task marks (the unit tests that run this file alone), every read compares, as before.
 const KEPT = new Map(),
-  KEPT_CHECK = {on: typeof window !== 'undefined' && window.KEPT_CHECK_ON === true};
+  KEPT_CHECK = {on: typeof window !== 'undefined' && window.KEPT_CHECK_ON === true},
+  KEPT_FRESH = typeof freshNow === 'function';
 function keptEntry(k) {
+  if (KEPT_FRESH && freshSeen(k)) return KEPT.get(k) || null;
   let raw;
   try {
     raw = keyGet(localStorage, k);
   } catch (e) {
-    return null;
+    return null; // a blocked storage: no mark, the next read asks again
   }
+  if (KEPT_FRESH) FRESH.set(k, freshNow());
   if (raw === null) return (KEPT.delete(k), null);
   let e = KEPT.get(k);
   if (!e || e.raw !== raw) {
@@ -72,12 +77,14 @@ function keptPush(k, x, cap) {
   let raw;
   try {
     raw = JSON.stringify(v);
+    if (KEPT_FRESH) storeWrote(k);
     localStorage.setItem(k, raw);
   } catch (e) {
     return;
   }
   if (KEPT_CHECK.on && raw !== ref) keptFail(k, 'push');
   KEPT.set(k, {raw, ok: true, v, by: new Map()});
+  if (KEPT_FRESH) FRESH.set(k, freshNow()); // the text just written is the stored text
 }
 // Photo difficulty (the pooled Elo; without it every prior is 0), kept offline with the sheet's version (v): refreshed
 // every 10 minutes while visible (the sheet caches it as long) and on return to a tab left longer.
@@ -90,13 +97,13 @@ document.addEventListener('visibilitychange', () => {
 });
 // It also tells the sheet (Code.gs behind_) the app's version, this device's anonymous id (devId, as its events) and the
 // minutes this page has been open (up): a device left on a replaced version is logged as 'old' with its id, so the admin
-// can find whose it is. Never from a local copy (LOCAL: a test, a developer; rule D1): without a device id the sheet
-// logs nothing.
+// can find whose it is. A local copy (LOCAL: a test, a developer, a review; rule D1) never reads them from the sheet:
+// sheetFetch answers it from a test's SHEET_STUB, else refuses, and the kept copy (if any) stays.
 function loadStats() {
   if (!SYNC_URL || !DATA) return;
   statsAt = Date.now();
   const me = LOCAL ? '' : `&dev=${devId()}&up=${Math.round(performance.now() / 60000)}`;
-  fetch(`${SYNC_URL}?stats=1&av=${appVer()}${me}`)
+  sheetFetch(`${SYNC_URL}?stats=1&av=${appVer()}${me}`)
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
@@ -129,7 +136,7 @@ const ownStatsAt = {};
 function loadOwnStats(S = SUBJ) {
   if (!SYNC_URL || !S || !S.stats || sheetV() < S.stats) return;
   ownStatsAt[S.id] = Date.now();
-  fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
+  sheetFetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
     .then(r => r.json())
     .then(j => {
       if (!j || !j.ok || !j.photos || j.s !== S.id || !(Number(j.v) >= S.stats)) return;
@@ -524,7 +531,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
-    if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
+    if (typeof stateBump === 'function') stateBump('rec'); // P refilled in place: an input of the views (app.js)
     clockTick(); // and right after: the log's count the clock's baseline before another answer is counted
     store.set(rvKey(S), rp.rv);
     if (stamp !== null) store.set(stKey(S), stamp); // the structure it was replayed under ('' for the base's)
@@ -680,7 +687,7 @@ function mergeSubject(j, d, S, mine) {
     introReset(Date.parse(rr)); // made on another device: its time (model.js startRestart keeps a window counted since)
     introIn();
     P = R;
-    if (typeof stateBump === 'function') stateBump(); // another object: an input of the views (app.js)
+    if (typeof stateBump === 'function') stateBump('rec'); // another object: an input of the views (app.js)
     SYNC[BK] = copy(R);
     store.set('reefid-account', SYNC);
     store.set(sKey('reset'), rr);
@@ -726,7 +733,7 @@ function mergeSubject(j, d, S, mine) {
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
       faDrop(P); // refilled in place: its false-alarm counters made again at the next read (core.js faOf)
-      if (typeof stateBump === 'function') stateBump(); // P refilled in place: an input of the views (app.js)
+      if (typeof stateBump === 'function') stateBump('rec'); // P refilled in place: an input of the views (app.js)
       clockTick(); // and right after: the merged count the clock's baseline
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
@@ -1199,7 +1206,7 @@ function sendReports() {
   if (!SYNC_URL || LOCAL || !L.length || navigator.onLine === false) return;
   const {batch, reports} = repBatch(L, repImgPend),
     first = batch;
-  fetch(SYNC_URL, {
+  sheetFetch(SYNC_URL, {
     method: 'POST',
     body: JSON.stringify({rname: first[0].rn || '', rpin: first[0].rp || '', ...(first[0].ra ? {racct: first[0].ra} : {}), reports})
   })
@@ -1490,7 +1497,7 @@ function sendAnon() {
     ),
     who = anonId(); // the anonymous player the send is for
   anonBusy = true;
-  fetch(SYNC_URL, {
+  sheetFetch(SYNC_URL, {
     method: 'POST',
     keepalive: true,
     // pt: the oldest answer of the whole queue (pendingFrom), as answers left in it after a lost reply may be logged already.
@@ -1610,7 +1617,7 @@ function sendEvents() {
   const {batch, who} = evBatch();
   if (!batch.length) return;
   evBusy = true;
-  fetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...who})})
+  sheetFetch(SYNC_URL, {method: 'POST', keepalive: true, body: JSON.stringify({dev: devId(), events: batch, ...who})})
     .then(r => r.json())
     .then(j => {
       sheetSeen(j);
@@ -1748,7 +1755,7 @@ function pagesRoute(h) {
     const L = store.get(PVLINK, null);
     if (L && L.g === genus && Date.now() - L.t < 30000) from = L.from;
     try {
-      localStorage.removeItem(PVLINK);
+      store.drop(PVLINK);
     } catch (e) {}
   }
   const s = genus && P[genus];
@@ -1836,11 +1843,11 @@ function signIn(name, pin, j) {
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
   if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
-    [LOG0, ANONQ, ANONID].forEach(k => localStorage.removeItem(k));
+    [LOG0, ANONQ, ANONID].forEach(k => store.drop(k));
   } catch (e) {}
   if (!j.found) {
     try {
-      localStorage.removeItem(ANONB);
+      store.drop(ANONB);
     } catch (e) {}
     store.set('reefid-account', SYNC);
     // no reload: the units are made again for the account's reserve at the next page change (app.js resSeen)
@@ -1870,7 +1877,7 @@ function signIn(name, pin, j) {
     M[pk] = S.anonBase ? (anon ? mergeProgress(store.get(ANONB, {}) || {}, here, R) : R) : mergeProgress({}, here, R);
   });
   try {
-    localStorage.removeItem(ANONB);
+    store.drop(ANONB);
   } catch (e) {}
   // The account's settings replace this device's, except the achievements: earned here before signing in, they join the
   // account's.
@@ -1884,21 +1891,21 @@ function signIn(name, pin, j) {
   // here) would tell the sheet that the account's log was replayed, and its replay would never come.
   try {
     // and its structure stamps likewise (stKey)
-    [RVK, ...rpSubjects().map(rvKey), ...SUBJECTS.filter(S => S.structure).map(stKey)].forEach(k => localStorage.removeItem(k));
+    [RVK, ...rpSubjects().map(rvKey), ...SUBJECTS.filter(S => S.structure).map(stKey)].forEach(k => store.drop(k));
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (the log, or sent anonymously: SYNC.anon) join the account's log with the
   // first save: no rules version applied, so that save gets the replay of the whole log (none adopted before: SYNC.anon).
   if (anon || SYNC.anon)
     try {
-      localStorage.removeItem(RVK);
+      store.drop(RVK);
     } catch (e) {}
   // Another subject replayed (fish): its answers played here signed out join the account's log with the first save, so
   // the replay of the whole of it is asked for then (every answer of that subject in it once).
   rpSubjects().forEach(S => {
     if (subjEntries(SYNC.log, S.id).length || SYNC.anon)
       try {
-        localStorage.removeItem(rvKey(S));
+        store.drop(rvKey(S));
       } catch (e) {}
   });
   if (ach) achMerge(JSON.stringify(ach));
@@ -1975,7 +1982,7 @@ function signOutClear(all) {
     );
   if (all)
     try {
-      localStorage.removeItem('reefid-report-name');
+      store.drop('reefid-report-name');
     } catch (e) {}
   // The pages summaries still queued are the account's: dropped, never sent under the next player.
   store.set(
@@ -2026,7 +2033,7 @@ function signOutClear(all) {
     .flatMap(k => withOldNames([k]))
     .forEach(k => {
       try {
-        localStorage.removeItem(k);
+        store.drop(k);
       } catch (e) {}
     });
 }
@@ -2045,9 +2052,9 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : SYNC.err === 'reserved' ? 'Sign out, then sign in with another name.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
-        ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}…</span>
+        ? `<p class="sline"><span class="sdot wait"></span><span>Saving for ${ORG.short} as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}…</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`
-        : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}${when ? ` · ${when}` : ''}</span>
+        : `<p class="sline"><span class="sdot"></span><span>Saved for ${ORG.short} as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}${when ? ` · ${when}` : ''}</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`;
     box.querySelector('#snow').onclick = () => {
       msg('Sending…');
@@ -2095,7 +2102,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
   // welcome (the point is no two players with one name), said in the label itself.
   const tail = name => (/\s/.test(name) ? 'add more of your surname' : `add your surname's initial (${name} B.)`);
   const form = (name = '', pin = '', hint = '') => {
-    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at IMR? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device. Learning on your own? Sign in too, to keep your progress on all your devices.</p>
+    box.innerHTML = `<h3>Sign in to save your progress</h3><p>Training at ${ORG.short}? Sign in with your name and a 4-digit code: your progress is saved for your trainer and comes back on any device. Learning on your own? Sign in too, to keep your progress on all your devices.</p>
     <form class="sform"><label>Your name or nickname <input name="n" required maxlength="40" autocomplete="name" placeholder="First name + initial"></label>
     <label>4-digit code <input name="p" required inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"></label>
     <button class="${box.classList.contains('tsync') ? 'next' : 'chip go'}" type="submit">Sign in</button> <span class="note" role="status"></span></form>

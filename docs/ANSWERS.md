@@ -2114,3 +2114,321 @@ entry is a paraphrase and says so. A few early answers were given only in the ch
   nudibranches dans le jeu : le supprimer, comme pour les poissons ?»: «oui». Lifts the game cap of 12 a species of Q377
   (2026-11-15, 16:08), which stays for the rest (circles, start 6, 20 candidates). Applied: #1544,
   docs/decisions/2026-11-24-seaslug-no-game-cap.md.
+
+## 2026-11-25
+
+- **06:24, the night's narrow work (REE-244).** «Ok, donc en fait, t'as pas vraiment beaucoup travaillé cette nuit.
+  Qu'est-ce qui fait que tu t'es arrêté et que tu as fortement limité ton travail […] il y a un problème à nouveau dans
+  notre manière de travailler, à aller chercher dans le backlog des trucs que tu pouvais faire? Parce que là, tu aurais
+  eu plein de boulot à faire.» On the diagnosis: «Oui, le diagnostic me paraît bien, mais effectivement, là, ça mérite
+  un une vraie issue, parce que, en fait, c'est un problème qui revient […] sauf s'il y a une issue existante qui existe
+  déjà, et dans ce cas-là, on vient rajouter le contexte de cette nuit à cette issue.» Applied: Linear REE-244 comment
+  (2026-11-25).
+- **06:30-06:35, Linear organised for the agents.** «Mais sauf que là, on n'est pas dans une équipe humaine […] Moi, je
+  lis quasiment pas le linéaire. Et en fait, c'est les agents qui lisent le linéaire et qui l'utilisent pour
+  s'organiser. Donc, tu dis le to-do, c'est l'engagement. Mais en fait, les agents devraient s'engager à juste tout
+  faire.» «Mon interface principale c'est l'app […] et puis c'est les agents avec qui je discute, donc typiquement toi,
+  l'intégrateur.» On a regular pass: «il faut qu'il y ait une action relativement régulière, peut-être, je sais pas,
+  toutes les 2 heures ou toutes les 1h30 […] qui permettent de vérifier et de basculer des issues en prêtes à être
+  lancées, parce que justement les développements récents ont permis de débloquer.» To «par défaut, toute issue
+  ouverte est à faire […] quatre raisons» and the sweep wording: «oui pour les deux»; to the wording shown: «ok».
+  Applied: docs/INTEGRATOR.md "Linear", tools/checkin.md steps 3-4.
+- **06:37-06:47, two kinds of study.** «il y a des issues qui ne dépendent pas forcément complètement de l'équipe de
+  développement et de l'intégrateur, mais plutôt d'agents qui réfléchissent à la conception […] elles peuvent pas être
+  fermées juste parce que y a un agent qui est passé dessus […] Il y a des issues et des tâches qui méritent des
+  réflexions poussées, éventuellement même des réflexions croisées entre plusieurs agents et plusieurs modèles.» On
+  the label: «study, en fait, c'est quelque chose qui est très large comme mot […] est-ce qu'il ne faut pas spécifier
+  ces labels en les rendant un peu plus longs et en faisant des sous-catégories?» To the group Study with Decision
+  input and Open inquiry: «ok». On who runs it: «Ou pas forcément, mais en tout cas elle doit être traité
+  différemment». On launching: «Sauf si on a décidé à l'avance de qui le traitait et que tu couvre au moins une partie
+  de ces agents. Du coup elle peut être lancé et traité partiellement. Jamais complètement conclue». Applied: Linear
+  labels Study › Decision input and Study › Open inquiry; docs/INTEGRATOR.md "Linear" (reason 5, two kinds of study).
+- **06:43-06:46, a PR that waits for Pierre yields the lane.** On whether a PR blocks the rest by function or by
+  method: «c'est pas la même chose en termes de blocage». To «une PR qui attend ta réponse cède la voie»: «oui !!!!!!»;
+  to launching REE-38 at once: «ok»; to the W27 wording shown: «ok». Applied: docs/rules/ship.md W27.
+
+## 2026-11-26
+
+- **06:24-06:27, the sweep checks the condition behind a label (REE-244).** On no agent running at 06:20: «Tu n'avais
+  aucun agent qui tournait quand je me suis connecté. Ca veut dire que t'as tout fini. Ya plus rien dans le
+  backlog?» To the diagnosis (a label taken as a reason without checking it still held): «Il faut que le balayage
+  tienne compte de ça». To the three proposals (the sweep checks the written condition, not only the label; when a PR
+  frees a sensitive file, look at once for what waited on it; the brief's other signals — W6 branches, docs past their
+  size mark, outdated stack — count as work): «oui. Ok». Applied: tools/checkin.md steps 3-4.
+- **06:28, the sweep and STATUS on one rhythm.** On the sweep (about every 90 minutes) and the STATUS refresh (about
+  every 90 minutes of work) listed side by side: «A synchroniser». Applied: tools/checkin.md step 5, docs/INTEGRATOR.md
+  "Habits" (STATUS refreshed right after each sweep, with its result).
+- **06:42-06:46, Linear holds the truth; Waiting restructured; the quota note.** On where night questions wait: «Il
+  faut limiter au maximum les redondances. La vérité doit être dans Linear. STATUS n'est qu'un résumé temporaire pour
+  toi, mais doit être considéré comme potentiellement incomplet.» To the wording shown (questions wait in Linear's
+  Decisions for Pierre view; STATUS only summarises them and may be incomplete): «ok». On the Waiting label: «A
+  corriger, et probablement à re-structurer […] "Waiting" pour quoi? […] Etiquette utile et informatives?» To the
+  label group Waits on (Data with a gate line, Pierre (action), External) beside blocked-by relations and Scheduled,
+  Waiting and Blocked retired, and an agent reclassifying the issues: «ok». On the 2026-11-06 quota note: «Le quota
+  c'est un problème de tout les jours. Mais déjà, en limitant les passes de jugement sur des milliers de photos ça va
+  déjà beaucoup mieux […] cette note d'il y a 20 jours n'est plus vraiment valable.» On the integrator's inline
+  sweeps: «Pour économiser quoi????? Tu coutes bien plus cher qu'un agent Sonnet». Applied: AGENTS.md Rule 0,
+  docs/rules/ship.md "Questions, the details", docs/INTEGRATOR.md "Linear" (reason 2) and "Habits" (the quota note
+  removed), tools/checkin.md steps 4 and 7, tools/brief.py's quiet line; Linear label group Waits on.
+- **08:36-08:48, "not now" always gets a when; triggers that will come.** On issues parked "on his signal": «quand je
+  dis "pas maintenant" ça veut dire pas maintenant, dans l'instant. Mais je m'attend à ce que la question revienne,
+  sauf si j'ai dis explicitement de remettre à plus tard avec un délai explicite. En fait, tu ne devrais jamais
+  accepter un "pas maintenant" de ma part, et me demander/forcer à donner un délai. Est-ce qu'on parle d'une heure,
+  d'un jour, d'une semaine, d'un mois, de plusieurs mois?» To the wording shown: «Oui». On a trigger such as the next
+  circle review: «IL faut que ça soit un déclencheur qui ait une chance de se déclencher. Soit par une date soit par un
+  pré-requis qui va arriver. Attention à ne pas mettre des déclencheurs susceptibles de ne jamais arriver, sinon
+  l'issue peut être bloquée.» Applied: docs/INTEGRATOR.md "Linear" ("Not now" always gets a when; reason 4; Scheduled
+  is a date).
+- **08:36-08:48, the trusted-answers gate and its recurrence.** On REE-105's gate never checked: «on n'a jamais eu de
+  compte de bots qui spamment. Donc ça veut dire que parce qu'on n'avait pas de mécanisme en place pour
+  vérifier/compter, on n'a jamais déclencher l'action»; to measuring it: «ok. Et comment on fait pour que ça ne se
+  reproduise pas?» Applied: REE-105 measured (7,713 trusted answers; gate met, Todo).
+- **08:36-08:48, rights: roles, groups and a design study (REE-31, #1554).** On one scope per group: «Euh.... Je suis
+  pas sur... Imagine des cas contraires»; to a list of subjects per group: «mieux». On an instance right: «oui, bien
+  sur. Dans chaque matière portée par l'instance». On guardrails: «Il doit toujours y avoir un admin, et un manager
+  pour une instance. Bien sur il sera toujours permis de forcer mais le minimum c'est qu'un fort warning et stop
+  soient émis»; «il faut éviter que quelqu'un puisse complètement bloquer une instance». On roles: «il me faut une
+  page de gestion de rôles, dans laquelle je customise les droits pour chaque rôle, et une page de gestion des groupes
+  dans laquelle j'associe des groupes de gens à un ou plusieurs rôles + la possibilité d'associer des rôles à des
+  personnes spécifiques […] Est-ce que ça reste compatible avec l'idée des ACL». On the study: «Une vrai étude de
+  conception», global best practices with options. To two Audit columns Before and After: «Ok». Applied: the design
+  study of REE-31 (launched 2026-11-26); #1554 held for it; REE-303 (the dropped option).
+- **08:51-09:26, Fable 5.2 and Astra as second views.** «Je me demande s'il ne faudrait pas ajouter Fable en High, à
+  utiliser avec parcimonie, pour les études de conception complexes ou les réflexions autour de problèmes complexes ou
+  de refactoring». On briefs written as goals, not steps: «oui!!!». On a Fable study run beside Opus: «ok. Bonne
+  idée!». After the comparison: «Fable en plus d'Opus pour les réflexions complexe et choix couteux. A lancer soit en
+  parallèle dès le début parce qu'on a identifié la difficulté, ou a posteriori en complément si on trouve que ça
+  mérite un second regard». On Astra: «on pourrait même demander aussi un avis à Astra comme second regard non?»; he
+  does not read Linear («Rappel que je ne lis quasiment jamais Linear moi même»); on the prompt: «ça pourrait être les
+  deux. Le prompt dans le ticket pour ne pas l'oublier, et l'intégrateur qui me le recopie dans le chat ou dans un
+  fichier au moment où il y en a besoin, avec le contexte». On a full pass or a cross check: «Les 2. Une première
+  passe indépendante, puis une passe de critique/review des études Claude»; then «je ne veut pas 2 prompts
+  indépendants, c'est l'enfer à gérer. Un seul prompt, un seul agent, avec 2 phases successives»; to anonymous copies
+  in the Drive first and one prompt with both phases: «Oui, beaucoup mieux». On ACLs: «Mon idée d'ACL c'était un exemple avec lequel je
+  suis familier, pas un exemple à suivre absolument». Applied: docs/INTEGRATOR.md model table and its two paragraphs.
+- **08:22-09:16, the judged ease within its unit; no simulation for it (REE-241, #1571).** On the family-only ease:
+  «J'ai l'impression qu'on fait une exception pour un niveau taxonomique. A réfléchir et justifier. Voire prendre de
+  la hauteur et re-concevoir». To (a), the ease ranks photos within the unit asked only, and (A), units start at the
+  sheet's offset: «ok», «ok». On a simulation: «on a tellement peu de données réelles sur les nudibranches que toutes
+  les simulations du monde ne pourront pas savoir si c'est ok ou pas. Je propose de juste implémenter sans simuler. Et
+  de revenir simuler une fois qu'on aura un nombre suffisant de réponses?»; in general: «il faut vraiment revenir sur
+  cette tendance à vouloir appliquer une simulation pour toute modif du moteur […] Tu fait un inventaire de tout ce
+  qui existe déjà dans le code et les règles, et tu lances une études?» Applied:
+  docs/decisions/2026-11-26-judged-ease-within-unit.md, #1571; REE-304 (the sea slugs' Data gate); the study
+  docs/reviews/2026-11-26-when-to-simulate-study.md.
+- **09:50-09:56, rights: roles, groups and assignments decided (REE-31, REE-305).** On the consolidated points after
+  the three studies (scope, #1554 revised, `grant` in other roles, the handover, the cohort's subjects, the three
+  risks, the build order): «ok». On the last admin or manager: «C'est probablement une meilleure pratique. Une encore
+  meilleure pratique serait d'avoir au moins 2 admins et 2 managers par instance. Mais c'est pas toujours possible
+  concrètement»; on a permanent warning: «ça va être pénible de voir un warning tout le temps si on ne peut rien y
+  faire». On a role given to a populated group: «Aaaaaaaahhhh. J'ai compris! C'est l'inscription libre par un code qui
+  pose problème. Oui, ok». On "Add all": «plus il va y avoir de joueurs plus ce bouton sera dangereux. Je propose
+  qu'on le redesigne autour des bétas exclusivement», «Et avec confirmation». Applied:
+  docs/decisions/2026-11-26-roles-groups-assignments.md; REE-305.
+- **11:51, when to simulate: the checks follow the question (S1 to S5, #1614).** «ok» to each of the study's five
+  questions, every time to the recommended option: S1 (A), the check follows the question (a regression check always,
+  a mechanics simulation only when it is failure-sized and would change what is built, no effect simulation; effects and
+  values go to the logic, his choice and the real log); S2, L12 without learnsim for every change, a Data issue
+  carrying the check where the real log cannot judge yet; S3, only a failure-sized mechanics result, a real-log reading
+  against the change or a cost players will feel go to him; S4, each Data issue sets its own gate, proposed by the
+  integrator, REE-304's form as the fallback; S5, supersedes Q188 (2026-11-06) and L11's levels (2026-11-08) for
+  effects and values, keeping the 40-minute cap, level 3 behind his go and the regression smokes. His 2026-11-21
+  caution («il faut pas non plus l'inverser complètement et le transformer plus qu'en garde-fou») stays. Applied:
+  rules/learning.md L10-L12, rules/README.md index, INTEGRATOR.md "Learning changes", AGENTS.md "Review guidelines",
+  LEARNING.md "Validating a learning change", FISH_PATH.md "Checks before release",
+  docs/decisions/2026-11-26-checks-follow-the-question.md (#1616).
+- **13:25-13:26, fish families named in English (rule W1).** On "castagnoles, grondeurs ; archers" in the chat: «Les
+  familles de poissons il faut vraiment que tu prennes l'habitude de les nommer en anglais, parce que c'est comme ça
+  que je les connais. Mon niveau de noms communs en français est malheureusement limité ^^»; on where to record it:
+  «Dans les règles». Applied: docs/rules/ship.md W1, docs/rules/README.md, AGENTS.md "Working with Pierre".
+- **12:02-13:27, the parked issues get a real when (the question session).** REE-73, the trainer role: «ok», given
+  through the new rights page once step 2 of REE-31 merges. REE-92, permission for Corals of the World: «ok», it comes
+  back with the market studies (REE-285). REE-247, the simple credits page: «oui», after the lecture photos are out
+  (REE-93). REE-108, the growth-form guesses, closed on «ok». On how good they are: «La forme de croissance est
+  toujours évaluée par la passe de jugement? J'ai souvenir qu'on n'était pas hyper bon sur ça.», then «ok pour l'issue»
+  and «J'ai très peu noté à la main des formes» (13:25). REE-79 (Coral ID Key photos): «Pourquoi attendre un mois?»;
+  REE-116 and REE-109: «Idem»; one Sonnet agent searches the judged photos for all three. REE-93, on a 1-for-1
+  replacement of the lecture photos (13:25): «Le but c'est pas de faire du 1 pour 1. Il faut faire le point sur ce que
+  ces photos restantes couvrent et (si) par quoi elles doivent être remplacées». REE-91, the fish families left out
+  (13:25): «En théorie, j'aimerais que notre base de connaissance (et de photos) contiennent tout, mais en pratique il
+  faut aussi choisir un parcours pédagogique qui fait du sens. Donc ya une vrai réflexion à avoir.» REE-100, when the
+  next round of independent reviews comes (13:27): «Au plus tard. Ou après une grosse refonte». Applied: Linear REE-73,
+  REE-92, REE-247, REE-108, REE-306 (the accuracy of the guesses); REE-79, REE-116, REE-109, REE-93, REE-91 (to run);
+  REE-100 (due 2026-12-15, or right after a large overhaul).
+- **13:38, the species exams and the ultimate exam (REE-27, #1489).** (a) a rolling set: «ok». (c) announced, started
+  from My progress, pause and resume: «Je suis d'accord! Il peut même être visualisé sous la forme d'un succès caché
+  mais avec un hover text un peu mystérieux ^^». (e) on by default for every subject that reaches species, the sea
+  slugs included: «Same thing. Sauf exception justifiée». (f) the stored shapes: «C'est du détail d'implémentation»,
+  the integrator's call. (g) B, a right answer on two different days, each on a never-shown photo at Advanced: «ok. A ce
+  stade c'est moins grave qu'on ralentisse un peu. On est déjà à la fin.» (b) and (d) not answered yet: on (b) «je ne
+  suis pas sur de comprendre le problème»; on (d) «Mouais... Je sais pas. Options? Bénéfices vs défauts». Applied:
+  Linear REE-27, to build (steps 1 and 2 on (f) and (g)); REE-30 (the hidden achievement).
+- **13:44-13:48, the reserve and the fish offsets already decided (REE-248, REE-55).** REE-248, after the integrator
+  asked again: «je suis quasiment sur qu'on avait déjà validé une stratégie… Je dis que j'ai tranché plus que le
+  principe, j'ai tranché les détails d'implémentations normalement». The integrator then rebuilt them from his words of
+  2026-11-18 and 2026-11-19; he corrected it (13:48): «Non, ça c'était avant. Les décisions ont été retravaillées après le
+  23»; «Là tu essaye de reconstruire un raisonnement à l'envers. Si on a tout remis sur la table le 23, ça veut dire que
+  les détails d'implémentations sont forcément arrivés après». So the 2026-11-18/19 words do not decide the build; his
+  later details are to be recovered. REE-55 (13:44): «Exactement» to removing the declared one-engine exception
+  `offsets` (the fish take their own memory and format offsets, as rule S1 and Q123 decided), and: «Ya des fois où il
+  faut accepter que le moteur ne soit pas encore parfait. Sauf si effectivement on a des bugs, ou que t'as de vrais
+  propositions d'améliorations fondamentales basées sur la logique ou de bonnes pratiques externes, et pas juste sur des
+  ajustements statistiques.» Applied: Linear REE-248, REE-307 (recovering his later details); REE-55, REE-28 steps 3
+  and 8, to build.
+- **14:07-14:27, small calls.** REE-101, on a lag test "not testable with today's draw": «ça on peut "nudge" le jeu
+  temporairement pour avoir les données qui nous intéresse ;-)»; (14:14) «Discrètement stp». REE-191, on more typed
+  questions and finer ranks sooner: «C'est des bonnes idées. Mais est-ce qu'on a eu une vrai réflexion globale sur
+  comment garder intéressés les joueurs de tout niveaux? Ca mérite une étude multi-modèle ça». REE-28 step 6, the
+  sign-in rule: «Je n'ai pas d'avis si ce n'est qu'il faut trouver la meilleure solution technique, et l'appliqué à
+  l'ensemble de l'app». REE-297 B1 (14:14), a reworded rule needs no approval step of his: «ok». REE-229 P5 (14:14), a
+  problem discussed and not solved gets an issue: «ok». REE-117 (14:14), the 2026-12-18 date kept as a plain return
+  date: «ok». REE-192 (Q316's fallback for the fish genera and species) and REE-255 (the coral single-view offset), both
+  closed on option A (14:27): «Si c'est ce que tu retiens après mes remarques alors ok»; nothing moves for players, and
+  no re-measure is scheduled. Applied: docs/INTEGRATOR.md "Linear" (P5); Linear REE-101 (design of the nudge, to
+  build), REE-191 (the study to launch), REE-28 step 6 (to build), REE-297, REE-117, REE-192, REE-255.
+- **14:07-14:23, an observation is not an absolute (REE-102, REE-308, REE-268).** On the name-similarity test (14:07):
+  «Pas du tout limité aux coraux...................». The integrator took it for a fact and wrote that the test already
+  covers every subject; he (14:14): «T'as vérifié? Mon commentaire n'était pas une affirmation factuelle, c'était un
+  commentaire sur le fait que ce test ne devrait pas être limité aux coraux». It then became an absolute rule; he
+  (14:17): «A nouveau, tu l'as transformé en règle absolu. J'ai besoin que tu vérifies et réfléchisse au problème avant de
+  transformer mon verbatim en absolu», «à noter comme un problème de travail». To testing the same hypothesis on every
+  choice among Latin names, the ~650 gate counted across them (14:23): «ok». On leaving the fish common names out of it:
+  «Mais du coup ça ouvre une nouvelle avenue d'erreurs à envisager». Applied: Linear REE-102; REE-308 (the new issue);
+  REE-268 (the working problem; the rule it fixes already stands in AGENTS.md "The rules").
+- **14:07-14:26, what a wrong answer should change (REE-26).** On the case: «ça ne devrait pas être un problème
+  spécifique d'un taxon. La question se pose quelque soit le niveau taxonomique»; on the family evidence: «Je suis
+  plutôt d'accord»; on wrong answers in general: «on a déjà eu plusieurs réflexions sur comment tenir compte des
+  réponses fausses. Et la littérature semblait dire qu'il ne fallait pas "punir" les réponses fausses»; on rule L2's set
+  of impacts: «est-ce que cet ensemble d'impacts correspond à une stratégie raisonnable et aux bonnes pratiques?»; on
+  option (b) generalised: «Ok? A voir en fonction des réflexions à côté». And (14:26) on logging the alternatives:
+  «Tu me confirmes que dans tous les cas on note les choix alternatifs pour une question à choix multiple? Et les choix
+  alternatifs pour les questions à plusieurs photos? A généraliser bien sur». Applied: Linear REE-26, the study to
+  launch (the choice among (a), (b) and (c) waits for it).
+- **14:45-14:49, photos and judging.** REE-309, the judging passes: «Rien de suite. ça sera pour la prochaine session.
+  Mais on peut définitivement faire une liste de priorités, et les pré-valider. The actual run has to be validated by me
+  when I am able to gage the quota and the charge of the agents». REE-275, (a) the view from above as reference for
+  flatfish and rays: «ok, mais j'élargirait probablement aux vues de 3/4 depuis le dessus. C'est probablement les plus
+  courantes pour ces poissons. En pratique, comment les sources externes les représentent sur les quelques photos les
+  plus mise en avant (voire photo de couverture)?»; (d), (e), (f): «ok». REE-225, on the tile rule that refuses
+  juveniles: «Pourquoi?»; then «ok» to dropping the juvenile flag from the general tile rule, and on Q321 D4's date:
+  «C'est ya longtemps ça ^^». REE-260, on the watermark rule for sheets: «Oui, et attention à ne pas faire d'exceptions
+  non justifiées entre les différents niveaux de fiches», then «Après il est tout a fait possible de faire des
+  exceptions, mais il faut qu'elles soient justifiées». REE-277, the judge comparison: «Sinon on reconstruit un nouveau
+  set, qu'on combine à l'autre test visuel (ou intégre à l'app comme suggéré. Review???) Je trouvais intéressant
+  d'évaluer différents modèles pour ça parce que ça pourrait potentiellement nous faire économiser beaucoup de quotas».
+  Applied: Linear REE-309 (the pre-validated list; each run on his go, rule P7), REE-275, REE-225, REE-260, REE-277.
+- **14:49-15:05, how a question's difficulty is aimed (REE-26's scope).** On Find the X: «find the x soulève tout un
+  tas de questions sur la manière de gérer les réponses pour les appliquer aux calculs de difficultés et de progrès. On
+  y avait réfléchi?» On the candidate photos (14:51): «Et aussi, comment on choisi les photos candidates, et donc la
+  difficulté de la question par rapport à la progression pédagogique du [joueur]? Exemple des juveniles». On multi-photo
+  formats (14:53): «Et surtout un nom est un nom, pour un niveau taxonomique donné. Une photo peut représenter la même
+  bestiole, mais le taux de réussite peut varier en fonction de la difficulté intrinseque de la photo (visibilité, state
+  de croissance, qualité de la photo, ...)». The scope (15:05): «Comment on ajuste la difficulté et les
+  sous-difficultés, pièges spécifiques, pour une question donnée, à un joueur donné (en fonction de son parcours)».
+  Applied: Linear REE-26 (the scope of the study), REE-225 (a build condition).
+- **15:05, the content design and the coral pairs.** REE-294 (the IMR layer): (a) the coral genus grid declared as IMR
+  layer data: «ok»; (b) on keeping the lecture photo references in `data.json` because a file of their own would change
+  a format fifteen tools read: «La difficulté d'une refont ne doit jamais être un argument à ce stade du développement.
+  Seul le résultat final et la conception doivent aider à décider» (re-decided on design alone, his answer pending);
+  (c) C8's PDF read as the instance's reference list: «oui». REE-61: Cycloseris / Lithophyllon, a one-sided line from
+  the sourced side: «ok»; Acropora / Cyphastrea, where two sources disagree: «Besoin de remonter le problème à un expert
+  de IMR». Applied: Linear REE-294, REE-61 (the question for an IMR expert, sent by him).
+- **15:05-16:59, the refactor's effort is no argument (rule W3); REE-294 (b) decided; version history.** On the first
+  wording of the rule ("At this stage of development"): «ça va mal vieillir.....». To the wording tied to the alpha
+  phase: «ok» (16:59). REE-294 (b), the lecture photos' references in their own file in the IMR layer, traced photos
+  included: «ok» (16:59). On the rule: «Et du coup il nous faut un vrai suivi de version pour l'app (ce qu'on n'a pas
+  vraiment à l'heure actuelle...)». Applied: docs/rules/ship.md W3,
+  docs/decisions/2026-11-26-refactor-effort-no-argument.md, Linear REE-294, REE-311. (REE-294 (a) and (c) and REE-61
+  (1) and (2), 15:05, are in the entry above.)
+- **15:08-16:49, feedback for the IMR trainers (REE-310).** The request (15:08): «Les formateurs de IMR seraient très
+  intéressés par des feedbacks sur leur cours, sur la base de tout le travail qu'on a pu faire, des sources externes, et
+  des données dont on dispose. Il faudrait essayer de lister toutes les erreurs ou potentielles contradictions entre IMR
+  et ce qu'on sait/pense savoir.» 15:09: «Ou évolutions et modifications à suggérer». 15:10: «Est-ce que tu peux lancer
+  cette étude maintenant stp? Avec Opus High seulement». 16:12, a section for the five main points and a much simpler,
+  more readable document. 16:35-16:37, corals and fish apart, each on its own as the trainers differ: «Dans chaque
+  matière. Pas les mêmes formateurs»; sea slugs removed: «on peut dégager la partie sur les limaces de mer. Ya pas de
+  cours IMR sur ça». 16:49, on the revised document: «Oui c'est bon». Applied: Linear REE-310 (done; sending it to the
+  trainers is his action).
+- **16:55-16:59, the question session's other answers.** REE-194: the identifier of the three Dipsastraea photos is
+  thamnasteroid, «Oui c'est lui», so the single-identifier rule stays; the batch review screen for the 9 fish photos
+  and the 11 nearly everyone misses: «ok». REE-261: «ok», "delete, keep answers" is kept as built (#1354), on rule D7.
+  REE-226: «C'est pas pour l'admin, c'est pour un futur role de curator (à définir)»; a default global list of pairs,
+  and a curator may change the pairs shown in their instance. REE-41: «oui» to logging the sheets viewed and
+  comparisons opened as a new event kind joined to the answers by device (a sheet column change, asked and allowed).
+  REE-6: «ok» to deleting the 2 unused objects listed and nothing else. Applied: Linear REE-194, REE-261, REE-226,
+  REE-41, REE-6.
+- **17:07-17:13, versioning (REE-311).** «Et on suit les bonnes pratiques de semantic versionning please. Sauf s'il
+  existe de meilleures pratiques mieux adaptées à une app en continuous delivery». «Il faut probablement séparer les
+  différents modules/composant de notre future infrastructure (voir ticket d'hier je crois). Donc versionner l'app, la
+  base de donnée, le futur Reef Studio, ...». On listing the database and each subject's content as two components:
+  «C'est la même chose dans la nouvelle conception» (17:08; precision 17:13: «A vérifier, mais c'est ce que je crois
+  avoir compris de nos réflexions avec ChatGPT hier», so to check against REE-283 and REE-284). On "0.x while in
+  alpha": «C'est pas 0.x le semantic versioning. Renseigne toi» (the correction on the issue sets out what SemVer says;
+  no scheme is chosen yet). Applied: Linear REE-311.
+- **17:12-17:22, the id scheme and the Reviews page (REE-256, REE-252).** REE-256, (A) lifted: «oui!»; on the prefixes
+  `g:`, `f:`, `s:`: «Pas assez spécifique à mon avis. Et si on fini avec 100 matières?»; on the short ids (17:18):
+  «Globalement c'est une mauvaise pratique d'utiliser des identifiants aussi courts»; (B), re-explained: «ok pour les
+  2»; (C) his: «Tu me demandes un détail d'implémentation que je ne maitrises pas» (the integrator's call); (D): «Oui,
+  et ce sont des détails d'implémentation, sauf si tu me demandes parce que les gardes fou ne te laisse pas le faire
+  tout seul?». On old app versions (17:22): «Il faut prévoir ce qu'il se passe si quelqu'un se reconnecte sur son app
+  après longtemps, depuis une vieille version». REE-252, the Reviews page (17:12): R1: «ok»; R2: «ok»; R3: «ok», and
+  «Mes corrections devront être prises en compte pour affiner/calibrer/corriger le jugement»; R4: «ok»; R5: «Pas
+  d'accord veut bien dire qu'il faut corriger...»; R6: «Je suis d'accord. Ca n'a aucun sens de me demander de cliquer
+  sur un bouton si je ne valide pas à la main de toute façon»; R7: «En fonction des critères les plus difficiles à
+  juger, ou les plus critiques. Par au hasard du tout. Il faut générer l'échantillon le plus informatif possible pour
+  les problèmes qu'on cherche à résoudre. Il faut minimiser mon temps et maximiser l'information qu'on en tire».
+  Applied: Linear REE-256 (a short design of long, readable ids first, to him; old versions lose nothing), REE-252.
+- **17:24-17:29, tooling, the species exams, the dev cycle.** REE-27, (b) the "at least 3 questions" minimum dropped:
+  «ok»; (d) the ultimate exam of 150 questions, at most 7 misses: «Ok. A ré-évaluer lorsqu'on aura déjà quelques
+  personnes qui l'auront passé. Du coup dans 2 ans ;-) (blague ^^». REE-121 (17:27), (a) a train identical to its PR
+  reuses the PR's CI, (b) a docs-only train skips the smokes, (c) CodeQL with path filters, (e) a budget alert and a
+  measured week: «ok»; and «Dans tous les cas, on peut optimiser dès maintenant, surtout si ça n'a pas d'impact sur le
+  résultat final»; (d) the smokes once per train only (17:29): «ok». REE-234 (17:24): «ok» to no new VERSION when
+  `Code.gs` is identical once comments are stripped, and to grouping `Code.gs` and `core.js` changes. REE-122
+  (17:24): «oui!» to iNaturalist API v2 now. REE-230 (17:24): «ok» to closing it without option (c). REE-239 (17:25),
+  on closing it: «Non. On remet ça dans la liste des trucs à faire» (the clean design is built). Applied: Linear
+  REE-27, REE-121, REE-234, REE-122, REE-230, REE-239.
+- **17:34-17:49, the rules not followed: a cross-review (REE-297).** «J'aimerais une relecture et une réflexion croisée
+  avec Astra. Tu as soumis à Fable le problème?» (17:34); «oui» to a Fable second view in parallel (17:38). The Astra
+  prompt rules (17:37, 17:42, 17:47, 17:48) are in #1620's entry. Applied: Linear REE-297 (A1, A2 and C1-C4 wait for
+  the Fable study and the Astra review, compared blind).
+- **17:40-17:46, method, achievements, the next steps line.** REE-229, P2a as a one-week trial (the agent hands back at
+  PR open, the integrator resumes the same agent on a Codex finding): «ok» (17:40). REE-32: «ok», the four names and
+  the 1-species threshold kept, the 10 and 50 thresholds lowered after a timing on the app (17:46). REE-56: «ok» to
+  (a)-(f) as recommended (17:46). REE-228: «ok», a Sea slug basics achievement under the rule of Fish basics (17:46).
+  REE-147: «Ok pour y réfléchir, mais pour moi c'était plus un mode spécifique "Time attack" qui peut être inclu dans
+  le quiz général, et apparaitre de temps en temps comme les autres + Un jeu à part qui ne fait que du time attack»
+  (17:46). REE-70: «ok» to (4) and (5), and «T'as vérifié que c'était toujours valable encore maintenant?» (the build
+  starts from screenshots of today's app). Applied: Linear REE-229, REE-32, REE-56, REE-228, REE-147, REE-70.
+- **17:51, the studies of the architecture and the market (REE-287, REE-284, REE-283, REE-285, REE-286).** REE-287:
+  «Option A», two full blind passes on the five missions. REE-284: «ok», a first Claude pass at the next session.
+  REE-283: «ok», after the Red Team reports of REE-290 and REE-292. REE-285: «ok», an Astra desk-research pass.
+  REE-286, on when to return to the Reef Recall market study: «C'est une bonne question. Honnêtement je ne sais pas
+  encore, mais vous serez les premiers au courant» (check-again date 2027-02-26, the integrator's). Applied: Linear
+  REE-287, REE-284, REE-283, REE-285, REE-286.
+- **17:54, the handover (REE-312).** «Ca sera pour le prochain agent. Donc pas toi. Donc sans ton contexte ni ton
+  transcript. Donc la passation a intérêt d'être propre.» Applied: Linear REE-312, docs/STATUS.md.
+- **17:55, the Drive Reef_ID folder (REE-313).** «C'est le bordel ce dossier Reef ID dans le Drive. Ca mérite une issue
+  d'organisation». Applied: Linear REE-313 (an inventory and a filing proposal first, nothing trashed).
+- **~17:58-18:00, work kept only in the scratchpad (REE-314).** Reading the handover message, on the two question
+  dossiers kept about 10 hours in the session scratchpad only (~17:58): «ça c'est un gros problème de travail!!!!». On
+  Drive copies of material that could live in Linear (18:00): «Pourquoi tu créés des documents GDrive qui pourraient
+  être dans Linear?» Applied: Linear REE-314 (the remedy is decided with REE-297); study B's part 1 and the day's Astra
+  prompts became comments on REE-297 and REE-310, and their two Drive copies were trashed.
+- **18:01-18:03, reread the transcript after a compaction (REE-315).** On an answer rebuilt from the compaction
+  summary (18:01): «Relis ton transcrit des dernières 20 min ça sera plus simple...»; then (18:03): «ça se note. En vrai
+  il faudrait presque que tu relises systématiquement les dernières 30 min de ton transcrit après compaction...». A
+  suggestion («presque»), not a decided rule: the mechanism goes back to him as a trial. Applied: Linear REE-315.
+- **18:26-18:29, a handover gives the start order (REE-316).** (18:26) «Et le prochain intégrateur sait par quels
+  tickets il doit commencer ?»; once REE-312 had its section 0, numbered (about 18:27): «Et 313, 314, 315?»; (18:28) «Le
+  fait de ne pas donner un ordre pour l'agent suivant est un problème de travail». To the integrator's proposal of
+  18:28 (STATUS "Next" becomes a numbered list of issues with a reason per line, checked by tests/docs.test.js, and
+  INTEGRATOR's handover step says so) (18:29): «Bonne idée». Applied: Linear REE-312 section 0 (REE-313, REE-314 and
+  REE-315 placed in it), REE-316; docs/STATUS.md "Next", docs/INTEGRATOR.md "Habits" and "Where open work sits",
+  tests/docs.test.js.
+- **17:37-17:49, how an Astra prompt is written (REE-297).** «Dans les prompts pour Astra il faut aussi toujours lier
+  le Linear. Parce que je les fait démarrer de rien»; «Pour astra il faut leur dire de passer par leur plugin et pas
+  par le web pour Linear... A noter pour la prochaine fois»; «Tu leur as pas dit où ils devaient écrire.....»; «A
+  modifier pour le futur aussi». Seen the same evening: Astra's Linear plugin reads descriptions but not comments.
+  Applied: docs/INTEGRATOR.md, the Astra paragraph (the links to start from, the plugin, a "comments, summarised"
+  section in the description, where and under what title to write).

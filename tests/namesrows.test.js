@@ -66,6 +66,9 @@ function run({imr = false, q = {}, sp = true} = {}) {
       block(APP, 'function namesSet(id) {', '\n}\n', {through: 1, file: 'app.js'}),
       block(APP, 'const namesOptsHtml = ', '</div>`;\n', {through: 1, file: 'app.js'}),
       'this.namesAsk = namesAsk; this.namesSet = namesSet; this.namesOptsHtml = namesOptsHtml;',
+      // a set's auto and units, views of the state version (app.js setAuto, setUnits): their computations here
+      block(APP, 'const setAuto = ', '\n', {through: 1, file: 'app.js'}),
+      block(APP, 'const setUnits = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const autoOf = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const learnRows = ', '\n', {through: 1, file: 'app.js'}),
       block(APP, 'const rowOn = ', '\n', {through: 1, file: 'app.js'}),

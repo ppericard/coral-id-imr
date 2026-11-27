@@ -473,13 +473,14 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     // drawn it: shown() now waits, bounded, for the fetch asked and the board drawn (no longer "Loading…"), then reads it.
     await p.waitForFunction(() => HAVE >= 4, null, {timeout: 30000});
     const sb = await p.evaluate(async () => {
-      const f0 = window.fetch,
+      const s0 = window.SHEET_STUB,
         asked = [],
         sv0 = store.get(SHEETV, 0);
       await Promise.all(Object.values(boardP));
       Object.keys(boardP).forEach(k => delete boardP[k]);
       Object.keys(boardAt).forEach(k => delete boardAt[k]);
-      window.fetch = u => {
+      // The sheet's reply (app.js sheetFetch answered by SHEET_STUB in memory, rule D1).
+      window.SHEET_STUB = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=seaslug/.test(u) ? [['Slug P', 41, 0.7]] : [['Coral P', 90, 1.1]];
         return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: store.get(SHEETV, 0)})));
@@ -506,7 +507,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         const units = inSubject('coral', () => rpUnits(subjectOf('seaslug')));
         return {before, live0, rp0, asked0, after, asked, live1: boardLive(SUBJ), units: !!units && !!units['g:Chromodoris']};
       } finally {
-        window.fetch = f0;
+        window.SHEET_STUB = s0;
         store.set(SHEETV, sv0);
       }
     });
@@ -535,6 +536,62 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       `2: the achievements page: ${ach.n} ${ach.head}`
     );
     check(/sea slug learning/.test(ach.help || '') && !/Fish whisperer|Course director/.test(ach.text), '2: its own ? text and list');
+    // REE-300: a visit that writes only the visited subject's records keeps the subject on screen's state version (app.js
+    // dataBack), which holds only if no state view reads another subject's records. Each other subject visited as a
+    // sync's merge writes it (a unit's record stored, a unit opened in its intro map, its settings stored), then every
+    // state view of the sea slugs read (VIEW_CHECK compares each kept value with a computation now: a view that read the
+    // visited subject's records would differ), then every state view made again with the stored keys it reads recorded:
+    // none of another subject's records (the version's own check, stateNow, reads every first-launch record: left out).
+    const xs = await p
+      .evaluate(() => {
+        const views = () => {
+          const L = pool();
+          [bonusList(), sciUp(), shareFree(), c1Met(), headScore(), lvSteps(), cbPlay(), cbGenera(), startP(), imrSaid(), cardsNow()];
+          L.forEach(n => (introduced(n), introReady(n), genScore(n), examOn(n)));
+          [...rankClasses().keys()].forEach(k => lvlNeed(k));
+        };
+        const kept = SUBJECTS.filter(S => S !== SUBJ).map(S => {
+          const s0 = stateNow();
+          inSubject(S.id, () => {
+            const L = slateGenera(),
+              [u, u2] = L.length >= 2 ? L : ['ProbeA', 'ProbeB'];
+            st(u);
+            P[u].ok = (P[u].ok || 0) + 5;
+            stateBump('rec');
+            store.set(sKey('progress'), P);
+            const m = introMap();
+            m[u2] = [answersSoFar(), 1, 0, 'c'];
+            store.set(INTRO.KEY, m);
+            Q.probe = 1;
+            saveQ();
+          });
+          return [S.id, stateNow() === s0];
+        });
+        views();
+        const others = new Set(
+            SUBJECTS.filter(S => S !== SUBJ).flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k)))
+          ),
+          read = [],
+          g = Storage.prototype.getItem;
+        Storage.prototype.getItem = function (k) {
+          if (!/stateRaw/.test(new Error().stack)) read.push(String(k));
+          return g.call(this, k);
+        };
+        try {
+          stateBump('rec');
+          views();
+        } finally {
+          Storage.prototype.getItem = g;
+        }
+        return {kept, others: [...new Set(read.filter(k => others.has(k)))], n: read.length};
+      })
+      .catch(e => ({err: e.message}));
+    check(!xs.err, `2: a visit that wrote another subject's records, then the state views read: ${xs.err}`);
+    check(
+      !xs.err && xs.kept.length === 2 && xs.kept.every(([, k]) => k),
+      `2: the state version kept after each visit: ${JSON.stringify(xs.kept)}`
+    );
+    check(!xs.err && xs.n > 0 && !xs.others.length, `2: a state view reads another subject's records: ${JSON.stringify(xs.others)}`);
     check(!errs.length, '2: page errors: ' + errs.join('; '));
     await ctx.close();
   }

@@ -1,0 +1,1240 @@
+{
+ "input": {
+  "rows": 7726,
+  "badTime": 0,
+  "first": "2026-11-01 17:47",
+  "last": "2026-11-25 14:58",
+  "secondary": false,
+  "until": null
+ },
+ "subjects": [
+  {
+   "subject": "coral",
+   "answers": 4021,
+   "players": 15,
+   "trusted": 15,
+   "scored": 1968,
+   "memToday": [
+    0,
+    0.38,
+    -0.7,
+    -1.2
+   ],
+   "checks": {
+    "rec": 1968,
+    "within": 1968,
+    "skipped": 0,
+    "sNot1": 0,
+    "oSet": 1592,
+    "disagreeSeenNoF": 7,
+    "disagreeNewF": 0,
+    "rows": 1968,
+    "seenW": 205.83333333333331
+   },
+   "seenAnswers": 205.8,
+   "lagMinutes": {
+    "p10": 6,
+    "p25": 1448,
+    "median": 4479,
+    "p75": 14486,
+    "p90": 21429
+   },
+   "bands": [
+    {
+     "band": "< 10 min",
+     "n": 29.3,
+     "share": 14,
+     "top": false,
+     "players": 9,
+     "ok": false
+    },
+    {
+     "band": "10 min-1 h",
+     "n": 17.5,
+     "share": 9,
+     "top": false,
+     "players": 4,
+     "ok": false
+    },
+    {
+     "band": "1 h-1 day",
+     "n": 10,
+     "share": 5,
+     "top": false,
+     "players": 3,
+     "ok": false
+    },
+    {
+     "band": "1-7 days",
+     "n": 84.7,
+     "share": 41,
+     "top": false,
+     "players": 7,
+     "ok": true
+    },
+    {
+     "band": "> 7 days",
+     "n": 64.3,
+     "share": 31,
+     "top": false,
+     "players": 5,
+     "ok": true
+    }
+   ],
+   "stop": false,
+   "table": [
+    [
+     "new photo (reference)",
+     {
+      "n": 1762.2,
+      "players": 12,
+      "right": 81.4,
+      "expected": 74.9,
+      "diff": 6.5,
+      "lo": 3,
+      "hi": 8.8
+     }
+    ],
+    [
+     "shown never right, < 10 min",
+     {
+      "n": 14.5,
+      "players": 8,
+      "right": 93.1,
+      "expected": 61.9,
+      "diff": 31.2,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 10 min-1 h",
+     {
+      "n": 6,
+      "players": 3,
+      "right": 66.7,
+      "expected": 65.1,
+      "diff": 1.6,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 1 h-1 day",
+     {
+      "n": 4,
+      "players": 2,
+      "right": 50,
+      "expected": 62.4,
+      "diff": -12.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 1-7 days",
+     {
+      "n": 26.8,
+      "players": 7,
+      "right": 74.5,
+      "expected": 64.7,
+      "diff": 9.8,
+      "lo": -2.9,
+      "hi": 39.4
+     }
+    ],
+    [
+     "shown never right, > 7 days",
+     {
+      "n": 14.3,
+      "players": 4,
+      "right": 72.1,
+      "expected": 59.3,
+      "diff": 12.8,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, all lags",
+     {
+      "n": 65.7,
+      "players": 9,
+      "right": 75.9,
+      "expected": 62.8,
+      "diff": 13.1,
+      "lo": 6.1,
+      "hi": 25.6
+     }
+    ],
+    [
+     "right once, < 10 min",
+     {
+      "n": 14.8,
+      "players": 6,
+      "right": 86.5,
+      "expected": 86.2,
+      "diff": 0.3,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, 10 min-1 h",
+     {
+      "n": 11.5,
+      "players": 4,
+      "right": 91.3,
+      "expected": 80.9,
+      "diff": 10.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, 1 h-1 day",
+     {
+      "n": 5,
+      "players": 3,
+      "right": 100,
+      "expected": 79.8,
+      "diff": 20.2,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, 1-7 days",
+     {
+      "n": 49.8,
+      "players": 6,
+      "right": 84.6,
+      "expected": 82.1,
+      "diff": 2.5,
+      "lo": -5.7,
+      "hi": 21.2
+     }
+    ],
+    [
+     "right once, > 7 days",
+     {
+      "n": 44.3,
+      "players": 5,
+      "right": 87.6,
+      "expected": 82.5,
+      "diff": 5.1,
+      "lo": 2,
+      "hi": 9.9
+     }
+    ],
+    [
+     "right once, all lags",
+     {
+      "n": 125.5,
+      "players": 10,
+      "right": 87.1,
+      "expected": 82.5,
+      "diff": 4.6,
+      "lo": -1.1,
+      "hi": 11.4
+     }
+    ],
+    [
+     "right 2+, < 10 min",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, 10 min-1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, 1 h-1 day",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 80.9,
+      "diff": 19.1,
+      "tooFew": true
+     }
+    ],
+    [
+     "right 2+, 1-7 days",
+     {
+      "n": 8,
+      "players": 1,
+      "right": 100,
+      "expected": 92.8,
+      "diff": 7.2,
+      "tooFew": true
+     }
+    ],
+    [
+     "right 2+, > 7 days",
+     {
+      "n": 5.7,
+      "players": 2,
+      "right": 73.5,
+      "expected": 79.9,
+      "diff": -6.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "right 2+, all lags",
+     {
+      "n": 14.7,
+      "players": 3,
+      "right": 89.8,
+      "expected": 87,
+      "diff": 2.7,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, < 10 min",
+     {
+      "n": 29.3,
+      "players": 9,
+      "right": 89.8,
+      "expected": 74.2,
+      "diff": 15.6,
+      "lo": -0.1,
+      "hi": 29.9
+     }
+    ],
+    [
+     "all seen, 10 min-1 h",
+     {
+      "n": 17.5,
+      "players": 4,
+      "right": 82.9,
+      "expected": 75.5,
+      "diff": 7.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, 1 h-1 day",
+     {
+      "n": 10,
+      "players": 3,
+      "right": 80,
+      "expected": 73,
+      "diff": 7,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, 1-7 days",
+     {
+      "n": 84.7,
+      "players": 7,
+      "right": 82.9,
+      "expected": 77.6,
+      "diff": 5.3,
+      "lo": -1.9,
+      "hi": 25.4
+     }
+    ],
+    [
+     "all seen, > 7 days",
+     {
+      "n": 64.3,
+      "players": 5,
+      "right": 82.9,
+      "expected": 77.1,
+      "diff": 5.8,
+      "lo": 1.5,
+      "hi": 22.7
+     }
+    ],
+    [
+     "all seen, all lags",
+     {
+      "n": 205.8,
+      "players": 11,
+      "right": 83.7,
+      "expected": 76.5,
+      "diff": 7.2,
+      "lo": 2.5,
+      "hi": 14.9
+     }
+    ]
+   ],
+   "primary": {
+    "players": 2,
+    "perPlayer": [
+     [
+      5.9,
+      12
+     ],
+     [
+      9.6,
+      10.3
+     ]
+    ],
+    "verdict": "cannot test"
+   },
+   "pooledShortLong": {
+    "est": 5.7,
+    "lo": -10.6,
+    "hi": 15.8
+   },
+   "control": {
+    "players": 9,
+    "perPlayer": [
+     [
+      -8,
+      5
+     ],
+     [
+      -5.4,
+      42
+     ],
+     [
+      -1.6,
+      22
+     ],
+     [
+      -1.2,
+      67.5
+     ],
+     [
+      -0.5,
+      23.3
+     ],
+     [
+      -0.3,
+      22
+     ],
+     [
+      4.8,
+      23
+     ],
+     [
+      5.8,
+      46
+     ],
+     [
+      11.2,
+      23.5
+     ]
+    ],
+    "mean": 0.5,
+    "lo": -4,
+    "hi": 5.1,
+    "p": 0.781,
+    "meanSlope": 0.118,
+    "logits": 0.05,
+    "logitsLo": -0.34,
+    "logitsHi": 0.43
+   },
+   "directions": [
+    [
+     "shown never right, 1 miss, < 1 h",
+     {
+      "n": 20.5,
+      "players": 8,
+      "right": 85.4,
+      "expected": 62.8,
+      "diff": 22.6,
+      "lo": 6.8,
+      "hi": 32.8
+     }
+    ],
+    [
+     "shown never right, 1 miss, >= 1 day",
+     {
+      "n": 33,
+      "players": 8,
+      "right": 77.3,
+      "expected": 63.8,
+      "diff": 13.5,
+      "lo": 1.5,
+      "hi": 34
+     }
+    ],
+    [
+     "shown never right, 2+ misses, < 1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 2+ misses, >= 1 day",
+     {
+      "n": 8.2,
+      "players": 3,
+      "right": 59.2,
+      "expected": 58.9,
+      "diff": 0.3,
+      "tooFew": true
+     }
+    ]
+   ]
+  },
+  {
+   "subject": "fish",
+   "answers": 3527,
+   "players": 9,
+   "trusted": 9,
+   "scored": 3527,
+   "memToday": [
+    0,
+    -0.5,
+    -0.5,
+    -1.5
+   ],
+   "checks": {
+    "rec": 3527,
+    "within": 3527,
+    "skipped": 0,
+    "sNot1": 0,
+    "oSet": 1251,
+    "disagreeSeenNoF": 6,
+    "disagreeNewF": 3,
+    "rows": 3527,
+    "seenW": 101
+   },
+   "seenAnswers": 101,
+   "lagMinutes": {
+    "p10": 2,
+    "p25": 4,
+    "median": 9,
+    "p75": 19,
+    "p90": 1468
+   },
+   "bands": [
+    {
+     "band": "< 10 min",
+     "n": 54,
+     "share": 53,
+     "top": false,
+     "players": 8,
+     "ok": true
+    },
+    {
+     "band": "10 min-1 h",
+     "n": 27,
+     "share": 27,
+     "top": false,
+     "players": 8,
+     "ok": false
+    },
+    {
+     "band": "1 h-1 day",
+     "n": 9,
+     "share": 9,
+     "top": false,
+     "players": 3,
+     "ok": false
+    },
+    {
+     "band": "1-7 days",
+     "n": 9,
+     "share": 9,
+     "top": false,
+     "players": 3,
+     "ok": false
+    },
+    {
+     "band": "> 7 days",
+     "n": 2,
+     "share": 2,
+     "top": false,
+     "players": 2,
+     "ok": false
+    }
+   ],
+   "stop": true,
+   "table": [
+    [
+     "new photo (reference)",
+     {
+      "n": 3426,
+      "players": 9,
+      "right": 87.8,
+      "expected": 81.8,
+      "diff": 6.1,
+      "lo": 4.1,
+      "hi": 7.7
+     }
+    ],
+    [
+     "shown never right, < 10 min",
+     {
+      "n": 11,
+      "players": 4,
+      "right": 90.9,
+      "expected": 84,
+      "diff": 6.9,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 10 min-1 h",
+     {
+      "n": 2,
+      "players": 2,
+      "right": 100,
+      "expected": 83.9,
+      "diff": 16.1,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 1 h-1 day",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 84.2,
+      "diff": 15.8,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 1-7 days",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 91.1,
+      "diff": 8.9,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, > 7 days",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 88,
+      "diff": 12,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, all lags",
+     {
+      "n": 16,
+      "players": 7,
+      "right": 93.8,
+      "expected": 84.7,
+      "diff": 9,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, < 10 min",
+     {
+      "n": 40,
+      "players": 8,
+      "right": 97.5,
+      "expected": 88,
+      "diff": 9.5,
+      "lo": 5.7,
+      "hi": 11.5
+     }
+    ],
+    [
+     "right once, 10 min-1 h",
+     {
+      "n": 25,
+      "players": 7,
+      "right": 88,
+      "expected": 90.5,
+      "diff": -2.5,
+      "lo": -26.4,
+      "hi": 7.5
+     }
+    ],
+    [
+     "right once, 1 h-1 day",
+     {
+      "n": 7,
+      "players": 2,
+      "right": 100,
+      "expected": 87.9,
+      "diff": 12.1,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, 1-7 days",
+     {
+      "n": 8,
+      "players": 3,
+      "right": 75,
+      "expected": 84.4,
+      "diff": -9.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, > 7 days",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 0,
+      "expected": 91.5,
+      "diff": -91.5,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, all lags",
+     {
+      "n": 81,
+      "players": 9,
+      "right": 91.4,
+      "expected": 88.5,
+      "diff": 2.9,
+      "lo": -3.7,
+      "hi": 6.7
+     }
+    ],
+    [
+     "right 2+, < 10 min",
+     {
+      "n": 3,
+      "players": 2,
+      "right": 100,
+      "expected": 98.3,
+      "diff": 1.7,
+      "tooFew": true
+     }
+    ],
+    [
+     "right 2+, 10 min-1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, 1 h-1 day",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 98,
+      "diff": 2,
+      "tooFew": true
+     }
+    ],
+    [
+     "right 2+, 1-7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, > 7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, all lags",
+     {
+      "n": 4,
+      "players": 3,
+      "right": 100,
+      "expected": 98.3,
+      "diff": 1.7,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, < 10 min",
+     {
+      "n": 54,
+      "players": 8,
+      "right": 96.3,
+      "expected": 87.8,
+      "diff": 8.5,
+      "lo": 2.9,
+      "hi": 11.8
+     }
+    ],
+    [
+     "all seen, 10 min-1 h",
+     {
+      "n": 27,
+      "players": 8,
+      "right": 88.9,
+      "expected": 90,
+      "diff": -1.1,
+      "lo": -19.6,
+      "hi": 8.4
+     }
+    ],
+    [
+     "all seen, 1 h-1 day",
+     {
+      "n": 9,
+      "players": 3,
+      "right": 100,
+      "expected": 88.6,
+      "diff": 11.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, 1-7 days",
+     {
+      "n": 9,
+      "players": 3,
+      "right": 77.8,
+      "expected": 85.2,
+      "diff": -7.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, > 7 days",
+     {
+      "n": 2,
+      "players": 2,
+      "right": 50,
+      "expected": 89.8,
+      "diff": -39.8,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, all lags",
+     {
+      "n": 101,
+      "players": 9,
+      "right": 92.1,
+      "expected": 88.2,
+      "diff": 3.8,
+      "lo": -2.5,
+      "hi": 7.4
+     }
+    ]
+   ],
+   "primary": {
+    "players": 1,
+    "perPlayer": [
+     [
+      25.7,
+      3
+     ]
+    ],
+    "verdict": "cannot test"
+   },
+   "pooledShortLong": {
+    "est": 18.8,
+    "lo": -20.2,
+    "hi": 32.3
+   },
+   "control": {
+    "players": 6,
+    "perPlayer": [
+     [
+      -24.3,
+      5
+     ],
+     [
+      -1.6,
+      34
+     ],
+     [
+      -1.3,
+      6
+     ],
+     [
+      1.4,
+      82
+     ],
+     [
+      3.6,
+      33
+     ],
+     [
+      21.2,
+      6
+     ]
+    ],
+    "mean": -0.2,
+    "lo": -15.4,
+    "hi": 15.1,
+    "p": 0.969,
+    "meanSlope": 0.115,
+    "logits": -0.02,
+    "logitsLo": -1.34,
+    "logitsHi": 1.31
+   },
+   "directions": [
+    [
+     "shown never right, 1 miss, < 1 h",
+     {
+      "n": 12,
+      "players": 5,
+      "right": 91.7,
+      "expected": 83.6,
+      "diff": 8,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 1 miss, >= 1 day",
+     {
+      "n": 2,
+      "players": 2,
+      "right": 100,
+      "expected": 89.6,
+      "diff": 10.4,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 2+ misses, < 1 h",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 88.3,
+      "diff": 11.7,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, 2+ misses, >= 1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ]
+   ]
+  },
+  {
+   "subject": "seaslug",
+   "answers": 168,
+   "players": 2,
+   "trusted": 1,
+   "scored": 165,
+   "memToday": [
+    0,
+    -0.5,
+    -0.5,
+    -1.5
+   ],
+   "checks": {
+    "rec": 165,
+    "within": 165,
+    "skipped": 0,
+    "sNot1": 0,
+    "oSet": 0,
+    "disagreeSeenNoF": 0,
+    "disagreeNewF": 0,
+    "rows": 165,
+    "seenW": 5
+   },
+   "seenAnswers": 5,
+   "lagMinutes": {
+    "p10": 2,
+    "p25": 3,
+    "median": 3,
+    "p75": 5,
+    "p90": 5
+   },
+   "bands": [
+    {
+     "band": "< 10 min",
+     "n": 4,
+     "share": 80,
+     "top": true,
+     "players": 1,
+     "ok": false
+    },
+    {
+     "band": "10 min-1 h",
+     "n": 1,
+     "share": 20,
+     "top": false,
+     "players": 1,
+     "ok": false
+    },
+    {
+     "band": "1 h-1 day",
+     "n": 0,
+     "share": 0,
+     "top": false,
+     "players": 0,
+     "ok": false
+    },
+    {
+     "band": "1-7 days",
+     "n": 0,
+     "share": 0,
+     "top": false,
+     "players": 0,
+     "ok": false
+    },
+    {
+     "band": "> 7 days",
+     "n": 0,
+     "share": 0,
+     "top": false,
+     "players": 0,
+     "ok": false
+    }
+   ],
+   "stop": true,
+   "table": [
+    [
+     "new photo (reference)",
+     {
+      "n": 160,
+      "players": 1,
+      "right": 83.8,
+      "expected": 83,
+      "diff": 0.7,
+      "tooFew": true
+     }
+    ],
+    [
+     "shown never right, < 10 min",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 10 min-1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 1 h-1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 1-7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, > 7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, all lags",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right once, < 10 min",
+     {
+      "n": 4,
+      "players": 1,
+      "right": 100,
+      "expected": 89,
+      "diff": 11,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, 10 min-1 h",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 80,
+      "diff": 20,
+      "tooFew": true
+     }
+    ],
+    [
+     "right once, 1 h-1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right once, 1-7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right once, > 7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right once, all lags",
+     {
+      "n": 5,
+      "players": 1,
+      "right": 100,
+      "expected": 87.2,
+      "diff": 12.8,
+      "tooFew": true
+     }
+    ],
+    [
+     "right 2+, < 10 min",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, 10 min-1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, 1 h-1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, 1-7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, > 7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "right 2+, all lags",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "all seen, < 10 min",
+     {
+      "n": 4,
+      "players": 1,
+      "right": 100,
+      "expected": 89,
+      "diff": 11,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, 10 min-1 h",
+     {
+      "n": 1,
+      "players": 1,
+      "right": 100,
+      "expected": 80,
+      "diff": 20,
+      "tooFew": true
+     }
+    ],
+    [
+     "all seen, 1 h-1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "all seen, 1-7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "all seen, > 7 days",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "all seen, all lags",
+     {
+      "n": 5,
+      "players": 1,
+      "right": 100,
+      "expected": 87.2,
+      "diff": 12.8,
+      "tooFew": true
+     }
+    ]
+   ],
+   "primary": {
+    "players": 0,
+    "perPlayer": [],
+    "verdict": "cannot test"
+   },
+   "pooledShortLong": null,
+   "control": {
+    "players": 0,
+    "perPlayer": [],
+    "verdict": "cannot test"
+   },
+   "directions": [
+    [
+     "shown never right, 1 miss, < 1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 1 miss, >= 1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 2+ misses, < 1 h",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ],
+    [
+     "shown never right, 2+ misses, >= 1 day",
+     {
+      "n": 0,
+      "players": 0
+     }
+    ]
+   ]
+  }
+ ]
+}

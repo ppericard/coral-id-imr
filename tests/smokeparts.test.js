@@ -7,7 +7,8 @@ require('./slot.js').testGuard();
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  {execFileSync} = require('child_process');
 
 const ROOT = path.join(__dirname, '..'),
   yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'smokes.yml'), 'utf8');
@@ -105,7 +106,18 @@ test('the fish jobs dispatch every scenario exactly once, as does the full local
 
 // The smokes are their own workflow, which a docs-only PR skips, so none may slip back into
 // checks.yml (it would run them on docs PRs again), and the skip lists docs only (never tools/, tests/ or data).
-test('the smokes live in smokes.yml only, skipped for docs-only PRs, always run on a merge train', () => {
+// Where the browser matrix runs (rule W12; Pierre, 2026-11-26, REE-121 (b) and (d)): never on a PR head, on every code,
+// mixed or unknown train, on no docs-only train; answer cost on every run of the workflow, a docs-only train's included.
+const DOCS = ['docs/**', '*.md', '.github/pull_request_template.md', 'LICENSE'];
+// A job's block in a workflow file: from "\n  <id>:\n" to the next job.
+const jobBlock = (src, id) => {
+  const at = src.indexOf(`\n  ${id}:\n`);
+  if (at < 0) return '';
+  const rest = src.slice(at + 1),
+    next = rest.slice(1).search(/\n {2}[\w-]+:\n/);
+  return next < 0 ? rest : rest.slice(0, next + 2); // with its last newline
+};
+test('the smokes live in smokes.yml only, skipped for docs-only PRs, run on a merge train', () => {
   const checks = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8');
   assert.ok(!/\n  smoke:\n/.test(checks) && !/\.smoke\.js/.test(checks), 'checks.yml runs a smoke');
   const ignore = /\n  pull_request:\n    paths-ignore:\n((?: {6}- .+\n)+)/.exec(yml);
@@ -115,10 +127,79 @@ test('the smokes live in smokes.yml only, skipped for docs-only PRs, always run 
       .trim()
       .split('\n')
       .map(l => l.replace(/^\s*- '?|'?$/g, '')),
-    ['docs/**', '*.md', '.github/pull_request_template.md', 'LICENSE']
+    DOCS
   );
-  assert.match(yml, /\n  push:\n    branches: \['train\/\*'\]\n/, 'smokes.yml: every smoke on a train push');
+  assert.match(yml, /\n  push:\n    branches: \['train\/\*'\]\n/, 'smokes.yml: the smokes on a train push');
+  assert.match(yml, /\n  workflow_dispatch:\n/, 'smokes.yml: the manual full validation');
   assert.match(checks, /\n  push:\n    branches: \['train\/\*'\]\n/, 'checks.yml: the checks on a train push');
+});
+test('smokes.yml: the browser matrix off PR heads by one line, on trains unless docs-only; answer cost on every run', () => {
+  const scope = jobBlock(yml, 'scope'),
+    smoke = jobBlock(yml, 'smoke'),
+    cost = jobBlock(yml, 'answercost');
+  assert.match(scope, /\n {4}name: browser scope\n/, 'the scope job is "browser scope" (tools/train.py waits for it)');
+  // The rollback of (d) is deleting this one line (this test passes without it): nothing else keeps the matrix off a PR
+  // head, and the scope job has no other condition.
+  assert.ok((yml.match(/pull_request'/g) || []).length <= 1, "smokes.yml: one condition on pull_request at most, the scope job's");
+  assert.deepStrictEqual(
+    scope.match(/\n {4}if: .*/g) || [],
+    /pull_request'/.test(yml) ? ["\n    if: github.event_name != 'pull_request'"] : []
+  );
+  assert.match(scope, /\n {6}browser: \$\{\{ steps\.scope\.outputs\.browser \}\}\n/);
+  assert.match(scope, /\n {8}id: scope\n {8}run: python3 tools\/smoke_scope\.py\n/);
+  assert.match(scope, /\n {10}sparse-checkout: tools\/smoke_scope\.py\n/);
+  // An empty answer runs the matrix: only an explicit false skips it.
+  assert.match(smoke, /\n {4}name: smoke \(\$\{\{ matrix\.name \}\}\)\n {4}needs: scope\n/);
+  assert.match(smoke, /\n {4}if: needs\.scope\.outputs\.browser != 'false'\n/);
+  assert.match(cost, /\n {4}name: answer cost\n/);
+  assert.doesNotMatch(cost, /\n {4}needs:/, 'answer cost depends on nothing: it runs on every run of the workflow');
+  // Its one condition: skipped only on a train branch tools/train.py named for a proven reuse (REE-121 (a), train.test.js).
+  assert.deepStrictEqual(cost.match(/\n {4}if: .*/g), [
+    "\n    if: ${{ !(startsWith(github.ref, 'refs/heads/train/') && contains(github.ref, '-reuse-cost')) }}"
+  ]);
+  const checks = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8');
+  assert.doesNotMatch(jobBlock(checks, 'checks'), /\n {4}name:/, 'the checks job keeps the name "checks" (tools/train.py)');
+});
+// tools/smoke_scope.py (the scope job and tools/train.py) reads the same list with GitHub's pattern rules: `*` stops at
+// `/`, `**` does not (docs.github.com, "Workflow syntax", filter pattern cheat sheet: '*.js' "all .js files at the root").
+test('tools/smoke_scope.py: the docs list is paths-ignore, read as GitHub reads it', () => {
+  const py = (code, input) =>
+    JSON.parse(execFileSync('python3', ['-B', '-c', code], {cwd: path.join(ROOT, 'tools'), input, encoding: 'utf8'}));
+  assert.deepStrictEqual(py('import json, smoke_scope; print(json.dumps(smoke_scope.DOCS))'), DOCS);
+  const cases = {
+    'docs/rules/ship.md': true,
+    'docs/a/b/c.png': true,
+    'README.md': true,
+    'AGENTS.md': true,
+    '.github/pull_request_template.md': true,
+    LICENSE: true,
+    'tools/README.md': false,
+    'tools/queue/README.md': false,
+    'tests/x.md': false,
+    'img/LICENSE': false,
+    'LICENSE.txt': false,
+    'a.md/x.js': false,
+    'docsx/a.md': false,
+    '.github/workflows/smokes.yml': false,
+    'data.json': false,
+    'tests/docs.test.js': false
+  };
+  const got = py(
+    'import json, sys, smoke_scope; print(json.dumps({p: smoke_scope.is_doc(p) for p in json.load(sys.stdin)}))',
+    JSON.stringify(Object.keys(cases))
+  );
+  assert.deepStrictEqual(got, cases);
+  assert.deepStrictEqual(
+    py(
+      'import json, smoke_scope as s; print(json.dumps([s.classify([]), s.classify(["docs/a.md", "README.md"]), s.classify(["docs/a.md", "app.js"]), s.classify(["app.js"])]))'
+    ),
+    [
+      ['unknown', []],
+      ['docs', []],
+      ['mixed', ['app.js']],
+      ['code', ['app.js']]
+    ]
+  );
 });
 
 // The unit tests run in shards (checks.yml, the unit job): its matrix lists the shards k, its command runs k/n over every

@@ -110,6 +110,11 @@ const GATES = {
   // the repository's numbers alone, silently (tests/infra.test.js runs the card's numbers).
   INFRA_SHEET: (v, N) =>
     fn('admin.js', 'const infraOn = ', '\n', 'infraOn', {INFRA_SHEET: N})({ok: true, cells: {}, ...(v === undefined ? {} : {v})}),
+  // The lean answer log (admin.js leanOn, leanIn; Code.gs answers_ with lean; core.js rowsPack, rowsUnpack): a reply read
+  // as lean from the version that serves it; before, an older script ignores the request's lean and sends rows, read as
+  // before (tests/ansrows.test.js).
+  LEAN_SHEET: (v, N) =>
+    fn('admin.js', 'const leanOn = ', '\n', 'leanOn', {LEAN_SHEET: N})({ok: true, lean: {f: 1}, ...(v === undefined ? {} : {v})}),
   // The content editor's structure (sync.js stOn, app.js structOn; core.js STRUCT_SHEET; Code.gs replays_ sts): the
   // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
   // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
@@ -229,7 +234,7 @@ const GATES = {
       sheetV: () => (v === undefined ? 0 : v),
       appVer: () => 1,
       ownStatsAt: {},
-      fetch: u => ((asked = u), new Promise(() => {}))
+      sheetFetch: u => ((asked = u), new Promise(() => {})) // app.js: every request to the sheet goes through it
     })();
     if (asked) assert.match(asked, /[?&]stats=1&s=seaslug&/);
     return !!asked;
@@ -246,7 +251,7 @@ const GATES = {
       sheetV: () => (v === undefined ? 0 : v),
       appVer: () => 1,
       ownStatsAt: {},
-      fetch: u => ((asked = u), new Promise(() => {}))
+      sheetFetch: u => ((asked = u), new Promise(() => {}))
     })();
     if (asked) assert.match(asked, /[?&]stats=1&s=fish&/);
     return !!asked;

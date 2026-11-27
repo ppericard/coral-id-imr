@@ -117,32 +117,154 @@ const IS_ADMIN =
 // writes (its queue, the comeback, the pending question, the achievements) are no input and bump nothing. The writers
 // outside this block call it guarded (typeof), as in model.js, quiz.js and sync.js: the unit tests run parts of these
 // files without it.
+// The data version, DATA_V, counts the writes of the inputs that do not move with the player's own play: every bump but
+// those of the player's records and settings (stateBump('rec'): the records P, the quiz settings Q, the intro map and
+// its offer, the first-launch record, a record made, a reset, sync.js's refills of P). The data views (dataView) read
+// only the other inputs: the data and the tree in force, the subject, the sheet's version, the photo statistics, the
+// files loaded. A bump with no argument moves both versions, so a writer not sorted makes the data views again too.
 let STATE_V = 0;
-const stateBump = () => void STATE_V++;
-// sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names).
-const STATE_KEYS = new Set([
-  ...SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => subjKey(S.id, k))),
-  'reefid-sheet-v',
-  'reefid-photo-stats',
-  ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)
-]);
+let DATA_V = 0;
+// A bump of the player's records and settings ('rec') is counted for the subject whose records it wrote (sid: a key's
+// subject, storeWrote; by default the subject in force, whose P and Q the writer holds; null, nobody's known: another
+// tab's write, stateNow), so a visit can tell the visited subject's writes from the subject on screen's (REC_BY).
+let REC_N = 0;
+const REC_BY = {};
+const stateBump = (rec, sid) => {
+  STATE_V++;
+  if (rec !== 'rec') return void DATA_V++;
+  if (sid === undefined)
+    try {
+      sid = SUBJ ? SUBJ.id : null;
+    } catch (e) {
+      // SUBJ not declared (a part of this file run alone, a unit test): nobody's known; any other error is thrown
+      if (!(e instanceof ReferenceError)) throw e;
+      sid = null;
+    }
+  if (sid !== null) (REC_N++, (REC_BY[sid] = (REC_BY[sid] || 0) + 1));
+};
+// A visit to another subject (inSubject) and a tree lent for a while (treeWith) swap the subject or the tree in force and
+// put it back. Their bumps (swapBump: the subject or the tree in force, and nothing else, changed) move both versions,
+// so the views read meanwhile are the visited one's, and are counted (DATA_SW). Back where it started, with every data
+// bump since a swap's (dataBack), the data views' inputs are the ones before the visit: the data version now reads as
+// the one before (DATA_AS: DATA_V's value now, an alias of that version), so the subject on screen's data views kept
+// for it hold (a sync visits the other subjects at each save and each pull). Any other data bump meanwhile (a tree built,
+// the statistics, the sheet's version, new data) leaves the new version. DATA_V only ever goes up and an alias is an
+// older version, so a version once left is never read again.
+// The state version the same way (REE-300): the records P and the settings Q swapped with the subject and put back as
+// the same objects, the hooks' state read again (swapBump('rec'), counted in STATE_SW alone), the state views' inputs
+// are the ones before the visit when every state bump since was a swap's or wrote another subject's records (the
+// visited subject's merge, its replay, its hold: REC_BY), with the data version back: the state version then reads as
+// the one before (STATE_AS). A write of the subject on screen's records (its key, or a write with it in force: a visit
+// back to it), one of nobody's known, or any data write leaves the new version.
+let DATA_SW = 0,
+  STATE_SW = 0,
+  DATA_AS = {v: -1, k: -1},
+  STATE_AS = {v: -1, k: -1};
+const swapBump = rec => (STATE_SW++, rec === 'rec' || DATA_SW++, stateBump(rec, null));
+const dataKey = () => (DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
+function dataMark() {
+  let s = null;
+  try {
+    s = SUBJ ? SUBJ.id : null;
+  } catch (e) {
+    if (!(e instanceof ReferenceError)) throw e; // SUBJ not declared (a part of this file run alone), as stateBump's
+  }
+  return {
+    v: DATA_V,
+    sw: DATA_SW,
+    k: dataKey(),
+    sv: STATE_V,
+    ssw: STATE_SW,
+    sk: STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V,
+    n: REC_N,
+    s,
+    own: REC_BY[s] || 0
+  };
+}
+// {data, state}: whether each version came back to the mark's (each then reads as it).
+function dataBack(m) {
+  const data = DATA_V - m.v === DATA_SW - m.sw,
+    state = data && m.s !== null && STATE_V - m.sv === STATE_SW - m.ssw + (REC_N - m.n) - ((REC_BY[m.s] || 0) - m.own);
+  if (data) DATA_AS = {v: DATA_V, k: m.k};
+  if (state) STATE_AS = {v: STATE_V, k: m.sk};
+  return {data, state};
+}
+// The other files' memos a visit resets with the subject (model.js the intro map read and each unit's difficulty, quiz.js
+// the typed names; their SUBJ_HOOKS): {get, put}, each read before a visit or a tree lent (memoGet) and put back after it
+// when the data version came back (memoPut; put(memo, back) with dataBack's {data, state}: the intro map only with the
+// state version).
+const SUBJ_MEMOS = [];
+const memoGet = () => SUBJ_MEMOS.map(h => h.get());
+const memoPut = (memo, back) => void (back.data && SUBJ_MEMOS.forEach((h, i) => h.put(memo[i], back)));
+// sync.js SHEETV; model.js OWN_STATS + a subject's id (tests/stateview.test.js checks both names). REC_KEYS: those of the
+// player's records and settings (stateBump('rec')), each to its subject's id.
+const REC_KEYS = new Map(SUBJECTS.flatMap(S => ['progress', 'quiz', 'intro', 'intro-offer', 'start'].map(k => [subjKey(S.id, k), S.id]))),
+  STATE_KEYS = new Set([...REC_KEYS.keys(), 'reefid-sheet-v', 'reefid-photo-stats', ...SUBJECTS.map(S => 'reefid-photo-stats-' + S.id)]);
+// Storage freshness, one check per task (docs/spec/storage.md "Keys read many times an answer"). A stored text read
+// many times (sync.js keptEntry, stateNow below) is compared with the text kept at its first read in a task, then
+// trusted until the task's microtasks run (freshEnd, queued then) or this tab writes the key (storeWrote). Within a task
+// only this tab changes what the storage reads: another tab's write reaches this page between its tasks (Chromium
+// applies it to the page's copy from a message, a task of its own; Firefox reads through a snapshot kept until the
+// task's end), so the next task's first read compares and sees it (were it readable mid-task, it would be seen one task
+// late, as if written after the task). No storage event is listened to: it is not sent for every change (the browser's
+// own tools), and the comparison needs none. Every write of this tab calls storeWrote(k):
+// store.set, store.drop, store.raw (the writes that do not go through JSON: sync.js's removals at sign-in and sign-out,
+// progress.js loadData, the settings kept as plain text), and sync.js keptPush. Without queueMicrotask (the unit tests
+// that run parts of these files) every read compares.
+let FRESH_T = 0, // the number of the task in progress, among those that compared a stored text
+  freshQ = false; // its end is queued
+const FRESH = new Map(); // a key -> the task its stored text was last compared in (sync.js keptEntry)
+const freshEnd = () => ((freshQ = false), FRESH_T++);
+// The task's number for a comparison made now, its end queued; -1 when no task can be marked (always compare).
+function freshNow() {
+  if (typeof queueMicrotask !== 'function') return -1;
+  if (!freshQ) ((freshQ = true), queueMicrotask(freshEnd));
+  return FRESH_T;
+}
+// k's stored text was compared in this task, and this tab has not written it since.
+const freshSeen = k => FRESH.get(k) === FRESH_T;
+// A write of k by this tab, whatever wrote it: its text is compared again at the next read, and the text of the key k
+// is an old name of (core.js keyRename: keyGet reads the old name while the new one is absent); an input of the views
+// bumps the state version (STATE_KEYS).
+function storeWrote(k) {
+  for (const n of [k, typeof keyRename === 'function' && keyRename(k)])
+    if (n) {
+      FRESH.delete(n);
+      if (STATE_LIVE.includes(n)) STATE_AT = -1;
+    }
+  if (STATE_KEYS.has(k)) stateBump(REC_KEYS.has(k) ? 'rec' : undefined, REC_KEYS.get(k));
+}
 // Two inputs are read from storage at every use, kept parsed while their text stays the same (sync.js keptBy): the
 // sheet's version (sheetV) and a subject's first-launch record (model.js imrSaid, startV). Their stored text is compared
-// at every read of a view (stateNow), as keptBy compares it, so a write that went round store.set (another tab of the
-// app, a progress file, a test) bumps the version too.
+// at the first read of a view in a task (stateNow), as keptEntry compares it, so a write that went round store.set
+// (another tab of the app, a test) bumps the version too. With VIEW_CHECK on, a read that trusts the task's comparison
+// compares again, and a difference (a write of this tab without storeWrote) throws.
 const STATE_LIVE = ['reefid-sheet-v', ...SUBJECTS.map(S => startKey(S.id))],
   STATE_RAW = STATE_LIVE.map(() => null);
+let STATE_AT = -1; // the task of stateNow's last comparison
+const stateRaw = k => {
+  try {
+    return keyGet(localStorage, k);
+  } catch (e) {
+    return null;
+  }
+};
 function stateNow() {
-  let ch = false;
+  if (STATE_AT === FRESH_T) {
+    if (VIEW_CHECK.on && STATE_LIVE.some((k, i) => stateRaw(k) !== STATE_RAW[i]))
+      viewFail('stateNow: a stored text changed in this task without storeWrote');
+    return STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V; // after a visit that wrote nothing on screen, the version before
+  }
+  // A first-launch record is the player's own (stateBump('rec')), written by another tab: nobody's known (a visit under
+  // way keeps nothing); the sheet's version (the first key) is data.
+  let ch = '';
   STATE_LIVE.forEach((k, i) => {
-    let raw = null;
-    try {
-      raw = keyGet(localStorage, k);
-    } catch (e) {}
-    if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = true));
+    const raw = stateRaw(k);
+    if (raw !== STATE_RAW[i]) ((STATE_RAW[i] = raw), (ch = i && ch !== 'all' ? 'rec' : 'all'));
   });
-  if (ch) stateBump();
-  return STATE_V;
+  if (ch) stateBump(ch === 'rec' ? 'rec' : undefined, null);
+  STATE_AT = freshNow();
+  return STATE_V === STATE_AS.v ? STATE_AS.k : STATE_V;
 }
 // A view (the units in play: bonusList, pool, sciUp, shareFree): f's value, computed at its first read in a version and
 // read again as it is until the next. f is a function of the inputs alone (no clock, no random number, no planner's
@@ -167,26 +289,77 @@ const viewSame = (a, b) => {
     ky = Object.keys(y);
   return kx.length === ky.length && kx.every((k, i) => k === ky[i] && viewSame(x[k], y[k]));
 };
-function stateView(name, f) {
+// A difference VIEW_CHECK found: thrown, and again in a task of its own.
+const viewFail = m => {
+  const e = new Error(m);
+  setTimeout(() => {
+    throw e;
+  });
+  throw e;
+};
+const viewDiff = (kind, name) =>
+  viewFail(`${kind} view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
+// f's value kept while now() (the version) stays the same.
+// point: its readers check each value they read instead (the units met, model.js introduced: a record written by hand
+// for another key, a smoke's P[LEVEL], changes no value read), so VIEW_CHECK does not compare the whole value.
+function verView(kind, name, f, now, point = false) {
   let at = -1,
     v;
   return () => {
-    const now = stateNow();
-    if (at !== now) {
+    const t = now();
+    if (at !== t) {
       v = f();
-      at = now;
+      at = t;
       return v;
     }
-    if (VIEW_CHECK.on && !viewSame(v, f())) {
-      const e = new Error(`state view ${name}: the value kept differs from a computation now (an input written without stateBump?)`);
-      setTimeout(() => {
-        throw e;
-      });
-      throw e;
-    }
+    if (VIEW_CHECK.on && !point && !viewSame(v, f())) viewDiff(kind, name);
     return v;
   };
 }
+function stateView(name, f, point = false) {
+  return verView('state', name, f, stateNow, point);
+}
+// The data version now: the stored texts compared first (stateNow), as for a state view; after a visit that wrote
+// nothing, the version before it (dataKey's test, written out: every view's read goes through here, and the answer
+// cost counts named calls).
+const dataNow = () => (stateNow(), DATA_V === DATA_AS.v ? DATA_AS.k : DATA_V);
+// A view of one argument k (a rank class, a unit), f(k) kept per k and per version: the values of a version are dropped
+// at the next (now: stateNow or dataNow). The same rules and the same check as stateView, value by value. k is a string,
+// a number or an object (a Map's key: the same value or the same object, the same entry).
+// view.fn(): the view for a loop with nothing written during it (as model.js introducedFn): the version is read once,
+// then a value kept in it is a lookup; any other read (a value not kept yet, VIEW_CHECK on, a newer version read since)
+// goes through the view. The reads stay anonymous closures, as every view's (the answer cost counts named calls).
+const withFn = (read, fn) => ((read.fn = fn), read);
+function keyView(kind, name, f, now) {
+  let at = -1,
+    read = null;
+  const M = new Map();
+  const fn = () => {
+    const t = now();
+    if (at !== t) ((at = t), M.clear());
+    return k => (at === t && !VIEW_CHECK.on && M.has(k) ? M.get(k) : read(k));
+  };
+  return (read = withFn(k => {
+    const t = now();
+    if (at !== t) ((at = t), M.clear());
+    if (!M.has(k)) {
+      const v = f(k);
+      if (at === t) M.set(k, v);
+      return v;
+    }
+    const v = M.get(k);
+    if (VIEW_CHECK.on && !viewSame(v, f(k))) viewDiff(kind, name);
+    return v;
+  }, fn));
+}
+const stateViewBy = (name, f) => keyView('state', name, f, stateNow);
+// A view of the data version (the rank classes, the units of a class with a photo, the look-alike index): computed once
+// per data version, so the player's answers, which move the state version only, do not make it again. f reads the data
+// inputs alone (DATA_V's), never the records or the settings; VIEW_CHECK checks it as a state view.
+const dataView = (name, f) => verView('data', name, f, dataNow);
+const dataViewBy = (name, f) => keyView('data', name, f, dataNow);
+// Every write of the storage by this tab calls storeWrote (above): set here; drop for a removal and raw for a text
+// written as it is, where a write went round store.set.
 const store = {
   get(k, d) {
     try {
@@ -200,7 +373,17 @@ const store = {
     try {
       localStorage.setItem(k, JSON.stringify(v));
     } catch (e) {}
-    if (STATE_KEYS.has(k)) stateBump(); // an input of the views
+    storeWrote(k); // an input of the views bumps the version
+  },
+  // localStorage.removeItem(k), which throws as it does (a caller's try decides what follows).
+  drop(k) {
+    storeWrote(k);
+    localStorage.removeItem(k);
+  },
+  // localStorage.setItem(k, text), the same.
+  raw(k, text) {
+    storeWrote(k);
+    localStorage.setItem(k, text);
   }
 };
 const VIEWS = [
@@ -636,9 +819,9 @@ const photoSrc = p =>
   !p
     ? ''
     : p.imr && p.pg
-      ? `<a class="psrc" href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}. ${esc(author(p))}: open the page that credits it"><span class="pa">IMR lecture · </span>${esc(author(p))} ↗</a>`
+      ? `<a class="psrc" href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener" title="${ORG.lectureRef}${p.slide ? ', slide ' + esc(p.slide) : ''}. ${esc(author(p))}: open the page that credits it"><span class="pa">${ORG.lecture} · </span>${esc(author(p))} ↗</a>`
       : p.imr
-        ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
+        ? `<span class="psrc" title="${ORG.lectureRef}${p.slide ? ', slide ' + esc(p.slide) : ''}">${ORG.lecture}</span>`
         : /^https?:\/\/(www\.)?inaturalist\.org\//.test(p.o || '')
           ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
           : // A FishBase photo Pierre put in play: its author and FishBase's photo page.
@@ -650,7 +833,7 @@ const groupHue = n => (n * 137) % 360;
 // An IMR lecture photo's credit: the lecture and slide, then, once traced (pg), its photographer and the page that credits
 // it (Corals of the World's terms ask for that citation).
 const lectCredit = p =>
-  `IMR Lecture 6, slide ${esc(p.slide)}${p.pg && p.a ? ` · <a href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener">${esc(p.a)}</a>` : ''}`;
+  `${ORG.lectureRef}, slide ${esc(p.slide)}${p.pg && p.a ? ` · <a href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener">${esc(p.a)}</a>` : ''}`;
 const credit = p =>
   p.imr
     ? lectCredit(p)
@@ -660,7 +843,7 @@ const credit = p =>
 // lecture, then its photographer and site (its page's address names the species: no link).
 const blindCredit = p => {
   const n = author(p);
-  return p.imr ? ' · IMR lecture' + (p.pg && n ? ` · © ${esc(n)}` : '') : n ? ` · © ${esc(n)}` : '';
+  return p.imr ? ' · ' + ORG.lecture + (p.pg && n ? ` · © ${esc(n)}` : '') : n ? ` · © ${esc(n)}` : '';
 };
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick (tools/covers.txt),
@@ -755,6 +938,9 @@ function build() {
     applyForms(x, CUR);
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
+  // The units each ★ genus opens after, on its record (core.js starAfter: the opening reads GX(n).after for every subject),
+  // last: its look-alikes and lecture groups are final.
+  starAfter(d);
   // What the corals' units were made from, for the content version of their answers (contentVer), kept out of sight on
   // the data made (not enumerable: nothing that reads or copies DATA meets it).
   Object.defineProperty(d, 'cvIn', {value: {S, cur: CUR, st: DATAST, files: [RAW, FORMS, AUTOQ, PICKS], v: ''}, configurable: true});
@@ -895,10 +1081,10 @@ function treeGenera(X, F) {
         // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
         ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
         tl: cues
-          ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
+          ? `ID tips (${ORG.short}, ` + (G.imr || g) + sl + ')'
           : marks
             ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
-            : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+            : 'Its species here' + (sl ? ` (${ORG.short}, ` + G.imr + sl + ')' : ''),
         // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
         ...(G.plain ? {plain: G.plain} : {}),
         // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
@@ -1084,19 +1270,34 @@ const metCount = (L, met) => {
   let m = -1;
   return () => (m < 0 ? (m = L.filter(met).length) : m);
 };
-// The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
-// met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
-// often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
-function spPlay(L, score, met, on) {
-  if (!on) return [];
+// The units of a level's list L by their parent (spPlay, sciPlay): [parent, its units in L's order], the parents in the
+// order of their first unit. A view of the data version per list (the tree's TREEU.spl, TREEU.ssl; computed where a part
+// of this file runs alone): each call went through the whole list. Its readers never change a list.
+const kidsCalc = L => {
   const by = new Map();
   L.forEach(n => {
     const p = GX(n).parent;
     if (!by.has(p)) by.set(p, []);
     by.get(p).push(n);
   });
+  return [...by];
+};
+const kidsOf = typeof dataViewBy === 'function' ? dataViewBy('kidsOf', kidsCalc) : kidsCalc;
+// sciPlay's lists: each parent's units of L (kidsOf) in its species order (its record's species), a view of the data
+// version per list as kidsOf.
+const sciKidsCalc = L =>
+  kidsOf(L).map(([p, U]) => {
+    const ord = (GX(p) || {}).species || [];
+    return [p, [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp))];
+  });
+const sciKids = typeof dataViewBy === 'function' ? dataViewBy('sciKids', sciKidsCalc) : sciKidsCalc;
+// The species units in play (the sp set): from L (TREEU.spl), for each family at Advanced (score, LV_AT[1]), its species
+// met and the next in its commonness order (fish.json cmi; lvlNext: the next ones while the level opens its group); how
+// often is the rank share's (model.js SHARE, shareRoom). on: the species level is on (spOn); off, none.
+function spPlay(L, score, met, on) {
+  if (!on) return [];
   const m = metCount(L, met);
-  return [...by].flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
+  return kidsOf(L).flatMap(([p, U]) => [...U.filter(met), ...(score(p) >= LV_AT[1] ? lvlNext(U, m(), met) : [])]);
 }
 // The species by their scientific names in play (the ssp set; docs/reviews/2026-11-18-species-step2-plan.md §2.3): from L
 // (TREEU.ssl), for each parent (their genus) in play now (up: the slate and the other sets' units in play) and at its
@@ -1108,18 +1309,10 @@ function spPlay(L, score, met, on) {
 // (sciSpOn, rule D4); off, none.
 function sciPlay(L, score, met, up, on) {
   if (!on) return [];
-  const by = new Map();
-  L.forEach(n => {
-    const p = GX(n).parent;
-    if (!by.has(p)) by.set(p, []);
-    by.get(p).push(n);
-  });
   const m = metCount(L, met);
-  return [...by].flatMap(([p, U]) => {
+  return sciKids(L).flatMap(([p, O]) => {
     if (!up.has(p)) return [];
-    const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1],
-      ord = GX(p).species || [],
-      O = [...U].sort((a, b) => ord.indexOf(GX(a).sp) - ord.indexOf(GX(b).sp));
+    const at = typeof GX(p).shareAt === 'number' ? GX(p).shareAt : LV_AT[1];
     return [...O.filter(met), ...(score(p) >= at ? lvlNext(O, m(), met) : [])];
   });
 }
@@ -1127,8 +1320,11 @@ function sciPlay(L, score, met, up, on) {
 // unit with none), and the class its questions stay in (kindRank): its rank inside the subject (rankOf) and its kind.
 // A question's choices, its typed names, its groups and its mimicry traps stay in one class, so a scientific question
 // never shows a common-name label, nor the reverse; the rank logged and the share's levels read rankOf alone.
+// kindRank is read for many units a question: a view of the data version per unit (dataViewBy; computed where a part of
+// this file runs alone, as in the unit tests), kindRankCalc computes it.
 const kindOf = n => (GX(n) || {}).kind || '';
-const kindRank = n => rankOf(n) + (kindOf(n) ? ':' + kindOf(n) : '');
+const kindRankCalc = n => rankOf(n) + (kindOf(n) ? ':' + kindOf(n) : '');
+const kindRank = typeof dataViewBy === 'function' ? dataViewBy('kindRank', kindRankCalc) : kindRankCalc;
 // The scientific genera in play (the sci set), from L (TREEU.sci), a genus met staying in: units, offered to everyone,
 // from its family's Advanced (LV_AT[1]; Open Water with hand: turned on by hand before, Q.sciH); auto, for an IMR player
 // (imr), the IMR genera (imrg) from Open Water without the offer, never in units.
@@ -1356,7 +1552,7 @@ const sciStars = L => L.filter(u => !!((TREEU && TREEU.sps && TREEU.sps[GX(u).sp
 // sets have in play (the fish's scientific genera; a sea slug genus is on the slate). A view of the state version
 // (sciUp, with bonusList below): sciUpCalc computes it.
 const sciUpCalc = () =>
-  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))]);
+  new Set([...slateGenera(), ...SETS().flatMap(S => (S.k === SCI_SP.k ? [] : [...(Q[S.k] ? setUnits(S) : []), ...autoOf(S)]))]);
 // The species by their scientific names, for every subject that asks them (SUBJECTS names 'sci'; UNITS sets: the
 // fish's, the sea slugs'): no offer and no switch of its own (the fish's come with their scientific genera, Q404 A's
 // names row; every sea slug player's); auto: sciPlay, once the level is on (sciSpOn, rule D4); all: every such unit
@@ -1365,7 +1561,8 @@ const SCI_SP = {
   k: 'ssp',
   all: () => sciSpAll(),
   units: () => [],
-  auto: () => (TREEU && sciSpOn() && typeof genScore === 'function' ? sciPlay(TREEU.ssl || [], genScore, introduced, sciUp(), true) : []),
+  auto: () =>
+    TREEU && sciSpOn() && typeof genScore === 'function' ? sciPlay(TREEU.ssl || [], genScore, introducedFn(), sciUp(), true) : [],
   due: () => false,
   page: false, // not on the families page
   kick: 'Scientific names',
@@ -1381,10 +1578,11 @@ const SCI_SP = {
 };
 // The scientific genera in the game now (TREEU.sci, the sci set): every circle's once the sheet replays them (sync.js
 // generaOn, rule D4), circle 1's alone before; every one where sync.js is not loaded (the
-// tools that run the app's units alone). A view of the state version (stateView): sciNowCalc computes it.
+// tools that run the app's units alone). A view of the data version (dataView: the tree and the sheet's version are its
+// inputs): sciNowCalc computes it.
 const sciNowCalc = () =>
   TREEU ? (TREEU.sci || []).filter(n => (GX(n).circle || 1) < 2 || typeof generaOn !== 'function' || !!generaOn()) : [];
-const sciNow = stateView('sciNow', sciNowCalc);
+const sciNow = dataView('sciNow', sciNowCalc);
 // A coral photo's taxon: its iNaturalist species (t), only within the genus asked n (a photo moved keeps its old name)
 // and when sure: Research Grade (no gid) or Pierre's own (rule S2). The corals have no common names.
 const coralTaxon = (p, n) => {
@@ -1394,7 +1592,18 @@ const coralTaxon = (p, n) => {
 };
 // Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
 // (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
-const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => kindRank(n) === rk);
+// The sets' units are grouped by class once per data version (a view: rankClassesCalc), each class in the sets' order,
+// so a read is one lookup where each read went through every unit of the tree's sets; its readers never change a list.
+const rankClassesCalc = () => {
+  const M = new Map();
+  new Set(SETS().flatMap(S => (S.all ? S.all() : S.units()))).forEach(n => {
+    const rk = kindRank(n);
+    M.has(rk) ? M.get(rk).push(n) : M.set(rk, [n]);
+  });
+  return M;
+};
+const rankClasses = dataView('rankClasses', rankClassesCalc);
+const rankUnits = rk => rankClasses().get(rk) || [];
 // A unit's record: a genus of the list or of the extra genera, or a fish entry (TREEU, by its teaching id: ids and genus
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (TREEU ? TREEU.gen[n] : undefined);
@@ -1491,9 +1700,12 @@ function mimLay(X, f) {
 // A tree subject's own state (the globals' names), made on first use; the globals from the state in force and back.
 const treeOf = id =>
   TREE_OF[id] || (TREE_OF[id] = {id, TREEU: null, TREEP: null, TREEH: null, TREERAW: null, TREEF: null, TREEST: '', TREEON: false});
-function treePull() {
+// swap: another tree put in force as it was kept (treeAt), nothing written (swapBump); else its state written (treeSet).
+function treePull(swap) {
   if (TREE_AT) ({TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON} = treeOf(TREE_AT));
-  if (typeof stateBump === 'function') stateBump(); // the tree in force: an input of the views
+  // the tree in force: an input of the views
+  if (swap && typeof swapBump === 'function') swapBump();
+  else if (typeof stateBump === 'function') stateBump();
 }
 function treePush() {
   if (TREE_AT) Object.assign(treeOf(TREE_AT), {TREEU, TREEP, TREEH, TREERAW, TREEF, TREEST, TREEON});
@@ -1504,7 +1716,7 @@ function treeAt(id) {
   if (!UNITS[id] || !UNITS[id].get || id === TREE_AT) return;
   treePush();
   TREE_AT = id;
-  treePull();
+  treePull(true);
   const T = treeOf(id);
   if (TREERAW && DATA && (!TREEU || T.stale)) {
     T.stale = false;
@@ -1514,13 +1726,18 @@ function treeAt(id) {
 }
 // fn() with subject id's tree in force, then the one before: what reads a tree subject's units outside its own context
 // (sync.js boardUnits: each leaderboard's tree, whatever the subject on screen).
+// The tree before back in force, with nothing else written, keeps the data version before (dataBack), the state version
+// with no record of the subject on screen written, and the memos (memoPut).
 function treeWith(id, fn) {
-  const was = TREE_AT;
+  const was = TREE_AT,
+    m = typeof dataMark === 'function' ? dataMark() : null,
+    memo = m && memoGet();
   treeAt(id);
   try {
     return fn();
   } finally {
     if (was) treeAt(was);
+    if (m && TREE_AT === was) memoPut(memo, dataBack(m));
   }
 }
 // The units of every tree subject loaded made again (build: a new curation): the one in force at once, the others when
@@ -1686,6 +1903,7 @@ function rankPhotos() {
     if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, treeSeen, p => photoDiff(n, p), treeSpPick)).f;
   });
   if (typeof stateBump === 'function') stateBump(); // the tree's photo lists: an input of the views
+  if (typeof drawFillSoon === 'function') drawFillSoon(); // the draw's data of the new version, filled ahead
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
 // questions planned ahead), reloaded on a switch: each file registers a function here. keep = true for a short visit
@@ -1697,18 +1915,26 @@ function subjectLoad(S, keep) {
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
-  // the subject, its records and settings: inputs of the views (and again after the hooks' own state)
-  if (typeof stateBump === 'function') stateBump();
+  // the subject, its records and settings: inputs of the views (and again after the hooks' own state); the subject in
+  // force swapped (swapBump: a tree built for it, a record renamed, bump on their own)
+  swapBump();
   SUBJ_HOOKS.forEach(f => f(keep));
-  if (typeof stateBump === 'function') stateBump();
+  swapBump();
 }
 // fn() run as if S were the current subject, then back (the sync's summary and merge, sign-in, sign-out). Synchronous.
 // SUBJ_VISIT: how many visits are under way (nothing may redraw the page meanwhile: it shows the subject on screen).
 let SUBJ_VISIT = 0;
+// The subject and the tree on screen back in force with no other data written meanwhile (every data bump a swap's):
+// the data version before the visit (dataBack), so the data views kept for it hold, and the memos the hooks reset put
+// back (memoPut); with no record of the subject on screen written either (the visited subject's own, REC_BY), the state
+// version before it too. A tree the visit put in force that stays (none before it) or a data write leaves the new
+// version.
 function inSubject(id, fn) {
   const S = subjectOf(id),
     was = {S: SUBJ, P, Q, T: TREE_AT};
   if (S === SUBJ) return fn();
+  const m = dataMark(),
+    memo = memoGet();
   SUBJ_VISIT++;
   subjectLoad(S, true);
   try {
@@ -1717,13 +1943,15 @@ function inSubject(id, fn) {
     SUBJ_VISIT--;
     SUBJ = was.S;
     // the subject on screen back: an input of the views, as its records and settings below
-    if (typeof stateBump === 'function') stateBump();
+    swapBump();
     if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
-    if (typeof stateBump === 'function') stateBump();
+    swapBump();
+    if (TREE_AT === was.T) memoPut(memo, dataBack(m));
     prog(); // the pill shows the subject on screen again (a visit may have saved, which shows its own)
+    if (typeof drawFillSoon === 'function') drawFillSoon(); // a visit that moved the data version: the draw's data filled again ahead
   }
 }
 // The subject switch (docs/DESIGN.md "Subject switch"): Home's row and the header's control (#subjc, not on Home), only
@@ -1939,173 +2167,13 @@ function card(name, group) {
   const im = p
     ? `<img class="ph" src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="card" sizes="${sizesFor('card')}" alt="" loading="lazy">`
     : `<span class="ph none">no photo</span>`;
-  return `<a class="card${ig ? ' grp' : ''}" href="${esc(hr('g-' + name))}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="IMR confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? '<b class="ikxtag">Not on IMR list</b> · ' : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
+  return `<a class="card${ig ? ' grp' : ''}" href="${esc(hr('g-' + name))}"${ig ? ` style="--g:${groupHue(ig.n)}"` : ''}>${im}${ig && group === true ? `<span class="ig" title="${ORG.short} confusion group ${ig.n}: ${esc(ig.t)}">Group ${ig.n}</span>` : ''}<span class="cap"><i>${esc(name)}</i><small>${g.x ? `<b class="ikxtag">Not on ${ORG.list}</b> · ` : g.n ? 'No. ' + g.n + ' · ' : g.ig || !starNote(name) ? '<b class="star">★ not surveyed</b> · ' : `<b class="star">${starNote(name)}</b> · `}${esc(altName(g.fam))}</small><p>${gloss(tipsText(g), undefined, true)}</p></span></a>`;
 }
 function bindCards(root = $v) {
   root.querySelectorAll('[data-g]').forEach(b => (b.onclick = () => go('g-' + b.dataset.g)));
 }
 function bindGo(root = $v) {
   root.querySelectorAll('[data-go]').forEach(b => (b.onclick = () => go(b.dataset.go)));
-}
-
-// Full-size viewer shared by every page. opts.blind() true = quiz before answering: hide the genus, the taxon and the
-// source links; the author's name alone stays (blindCredit).
-const lb = document.getElementById('lightbox');
-let lbClose = null;
-// Back closes the open viewer. A viewer's entry reached with no viewer open (Forward after closing a photo, or Back onto
-// it from a link followed inside the viewer) is stepped over, like after a reload.
-addEventListener('popstate', () => {
-  if (lbClose) lbClose(true);
-  else if ((history.state || {}).lb) history.back();
-});
-const VIEW_LABEL = {wide: 'Colony', medium: 'Close-up', macro: 'Corallites', close: 'Close-up'};
-// The enlarge mark on photos that open this viewer (quiz, duels, genus sheet: almost no player enlarged a quiz photo, so
-// most did not know they could). A magnifier with a plus in a
-// corner, from the app's SVG set; decorative, the button around it carries the label "Enlarge photo".
-const ZOOMI =
-  '<span class="zic" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4M11 8.5v5M8.5 11h5"/></svg></span>';
-// The one-time "Tap a photo to see it bigger" hint (quiz.js zoomHint): 'seen' once shown, 'zoomed' once a photo has been
-// enlarged on this device; either way it is never due again. Per device, not part of the progress.
-const ZHINT_KEY = 'reefid-zoomhint';
-// opts.over(p): an optional layer drawn over the whole photo (HTML in % of the photo, e.g. the labels of a Coral basics
-// step, proto/basics.js), with a Labels on/off switch; it follows the photo at fit and at actual size.
-function zoom(list, i, opts = {}) {
-  if (store.get(ZHINT_KEY, null) !== 'zoomed') store.set(ZHINT_KEY, 'zoomed');
-  const blind = () => (opts.blind ? opts.blind() : false);
-  let overOn = true,
-    ro = null;
-  const show = () => {
-    const p = list[i],
-      hide = blind(),
-      vl = p.view ? (SUBJ.views.find(v => v[0] === p.view) || VIEWS.find(v => v[0] === p.view) || [0, VIEW_LABEL[p.view]])[1] : '',
-      over = !hide && opts.over ? opts.over(p) : '';
-    const cap = hide
-      ? esc(vl || 'Photo') + blindCredit(p)
-      : `${p.genus ? `<b>${uname(p.genus)}</b> · ` : ''}${vl ? esc(vl) + ' · ' : ''}${credit(p)}${p.src ? ` · <a href="${esc(safeUrl(p.src))}" target="_blank" rel="noopener">original</a>` : ''}`;
-    // The 1600 px file, over the 480 px one shown at once (usually already loaded). Saver: 960 px, 1600 on a click.
-    lb.innerHTML = `<div class="lb-in"><img src="${img(p, saver() ? 'm' : '')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} style="background:center / contain no-repeat url('${img(p, 's')}')" alt="${hide ? `${SUBJ.what} to identify` : esc(p.t || '')}" title="Click for actual size">${over ? `<div class="lb-over"${overOn ? '' : ' hidden'}>${over}</div>` : ''}<p class="lb-cap">${cap}${!hide && p.f && DATA ? ` · ${repBtn({k: 'photo', g: p.genus || genusOfPhoto(p.f), ph: [p.f], m: 'photo'}, '⚑ Report')}` : ''}</p>
-      <div class="lb-nav">${list.length > 1 ? `<button type="button" data-d="-1" aria-label="Previous photo">‹</button><span>${i + 1} / ${list.length}</span><button type="button" data-d="1" aria-label="Next photo">›</button>` : ''}${over ? `<button type="button" data-ov aria-pressed="${overOn}">Labels</button>` : ''}<button type="button" data-x aria-label="Close">Close</button></div></div>`;
-    lb.classList.remove('full');
-    const im = lb.querySelector('.lb-in img');
-    im.draggable = false;
-    // The layer sits exactly on the photo's box (the photo keeps its ratio, so its box is the picture).
-    if (ro) ro.disconnect();
-    const ov = lb.querySelector('.lb-over');
-    if (ov) {
-      const place = () =>
-        Object.assign(ov.style, {
-          left: im.offsetLeft + 'px',
-          top: im.offsetTop + 'px',
-          width: im.offsetWidth + 'px',
-          height: im.offsetHeight + 'px'
-        });
-      place();
-      im.addEventListener('load', place);
-      if (typeof ResizeObserver === 'function') (ro = new ResizeObserver(place)).observe(im);
-      lb.querySelector('[data-ov]').onclick = e => {
-        e.stopPropagation();
-        overOn = !overOn;
-        ov.hidden = !overOn;
-        e.currentTarget.setAttribute('aria-pressed', overOn);
-      };
-    }
-    im.onclick = e => {
-      e.stopPropagation();
-      if (moved) return; // the end of a drag, not a click
-      // Actual size centred on the point clicked, not on a corner to scroll from.
-      const rx = e.offsetX / im.clientWidth,
-        ry = e.offsetY / im.clientHeight;
-      lb.classList.toggle('full');
-      const u = im.getAttribute('src') || '';
-      if (ownPhoto(u) && tierOf(u)) im.src = resized(u, '');
-      if (lb.classList.contains('full')) {
-        const at = () => {
-          lb.scrollLeft = rx * im.clientWidth - lb.clientWidth / 2;
-          lb.scrollTop = ry * im.clientHeight - lb.clientHeight / 2;
-        };
-        at();
-        im.addEventListener('load', at, {once: true});
-      }
-    };
-    lb.querySelectorAll('[data-d]').forEach(
-      b =>
-        (b.onclick = e => {
-          e.stopPropagation();
-          step(Number(b.dataset.d));
-        })
-    );
-    lb.querySelector('[data-x]').onclick = () => close();
-    lb.querySelector('[data-x]').focus({preventScroll: true});
-  };
-  const step = d => {
-    i = (i + d + list.length) % list.length;
-    show();
-  };
-  const back = document.activeElement;
-  // Phones close an enlarged photo with Back (else Back changes the page under it): opening adds a history entry with the
-  // same address, Back (popstate) closes it, and Close takes the entry back.
-  const close = fromBack => {
-    if (lbClose !== close) return;
-    lbClose = null;
-    if (ro) ro.disconnect();
-    if (!fromBack && history.state && history.state.lb) history.back();
-    lb.hidden = true;
-    lb.innerHTML = '';
-    lb.classList.remove('full');
-    document.removeEventListener('keydown', key);
-    if (back && back.focus) back.focus({preventScroll: true});
-  };
-  const key = e => {
-    if (e.key === 'Escape') close();
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') step(e.key === 'ArrowRight' ? 1 : -1);
-  };
-  // At actual size, a mouse drags the photo around (hand cursor; an RA's request:
-  // docs/decisions/2026-11-18-decisions-from-app-comments.md); a touch screen already pans it natively. A press that
-  // moves under 5 px is still a click (back to fit).
-  let drag = null,
-    moved = false;
-  lb.onpointerdown = e => {
-    moved = false;
-    if (e.pointerType !== 'mouse' || e.button || !lb.classList.contains('full')) return;
-    drag = {x: e.clientX, y: e.clientY, l: lb.scrollLeft, t: lb.scrollTop};
-  };
-  lb.onpointerup = lb.onpointercancel = () => {
-    drag = null;
-    lb.classList.remove('dragging');
-  };
-  lb.onpointermove = e => {
-    if (!drag) return;
-    // Released outside the window (no pointerup reached us): the drag ends here. No pointer capture:
-    // it would retarget the click that zooms back out to the viewer itself.
-    if (!(e.buttons & 1)) return lb.onpointerup();
-    const dx = e.clientX - drag.x,
-      dy = e.clientY - drag.y;
-    if (!moved && Math.hypot(dx, dy) < 5) return;
-    moved = true;
-    lb.classList.add('dragging');
-    lb.scrollLeft = drag.l - dx;
-    lb.scrollTop = drag.t - dy;
-  };
-  // Swipe left/right between photos (single finger only, so pinch-zoom still works).
-  let x0 = null;
-  lb.ontouchstart = e => {
-    x0 = e.touches.length === 1 && !lb.classList.contains('full') ? e.touches[0].clientX : null;
-  };
-  lb.ontouchend = e => {
-    if (x0 === null || list.length < 2) return;
-    const dx = e.changedTouches[0].clientX - x0;
-    if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
-    x0 = null;
-  };
-  if (lbClose) lbClose(true);
-  else history.pushState({lb: 1, d: pageDepth}, '');
-  lbClose = close;
-  lb.hidden = false;
-  lb.onclick = e => {
-    if (e.target === lb && !moved) close();
-  };
-  document.addEventListener('keydown', key);
-  show();
 }
 
 /* ---------- key helpers (Coral Finder book boxes, used by genus sheets and the Coral ID Key) + IMR groups ---------- */
@@ -2151,7 +2219,7 @@ const save = () => {
 // visit, so the pill keeps its 0% until then.
 const prog = () => typeof showProg === 'function' && showProg();
 // A unit's record, made empty at its first use (a record made: an input of the views, stateBump).
-const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump(), P[n]);
+const st = n => P[n] || ((P[n] = {ok: 0, ko: 0, streak: 0}), typeof stateBump === 'function' && stateBump('rec'), P[n]);
 const qLoad = () => {
   const q = Object.assign({view: 'any', level: 'auto'}, store.get(sKey('quiz'), {}), {stars: true}); // starred genera are always asked
   if (q.lvv !== 3) {
@@ -2209,11 +2277,14 @@ const treeC3 = () => {
   const h = headScore();
   return h ? ((h.by[1] || {}).entries || 0) >= c3.entries : progPct(TREEU.c1) >= 100 * c3.mean;
 };
+// Circle 2's condition (every circle-1 family asked since its card, and met): a view of the state version (the records,
+// the intro map and the tree are its inputs), read for each circle-2 unit the opening checks.
+const c1MetCalc = () => (TREEU ? TREEU.c1 : []).every(x => askedOpen(x) && introduced(x));
+const c1Met = typeof stateView === 'function' ? stateView('c1Met', c1MetCalc) : c1MetCalc;
 const treeGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
-  const c1 = TREEU ? TREEU.c1 : [];
-  return c < 3 ? c1.every(x => askedOpen(x) && introduced(x)) : !!TREEU && treeC3();
+  return c < 3 ? c1Met() : !!TREEU && treeC3();
 };
 // Every family in play met and none may open now (quiz.js allMetDue; UNITS fish done): the card's reason k, from o:
 // c3, circle 3 not reached ("about Open Water on average", the Entries component shown nowhere); beyond, circle 3
@@ -2228,15 +2299,15 @@ const fishNextOf = o => {
   if (o.c3 && !o.c3due) {
     k = 'c3';
     L.push(
-      `Next: ${pl(o.c3, 'family', 'families')} beyond the IMR course. They come once you know the course’s families well, about Open Water on average: keep practising them!`
+      `Next: ${pl(o.c3, 'family', 'families')} beyond the ${ORG.course}. They come once you know the course’s families well, about Open Water on average: keep practising them!`
     );
   } else if (o.c3 && o.c3row) {
     if (o.c3back) return null;
     k = 'beyond';
     L.push(
       o.c3 > 1
-        ? `The ${o.c3} families beyond the IMR course wait for you: open them in My progress, any time.`
-        : 'The family beyond the IMR course waits for you: open it in My progress, any time.'
+        ? `The ${o.c3} families beyond the ${ORG.course} wait for you: open them in My progress, any time.`
+        : `The family beyond the ${ORG.course} waits for you: open it in My progress, any time.`
     );
   } else {
     if (o.wait)
@@ -2300,7 +2371,7 @@ function treePhoto(f) {
 // every scientific genus name of the tree in force, and its common names (cn, cnr, IMR tags, en), so an English name is
 // told so, never read as a genus. Nothing for another rank.
 function treeTypeOther(rk) {
-  const F = rk === 'genus' && TREERAW && TREERAW.f;
+  const F = rk === 'genus' && (TREEF || (TREERAW && TREERAW.f));
   if (!F) return null;
   const first = x => String(x || '').split(/\s+/)[0],
     en = r => ((r && r.en) || []).map(x => x && x.n);
@@ -2417,9 +2488,9 @@ const UNITS = {
     // view's name; about, what it shows; src, where the look-alikes of the My mix-ups view's first look come from; groups,
     // the groups of the units in play, [{k, t: title (HTML), sub, mark (HTML), L}] (quiz.js cqByIMR, cqByKey, cqByFamily).
     cq: {
-      by: 'IMR groups',
-      about: 'the IMR lecture’s groups (the genera to tell apart)',
-      src: 'the IMR lecture and the Coral Finder book',
+      by: `${ORG.short} groups`,
+      about: `the ${ORG.lecture}’s groups (the genera to tell apart)`,
+      src: `the ${ORG.lecture} and the Coral Finder book`,
       groups: play => cqByIMR(play)
     },
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
@@ -2431,6 +2502,14 @@ const UNITS = {
       ask: 'Stuck on a coral?',
       name: 'Coral ID Key',
       lo: 'Tap the growth form and the clues you can see: it ranks the genera that fit, then compares them side by side.'
+    },
+    // The words of its question hint, the link under the photos that adds a close-up (quiz.js question, hintb) and the
+    // "Did you know?" tip about it (tips.js hint): name, said in the link ("Show the corallites (hint)") and the card; lo,
+    // what the card says it adds. Declared only by a subject whose questions have one (the fish and the sea slugs show one
+    // view): no words, no tip.
+    hint: {
+      name: 'corallites',
+      lo: 'a close-up of the corallites, the detail that often tells look-alikes apart'
     },
     // How a Memory pair is made (proto/pairs.js MEMORY): the unit's colony and its corallites, two views of it.
     memory: 'views',
@@ -2454,12 +2533,12 @@ const UNITS = {
     // Home's doors drawn before data.json, the band's photos once it is in (beforeData).
     doorsFirst: true,
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
-    pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
+    pick: `The coral genera of the ${ORG.slate}, as on ReefCloud photos.`,
     slate: () => slateOf(DATA),
     // The one 45-genus scale of the global progress (rule L6; docs/decisions/2026-11-21-coral-one-scale.md): the slate
     // and the bonus genera, for every player, opted in or not; the slate's own % is the IMR slate score.
     scale: () => gameOf(DATA),
-    slateName: 'IMR slate',
+    slateName: ORG.slate,
     // The IMR lecture's group k (data.json imrg: {n, t}), undefined for the genera outside the lecture's groups.
     group: k => DATA.imrg.find(x => x.n === k),
     // The structure stamp of its units (core.js structStamp: '' while the look-alike pairs in force are data.json's), sent
@@ -2507,10 +2586,10 @@ const UNITS = {
     deck: () => pairs().filter(([a, b]) => isClassic(a, b)),
     inGame: n => gameGenus(n),
     cmp: {
-      src: 'the IMR lecture or the Coral Finder book',
+      src: `the ${ORG.lecture} or the Coral Finder book`,
       clues: () => true,
       tag: (n, g) => (isBenthic(n) ? ' <small>fire coral</small>' : g.x ? ' <small>bonus</small>' : g.n ? '' : ' ★'),
-      line: g => `${esc(altName(g.fam))}${g.ig ? ' · IMR group ' + g.ig : ''}`,
+      line: g => `${esc(altName(g.fam))}${g.ig ? ` · ${ORG.short} group ` + g.ig : ''}`,
       more: g =>
         (g.crit || []).length
           ? `<details class="more"><summary>Coral ID Key criteria</summary><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">${critRef(g)}</p></details>`
@@ -2521,7 +2600,7 @@ const UNITS = {
     webBy: () => [
       {chip: 'Colour by family', of: n => GX(n).fam, name: altName},
       {
-        chip: 'Colour by IMR group',
+        chip: `Colour by ${ORG.short} group`,
         of: n => GX(n).ig || 0,
         name: k => (k ? k + '. ' + DATA.imrg[k - 1].t : '★ not in the lecture'),
         color: k => `hsl(${groupHue(k)} 55% 52%)`
@@ -2546,11 +2625,11 @@ const UNITS = {
         due: () => slateGenera().every(n => askedOpen(n) && introduced(n)), // a genus closed (model.js introBack, introLive) waits for its card and its question
         kick: 'Every genus of the slate met',
         title: n => `${n} more genera?`,
-        body: 'Not on the IMR coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.',
-        note: '⚙ Settings, Bonus genera, any time. They count in your progress, not in your IMR slate score.',
+        body: `Not on the ${ORG.short} coral list, but common at Dauin: you may meet them on dives and in ReefCloud photos.`,
+        note: `⚙ Settings, Bonus genera, any time. They count in your progress, not in your ${ORG.slate} score.`,
         tag: 'Bonus genus',
         name: 'Bonus genera',
-        card: 'Not on the IMR list, but common at Dauin.'
+        card: `Not on the ${ORG.list}, but common at Dauin.`
       }
     ]
   },
@@ -2582,10 +2661,10 @@ const UNITS = {
       before: 'EventMeasure or your next dive',
       when: 'In EventMeasure<span class="wide"> · or a photo from your dive</span>',
       title: 'Identify a fish',
-      desc: 'The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.',
+      desc: `The Fish ID Key is on its way: it will help you name the fish on the ${ORG.short} survey videos, or in your own photos.`,
       btn: 'Fish ID Key',
       soon: 'Coming soon',
-      key: 'A key to name the fish on the IMR survey videos and in your own photos, as the Coral ID Key does for corals.'
+      key: `A key to name the fish on the ${ORG.short} survey videos and in your own photos, as the Coral ID Key does for corals.`
     },
     // Home's Learn band in landscape tiles (home.js, home.css .hdtiles.land: most fish are horizontal, square tiles cut
     // them); the corals keep their square-ish close-ups.
@@ -2597,7 +2676,7 @@ const UNITS = {
     home: S => treeHome(S.id).then(() => fishCached().then(c => c && treeLoad(S.id))),
     // Between the two: the units on their first photos only (dataPartial).
     partial: () => !!TREERAW && !TREERAW.full,
-    pick: 'The reef fish families, as on the IMR survey videos.',
+    pick: `The reef fish families, as on the ${ORG.short} survey videos.`,
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
     // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.
     tour: {
@@ -2637,8 +2716,7 @@ const UNITS = {
     about: {
       who: 'reef fish families',
       photos: 'Fish photos also come from <a href="https://www.fishbase.se" target="_blank" rel="noopener">FishBase</a>, under CC BY-NC.',
-      course:
-        'The fish families follow the reef fish ID book (References); the cues, the look-alikes and IMR’s names come from the IMR fish presentation.',
+      course: `The fish families follow the reef fish ID book (References); the cues, the look-alikes and ${ORG.short}’s names come from the ${ORG.fishPres}.`,
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
     },
     // No level-change card (model.js startDue, the fallback cards at 40 and 60 answers) until the fish level is better
@@ -2662,12 +2740,12 @@ const UNITS = {
         k: 'beyond',
         units: () => (TREEU ? TREEU.c3 : []),
         due: () => !!TREEU && treeC3(),
-        kick: 'Beyond the IMR course',
-        title: () => 'More fish families, beyond the IMR course?',
+        kick: `Beyond the ${ORG.course}`,
+        title: () => `More fish families, beyond the ${ORG.course}?`,
         body: 'The families divers look for around Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
         yes: 'Open them',
         note: 'Also in My progress, any time.',
-        row: n => `Open the families beyond IMR (${n} ${n > 1 ? 'families' : 'family'})`
+        row: n => `Open the families beyond ${ORG.short} (${n} ${n > 1 ? 'families' : 'family'})`
       }
     ],
     // Every family in play met and none may open now (quiz.js allMetDue): the card's reason and words
@@ -2698,9 +2776,15 @@ const UNITS = {
       const G = TREEU ? TREEU.gen : {},
         sci = new Set(sciNow()),
         own = Object.fromEntries(Object.entries(G).filter(([n, g]) => g.rank !== 'species' && (g.rank !== 'genus' || sci.has(n)))),
-        sp = (TREEU ? TREEU.spl || [] : []).map(n => TREEU.sps[G[n].sp]);
+        sp = (TREEU ? TREEU.spl || [] : []).map(n => TREEU.sps[G[n].sp]),
+        // the file with the species' own lists of names laid over it (TREEF), and the tree in force's part of the curation
+        F = TREEF || (TREERAW && TREERAW.f),
+        part = treeCur(
+          SUBJECTS.find(x => x.id === TREE_AT),
+          CUR
+        );
       return [
-        ...treeTypeNames(own, SUBJ.typeDrop, TREERAW && TREERAW.f ? treeNameIndex(TREERAW.f, ((CUR || {}).fish || {}).names) : []),
+        ...treeTypeNames(own, SUBJ.typeDrop, F ? treeNameIndex(F, ((part || {}).fish || {}).names) : []),
         ...cnTypeNames(sp).map(o => ({...o, g: spUnitId('cn', o.g)})),
         ...sciTypeNames(sciSpAll())
       ];
@@ -2710,7 +2794,7 @@ const UNITS = {
     cq: {
       by: 'ID groups',
       about: 'the identification groups of the regional fish ID key (the families to tell apart)',
-      src: 'the IMR fish presentation',
+      src: `the ${ORG.fishPres}`,
       groups: play => cqByKey(play)
     },
     // The look-alikes the IMR presentation names, each pair once.
@@ -2721,7 +2805,7 @@ const UNITS = {
     // The Look-alikes deck and Compare (treeDeck, treeInGame, treeCmp).
     deck: treeDeck,
     inGame: treeInGame,
-    cmp: {...treeCmp, src: 'the IMR fish presentation'},
+    cmp: {...treeCmp, src: `the ${ORG.fishPres}`},
     // Tools › Look-alike web's colouring (as the corals'): by the key's identification group (SUBJECTS sheets, TREEU groups).
     webBy: () => [
       {
@@ -2749,18 +2833,18 @@ const UNITS = {
         })),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the ${ORG.course}, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the ${ORG.course}’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names and by their scientific names, and Fish basics done. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the ${ORG.short} survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
     // cur: the game on screen (the Duel tab opens with its own paragraph, quiz.js duelLede).
     help: cur => `${
       String(cur || '').startsWith('quiz-duel')
-        ? duelLede('the look-alikes the IMR fish presentation names')
-        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first IMR cue, or its first ID mark from another source, named). <b>More</b> opens the other IMR cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>${customPlayLede(cur)}`
+        ? duelLede(`the look-alikes the ${ORG.fishPres} names`)
+        : `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, ${ORG.short}’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the verdict and one line that settles it (when you mix up two look-alikes, how to tell them apart; else the family's first ${ORG.short} cue, or its first ID mark from another source, named). <b>More</b> opens the other ${ORG.short} cues and the rest; <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>${customPlayLede(cur)}`
     }
-  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
+  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, ${ORG.short}’s name, its scientific name and the names ${ORG.short} uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the ${ORG.short} survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       // The scientific genera (treeGenera, sciOpen): offered once a family is at Advanced, each family's joining from its
       // Advanced; auto: an IMR player's IMR genera; all: every genus in the game now (sciNow), for setOf. They count in
@@ -2768,8 +2852,9 @@ const UNITS = {
       {
         k: 'sci',
         all: () => sciNow(),
-        units: () => (TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introduced, imrSaid(), !!Q.sciH).units : []),
-        auto: () => (TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introduced, imrSaid()).auto : []),
+        units: () =>
+          TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introducedFn(), imrSaid(), !!Q.sciH).units : [],
+        auto: () => (TREEU && typeof genScore === 'function' ? sciOpen(sciNow(), genScore, introducedFn(), imrSaid()).auto : []),
         // Families met first: no genus card while a family in play is still not met (setLater, model.js openPick); its
         // auto units, the set turned on by hand early and Open all are exempt.
         after: 1,
@@ -2780,7 +2865,7 @@ const UNITS = {
         back: {
           title: 'Keep the scientific genus names?',
           body: 'Scientific genus names now come later, once a family is at Advanced. You can close them for now: your progress on them is kept.',
-          imr: 'The genera of the IMR course stay in the game.',
+          imr: `The genera of the ${ORG.course} stay in the game.`,
           no: 'Close them for now',
           yes: 'Keep them'
         },
@@ -2809,7 +2894,7 @@ const UNITS = {
         k: 'sp',
         all: () => (TREEU ? TREEU.spl || [] : []),
         units: () => [],
-        auto: () => (TREEU && typeof genScore === 'function' ? spPlay(TREEU.spl || [], genScore, introduced, spOn()) : []),
+        auto: () => (TREEU && typeof genScore === 'function' ? spPlay(TREEU.spl || [], genScore, introducedFn(), spOn()) : []),
         due: () => false,
         page: false, // not on the families page
         kick: 'Species',
@@ -2872,9 +2957,9 @@ const UNITS = {
         name: 'Scientific names',
         self: () => imrNow(),
         line: () =>
-          `${sciSpOn() ? 'Genera, then their species' : 'Genera'}, by their scientific names. A family’s genera come as you reach Advanced on it${imrNow() ? ', the IMR course’s from Open Water' : ''}.`,
+          `${sciSpOn() ? 'Genera, then their species' : 'Genera'}, by their scientific names. A family’s genera come as you reach Advanced on it${imrNow() ? `, the ${ORG.course}’s from Open Water` : ''}.`,
         // An IMR player who has not turned the set on: the IMR genera alone come (sciOpen auto).
-        part: () => 'The IMR course’s genera only, from Open Water. On: every family’s genera, as you reach Advanced on it.',
+        part: () => `The ${ORG.course}’s genera only, from Open Water. On: every family’s genera, as you reach Advanced on it.`,
         k: 'sci'
       }
     ],
@@ -3069,7 +3154,14 @@ const slateGenera = () => UNITS[SUBJ.id].slate();
 // genera, rule L6), the slate where the subject has no scale of its own.
 const scaleUnits = () => (UNITS[SUBJ.id].scale || UNITS[SUBJ.id].slate)();
 // The opt-in set a unit belongs to (the coral bonus genera, the fish scientific genera), or null.
-const setOf = n => SETS().find(S => (S.all || S.units)().includes(n)) || null;
+// Each unit's set, the first that lists it, once per data version (a view: setMapCalc; the sets' lists are data).
+const setMapCalc = () => {
+  const M = new Map();
+  SETS().forEach(S => (S.all || S.units)().forEach(n => M.has(n) || M.set(n, S)));
+  return M;
+};
+const setMap = dataView('setMap', setMapCalc);
+const setOf = n => setMap().get(n) || null;
 const isBonus = n => !!setOf(n);
 // Players who had bonus genera unlocked by the former progress thresholds (Q.bu, Millepora counted first) keep them
 // on, so nothing disappears under them; Millepora alone (Q.bu 1) is now a slate genus, so not an opt-in.
@@ -3080,7 +3172,12 @@ if (Q.bon === undefined && Q.bu > 1) {
 // The units a set brings without asking (its auto: an IMR player's IMR genera, the species), none once its What I learn
 // row is turned off (Q[k + 'O']: that level stops being asked, Q404 A; its units keep their bars, Q402 A). A "Not now" or
 // "Close them for now" card (Q[k] false alone) keeps them, as before the card. Every reader of a set's auto goes through it.
-const autoOf = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? S.auto() : []);
+// A set's auto and its units (S.auto, S.units: sciOpen, spPlay, sciPlay over the tree) are views of the state version per
+// set (setAuto, setUnits; computed where a part of this file runs alone): the units in play (bonusList, sciUp, shareFree)
+// each read them.
+const setAuto = typeof stateViewBy === 'function' ? stateViewBy('setAuto', S => S.auto()) : S => S.auto();
+const setUnits = typeof stateViewBy === 'function' ? stateViewBy('setUnits', S => S.units()) : S => S.units();
+const autoOf = (S, q = Q) => (S.auto && !q[S.k + 'O'] ? setAuto(S) : []);
 // The What I learn card (progress.js learnCard; docs/FISH_PATH.md "Which names a player learns"): the subject's names rows
 // (UNITS learn: {k, name, line, part, when, self}), those whose level is on now (when: rule D4, the sheet replays it). A
 // row is on while not turned off on the card (Q[k + 'O']) and either turned on (Q[k] true) or bringing its units by
@@ -3130,7 +3227,7 @@ const namesOptsHtml = cur =>
     .join('')}</div>`;
 // The units of the opt-in sets the player has on, and those a set brings without asking (autoOf), each once. A view of
 // the state version (stateView), computed once per version instead of by each of its readers: bonusCalc computes it.
-const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...autoOf(S)]))];
+const bonusCalc = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? setUnits(S) : []), ...autoOf(S)]))];
 const bonusList = stateView('bonusList', bonusCalc);
 const sciUp = stateView('sciUp', sciUpCalc);
 // A unit of a set that opens after the slate (its after: the fish scientific genera once the offer is accepted), so it
@@ -3145,7 +3242,7 @@ const setLater = n => {
 // come in the slate's phase: the ones it brings by itself (auto: an IMR player's IMR genera from their family's Open
 // Water) and all of them once the player turned it on by hand before it was due (Q[k + 'H']). Read once per answer
 // (model.js sharesNow). A view of the state version (stateView): shareFreeCalc computes it.
-const shareFreeCalc = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...autoOf(S)] : []));
+const shareFreeCalc = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? setUnits(S) : []), ...autoOf(S)] : []));
 const shareFree = stateView('shareFree', shareFreeCalc);
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 once opened by itself keep it): a closed mark ('b': a unit
@@ -3204,14 +3301,57 @@ document
   .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin, true)));
 showBon();
 // The warning on Millepora's first-meeting card and genus sheet.
-const BENTHIC_NOTE =
-  "Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate and very common at Dauin, including in ReefCloud photos.";
+const BENTHIC_NOTE = `Not a hard coral and not on the ${ORG.short} coral list, but it's on the ${ORG.benthic} and very common at Dauin, including in ReefCloud photos.`;
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
 // (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.) A view of
-// the state version (stateView): poolCalc computes it.
-const poolCalc = () => [...slateGenera(), ...bonusList()].filter(photoAny);
+// the state version (stateView): poolCalc computes it. Whether a unit has a photo is a view of the data version per unit,
+// read once for the loop (model.js photoAnyFn): nothing is written during it.
+const poolCalc = () => [...slateGenera(), ...bonusList()].filter(typeof photoAnyFn === 'function' ? photoAnyFn() : photoAny);
 const pool = stateView('pool', poolCalc);
+// The photo draw's data filled ahead, in idle time (docs/spec/model.md "The state version and its views"): the first
+// draw on a unit in a data version fills its data (model.js drawPhotos), about ten calls a photo, a fish family's
+// thousands of photos on the answer that draws it. drawFillSoon asks for it to be filled while the page is idle, for the
+// units in play (pool, those met first), in slices of at most DRAW_FILL.CAP photos that yield between them, so the
+// draw finds it ready; one not filled yet is filled by its draw, as before. A slice fills the view itself, so the values
+// are the ones the draw would make (the view's version rule, app.js dataViewBy). Asked after the boot's first plan, after
+// each plan (quiz.js planNext), after a visit to another subject (inSubject: its version moves) and when the photo
+// statistics arrive (rankPhotos); a version already filled asks nothing. A unit that comes into play later in the same
+// version (the slate widened) is filled by its draw. done: the data version whose units in play were all filled; q: the
+// units left for version qv; n: the units the slices went through (tools/answercost.js reads it).
+const DRAW_FILL = {CAP: 1500, done: -1, qv: -1, q: [], h: 0, n: 0};
+const idleSoon = f => (typeof requestIdleCallback === 'function' ? requestIdleCallback(f) : setTimeout(() => f(null), 50));
+function drawFillSoon() {
+  if (DRAW_FILL.h || !DATA || typeof drawPhotos !== 'function' || DRAW_FILL.done === dataNow()) return;
+  DRAW_FILL.h = idleSoon(drawFillStep);
+}
+// One slice: the units of the queue until CAP photos or the idle period's end, at least one (without
+// requestIdleCallback in the browser: a slice every 50 ms, CAP photos each). The queue is made again when the data
+// version moved since it was made (a subject switch, new data: every writer of the data bumps it), so its units are
+// the data's. window.DRAW_FILL_HOLD (tools/answercost.js): nothing filled until it is cleared and drawFillSoon asked
+// again.
+function drawFillStep(dl) {
+  DRAW_FILL.h = 0;
+  if (globalThis.DRAW_FILL_HOLD || dataPartial()) return;
+  const v = dataNow();
+  if (DRAW_FILL.done === v) return;
+  if (DRAW_FILL.qv !== v) {
+    const L = pool(),
+      met = typeof introReadyFn === 'function' ? introReadyFn() : introReady;
+    DRAW_FILL.qv = v;
+    DRAW_FILL.q = [...L.filter(met), ...L.filter(n => !met(n))];
+  }
+  for (let ph = 0; DRAW_FILL.q.length;) {
+    const n = DRAW_FILL.q.shift();
+    ph += drawPhotos(n).d.size;
+    DRAW_FILL.n++;
+    if (ph >= DRAW_FILL.CAP || (dl && dl.timeRemaining() < 2)) break;
+  }
+  if (DRAW_FILL.q.length) DRAW_FILL.h = idleSoon(drawFillStep);
+  else DRAW_FILL.done = v;
+}
+// Every unit in play filled for the data version now, nothing asked (tools/answercost.js waits for it).
+const drawFillDone = () => !DRAW_FILL.h && DRAW_FILL.done === dataNow();
 // The plain sentence: one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py), clear for
 // everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before the ID
 // tips and lecture notes, in body text with no label (a muted labelled line above the photo gets skipped). It adds to the
@@ -3241,7 +3381,7 @@ const unitCname = n => {
 // Coral Finder pages: tools/apply_id_tips.py), the Coral Finder pages for bonus genera; a bonus genus's
 // tips the content editor reworded with a source, plain (the source shows under them: tipsList).
 const tipsLabel = g =>
-  g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');
+  g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : `ID tips (${ORG.short})`);
 // A genus whose tips the content editor replaced, with a source of his own: it shows under them (qsrc), and the heading
 // made for the genera the lecture skips (tl) stops naming the Coral Finder as their source.
 const tipsEdited = g => g && g.esrc && g.esrc.qt && ((g.qsrc = g.esrc.qt), g.tl && (g.tl = 'ID tips'));
@@ -3267,15 +3407,19 @@ function syncTrouble() {
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyt6l9sBeWP4KacPx1SUbsk9-15uJikxRafrpwF6b2oAE8GgrnPOtuJg7IqfFG5ymrR/exec';
 // How a message names it ("Progress loaded from your account."): players are never told about "the sheet".
 const SHEET_NAME = 'your account';
-// A copy run on this computer (tests, tools/perf.js, a developer) never sends anonymous answers or reports to the real
-// sheet (rule D1; requests a service worker or an unloading page sends escape a test's network mocks). A browser driven
-// by a program (Playwright, Selenium: navigator.webdriver) counts as one whatever its address. No player's browser sets
-// it.
-const LOCAL =
-  /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/.test(location.hostname) || location.protocol === 'file:' || navigator.webdriver === true;
-// Signed-in traffic (signing in, saving, loading a saved account) goes through sheetFetch, so a local copy never reaches
-// the sheet with a name either. A test answers it with window.SHEET_STUB(url, options), set before the app loads (pages.smoke.js);
-// without one a local copy gets an error and stays signed out. Players never run a local copy.
+// The one copy of the app that talks to the real sheet: the deployed site players open (index.html og:url). This is the
+// opt-in, and the only one: every other copy is a local copy (LOCAL) with the sheet off, whatever serves it (a developer's
+// or a review's server on this computer or the network, file:, a test, tools/perf.js, a fork or another site on the same
+// origin). A browser driven by a program (Playwright, Selenium: navigator.webdriver) is one even on the deployed site. No
+// player's browser sets it. Rule D1: requests a service worker or an unloading page sends escape a test's network mocks,
+// so the app itself never sends them.
+const SHEET_SITE = 'https://ppericard.github.io/coral-id-imr/';
+const LOCAL = !(location.origin + location.pathname.toLowerCase()).startsWith(SHEET_SITE) || navigator.webdriver === true;
+// Every request to the sheet goes through sheetFetch, reads included (photo statistics, the leaderboards, the
+// achievements' shares, signing in, saving, loading a saved account); the senders of anonymous answers, reports and
+// events also stop at LOCAL before they build their batch (sync.js). A test answers it with window.SHEET_STUB(url,
+// options), set before the app loads (pages.smoke.js); without one a local copy gets an error: no statistics (each photo
+// at its prior), the kept leaderboard, and signed out. Players never run a local copy.
 const sheetFetch = (url, o) =>
   !LOCAL
     ? fetch(url, o)
@@ -3389,7 +3533,7 @@ document.querySelectorAll('#size button').forEach(
       const p = sizePrefs();
       p[pageKey()] = b.dataset.size;
       try {
-        localStorage.setItem('reefid-sync-size', JSON.stringify(p));
+        store.raw('reefid-sync-size', JSON.stringify(p));
       } catch (e) {}
       applySize();
     })
@@ -3409,7 +3553,7 @@ document.querySelectorAll('#theme button').forEach(
       const t = b.dataset.th;
       document.documentElement.dataset.theme = t;
       try {
-        localStorage.setItem('reefid-sync-theme', t);
+        store.raw('reefid-sync-theme', t);
       } catch (e) {}
       showTheme();
     })
@@ -3427,7 +3571,7 @@ document.querySelectorAll('#palette button').forEach(
       const p = b.dataset.pal;
       document.documentElement.dataset.palette = p;
       try {
-        localStorage.setItem('reefid-sync-palette', p);
+        store.raw('reefid-sync-palette', p);
       } catch (e) {}
       showPal();
     })
@@ -3445,7 +3589,7 @@ document.querySelectorAll('#cvd button').forEach(
       if (on) document.documentElement.dataset.cvd = '1';
       else delete document.documentElement.dataset.cvd;
       try {
-        localStorage.setItem('reefid-sync-cvd', on ? '1' : '0');
+        store.raw('reefid-sync-cvd', on ? '1' : '0');
       } catch (e) {}
       showCvd();
     })
@@ -3516,7 +3660,7 @@ function ctxBar(h) {
       i = L.indexOf(n);
     const prev = L[(i - 1 + L.length) % L.length],
       next = L[(i + 1) % L.length];
-    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? 'IMR benthic slate' : g.x ? 'Not on IMR list' : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
+    return `${back}<h2 class="ctx-t"><i>${esc(n)}</i><small>${isBenthic(n) ? ORG.benthic : g.x ? `Not on ${ORG.list}` : g.n ? 'No. ' + g.n : '<b class="star">★</b> not surveyed'} · ${esc(altName(g.fam))}</small></h2>
       <span class="pn"><a href="${esc(hr('g-' + prev))}" title="Previous: ${esc(prev)} (←)" aria-label="Previous genus: ${esc(prev)}">‹</a><a href="${esc(hr('g-' + next))}" title="Next: ${esc(next)} (→)" aria-label="Next genus: ${esc(next)}">›</a></span>`;
   }
   const [a, b] = h.startsWith('cmp-') ? h.slice(4).split('|') : [];
@@ -4020,7 +4164,7 @@ document.getElementById('signb').onclick = e => {
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due, the What I learn rows back
         // to their defaults
         SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H', 'O'].forEach(x => delete Q[k + x]));
-        if (typeof stateBump === 'function') stateBump(); // the records and settings emptied: inputs of the views
+        if (typeof stateBump === 'function') stateBump('rec'); // the records and settings emptied: inputs of the views
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();
@@ -4097,7 +4241,7 @@ if (HAS_ADMIN_TOKEN) {
     b.onclick = () => {
       if ((b.dataset.view === 'admin') === IS_ADMIN) return;
       try {
-        localStorage.setItem('reefid-admin-view', b.dataset.view);
+        store.raw('reefid-admin-view', b.dataset.view);
       } catch (e) {}
       location.reload();
     };
@@ -4415,6 +4559,7 @@ Promise.all([
       .then(() => {
         const h = hashNow();
         planNext(h.startsWith('quiz') ? h : 'quiz');
+        drawFillSoon(); // the draw's data of the other units in play, filled while the page is idle
         return prefetched();
       })
       .then(() => need(4))

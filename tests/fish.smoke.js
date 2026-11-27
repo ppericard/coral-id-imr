@@ -1894,6 +1894,21 @@ async function quizAndProgress(b, base, errs) {
       // question. The answer's record put back after.
       const Pj = JSON.stringify(P),
         cb = () => ((CB.r = 0), (CB.f = 0));
+      // The photo the draw serves here is the draw's choice: a juvenile, sex or colour phase, or a mimic would bring its
+      // own card first at this break (quiz.js mimArm, phaseArm: the first card armed wins), as the app means. Those
+      // cards are marked shown for this check (every phase kind, every mimicry pair of the units in play), then put back.
+      const phK = ['juvenile', 'phase'].map(k => subjDev(SUBJ.id, PHASEC.KEY + k)),
+        mimK = subjDev(SUBJ.id, MIMC.KEY),
+        cards0 = [...phK, mimK].map(k => [k, store.get(k, null)]),
+        pairs = {};
+      slateGenera().forEach(n =>
+        ((GX(n).views || {}).wide || []).forEach(p => {
+          const m = mimOf(n, p);
+          if (m) pairs[m.pair.id] = Date.now();
+        })
+      );
+      phK.forEach(k => store.set(k, Date.now()));
+      store.set(mimK, {...(store.get(mimK, null) || {}), ...pairs});
       closeCards();
       quizPhoto();
       closeCards();
@@ -1922,7 +1937,11 @@ async function quizAndProgress(b, base, errs) {
       );
       if (nx) nx.click();
       const d = document.querySelectorAll('.unlock.allmet');
-      ok(d.length === 1 && document.querySelectorAll('.unlock').length === 1, 'all met: Next brings the card, alone');
+      ok(
+        d.length === 1 && document.querySelectorAll('.unlock').length === 1,
+        'all met: Next brings the card, alone ' +
+          JSON.stringify([t, [...document.querySelectorAll('.unlock')].map(x => x.className + ': ' + x.textContent.slice(0, 60))])
+      );
       if (d[0]) {
         const g = d[0].querySelector('[data-b]');
         g.disabled = false;
@@ -1933,6 +1952,7 @@ async function quizAndProgress(b, base, errs) {
         'all met: Got it goes on to the next question, marked seen'
       );
       localStorage.removeItem(amKey('c3'));
+      cards0.forEach(([k, v]) => store.set(k, v));
       Object.keys(P).forEach(n => delete P[n]);
       faDrop(P);
       stateBump();
@@ -1984,8 +2004,10 @@ async function quizAndProgress(b, base, errs) {
     const im = introMap(),
       c3a = TREEU.c3[0];
     im[c3a] = [answersSoFar(), 0, Date.now(), 'c'];
+    stateBump('rec'); // the intro map written here by hand: the units met (model.js introduced) are a view of it
     ok(TREEU.c3.every(mayOpen) && !openOfferDue(), 'circle 3 already open: kept on, no card');
     delete im[c3a];
+    stateBump('rec');
     closeCards();
     openOfferShow();
     const c3card = document.querySelector('.unlock.intro');
@@ -2093,8 +2115,9 @@ async function quizAndProgress(b, base, errs) {
     // No level-change card on the fish: a window that says "easier than said" shows nothing.
     store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: [], w: [], v: 'hi'});
     ok(startOf() && startOf().v === 'hi' && startDue() === null, 'fish: no level-change card');
-    if (s0 === null) localStorage.removeItem(sk);
-    else localStorage.setItem(sk, s0);
+    // put back as the app writes (app.js storeWrote told)
+    if (s0 === null) store.drop(sk);
+    else store.raw(sk, s0);
     // The scientific genera (app.js treeGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
     // species of each family in play, in every circle, never two families; offered once a family is
     // at Advanced, a family's genera in play only from its Advanced; their questions and typed answers among genera only,
@@ -2176,8 +2199,9 @@ async function quizAndProgress(b, base, errs) {
         'sci: a family question still among families'
       );
       pgAt('f:Surgeonfishes', 0.2);
-      if (s0 === null) localStorage.removeItem(sk);
-      else localStorage.setItem(sk, s0);
+      // put back as the app writes (app.js storeWrote told)
+      if (s0 === null) store.drop(sk);
+      else store.raw(sk, s0);
     }
     pgAt('f:Butterflyfishes', 0.72);
     ok(genScore('f:Butterflyfishes') >= LV_AT[1], 'sci: the family at Advanced');
@@ -3353,8 +3377,9 @@ async function uiAndAccess(b, base, errs) {
       if (q0 === undefined) delete Q.sci;
       else Q.sci = q0;
       stateBump();
-      if (s0 === null) localStorage.removeItem(sk);
-      else localStorage.setItem(sk, s0);
+      // put back as the app writes (app.js storeWrote told)
+      if (s0 === null) store.drop(sk);
+      else store.raw(sk, s0);
       Object.keys(P).forEach(k => delete P[k]);
       faDrop(P);
       stateBump();
@@ -3402,11 +3427,12 @@ async function uiAndAccess(b, base, errs) {
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // The fish leaderboard (one per subject): #leaderboard on Fish asks the sheet for the fish board (&s=fish, below the
     // gate floor core.js SHEET_FLOOR), kept apart from the corals' copy.
-    // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
+    // The sheet's reply is a fixture (app.js sheetFetch answered by SHEET_STUB in memory; nothing leaves this computer,
+    // rule D1).
     const fb = await q.evaluate(async () => {
-      const f0 = window.fetch,
+      const s0 = window.SHEET_STUB,
         asked = [];
-      window.fetch = u => {
+      window.SHEET_STUB = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=fish/.test(u)
           ? [
@@ -3436,7 +3462,7 @@ async function uiAndAccess(b, base, errs) {
           coral: localStorage.getItem('reefid-board-cache')
         };
       } finally {
-        window.fetch = f0;
+        window.SHEET_STUB = s0;
       }
     });
     if (

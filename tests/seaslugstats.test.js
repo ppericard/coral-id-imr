@@ -186,7 +186,7 @@ function app(sheetVersion, reply) {
       appVer: () => 1,
       rankPhotos: () => {},
       store: {get: (k, d) => (k in kept ? plain(kept[k]) : d), set: (k, v) => (kept[k] = plain(v))},
-      fetch: u => (asked.push(u), Promise.resolve({json: () => reply}))
+      sheetFetch: u => (asked.push(u), Promise.resolve({json: () => reply})) // app.js: every request to the sheet
     });
   vm.runInContext(
     [

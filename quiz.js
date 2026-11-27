@@ -35,8 +35,8 @@ const customPlayLede = cur =>
 const gameHelp = cur =>
   UNITS[SUBJ.id].help
     ? UNITS[SUBJ.id].help(cur)
-    : `<p class="lede">${cur.startsWith('quiz-duel') ? 'Two genera that are often confused (look-alikes listed by the IMR lecture or the Coral Finder book, and your own mix-ups): say which one is in the photos.' : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
-  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the verdict and one line that settles it (how to tell the genus from your answer, or its first ID tip); <b>More</b> opens the IMR ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the IMR list that are common at Dauin (⚙ Settings, Bonus genera).</p>
+    : `<p class="lede">${cur.startsWith('quiz-duel') ? `Two genera that are often confused (look-alikes listed by the ${ORG.lecture} or the Coral Finder book, and your own mix-ups): say which one is in the photos.` : 'Name the genus in the photos: all the photos of a question show the same coral, at one or several zoom levels.'}
+  Pick an answer (or press 1-${cur.startsWith('quiz-duel') ? 2 : 4}). Stuck? When a question has no corallite photo in view, <b>Show the corallites</b> adds one. After answering you get the verdict and one line that settles it (how to tell the genus from your answer, or its first ID tip); <b>More</b> opens the ${ORG.short} ID tips and why the other ${cur.startsWith('quiz-duel') ? 'genus is' : 'choices are'} wrong; <b>Next</b> (or Enter) goes on.${cur.startsWith('quiz-duel') ? ' The achievements for runs of right answers (On a roll, Unstoppable) and Sharp eye are earned in the Quiz only: an answer here neither extends nor breaks your run.' : ' The other choices start easy and its look-alikes come in as you get a genus right.'} Every answer counts in <a href="${esc(hr('progress'))}">My progress</a>. New genera come one at a time, each on its card; <b>Open all genera</b> (My progress) opens them all at once, and if the questions then get much harder for you, a card offers once to go back to one at a time. Once you have met every genus of the slate, you can add <b>bonus genera</b>: corals off the ${ORG.list} that are common at Dauin (⚙ Settings, Bonus genera).</p>
   ${customPlayLede(cur)}
   <p class="lede"><b>Photos</b>: each genus starts with its best photos, preferably a colony photographed at several zoom levels (never views of different colonies mixed), and new ones keep coming in; the more you get a genus right, the harder its photos get and the more often a single view is shown alone (colony, close-up or corallites), and a mistake eases them off. A genus's % is the share of its photos you would name alone and typed, as far as your answers on it have shown: a right answer on a hard photo or a typed one raises it most, a mistake takes it back down; it fills up to 95%, and it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the Quiz: see ? on <a href="${esc(hr('progress'))}">My progress</a>.</p>${
     cur.startsWith('quiz-duel')
@@ -73,9 +73,11 @@ const typeNames = () => {
 // rk: the class of the unit asked (app.js kindRank: its rank and its kind of name): a typed answer is read among the
 // names of that class only (a fish scientific genus, Chromis, against the genera; the IMR sub-entry Chromis names the
 // Damselfish entry on an entry question; a species' scientific name against the scientific names, never a common name).
+// Each name's class read through one read of the data version (model.js rankKindFn; kindRank where it is not loaded).
 const typeMatch = (text, rk = '') => {
+  const kr = typeof rankKindFn === 'function' ? rankKindFn() : kindRank;
   const m = typeMatchIn(
-    typeNames().filter(o => kindRank(o.g) === rk),
+    typeNames().filter(o => kr(o.g) === rk),
     text,
     UNITS[SUBJ.id].norm
   );
@@ -101,9 +103,10 @@ const typeKind = (text, rk) => {
   if (!x) return '';
   // The species by their scientific names stay out: the name index already says what a species' name is (identical
   // nudges whether their level is on or off).
+  const kr = typeof rankKindFn === 'function' ? rankKindFn() : kindRank; // as typeMatch
   return typeElse(
     text,
-    typeNames().filter(o => kindRank(o.g) !== rk && kindOf(o.g) !== 'sci'),
+    typeNames().filter(o => kr(o.g) !== rk && kindOf(o.g) !== 'sci'),
     {...x, rank: g => rankOf(g) || unitRankOf(SUBJ), own: g => (GX(g) || {}).imrName},
     U.norm
   );
@@ -353,7 +356,8 @@ function question(cur, target, choices, prompt, set, kq) {
   PENDSCI = null;
   const sub = c => (SCIQ ? (SCIQ.v === 'sc' ? (GX(c) || {}).cn || '' : '') : (GX(c) || {}).sci || '');
   let answered = false,
-    hintShown = false;
+    hintShown = false,
+    by = ''; // 'key' while a number key clicks its answer (the keys tip's counter)
   // data-f names the photo whatever its file: an iNaturalist photo not downloaded yet (r: 1, a candidate just added) keeps
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
@@ -369,7 +373,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
       ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${sub(c) ? `<span class="csn">${esc(unameT(c))}<small${SCIQ ? ' class="cnu"' : ''}>${esc(sub(c))}</small></span>` : esc(unameT(c))}</button>`).join('')}</div>`}
-      ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
+      ${set.hint ? `<button type="button" class="linkish" id="hintb">Show the ${esc(hintName())} (hint)</button>` : ''}
       <div id="after"></div>
     </aside></div>`;
   QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
@@ -407,7 +411,12 @@ function question(cur, target, choices, prompt, set, kq) {
     const h = st.lastElementChild;
     if (h && st.scrollWidth > st.clientWidth + 4) st.scrollTo({left: h.offsetLeft - st.offsetLeft, behavior: 'smooth'});
   };
-  if (hb) hb.onclick = showHint;
+  // The player's own tap counts for the hint tip (tipOpened); the reveal after an answer (go) is no use of it.
+  if (hb)
+    hb.onclick = () => {
+      tipOpened('h');
+      showHint();
+    };
   // Keys: 1-4 answer, Enter goes to the next question.
   const keys = e => {
     if (!document.body.contains($v.querySelector('.q'))) return document.removeEventListener('keydown', keys);
@@ -417,7 +426,12 @@ function question(cur, target, choices, prompt, set, kq) {
     const b = !answered && $v.querySelectorAll('[data-c]')[Number(e.key) - 1];
     if (b) {
       e.preventDefault();
-      b.click();
+      by = 'key'; // the keys tip's counter (tipNote): this click is the key's own
+      try {
+        b.click();
+      } finally {
+        by = '';
+      }
     }
   };
   document.addEventListener('keydown', keys, {signal: viewKeys()});
@@ -452,10 +466,11 @@ function question(cur, target, choices, prompt, set, kq) {
     fitStage();
   };
   let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition
-  const go = c => {
+  // how: how the answer was picked, for the keys tip (tipNote): 'key', 'click' or '' (typed, touched, a script).
+  const go = (c, how = '') => {
     const hintOpen = hintShown, // read before showHint opens it for the feedback: a hint left closed was not seen
       cor = hintOpen || ph.some(p => p.view === 'macro' || p.view === 'close'),
-      tm = tm0 || {rt: qclockRead(), zm: QCLOCK.zm};
+      tm = {...(tm0 || {rt: qclockRead(), zm: QCLOCK.zm}), by: how};
     showHint();
     reveal();
     answered = true;
@@ -479,7 +494,11 @@ function question(cur, target, choices, prompt, set, kq) {
     const tr = $v.querySelector('.trail');
     if (tr) tr.outerHTML = trail();
   };
-  $v.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => go(b.dataset.c)));
+  // A real pointer click (detail 1 or more: a key or a script gives 0) on a device that shows the key marks (not a touch
+  // screen: the media query that hides the <kbd> marks) counts as a click; the number key's own click is a key.
+  $v.querySelectorAll('[data-c]').forEach(
+    b => (b.onclick = e => go(b.dataset.c, by || (e && e.detail > 0 && !matchMedia(MQ.touch).matches ? 'click' : '')))
+  );
   // A typed question: the genus read is the answer ('' for "I don't know"), what was typed goes with it (TYPEDQ).
   const tf = $v.querySelector('.tyform'),
     // the photo's own species (app.js photoTaxon): a name of part of the unit counts only when it designates them
@@ -788,8 +807,8 @@ function recordAnswer({
   });
   const res = scoreAnswer(P, q),
     {th0, dm} = res;
-  // The records the scorer wrote, and those written below: inputs of the views (app.js stateBump).
-  if (typeof stateBump === 'function') stateBump();
+  // The records the scorer wrote, and those written below: inputs of the views (app.js stateBump), the player's own.
+  if (typeof stateBump === 'function') stateBump('rec');
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   // A look-alike contrast won (the duel achievement): the Duel tab, a duel slipped into the quiz or an Again (core.js
@@ -830,7 +849,7 @@ function recordAnswer({
   // back, for the genus shown and for the one answered (mxKept). Only at a miss, as the full replay's lm (a mark the
   // replay kept with its bar under DOM.KEEP must not go at a right answer).
   if (!good) [target, ...(GX(c) ? [c] : [])].forEach(n => P[n] && P[n].mx && !mxKept(n) && delete P[n].mx);
-  if (typeof stateBump === 'function') stateBump();
+  if (typeof stateBump === 'function') stateBump('rec');
   // Answer log for the RA sheet: kept until the sheet confirms it (capped), so an answer is never logged twice or lost offline.
   // Not signed in yet: the answers wait on this device (LOG0) and join the log when the player signs in (signIn), so the
   // sheet's Answers tab also gets what was played before the account existed.
@@ -1120,8 +1139,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
   allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
-  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run.
-  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '');
+  // ty: how a typed question was answered ('idk' or 'typed'; '' when it was not typed): the typed-answers tip's run. The
+  // next to last: a miss on a question that offered the hint and left it closed (unseen), the hint tip's count; the last,
+  // how the answer was picked (tm.by: 'key', 'click' or ''), the keys tip's counters.
+  tipAfter(nb, cur, !good, tm.zm, exq && s.mx, tq ? (idk && !(tq.rj && tq.rj.length) ? 'idk' : 'typed') : '', !good && !!unseen, tm.by);
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
@@ -1151,7 +1172,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
     named = inner =>
       fish
         ? `<b>${inner}</b>${ven ? ` <span class="ven">${esc(ven)}</span>` : ''} <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
-        : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
+        : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ` (fire coral, ${ORG.benthic})` : g.x ? ` (bonus, not on the ${ORG.list})` : g.n ? '' : ' (★ not surveyed)'}`,
     name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
     // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
     // letters marked (an old name typed: that name, then the unit); the words in normal weight and the name in bold, so
@@ -1165,7 +1186,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
         : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     // A fish entry's names inside it, phases and credits sit flat behind More (the sheet's own More replaced its fold).
     more = fish
-      ? `${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p>`
+      ? `${g.sub.length ? `<p class="vs">${ORG.short} names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p>`
       : // the criteria cited by the source the content editor gave with his edit of them, else the Coral Finder pages
         // (idtips.js critRef), and his summary's and mnemonic's with them (esrcTag; rule C2)
         `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length && g.sum ? `<p class="vs">${esc(g.sum)}${esrcTag(g, 'sum')}</p>` : ''}${(g.crit || []).length ? `<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">${critRef(g)}</p>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
@@ -1187,7 +1208,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx, chs = [], rep =
 function pairLine(a, b) {
   const g = GX(a) || {},
     hit = (g.lk || []).find(([o, t]) => o === b && t);
-  if (hit) return {t: hit[1], s: ['IMR', ((g.lksrc || {})[b] || {}).t].filter(Boolean).join('; ')};
+  if (hit) return {t: hit[1], s: [ORG.short, ((g.lksrc || {})[b] || {}).t].filter(Boolean).join('; ')};
   return g.ap && g.ap[b] ? {t: g.ap[b], s: (g.apsrc || {})[b] || ''} : null;
 }
 // What the two records say of the pair (a, b): the line that describes a (b's record gives it), then the one that describes b
@@ -1249,7 +1270,7 @@ const tipsBy = g =>
 const noImr = s =>
   String(s || '')
     .split('; ')
-    .filter(x => x && x !== 'IMR')
+    .filter(x => x && x !== ORG.short)
     .join('; ');
 function fbLine(target, c, good, chs = [], mim = null) {
   const say = (t, s) => `<p class="vs fbline">${t}${noImr(s) ? ` <small class="esrc">(${esc(noImr(s))})</small>` : ''}</p>`;
@@ -1666,7 +1687,7 @@ function phaseShow({p, k, q: q0}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || ORG.short)}</b>: ${lines.map(esc).join('; ')}</p>` : ''}${srcs.length ? `<p class="phlines phsrc">${phaseSrcs(srcs)}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
@@ -1848,12 +1869,12 @@ const tipBasics = () => {
   const r = store.get(basicsKey(), {}) || {};
   return !r.last && !Object.keys(r.seen || {}).length;
 };
-function tipAfter(nb, cur, miss, zm, hold, ty = '') {
+function tipAfter(nb, cur, miss, zm, hold, ty = '', hm = false, by = '') {
   const raw = store.get(TIPR.KEY, null);
   let st = tipsLoad(raw, false);
   const q0 = st.u.q,
     k0 = st.u.k;
-  st = tipNote(st, Date.now(), ty);
+  st = tipNote(st, Date.now(), ty, hm, by);
   // Just seeded from the log, this answer included: its own count of the run (the seed ends with this answer already).
   if (!raw && q0 && ty) st = {...st, u: {...st.u, k: ty === 'idk' ? k0 : 0}};
   st = tipRun(st); // after the note: the log holds this answer, so the run it shows now is compared with the counter's
@@ -1866,7 +1887,10 @@ function tipAfter(nb, cur, miss, zm, hold, ty = '') {
     miss,
     zm: !!zm,
     mix: st.u.m < 1 ? mixEdges(unlocked()).filter(e => e[2] >= TIPR.MIX).length : 0,
-    bx: tipBasics() ? 1 : 0
+    bx: tipBasics() ? 1 : 0,
+    hm,
+    hx: hintWords() ? 1 : 0,
+    kb: matchMedia(MQ.touch).matches ? 0 : 1 // the key marks show (CSS kbd): a keyboard and a mouse, not a touch screen
   };
   if (hold || !tipDue(st, b) || !promptOk()) return;
   breakArm(nb, () => {
@@ -1924,8 +1948,8 @@ function tipShow(t, st, cur, now = 0) {
     kind: 'tip',
     cls: 'tipcard',
     kick: esc(t.card.kick),
-    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()})),
-    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords(), key: idWords()}))}</p>`,
+    title: esc(t.card.title({mouse, subj: SUBJ, basics: basicsWords(), key: idWords(), hint: hintWords()})),
+    body: `${t.act === 'zoom' && im ? `<div class="tipvis" aria-hidden="true"><img src="${esc(im.currentSrc || im.src)}" alt="">${ZOOMI}</div>` : ''}<p>${esc(t.card.body({mouse, subj: SUBJ, basics: basicsWords(), key: idWords(), hint: hintWords()}))}</p>`,
     primary: t.act ? {text: 'Show me', attr: 'disabled'} : null,
     secondary: {text: 'Got it', attr: 'disabled'},
     focus: 'h3',
@@ -1941,6 +1965,10 @@ function tipShow(t, st, cur, now = 0) {
 }
 // The subject's words for the Identify tip (app.js UNITS idtip), null for a subject whose Identify tool is not built.
 const idWords = () => UNITS[SUBJ.id].idtip || null;
+// The subject's words for its question hint (app.js UNITS hint: name, lo), null for a subject that declares none (no hint
+// tip); the hint's button says its name.
+const hintWords = () => UNITS[SUBJ.id].hint || null;
+const hintName = () => (hintWords() || {}).name || 'close-up';
 // A page drawn (app.js route, and SETUP 2 for one drawn before this tier): the Identify tool's page counts as one open
 // (tip i), and Home or My progress may show the tip about it.
 function tipRoute(h) {
@@ -1956,7 +1984,7 @@ function tipOut() {
   clearTimeout(tipOutT);
   tipOutT = 0;
   const ctx = () => (hashNow() || 'home').split('|')[0],
-    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0});
+    b = () => ({ctx: ctx(), miss: false, zm: false, mix: 0, bx: 0, ix: idWords() ? 1 : 0, hm: false, hx: 0, kb: 0});
   if (!tipDue(tipsLoad(), b(), TIPS, Date.now())) return;
   const at = ctx();
   tipOutT = setTimeout(() => {
@@ -2459,6 +2487,7 @@ function planNext(cur) {
     PF.push(x);
   }
   pump();
+  if (typeof drawFillSoon === 'function') drawFillSoon(); // app.js: the draw's data of the units in play, filled ahead when idle
 }
 const topUp = () => setTimeout(() => planNext(hashNow()), 50);
 const takePlan = cur => {
@@ -2854,11 +2883,12 @@ function introCard(n, o = {}) {
 // first: drawn unit by unit, the confusion groups taking over from the next card).
 function introStart(list) {
   const slate = list.filter(n => !isBonus(n)),
-    want = INTRO.START - slate.filter(introduced).length,
+    met0 = typeof introducedFn === 'function' ? introducedFn() : introduced, // read once for the two lists below (model.js)
+    want = INTRO.START - slate.filter(met0).length,
     L = [],
     met = n => introduced(n) || L.includes(n);
   for (
-    let fresh = slate.filter(n => !introduced(n) && mayOpen(n));
+    let fresh = slate.filter(n => !met0(n) && mayOpen(n));
     L.length < want && fresh.length;
     fresh = fresh.filter(n => n !== L[L.length - 1])
   )
@@ -2906,7 +2936,8 @@ const findRank = n => !rankOf(n) || rankOf(n) === 'species';
 function planFind(cur, t, list, ease = 0, sel = null) {
   const tiles = UNITS[SUBJ.id].tiles;
   if (!findRank(t) || !introReady(t) || !tiles(t).length) return null;
-  const others = list.filter(n => n !== t && rankKind(n) === rankKind(t) && introReady(n) && tiles(n).length);
+  const kr = rankKindFn(),
+    others = list.filter(n => n !== t && kr(n) === kr(t) && introReady(n) && tiles(n).length);
   if (others.length < 3 || !(Math.random() < FIND.P)) return null;
   const tile = p => !!p.xc,
     // The mimicry class's decoy (mimDecoys), when t is the unit of the species a pair resembles: its tile is a photo of the
@@ -2987,8 +3018,17 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   let cards = sel || noOpen() ? [] : introStart(list);
   let start = cards.length > 0,
     lvl = false;
-  const ready = n => cards.includes(n) || introReady(n),
+  // ready: read for the units in play at once, with nothing written in between (model.js introReadyFn).
+  const ready = (
+      f => n =>
+        cards.includes(n) || f(n)
+    )(typeof introReadyFn === 'function' ? introReadyFn() : introReady),
     known = n => cards.includes(n) || introduced(n),
+    // known for a loop with nothing written during it: the units met read once (model.js introducedFn).
+    knownNow = () => {
+      const f = typeof introducedFn === 'function' ? introducedFn() : introduced;
+      return n => cards.includes(n) || f(n);
+    },
     met = list.filter(ready),
     warmL = start || !cbIn(cur) ? null : comebackOf(met),
     warm = !!warmL,
@@ -2998,7 +3038,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     fresh =
       !sel && !start && !warm && met.length && !noOpen() && !introHold() && openPace(at, soon) && openRight(at)
         ? openFresh(
-            list.filter(n => !introduced(n) && mayOpen(n)),
+            list.filter(
+              (
+                met => n =>
+                  !met(n) && mayOpen(n)
+              )(typeof introducedFn === 'function' ? introducedFn() : introduced)
+            ),
             list
           )
         : [];
@@ -3052,11 +3097,13 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // little later (else its name would be a choice on the question behind the card). The custom quiz: from its
     // selection first, topped up under 4 from the other genera unlocked only (customChoices; one progression path, rule
     // L4: never a locked genus, a ★ one included, as a choice).
+    // known read once for the wrong choices (knownNow): customChoices and distractors write nothing, so the units met do
+    // not change between this read and its last use.
     ch = shuffle([
       t,
       ...(sel
-        ? customChoices(t, sel, unlocked(play), traps, known)
-        : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, known))
+        ? customChoices(t, sel, unlocked(play), traps, knownNow())
+        : distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, knownNow()))
     ]),
     // Typed (model.js TYPED): with the genus's typed share, from its progress (never on a genus under TYPED.from: no
     // draw is spent there, so a beginner's questions are unchanged); an exam question as examTyped says. Never a
@@ -3400,11 +3447,11 @@ function cqByIMR(play) {
       const gr = UNITS[SUBJ.id].group(k),
         L = play.filter(n => gk(n) === k);
       return gr
-        ? {k, t: esc(gr.t), sub: 'IMR lecture group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
+        ? {k, t: esc(gr.t), sub: ORG.lecture + ' group ' + gr.n, mark: cqMark(gr.n, groupHue(gr.n)), L}
         : k === 'F'
-          ? {k, t: 'Fire coral', sub: 'IMR benthic slate, not a hard coral', mark: cqMark('F', 200), L}
+          ? {k, t: 'Fire coral', sub: `${ORG.benthic}, not a hard coral`, mark: cqMark('F', 200), L}
           : k === '+'
-            ? {k, t: 'Bonus genera', sub: 'Not on the IMR list', mark: cqMark('+', 200), L}
+            ? {k, t: 'Bonus genera', sub: `Not on the ${ORG.list}`, mark: cqMark('+', 200), L}
             : {k, t: 'Not covered in the lecture', sub: '', mark: cqMark('★', 200), L};
     });
 }
@@ -3439,7 +3486,7 @@ function viewCustom() {
     qp = cqPicks(play),
     lk = play.filter(n => cqLooks(n, play).length > 1);
   try {
-    localStorage.removeItem(CQ.OLD); // the older A-Z / IMR groups choice: IMR groups once
+    store.drop(CQ.OLD); // the older A-Z / IMR groups choice: IMR groups once
   } catch (e) {}
   let view = store.get(CQ.VIEW, 'imr'),
     q = '';
@@ -3563,3 +3610,6 @@ if (typeof SUBJ_HOOKS !== 'undefined')
     DUELBACK = null;
     session = {ok: 0, n: 0, h: []};
   });
+// The subject on screen's typed names, put back after a visit or a tree lent that came back to the same data (app.js
+// memoPut: the data version back; the memo checks its own key too).
+if (typeof SUBJ_MEMOS !== 'undefined') SUBJ_MEMOS.push({get: () => TYPEN, put: m => (TYPEN = m)});

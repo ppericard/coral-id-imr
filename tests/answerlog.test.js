@@ -191,8 +191,51 @@ test('typedText: the typed near-misses as typed and the spelling steps, trusted 
     ['Seriatopora', 'seriatpora', 'Seriatopora', 0, 1],
     ['Stylophora', 'seriatopora', 'Seriatopora', null, 1]
   ]);
-  assert.deepStrictEqual(typedText(R.slice(0, 12)), {n: 0, step: [0, 0], near: []}, 'nothing typed');
+  assert.deepStrictEqual(typedText(R.slice(0, 12)), {n: 0, step: [0, 0], near: [], rej: [0, 0], refused: []}, 'nothing typed');
   // A removed account's answers (anonymous flag 2: deleted or archived) never show, its text nor its steps (rule D7).
   const gone = R.map(r => (r[0] === 'a' && C.TYPED_RE.test(r[5]) ? Object.assign([...r], {11: 2}) : r));
-  assert.deepStrictEqual(typedText(gone), {n: 0, step: [0, 0], near: []}, 'a removed account');
+  assert.deepStrictEqual(typedText(gone), {n: 0, step: [0, 0], near: [], rej: [0, 0], refused: []}, 'a removed account');
+});
+
+test('typedText: the refused texts (Rejected tries, row 23), trusted typed answers only, none from an older script', () => {
+  const ty = (id, rj, m = 'quiz|t') => {
+    const r = row(id, 'Pocillopora', 'Pocillopora', 1, m);
+    r[15] = 'Pocillopora';
+    r[16] = null;
+    if (rj !== undefined) r[23] = rj;
+    return r;
+  };
+  const R = [...Array(12)].map(() => row('a', 'Porites', 'Porites', 1, 'quiz', 'p1', 'Porites Favites Montipora Pavona'));
+  R.push(
+    ty('a', ['Brain coral', 'xyz']),
+    ty('a', [' brain CORAL ', 'xyz', 'acro']),
+    ty('a', ['xyz'], 'quiz|t|x'), // the exam too
+    ty('a', null), // none logged
+    ty('a'), // a row from a script that does not serve them
+    ty('a', []),
+    ty('a', ['', '  ', 5]), // nothing readable
+    ty('z', ['untrusted']),
+    Object.assign(ty('a', ['removed']), {11: 2}),
+    Object.assign(row('a', 'Pavona', 'Porites', 0, 'quiz', 'p1', 'Pavona Porites Favites Montipora'), {23: ['not typed']})
+  );
+  // the rows as the plain reply gives them and as the admin reads a lean one back (core.js rowsPack, rowsUnpack): the same
+  const wire = L => C.rowsUnpack(JSON.parse(JSON.stringify(C.rowsPack(L))));
+  for (const T of [typedText(R), typedText(wire(R))]) {
+    assert.strictEqual(T.n, 7);
+    assert.deepStrictEqual(T.rej, [3, 6]);
+    assert.deepStrictEqual(T.refused, [
+      ['xyz', 3],
+      ['brain coral', 2],
+      ['acro', 1]
+    ]);
+  }
+  // a text that is a name of Object.prototype counts as any other (what players type is a key)
+  const P = typedText([...R.slice(0, 12), ty('a', ['constructor', '__proto__']), ty('a', ['Constructor', 'toString'])]);
+  assert.deepStrictEqual(P.refused, [
+    ['constructor', 2],
+    ['__proto__', 1],
+    ['tostring', 1]
+  ]);
+  for (const old of [typedText(R.map(r => r.slice(0, 23))), typedText(wire(R.map(r => r.slice(0, 23))))])
+    assert.deepStrictEqual([old.rej, old.refused], [[0, 0], []], 'an older script serves none: nothing shows');
 });

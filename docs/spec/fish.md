@@ -12,12 +12,16 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
 ## Files
 
 - `tools/fish_source.json` (hand-maintained, the sources' part; its `_doc` key explains every field): the regional
-  identification keys and the one in force (`keys`, `deploy`), the teaching nodes with their reference mapping, the
-  species list in PDF order with the cheatsheet rank, the circle-3 sources (`sources`) and the retired ids (`retired`).
+  identification keys (`keys`), the teaching nodes with their reference mapping, the species list in PDF order (its
+  `id`, `name` and the other sources' common names), the circle-3 sources (`sources`) and the retired ids (`retired`).
+- `tools/instance.json` `key`: the identification key in force, one of `keys`.
 - The IMR instance's layer, `tools/instances/imr/fish.json`: each teaching node's circle, IMR tag (`src: imr`), dive-sign
-  mark (`sign`), slides (`sl`), cues, look-alike lines and phase lines from the IMR fish presentation, the sub-entries'
-  slides and cues, each species' presentation slide (`sl`), the starter core `start` and the declared look-alike groups
-  `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
+  mark (`sign`), the name and family spelling IMR gives it (`name`, `fam`; and its sub-entries' `name`), the section
+  tokens of the IMR reference PDF it should hold (`pdf`), slides (`sl`), cues, look-alike lines and phase lines from the
+  IMR fish presentation, the sub-entries'
+  slides and cues, each species' presentation slide (`sl`), the PDF species' common name, section, pages and cheatsheet
+  rank (`common`, `sec`, `pdf`, `cs`) and the presentation's own species (`src: slides`), the starter core `start` and
+  the declared look-alike groups `look` ([data.md › The instance's layer](data.md#the-instances-layer)).
 - `tools/build_fish.py`, the build, documented at its top: it reads the two, composed by `tools/instance.py`
   `fish_source`, and writes `fish.json`. `tests/fish.test.js` checks its structure.
 - Only derived lists are in the repository, never the PDF or the slides.
@@ -29,7 +33,8 @@ are in [fish-photos.md](fish-photos.md); the subject's place in the taxon model 
   unranked clades kept, missing ranks skipped); `syn` the WoRMS synonyms, accepted when typed; `inat` the iNaturalist
   taxon id; `iname` iNaturalist's name when it differs.
 - `teach`, the teaching tree: the 27 entries of the IMR presentation (level 1, circle 1) in its order, then the other
-  circles; level 2 = species. Each node: `id` (stable, never the name), `name` (as IMR names it), `fam` (as IMR writes
+  circles; level 2 = species. Each node: `id` (stable, never the name), `name` (as IMR names it, from the instance's
+  layer; without the layer, an entry takes its family's label in the key in force), `fam` (as IMR writes
   it; `wfam` the WoRMS families when they differ, e.g. Groupers: Epinephelidae), `group` (its group in the key in force),
   `level`, `circle`, `src` (imr / pdf / diver / wink), `wink`, `note`, `why` (circle 3: why divers want it), `ref` /
   `not` (the AphiaIDs it covers / leaves out), `species` (the ids of its species in the game, the most commonly met
@@ -176,6 +181,19 @@ or a PDF species whose family is in no circle, is out of the game (`out` says wh
 - `tools/build_fish.py` `add_families` (every build path, `--regroup` the quickest offline) writes them into
   `fish.json`, species `cn`: `[[name shown, other spellings…], …]`. Two species may carry one name: nothing is dropped
   for it, each such name is flagged `shared` and listed in the file's top-level `shared` (name → species ids).
+- **His own list for a species** (`curation.json` `fish` `cn`, `{species id: [1 to 3 names, the main first]}`; the
+  sea slugs' part would read the same key from their own part, `SUBJECTS` `admin.cur`): `core.js` `treeCnApply`, run
+  by `contentApply` on every path (the app's `treeBuild` into `TREEF`, the admin, the sheet's replay), lays each clean
+  list (`treeCnClean`: 1 to 3 names with letters, none twice as typed names read them) over its species' `cn`
+  (`treeCnLay`): a name the build lists in some spelling keeps its other spellings, a new one has none, the list's order
+  is his, `cni` follows the IMR name to its place and goes when the list drops it, `cnr` stays. A species with no entry,
+  an entry that is not a clean list or a species the file does not know keeps the built names; a species with no built
+  list is left alone whatever the entry says, so a list never changes whether a species has a progress unit
+  (`treeSpUnits`, `treeScoreTree`, `treeReplayGen`: the sheet needs no gate). The name index (`treeNameIndex`), the typed
+  names and every `cnFirst` reader read the file in force (`TREEF`), so a name he takes out is no longer accepted when
+  typed. `fish.json` is not changed: `vn` (the kind words) and `common` (the PDF's name) stay as built. Written in the
+  admin's Common names box ([admin-tree.md](admin-tree.md#common-names-a-species-own-list)). Tests:
+  `tests/fishcnames.test.js`, the Common names step of `tests/admin.smoke.js`.
 - The game reads them through `app.js` `cnList`, `cnShow` (the name a multiple-choice question shows: the player's
   first, `cnFirst`), `cnTypeNames` (typed: only the listed names and their spellings, a name two species list right for
   the species asked, a kind word of `vn` known) and `cnAlso` (the species sheet's "Also used for …", `learn.js`
@@ -255,9 +273,9 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 
 - `tools/fish_source.json` `keys` holds the keys (`id`, `region` {name, area}, `cite` the full citation, `short` its
   short form, `src`, `groups`: `n`, `title` exact, `pages`, `labels` [label as the key prints it, [WoRMS accepted names
-  it covers], note]) and `deploy` the deployment's region and the key in force: here the index of the 20 identification
-  groups of *Reef Fish Identification – Tropical Pacific*, 2nd ed., which the IMR course follows, transcribed from
-  Pierre's screenshots of its index.
+  it covers], note]); the key in force is `tools/instance.json` `key` (`tools/instance.py` `fish_source` lays it as
+  `deploy.key`): here the index of the 20 identification groups of *Reef Fish Identification – Tropical Pacific*,
+  2nd ed., which the IMR course follows, transcribed from Pierre's screenshots of its index.
 - `build_fish.py` gives each teaching node the group of the first key label met walking up WoRMS from each of its
   references (a subfamily label wins: Parrotfishes over Wrasses) and fails, naming the node, when a node in the game
   (any circle, winks aside) has no group or spans two, unless the source makes it explicit (`keyGroup` {key id: n};
@@ -268,9 +286,9 @@ Rule S3: the fish groups come from the identification key of the deployment's re
 - `fish.json` `key` = the key in force without its labels (`treeGen` `key`, `groups`); the app shows the key's numbers
   and titles, `cite` on the families page and `short` everywhere else (one edit changes both).
 - `python3 tools/build_fish.py --regroup` applies the key to `fish.json` again offline from its own reference tree
-  (after an edit of `keys`, `deploy` or `keyGroup`, or to settle a merge of `fish.json`); `--regroup --check` (run by
-  `tests/fish.test.js`) fails when `fish.json` is not as the key gives it. A region with no key has no group rule
-  (`deploy.key` unset); a key for another region is data only.
+  (after an edit of `keys`, the instance's `key` or `keyGroup`, or to settle a merge of `fish.json`); `--regroup
+  --check` (run by `tests/fish.test.js`) fails when `fish.json` is not as the key gives it. A region with no key has no
+  group rule (`tools/instance.json` `key` unset); a key for another region is data only.
 
 ## Starter core and judged photos
 
@@ -292,8 +310,9 @@ Rule S3: the fish groups come from the identification key of the deployment's re
   and the cards show it too. The app ranks them again on `model.js` `photoDiff` (`app.js` `rankPhotos`, at load and with
   each new photo statistics reply), so the players' ratings take over once fish answers are logged. `model.js` reads `e`
   in `photoDiff` (the prior), in the `RARE` cap (`rareCap`: until a unit reaches Open Water, its photos under ease 4,
-  or its `RARE.FEW` easiest when it has fewer, make at most `RARE.SHARE` of the photos drawn) and in `easyTrust`
-  ([LEARNING.md](../LEARNING.md) "Fish: the starter core and judged photos").
+  or its `RARE.FEW` easiest when it has fewer, make at most `RARE.SHARE` of the photos drawn)
+  ([LEARNING.md](../LEARNING.md) "Fish: the starter core and judged photos"). The prior is centred on its unit's mean
+  ease (`easeMid`), so `e` never ranks units ("The judged ease, within its unit").
 
 ## Covers
 

@@ -15,7 +15,27 @@ Institute for Marine Research, `app` IMR Reef ID, `appShort` Reef ID, the home-s
 (`SHEET_NAME`, the progress file message, the sign-in button's tooltip); the static files that carry the name
 (`index.html`'s title, social tags and header; `admin.html` "IMR Reef ID Admin"; `privacy.html`;
 `manifest.webmanifest` `name` / `short_name`; `tools/og/og.html`, then `node tools/og/make_og.js` for `og.jpg`;
-`README.md` and the docs) are written from it by **`tools/rename_app.py`**. Things outside the repository kept their
+`README.md` and the docs) are written from it by **`tools/rename_app.py`**. The same tool writes the **bare
+organisation words** of `index.html`, `privacy.html`, `admin.html` and `tools/og/og.html` (`ORG_FILES`) from `ORG`: the
+whole word "IMR" becomes `ORG.short` and "Institute for Marine Research" becomes `ORG.name` (HTML-escaped), so the
+survey lists line of `index.html`'s description, the "Non-IMR genera" labels and `privacy.html`'s prose follow a fork's
+`ORG` and read as before in the IMR edition; CI's `--check` covers them. Not covered: the organisation's words in pages
+built by JS, which read `ORG` themselves. **The course's words** are `ORG` fields too, each a whole name without its
+article, at today's values: `course` (IMR course), `lecture` (IMR lecture: its notes, groups and photos), `lectureRef`
+(IMR Lecture 6, as a reference names it), `fishPres` (IMR fish presentation), `list`, `slate` and `benthic` (the
+survey's coral list, slate and benthic slate), `trainer` (IMR trainer); a phrase not listed builds on `ORG.short`
+("At IMR or elsewhere"). The core (`core/subjects.js`, `core/achievements.js`, `core/tree.js`) writes its texts from
+them, and so do the players' pages (`app.js`, `learn.js`, `quiz.js`, `progress.js`, `home.js`, `sync.js` and the rest),
+which also derive the prefixes of the data's source lines from `ORG` (`model.js` `isClassic`, `learn.js` `srcTag`), and the
+admin's pages (`admin*.js`: the help, the tags, the filters, the token links named for `ORG.app`), and the Lab
+(`proto/*.js`), which keeps the lecture sentences with their citation ("(IMR Lecture 6)") as literals, listed in
+`tests/orgwords.test.js` `KEEP` (they credit that lecture's words, rule C2) and reads the four it repeats from the glossary
+(`data.json` `terms`); `analysis.js` still writes its own: it runs in a worker and in the Action's Node run with no
+`core.js` and keeps its labels in the stored report (REE-34). The data's own values (the source lines "IMR Lecture 6, slide …"
+and "IMR fish presentation, …" in `data.json` and `fish.json`) and the identifiers (`imr` fields, `cqByIMR`) keep their words: code derives what it matches from `ORG`.
+`tests/orgwords.test.js` counts the word "IMR" still written in the code outside comments, per file, against the lines
+left to move and the few that stay (the sheet backups' pCloud folder, the rules versions' records)
+([decision](../decisions/2026-11-25-org-course-words.md)). Things outside the repository kept their
 old name: the Google Sheet "IMR Coral ID – RA progress" and the Cloud project "IMR Coral ID sync".
 
 **`tools/rename_app.py`** applies every mechanical part of the rename (the visible name, the storage keys, the shell
@@ -23,7 +43,8 @@ cache's name, the CSP hashes of the inline scripts, Prettier on what it changed)
 branch that still uses the old names, run `python3 tools/rename_app.py` and commit its result on its own (`--check`
 changes nothing and fails when something is left; CI runs it). Lines marked `rename-app: keep` (or blocks between
 `rename-app: keep-begin` / `keep-end`) are left alone: the code that names the old keys on purpose. A fork for another
-organisation edits `ORG` and runs it with `--from "IMR Reef ID"`.
+organisation edits `ORG` and runs it with `--from "IMR Reef ID" --from-short IMR --from-name "Institute for Marine Research"`
+(the earlier app name, short form and full name).
 
 ## Storage keys
 
@@ -71,10 +92,20 @@ The service worker's messages to the pages follow the same names (`reefid-ver?`)
 **Keys read many times an answer** (REE-263): `sync.js` `keptGet`, `keptBy` and `keptPush` keep a key's parsed value,
 and what is read from it, while its stored text stays the same: `reefid-sheet-v` (`sheetV`), the subject's
 `-start` record (`model.js` `startV`, `imrSaid`), and the answer queues `reefid-log0` and `reefid-anonq` (`quiz.js`
-`logAnswer` and the readers of LOG0 in `quiz.js` and `model.js`, `sync.js` `sendAnon`). Each read still asks the storage
-for the text (`keyGet`) and compares it, so any write, another tab's included, is read at once; the values are those of
-`store.get`. A kept value is shared: only readers that never change it read through `keptGet`. In the smokes,
-`KEPT_CHECK` (`tests/facheck.js`) checks every kept value against a fresh `store.get`.
+`logAnswer` and the readers of LOG0 in `quiz.js` and `model.js`, `sync.js` `sendAnon`). The first read of a key in a
+task asks the storage for the text (`keyGet`) and compares it; the task's later reads trust that comparison (`app.js`
+`freshSeen`, `freshNow`: the mark ends with the task's microtasks), unless this tab wrote the key since. Every write of
+the app page calls `app.js` `storeWrote`: `store.set`, `store.drop` (a removal), `store.raw` (a text written as it is:
+`progress.js` `loadData`, the settings kept as plain text) and `sync.js` `keptPush`; `tests/kept.test.js` fails on a
+`localStorage` write in the page's scripts that goes round them. The key moves of `core.js` (`migrateStorage`,
+`migrateRoutes`) run first, before any read. Another tab's write is seen by the next task's first read: within a task
+the page's storage changes only by its own writes (Chromium applies another tab's change from a message, a task of its
+own; Firefox reads through a snapshot kept until the task's end; Safari is not checked). Were another tab's write ever
+readable mid-task, a kept read would see it one task late, as if it had landed after the task. No `storage` event is
+listened to. The values are
+those of `store.get`. A kept value is shared: only readers that never change it read through `keptGet`. In the smokes,
+`KEPT_CHECK` (`tests/facheck.js`) checks every kept value against a fresh `store.get`, the reads that trust their
+task's comparison included.
 
 ## Moving data written under older names
 

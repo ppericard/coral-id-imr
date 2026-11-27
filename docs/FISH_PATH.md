@@ -121,8 +121,8 @@ is the design's shorthand, and internal identifiers may keep it.
 - **Selection**: the names that recur across public sources (the iNaturalist default English name, the FishBase main
   English name, other public references), at most 3. **Published without his prior check** (Pierre, 2026-11-08, Q313:
   "Publie, je corrige à l'usage"): he corrects in use. The admin's Names box (Photos › Tree, a family's page) sets the shared names' exceptions
-  (`curation.json` `fish` `names`: accepted, often, off); a species' own list is not editable there yet (it waits for a
-  stored format, ROADMAP "Fish common names").
+  (`curation.json` `fish` `names`: accepted, often, off); a species' own list is edited in its Common names box (below,
+  "Correcting a list").
 - **The lists** (`tools/fish_common.json`, written by `tools/fish_common.py`, every name with its sources; `tools/build_fish.py`
   writes them into `fish.json`, species `cn`: one list per name, the name shown first, then its other spellings; `cni`: the
   place of the IMR name in `cn`; `cnr`: the regional names, the same shape, accepted when typed; `cni` and `cnr` are
@@ -177,7 +177,13 @@ is the design's shorthand, and internal identifiers may keep it.
   so any of them typed credits the one unit (Q376 (b)). The species' one common-name unit is in the score tree once the
   species level is on (`core.js` `treeScoreTree` on: `['s:s091']`, `null` for a species with no listed name; off, as before:
   `[]` for a species with a PDF name, `null` without one).
-- **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
+- **Correcting a list** (Pierre, 2026-11-21, Q444: "C'est un détail d'implémentation. Si tu penses que c'est le mieux,
+  oui."): a species' own list, 1 to 3 names with the main name first, is `curation.json` `fish` `cn` `{species id:
+  [names]}`, written only by the admin's draft and Publish (rule A1), in the Common names box of the species' page
+  (Photos › Tree). It replaces the built list for that species alone, in the game, the sheet and the admin
+  ([spec/fish.md](spec/fish.md#curated-common-names)): a species with no entry keeps the built names, and a species the
+  build gives no name cannot be given one there (a list would add the species' progress unit). A name he takes out is no
+  longer accepted when typed; the IMR name stays the IMR name while the list holds it.
 - **Later languages**: names as a per-language layer over the taxon-keyed progress (Q362; the study §7.2); not built.
 - **Genus common names** (`tools/fish_genus_names.json`, `fish.json` genera `common`, `csrc`): the IMR sub-entry's name,
   a reference's, or one inferred from its species' names when no reference names the genus (Q376 (d): *Cephalopholis*
@@ -224,8 +230,8 @@ is the design's shorthand, and internal identifiers may keep it.
   "“Razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes."; on a photo it does not designate,
   "“razorfish” is a name of some Wrasses, not this one. It is also used for the Shrimpfishes."; on another family,
   "“Razorfish” names the Shrimpfishes and some Wrasses.". Pierre's exceptions in `curation.json` `fish` `names` (`off`,
-  `on` and `often` give a name to the whole family: "✓ Yes, it's Shrimpfishes (often called razorfish)"); the admin page
-  to edit them is still to build (ROADMAP "Fish common names").
+  `on` and `often` give a name to the whole family: "✓ Yes, it's Shrimpfishes (often called razorfish)"), set in the
+  admin's Names box.
 - Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
   Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
   sharks).
@@ -419,7 +425,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   - photo difficulty, traps and the display schedule start from the player's level (`playerStart`), not from the hardest setting;
   - the draw keeps the `OPEN` share for units never asked (new species come in as results allow, not as a wall of 300 never-asked
     species);
-  - checked with a learnsim fish profile before release (Checks).
+  - checked on a learnsim fish profile when a mechanics question asks it (rule L11; Checks).
 
 ## Fish basics (Pierre, 2026-11-04)
 
@@ -793,7 +799,7 @@ Every question here is answered (3: Q394 A; 5: Q395).
 
 The fish are open to players (they left beta on 2026-11-17); these are the checks made before a subject opens, and the ones to repeat for the next.
 
-- **learnsim fish profiles** (rules L11, L12, 5 seeds each; `tools/learnprof.js`, docs/LEARNING.md "Profiles"): built on the
+- **learnsim fish profiles**, for a mechanics run (rule L11; 5 seeds each; `tools/learnprof.js`, docs/LEARNING.md "Profiles"): built on the
   fish's own structure, never on the corals': the beginner, the casual diver (the families met most near Dauin and the commonest
   species of each, common names only), the lecture RA ("I'm at IMR": the circle-1 families, their IMR genera, the IMR
   cheatsheet's 24 most sighted species), the strong RA (the circle-1 families and genera, the cheatsheet's species and the 3
