@@ -2453,8 +2453,10 @@ ruleset, the budgets, the CodeQL cutover) are on their Linear issues and come to
   mode "pause" ou à la demande (propose moi des noms) pour un travail où j'ai plus de contrôle dans les taches qui sont
   lancés, et dans quelle ordre.» To the integrator's proposal (names auto and pilote; in pilote, a numbered proposal and
   his pick, no scheduled tasks, merges only for what he launched; pilote when no mode is written): «ok pour auto et
-  pilote, écris la règle». The proposal's "one question point each morning" and "a 5-line summary each evening" were
-  the integrator's own ideas, never decided («C'est quoi ça? J'ai pas souvenir», 11:29): left out of the rule. On the
+  pilote, écris la règle». On the proposal's "a 5-line summary each evening" he asked (11:29): «C'est quoi ça? J'ai
+  pas souvenir». A question, not a refusal (11:35: «C'est pas ce que je t'ai dis!!!!!!!!!!!!!!!!!!!!» to the
+  integrator's reading that he had dropped it). It and "one question point each morning" came from the integrator's
+  proposal 1.2 of the day and wait for his answer; the rule carries neither until then. On the
   check-in and the sweep (11:29): «il faudra repenser les taches programmées. C'est quoi leur coût et la pertinence
   qu'elles ne soient pas synchronisées?» (an open question, REE-244). Applied: AGENTS.md "Working mode", docs/INTEGRATOR.md "Work modes: auto and pilote" and
   "Habits", tools/checkin.md, docs/STATUS.md (`Mode: pilote`).
