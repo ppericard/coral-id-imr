@@ -772,7 +772,8 @@ fish's `FISH_RVS`, the sea slugs' `SEASLUG_RVS`; rule D5), and every device adop
 `replayAdopt`). The replay's record of a unit and its answer count win over the saved copy, also when the copy holds
 more answers; a unit the log has no answer on loses the answers the copy counts. The level's answer count follows the
 log the same way (rules version 15, fish 7, sea slugs 4); the app's checkpoints count on an answer clock of their own
-(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). There is no floor: a bar may go down.
+(`model.js` `tally`; [the design note](reviews/2026-11-09-level-count-checkpoints.md)). The replay counts each answer
+id once, also when the log holds one twice (rules version 16, fish 8, sea slugs 5; REE-351). There is no floor: a bar may go down.
 A recalculation is silent, a learned mark taken away included (rule D6), and every leaderboard follows at once (rule D8).
 
 ### Fish on the same model

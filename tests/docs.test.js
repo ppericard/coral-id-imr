@@ -56,6 +56,78 @@ test('docs/STATUS.md exists and has its sections; past its line mark it warns', 
     assert.ok(new RegExp('^## ' + h + '$', 'm').test(STATUS), 'docs/STATUS.md: section "## ' + h + '" missing');
 });
 
+// STATUS "Next" is the start order for the next integrator (REE-316; Pierre, 2026-11-26 18:29: «Bonne idée»): a
+// numbered list, each item naming a Linear issue (plain REE-N or a Markdown link) and giving its reason after " — ".
+// Only the "## Next" section is read, up to the next level-two heading; a wrapped line joins the item above it.
+const nextSection = doc => {
+  const m = /^## Next[ \t]*$/m.exec(doc);
+  if (!m) return null;
+  const rest = doc.slice(m.index + m[0].length);
+  const end = /^## /m.exec(rest);
+  return end ? rest.slice(0, end.index) : rest;
+};
+const nextOrderProblems = doc => {
+  const sec = nextSection(doc);
+  if (sec === null) return ['no "## Next" section'];
+  const items = [],
+    bad = [];
+  let open = false;
+  for (const line of sec.split('\n')) {
+    if (/^\d+\.\s/.test(line)) {
+      items.push(line.replace(/^\d+\.\s+/, ''));
+      open = true;
+    } else if (open && /^\s+\S/.test(line)) items[items.length - 1] += ' ' + line.trim();
+    else if (/^\s*[-*+]\s/.test(line)) {
+      bad.push('an unnumbered entry: ' + line.trim());
+      open = false;
+    } else if (line.trim()) open = false;
+  }
+  if (!items.length) bad.push('no numbered item naming an issue');
+  items.forEach((it, i) => {
+    const cut = it.indexOf(' — ');
+    const head = cut < 0 ? it : it.slice(0, cut);
+    if (!/\bREE-\d+\b/.test(head)) bad.push('item ' + (i + 1) + ' names no issue (REE-N) before its reason');
+    if (cut < 0 || !/\w/.test(it.slice(cut + 3))) bad.push('item ' + (i + 1) + ' has no reason after " — "');
+  });
+  return bad;
+};
+
+test('docs/STATUS.md "Next" is a numbered start order: an issue and a reason per item', () => {
+  assert.deepStrictEqual(nextOrderProblems(STATUS), [], 'docs/STATUS.md "## Next"');
+});
+
+test('the "Next" check: what passes and what fails', () => {
+  const doc = next =>
+    '# Status\n\n## Now\n\n- Main is green; REE-1 waits.\n\n## Next\n\n' + next + '\n## Questions for Pierre\n\n- None.\n';
+  // Passes: a Markdown issue link, a wrapped reason, prose before the list, bullets outside Next.
+  assert.deepStrictEqual(
+    nextOrderProblems(
+      doc(
+        'The order as of 2026-11-27, from REE-312.\n\n' +
+          '1. [REE-310](https://linear.app/reef-id/issue/REE-310) Apply the outside review — Pierre is waiting for the\n' +
+          '   corrected feedback document, before he sends it.\n' +
+          '2. REE-121, REE-229: the dev cycle — approved; it also tests the trial (2026-11-26).\n'
+      )
+    ),
+    []
+  );
+  // Fails: the unordered form of 2026-11-26 (themes as bullets, no order, no first step).
+  const old =
+    'Start the next session with REE-312, which lists them all:\n\n' +
+    '- **Decided work to launch** (section 2): the species exams (REE-27), memory and format offsets (REE-55).\n' +
+    '- **Studies** (section 3): REE-26, REE-191, REE-91.\n';
+  assert.ok(nextOrderProblems(doc(old)).includes('no numbered item naming an issue'));
+  assert.ok(nextOrderProblems(doc(old)).some(p => p.startsWith('an unnumbered entry')));
+  // Fails: a numbered issue under "Now" only.
+  const nowOnly = '# Status\n\n## Now\n\n1. REE-5 — first.\n\n## Next\n\nSee Linear.\n\n## Last stop\n';
+  assert.deepStrictEqual(nextOrderProblems(nowOnly), ['no numbered item naming an issue']);
+  // Fails: an issue without a reason; two items where only the first has one; a numbered item with no issue.
+  assert.deepStrictEqual(nextOrderProblems(doc('1. REE-7 Build the exams.\n')), ['item 1 has no reason after " — "']);
+  assert.deepStrictEqual(nextOrderProblems(doc('1. REE-7 Build — decided.\n2. REE-8 Study — \n')), ['item 2 has no reason after " — "']);
+  assert.deepStrictEqual(nextOrderProblems(doc('1. Tidy the docs — they drift.\n')), ['item 1 names no issue (REE-N) before its reason']);
+  assert.deepStrictEqual(nextOrderProblems('# Status\n\n## Now\n'), ['no "## Next" section']);
+});
+
 test('question numbers never go back: the last number covers every open question', () => {
   const m = /Last question number: Q(\d+)/.exec(STATUS);
   assert.ok(m, 'docs/STATUS.md: the line "Last question number: Qn" is missing');
@@ -666,6 +738,7 @@ const DOC_MARKS = {
   'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
   'docs/spec/sync.md': [82, 220],
+  'docs/spec/answer.md': [13, 160], // new, 2026-11-27: one logged answer's contract (REE-284)
   'docs/spec/content.md': [16, 130],
   'docs/spec/data.md': [34, 140],
   'docs/spec/fish-photos.md': [54, 180],
@@ -716,6 +789,7 @@ const DOC_MARKS = {
   'tools/studies/what-makes-a-5/README.md': [4, 300], // new, 2026-11-24: the "what makes a 5" session page and its data (REE-275)
   'tools/studies/ree255/README.md': [8, 130], // new, 2026-11-25: REE-255's declared method and its study scripts
   'tools/studies/ree241/README.md': [3, 130], // new, 2026-11-26: REE-241's study scripts, what holds for the rule in force
+  'tools/studies/ree319/README.md': [3, 130], // new, 2026-11-27: REE-319's specimen-overlap scripts and their inputs
   'tools/sync/changes/README.md': [2, 130]
 };
 // A record has no entry of its own (every decision PR would add one): the same mark for each. A sheet script change

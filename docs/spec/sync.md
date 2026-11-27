@@ -18,9 +18,10 @@ prompts the app shows around a game, some of them kept with the progress, are in
   from it, serves the photo statistics, the leaderboard and the admin's reads, and updates itself from GitHub.
 - **Accounts**: a name and a 4-digit code, no Google account. The code only prevents accidental overwrites: it is not a
   password (SECURITY.md).
-- **A local copy never talks to the sheet**: on `localhost`, `file:` or a webdriver browser the app never signs in,
-  saves or sends (`app.js` `LOCAL`, `sheetFetch`, unless a test sets `window.SHEET_STUB`), so tests never reach the real
-  sheet (rule D1).
+- **A local copy never talks to the sheet**: only the deployed site does (`app.js` `SHEET_SITE`); on any other address,
+  `file:` or a webdriver browser the app asks it nothing, the photo statistics, leaderboards and achievements' shares
+  included (`app.js` `LOCAL`; every request through `sheetFetch`, unless a test sets `window.SHEET_STUB`), so tests
+  never reach the real sheet (rule D1, `tests/sheetoff.test.js`).
 
 ### Version gates and the floor
 
@@ -28,7 +29,9 @@ A feature that needs sheet script version N turns on only when the script's repl
 `const X_SHEET = N` in the app's code. Gates stop at `core.js` `SHEET_FLOOR`, a script version already confirmed live:
 it is set only to a version merged at least three days before, never to the build's `VERSION`, because Pages deploys
 before the script updates itself. `sync.js` `sheetV` reads the script's version as at least the floor, also before any
-reply, so a new device or an offline first launch plays today's rules. Every gate at or below the floor is deleted with
+reply, so a new device or an offline first launch plays today's rules. Answers are never sent trimmed for want of a
+version (REE-351): a save reads it from the load before it, and an anonymous send holds a batch with a field the floor
+trims until a reply has said one ([answer.md](answer.md)). Every gate at or below the floor is deleted with
 its old branch: `tests/gates.test.js` lists the gates and fails on one at or below the floor, or on a floor above
 `VERSION`; `tools/sheet_version.py` never moves the floor. A gate this file names (`PA_SHEET`, `CV_SHEET`, `STRUCT_SHEET`,
 `PAIRS_SHEET`, `VIEWPORT_SHEET`, `LIVEGAME_SHEET`) is one of those still above it.
@@ -76,7 +79,7 @@ QUERY on A:E): new columns only ever go at the end. A tab with fewer columns rea
 until the next answer adds them (`logAnswers_` inserts the columns before its header check). A row logged before a
 column existed has it blank, and an app that sends no value for a field leaves it blank: the script ignores the fields
 it does not know, so a field that an older script would drop needs no gate (no `*_SHEET`) unless the app must know it
-was kept.
+was kept. One answer's whole path, as one contract with its field table: [answer.md](answer.md).
 
 - **Seconds** and **Enlarged**: the answer's time and whether a photo was enlarged (below, "Answer time and
   enlargement"). `readAnswers` rows carry them at indexes 12 and 13 (null when blank), after the anonymous flag (11).
@@ -386,7 +389,8 @@ also pulls and merges, without writing, on start-up, when it comes back to the s
 online, so progress made on another device shows up without answering a question first. Each send carries `at`, the
 sheet revision it merged against; if another device wrote in between, the sheet answers `stale` (the answers still
 logged) and the app pulls, merges and sends again (at most twice). The app keeps unsent answers (2,000 at most) until
-the sheet confirms `log: true`.
+the sheet confirms `log: true`, which covers only the answers whose id the sheet takes (`core.js` `logIdOk`): one it
+refuses stays queued for at most 3 sends, then leaves with an Events line ([answer.md](answer.md), REE-351).
 
 ### Lighter saves on slow lines
 
@@ -1044,6 +1048,39 @@ formulas or formats), uploaded with `UrlFetchApp` to pCloud's HTTP API.
   request, under the script lock or in `autoUpdate`: no token, a refused token or a missing authorisation only writes
   one `pCloud backup:` line to the `Deploy log` tab (the file name and size, or the reason; never the token).
   `tests/backup.test.js`.
+
+### Restore rehearsal
+
+`node --test tests/restore.test.js` (under a second, part of the fast tier) rehearses a restore on local doubles only
+(REE-337; no disposable Apps Script project or sheet until Pierre answers REE-100 point B): synthetic accounts, never a
+real backup or the production sheet (rules D1, D2).
+
+1. **The cohort.** Accounts saved through `doPost` on the in-memory sheet (`tests/gas.js`), two devices and a device not
+   signed in; Roles rows from before the groups, then the one-shot migrations (`once_`); a cohort group with its board
+   and a group carrying the players right; the admin list; revocations (a Managers membership, an admin grant, a
+   Curators membership), a hidden board, a player left out of the statistics, an admin delete that keeps the answers and
+   a self-delete; a progress of 50,000 characters.
+2. **The snapshot.** `xlsx_`, the file `backup_` uploads, and what the sheet answered then (every value, the answer ids,
+   each account's rights, the groups, the anonymous ids). Then, on the live sheet, a self-delete, a revocation, a save
+   that moves a revision on and a new account.
+3. **The restore.** The file read back as an import is assumed to read it (shared strings as text, `t="b"`, the date
+   style as a time in the new spreadsheet's zone; not checked against Google, rule W11) into a fresh script whose Script
+   Properties hold only what is carried: `ANON_SALT`, the `ONCE_<name>` marks and `ROLES_SEED` (any non-empty value: the
+   script only tests that they are set).
+4. **Checked.** Every tab and value back, dates to the millisecond; the answer ids of the snapshot and no other; the
+   anonymous ids, every account's rights and every group as at the snapshot; deleted accounts answered `gone`, their
+   names in no tab but `Removed`; the hidden board and the left-out player as they were; `once_` changes nothing; a
+   returning device answered `stale` logs its queue once, and a resend adds nothing.
+
+The tests named `GAP` pin what the rehearsal found unsafe today, so a fix changes them on purpose: a delete or a
+revocation made after the snapshot is undone; a revision number is reused, so a device that saved after the snapshot
+overwrites a newer save without merging; without the `ONCE_` marks every group loses its rights until `autoUpdate`
+runs the one-shots, and the rights migration then writes back a Managers membership revoked long before; without
+`ROLES_SEED` the admin page's first read gives the admin account back the rights it had left; without the old
+`ANON_SALT` every anonymous id changes and a player left out of the statistics counts again; a spreadsheet whose time
+zone is not Manila moves every date. Recovery point: the last weekly backup, at most 7 days; answers confirmed after it
+are lost, as the devices drop them from their queue once the sheet confirms them. Recovery time: not measurable here
+(the import, the redeploy and the app's `SYNC_URL` change are outside the double; about 30 ms locally for this cohort).
 
 ## Versioning and deploy
 

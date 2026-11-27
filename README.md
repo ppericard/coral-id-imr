@@ -45,8 +45,9 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PAGES.md](docs/PAGE
 python3 -m http.server 8000     # app: http://localhost:8000   admin on made-up data: http://localhost:8000/admin.html?demo
 ```
 
-A local copy reads the live photos (R2) and the read-only photo statistics, but never signs in, saves or sends answers:
-`app.js` `LOCAL` turns the sheet off (the error "local copy: the sheet is off"), so tests answer it with `window.SHEET_STUB`.
+A local copy reads the live photos (R2) but never asks the sheet anything: no photo statistics, leaderboard, sign-in,
+save or answer. Only the deployed site (`app.js` `SHEET_SITE`) talks to it; on any other address `app.js` `LOCAL` turns
+the sheet off (the error "local copy: the sheet is off"), so tests answer it with `window.SHEET_STUB` (rule D1).
 
 ## Test
 

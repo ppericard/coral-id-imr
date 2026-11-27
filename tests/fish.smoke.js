@@ -3427,11 +3427,12 @@ async function uiAndAccess(b, base, errs) {
     if (bt.toast || bt.told) ui.push(`${width}px leaderboard toast on Fish: ${JSON.stringify(bt)}`);
     // The fish leaderboard (one per subject): #leaderboard on Fish asks the sheet for the fish board (&s=fish, below the
     // gate floor core.js SHEET_FLOOR), kept apart from the corals' copy.
-    // The sheet's reply is a fixture (the page's fetch wrapped in memory; nothing leaves this computer, rule D1).
+    // The sheet's reply is a fixture (app.js sheetFetch answered by SHEET_STUB in memory; nothing leaves this computer,
+    // rule D1).
     const fb = await q.evaluate(async () => {
-      const f0 = window.fetch,
+      const s0 = window.SHEET_STUB,
         asked = [];
-      window.fetch = u => {
+      window.SHEET_STUB = u => {
         asked.push(String(u).replace(/^.*\?/, ''));
         const rows = /s=fish/.test(u)
           ? [
@@ -3461,7 +3462,7 @@ async function uiAndAccess(b, base, errs) {
           coral: localStorage.getItem('reefid-board-cache')
         };
       } finally {
-        window.fetch = f0;
+        window.SHEET_STUB = s0;
       }
     });
     if (

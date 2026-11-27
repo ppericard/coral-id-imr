@@ -6599,15 +6599,19 @@ async function subjTour(b, base) {
         }
       } catch (e) {}
       const g = mode === 'plain' || mode === 'all' || mode === 'names' ? [] : ['fish'];
+      // The account's calls only. The public reads (statistics, leaderboard, achievements) fail as offline: their reply
+      // would carry this stub's version (sync.js sheetSeen), below the one 'names' set for the species level.
       window.SHEET_STUB = (url, o) =>
-        Promise.resolve({
-          json: () =>
-            Promise.resolve(
-              o && o.method === 'POST'
-                ? {ok: true, log: true, rev: 2, v: 56, groups: g}
-                : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 56, groups: g}
-            )
-        });
+        /[?&](stats|board|achs)=1/.test(String(url))
+          ? Promise.reject(new TypeError('Failed to fetch'))
+          : Promise.resolve({
+              json: () =>
+                Promise.resolve(
+                  o && o.method === 'POST'
+                    ? {ok: true, log: true, rev: 2, v: 56, groups: g}
+                    : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 56, groups: g}
+                )
+            });
     }, mode);
     const p = await c.newPage();
     p.on('pageerror', e => errs.push(`${mode}: ${e.message}`));

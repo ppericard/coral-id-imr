@@ -207,12 +207,23 @@
       String(x || '')
         .split(/\s+/)
         .filter(Boolean);
+    // Each answer once (REE-351): a row that carries its answer id (LOG_RID: logRow, Code.gs rowOf_) counts only the
+    // first time that player's rows meet the id, in time order; a log that holds an id twice (a hand edit, a restore)
+    // counts it once. A row without one (the admin's readAnswers rows, a study's) counts as it comes.
+    const aids = Object.create(null),
+      aidOf = r => (typeof r[LOG_RID] === 'string' ? r[LOG_RID] : '');
     rows
       .filter(r => r && r[0] && r[2])
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
         if (own(since, id) && !(r[1] > own(since, id))) return;
+        const aid = aidOf(r);
+        if (aid) {
+          const met = (aids[id] = aids[id] || new Set());
+          if (met.has(aid)) return;
+          met.add(aid);
+        }
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -311,7 +322,8 @@
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
   // player id: this device's answers the sheet has not confirmed yet, replayed on top of the sheet's replay (sync.js).
   // The seconds rt at index 12 and the scoring record sc at LOG_SC (22), as in the sheet's readAnswers rows (11, their
-  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null).
+  // anonymous flag, and 13 to 21, enlarged to species shown, unused here: null), and the answer's id at LOG_RID (24), as
+  // the tab keeps it (its first 20 characters), so the replay counts it once.
   const logRow = (a, id) => [
     id,
     Date.parse(a.t) || 0,
@@ -327,7 +339,9 @@
     null,
     typeof a.rt === 'number' ? a.rt : null,
     ...new Array(LOG_SC - 13).fill(null),
-    scoreRec(a.sc)
+    scoreRec(a.sc),
+    ...new Array(LOG_RID - LOG_SC - 1).fill(null),
+    a.id ? String(a.id).slice(0, 20) : ''
   ];
   // A player's progress as the app holds it after the replay (docs/LEARNING.md "Full replay", What the replay gives and
   // what the device keeps; rule D9). rep: replayProgress's player; saved: the player's reefid-sync-coral-progress (the

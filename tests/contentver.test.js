@@ -19,7 +19,7 @@ const ROOT = path.join(__dirname, '..'),
 const CORAL = C.subjectOf('coral'),
   TREEU = C.subjectOf('fish'),
   SEA = C.subjectOf('seaslug');
-// The sheet's checks on an id (Code.gs logAnswers_ ID, the 20 characters it keeps) and on a content version (CV).
+// The sheet's checks on an id (core.js logIdOk, and the 20 characters Code.gs logAnswers_ keeps) and on a content version (CV).
 const ID = /^[a-z0-9]{1,20}$/,
   CVRE = /^c[a-z0-9]{1,15}$/;
 

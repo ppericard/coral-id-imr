@@ -136,19 +136,26 @@ fails on a smoke line that names a quiz answer control or answers with a number 
 the choices or a check of one format, says `answer.js: <why>` on or above its line) and on an answer control in `app.js`
 `qAnswers` the helper does not know. Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
-`.github/workflows/checks.yml` (JS syntax, tests, JSON, `data.json` layout, Python, versions) and
-`.github/workflows/smokes.yml`, each Playwright smoke in its own parallel job `smoke (<name>)` (pages in four groups and
-fish in two, `SMOKE_PART`, each group in a job of its own or `tests/smokeparts.test.js` fails; admin whole at 390 px and
-in three groups at 1280, `SMOKE_W` / `SMOKE_PART`), `fail-fast: false` so every failing smoke reports. **A PR that changes
-only docs skips the smokes** (every file under `docs/`, a `*.md` at the root, the PR template or `LICENSE`); `checks`
-still runs on it, `tests/docs.test.js` included. A merge train's push runs both workflows in full (rule W26). A new push
-cancels the run still going on the PR. **Session hooks**
+`.github/workflows/checks.yml` (JS syntax, tests in two shards, JSON, `data.json` layout, Python, versions).
+`.github/workflows/smokes.yml` holds the browser matrix, each Playwright smoke in its own parallel job `smoke (<name>)`
+(pages in four groups and fish in two, `SMOKE_PART`, each group in a job of its own or `tests/smokeparts.test.js` fails;
+admin whole at 390 px and in three groups at 1280, `SMOKE_W` / `SMOKE_PART`), `fail-fast: false` so every failing smoke
+reports, and `answer cost` beside it. **The browser matrix runs once, on the merge train, not on a PR head**: locally the
+agent runs the smoke part its change touches (rule W14), and a smoke failure first shows on the train. A code PR still
+runs `answer cost`. **A PR that changes only docs skips the Smokes workflow** (every file under `docs/`, a `*.md` at the
+root, the PR template or `LICENSE`; GitHub's `*` stops at `/`); `checks` still runs on it, `tests/docs.test.js` included.
+On a train, the `browser scope` job (`tools/smoke_scope.py`) reads the whole diff from the train's base, deletions and
+both sides of a rename included: **a docs-only train skips the browser matrix**, a code, mixed or unknown one runs all of
+it, and `answer cost` and Checks run on both (rule W26). `workflow_dispatch` runs everything on any branch. A new push
+cancels the run still going on the PR. **Rollback of the PR-head rule:** delete the scope job's
+`if: github.event_name != 'pull_request'` line, and every code PR runs the matrix again. **Session hooks**
 (`.claude/settings.json`) print the Manila time and the Rule 0 window at each session start and prompt
 (`tools/brief.py --short`, `--time`). The startup hook refreshes `origin/main` before selecting the reviewed script.
 The prompt clock uses the cached ref offline. Both pass the trusted script to `python3 -I -`. A branch's own
 `tools/brief.py` reaches the hooks once merged and fetched. See [the hooks](../spec/tools.md#working-with-the-repository).
 *Source:* repository practice, by 2026-11-01; hooks, 2026-11-05; docs-only PRs skip the smokes, Pierre, 2026-11-08
-(Q305); one answerer for the smokes, Pierre, 2026-11-13 (fix the structure, not the one spot: a typed question hung the
+(Q305); docs-only trains skip the browser matrix (b), and it runs once per train only (d), Pierre, 2026-11-26 (REE-121:
+«ok», measuring the extra round trips, back if it slows delivery too much); one answerer for the smokes, Pierre, 2026-11-13 (fix the structure, not the one spot: a typed question hung the
 overlays smoke on #855).
 
 ### W13
@@ -164,7 +171,7 @@ reformatting commits (`git config blame.ignoreRevsFile .git-blame-ignore-revs` o
 ### W14
 
 **The fast tier before each push, the full tier on CI.** Several agent sessions share one machine, and running every
-smoke on every push loaded it until fixed timeouts failed; CI runs everything on each PR, each smoke on its own runner,
+smoke on every push loaded it until fixed timeouts failed; CI runs everything on the merge train, each smoke on its own runner,
 and reports every failing one. Locally, run what your change can break, once:
 - **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.10.1 --check` on the changed `.js`/`.css`;
   `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency, and the sheet's changes file: never
@@ -172,7 +179,8 @@ and reports every failing one. Locally, run what your change can break, once:
   `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24) **without
   the slow statistical tests tagged `slow`** (CI and the merge train run them); then **the one smoke part your change
   touches** (below). Docs-only changes: no smoke.
-- **Full tier**: CI on the PR (no smoke for a docs-only PR, rule W12) and on the merge train (rule W26). Run every smoke
+- **Full tier**: CI on the PR (Checks and `answer cost`; the browser matrix on the train only, rule W12) and on the merge
+  train (rule W26). Run every smoke
   locally only when CI is down. After a big interface change, the
   brand-new-player replay of rule W17 stays a separate manual step.
 - **Which smoke part**: `admin*.js`, `admin.css`, `admin.html`, `autosort.js`, `analysis.js` →
@@ -385,10 +393,18 @@ Use a stronger model for judgment, including photo judging.
 **Every PR merges through a green merge train, alone or with other ready PRs.** When a PR meets the merge contract on
 its own head, the integrator runs `python3 tools/train.py N` (`--dry-run` first; PRs ready at the same time ride one
 train: `N1 N2 …`, in merge order). A PR is never brought up to date with `main` just to merge: a new branch
-`train/<time>` holds `main` plus the heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
+`train/<time>` holds `main` plus the heads, Checks and Smokes run once on it (the browser matrix unless the whole train is
+docs only, rule W12), and if it is green each PR is squash-merged through the API in
 order at the head the train tested, with no update-branch (no new head, so no new Codex wait); then `main`'s tree must
 equal the train's, and the train stops if a Publish, an Action or another merge lands in between; then it moves the
-`release` branch (the sheet script's source) to the commit `main` ended on, and nothing else does (rule D3). A red train merges
+`release` branch (the sheet script's source) to the commit `main` ended on, and nothing else does (rule D3). Green means
+every job the train needs succeeded: `tools/train.py` reads them from the train's own workflow files (every Checks job,
+both unit shards, `browser scope`, `answer cost`, and each `smoke (…)` job unless docs-only), and a job skipped or
+missing is never a pass. A train of one PR whose tree is the one its own PR run tested (GitHub's merge of the same
+head into the same `main` commit) reuses what that run proved: Checks (all three jobs) and `answer cost`, never the
+browser matrix; `tools/train_reuse.py` proves it job by job, and anything missing, stale, cancelled, re-run, partial or
+unreadable runs on the train (`TRAIN_REUSE`: `shadow` first, `on`, `off` to roll back). The Codex reviews are never
+replaced. A red train merges
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
 `Code.gs` rides a train only once its `VERSION` is assigned on its branch (rule D3), one such PR per train (two would
 conflict on the header line). Any other new head (a fix, a catch-up merge of `main`, the `VERSION` assign) waits for
@@ -397,7 +413,8 @@ days, docs/HANDOVER.md); `tools/train.py` sends only GET and PUT to GitHub and
 never force-pushes.
 *Why:* each merge leaves the other PRs behind `main`, and a catch-up merge is a new head, so a CI run and a Codex wait;
 the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to 16 held a single PR). *Source:* Pierre,
-2026-11-08 (Q305); every PR, even alone, 2026-11-16.
+2026-11-08 (Q305); every PR, even alone, 2026-11-16; the browser matrix by train class, 2026-11-26 (REE-121 (b), (d));
+a train identical to its PR reuses the PR's CI, 2026-11-26 (REE-121 (a): «ok»).
 
 ### W27
 

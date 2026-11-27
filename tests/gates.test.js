@@ -234,7 +234,7 @@ const GATES = {
       sheetV: () => (v === undefined ? 0 : v),
       appVer: () => 1,
       ownStatsAt: {},
-      fetch: u => ((asked = u), new Promise(() => {}))
+      sheetFetch: u => ((asked = u), new Promise(() => {})) // app.js: every request to the sheet goes through it
     })();
     if (asked) assert.match(asked, /[?&]stats=1&s=seaslug&/);
     return !!asked;
@@ -251,7 +251,7 @@ const GATES = {
       sheetV: () => (v === undefined ? 0 : v),
       appVer: () => 1,
       ownStatsAt: {},
-      fetch: u => ((asked = u), new Promise(() => {}))
+      sheetFetch: u => ((asked = u), new Promise(() => {}))
     })();
     if (asked) assert.match(asked, /[?&]stats=1&s=fish&/);
     return !!asked;

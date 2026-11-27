@@ -382,6 +382,8 @@ Rules D1-D9 ([rules/sheet.md](rules/sheet.md)) govern it, [SECURITY.md](SECURITY
 - **The gate floor** and the version gates: [sync.md › Version gates and the floor](spec/sync.md#version-gates-and-the-floor).
 - **Sheet tabs**, **`Answers` columns**, **Every subject's answers, at any rank**, **Surprise cards' answers**, **Answer
   time and enlargement**: [sync.md › The sheet](spec/sync.md#the-sheet).
+- **One logged answer's contract** (its fields, id, acknowledgement, adoption, version signals, and where today's code
+  breaks it): [spec/answer.md](spec/answer.md).
 - **Endpoints**: [sync.md › Requests](spec/sync.md#requests).
 - **Devices on one account**, **Lighter saves on slow lines**, **A save that fails**:
   [sync.md › Saving and loading](spec/sync.md#saving-and-loading).
