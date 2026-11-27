@@ -1954,6 +1954,14 @@ function inSubject(id, fn) {
     if (typeof drawFillSoon === 'function') drawFillSoon(); // a visit that moved the data version: the draw's data filled again ahead
   }
 }
+// A tree subject's datasets come when it is first opened (sw.js `optional`: the fish files are not in the install). When
+// they cannot (offline, a failing line) the subject on screen stays and a note says so, until a later try finds them.
+const subjUnavailable = S => e => {
+  need(2)
+    .then(() => appToast(`${esc(S.name)} is not available yet: its data has not downloaded. Try again when you are online.`, 8000))
+    .catch(() => {});
+  throw e;
+};
 // The subject switch (docs/DESIGN.md "Subject switch"): Home's row and the header's control (#subjc, not on Home), only
 // with two subjects or more (subjMine). The subject's data first, then everything reloads for it; synced (SUBJECT_KEY).
 // A subject the player may not have (subjAt) brings the corals.
@@ -1974,7 +1982,7 @@ function setSubject(id) {
     const sp = subjPage(hashNow());
     if (hrFull(sp) !== location.pathname + location.search + location.hash) history.replaceState(history.state, '', hrFull(sp));
     route();
-  });
+  }, subjUnavailable(S));
 }
 // The subjects this player can switch between (subjOpen): the switches show only when there are two or more.
 const subjMine = () => SUBJECTS.filter(subjOpen);
@@ -2044,7 +2052,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-subj], [data-flip]');
   if (b) {
     subjMenu(false);
-    setSubject(b.dataset.subj || b.dataset.flip);
+    setSubject(b.dataset.subj || b.dataset.flip).catch(() => {}); // a subject whose data did not come said so (setSubject)
   } else if (e.target.closest('#subjb')) subjMenu(document.getElementById('subjmenu').hidden);
   else if (!e.target.closest('#subjmenu')) subjMenu(false);
 });

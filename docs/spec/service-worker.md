@@ -27,6 +27,16 @@ it (`fixed`): most deploys change a few files. The other shell files (the page, 
 are asked from the server with `cache: 'no-cache'`, never from the browser's HTTP cache, which could hold the previous
 deploy's page and run its old code. Then `skipWaiting`.
 
+**The fish datasets are optional** (REE-339: `fish.json`, `fish-photos.json`, `fish-game.json`, about 938 kB compressed,
+`optional()` in `sw.js`; they stay in `SHELL` so `tools/check_versions.py` and the cache-name hash still cover them). The
+install of a device that never opened fish asks for none of them, and one failing (a 503, a cut line) cannot fail the
+install: the coral shell is what "ready offline" means for a coral player. The page fetches them when fish is first needed
+(`app.js` `setSubject`); the versioned-file rule under Fetch keeps each good reply in the shell cache, so a second visit,
+offline too, reads them from it. A device whose older shell cache holds a fish dataset (`holdsOptional`) copies the
+unchanged ones into the new cache and asks for a newer one at install, a failure of which is the page's to meet when fish
+is next opened. While its data cannot come, a switch to fish stays on the corals and says so in a note (`app.js`
+`setSubject`). `tests/swcache.test.js` and `tests/net.smoke.js` check 6b hold it.
+
 ## Activate
 
 The photos still in an old shell cache move to the photo cache, the old shell caches go, and `clients.claim` takes the

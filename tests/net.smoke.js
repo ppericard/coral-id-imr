@@ -27,9 +27,18 @@ const ADMIN_HITS = [];
 // with nothing when the test ends. The server holds them, not a Playwright route: see test 9.
 let HOLD = null;
 const HELD = [];
+// Test 6b (REE-339): the files this server answers 503 while FAIL matches their path (the fish datasets), and every
+// request it cuts off while OFFLINE is set (the line is down: the page and the service worker both see it).
+let FAIL = null,
+  OFFLINE = false;
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
+  if (OFFLINE) return void req.socket.destroy();
+  if (FAIL && FAIL.test(u)) {
+    res.writeHead(503);
+    return void res.end();
+  }
   if (HOLD && HOLD.test(u)) return void HELD.push(res);
   if (u === '/admin.html') {
     const hit = {url: req.url, at: Date.now(), done: 0};
@@ -71,7 +80,10 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
-// 9. A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
+// 6b. A first install of a coral player succeeds and takes over although every fish dataset answers 503: the coral
+//    shell is all in the cache and a coral question prepared online is shown offline with its photos; fish says it is
+//    not available until its data arrives, then loads, is kept, and opens offline on the next visit (REE-339).
+// 9.A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
 // 8. Start-up recovers when its scripts, stylesheet and data.json fail once (loader retries, getR).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 //    Auto is Saver on a line the app measures as slow, and Saver never moves a shown photo to a bigger file.
@@ -971,6 +983,114 @@ const server = http.createServer((req, res) => {
       ]).catch(() => false)
     );
     if (!ok) fails.push('The service worker did not install when each file failed once');
+    await ctx.close();
+  }
+  // 6b. A first install of a coral player while every fish dataset answers 503 (REE-339; Y7L's empty-cache fixture: fish-game.json
+  // failed and the install never activated). The install takes over; every file the corals need is in the shell cache
+  // ("ready offline" means the course is there); a question prepared online is shown offline with its photos; fish says it
+  // is not available while its data cannot come, loads when it can, is kept, and opens offline on the next visit.
+  {
+    const sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8'),
+      shell = sw.slice(sw.indexOf('const SHELL'), sw.indexOf('];', sw.indexOf('const SHELL'))),
+      coral = [...shell.matchAll(/'([\w./?=-]+)'/g)].map(m => m[1]).filter(u => (u === './' || u.includes('.')) && !/^fish/.test(u)),
+      outside = u => !u.href.startsWith(base),
+      cut = r => r.abort(),
+      at = '6b, every fish dataset failing: ';
+    FAIL = /\/fish[\w-]*\.json$/;
+    const ctx = await b.newContext({viewport: {width: 390, height: 800}});
+    await ctx.route(outside, cut);
+    await inatLocal(ctx);
+    await fromR2(ctx);
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('reefid-tour', '1');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      } catch (e) {}
+    });
+    const p = await ctx.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base + '#practice/quiz');
+    await ready(p);
+    const ok = await p.evaluate(() =>
+      Promise.race([
+        navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready.then(() => true)),
+        new Promise(ok => setTimeout(() => ok(false), 60000))
+      ]).catch(() => false)
+    );
+    if (!ok || !(await p.waitForFunction(() => navigator.serviceWorker.controller, null, {timeout: 30000}).catch(() => null)))
+      fails.push(at + 'the service worker did not install and take the page over');
+    else {
+      await p.reload();
+      await ready(p);
+      const missing = await p.evaluate(async us => {
+        const m = [];
+        for (const u of us) if (!(await caches.match(u))) m.push(u);
+        return m;
+      }, coral);
+      if (missing.length) fails.push(`${at}the shell cache lacks ${missing.length} coral file(s): ${missing.slice(0, 4)}`);
+      // A coral question prepared online (planned during the feedback, its photos asked for): its specimen photo is in the
+      // worker's photo cache, not only its text. A question whose photo is an iNaturalist original is not kept by the worker
+      // (a cross-origin photo): the next one is tried.
+      let want = [];
+      for (let i = 0; i < 8 && !want.length; i++) {
+        await qa.ready(p);
+        await p.evaluate(() => smokeAnswer(false));
+        await p.waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 10000}).catch(() => {});
+        want = await p.evaluate(() =>
+          NEXTQ && NEXTQ.args ? NEXTQ.args[4].shown.filter(x => /\/img\//.test(img(x, 's'))).map(x => x.f) : []
+        );
+        if (!want.length) {
+          await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
+          await p.click('#next');
+        }
+      }
+      let prepared = false;
+      for (let i = 0; i < 40 && want.length && !prepared; i++) {
+        prepared = await p.evaluate(async fs => {
+          const k = (await (await caches.open('imr-photos-v1')).keys()).map(r => r.url);
+          return fs.every(f => k.some(u => u.includes('/img/' + f + '-')));
+        }, want);
+        if (!prepared) await p.waitForTimeout(500);
+      }
+      if (!prepared) fails.push(`${at}the specimen photo of the question prepared online is not in the worker's cache (${want})`);
+      // Offline, the next visit starts from the worker's copy: the corals' Home draws.
+      OFFLINE = true;
+      await p.reload();
+      await ready(p).catch(() => fails.push(at + 'offline, the next visit did not start'));
+      // Fish, offline: said not available, the corals stay on screen.
+      await p.evaluate(() => (location.hash = 'home'));
+      await p.waitForSelector('[data-subj="fish"]', {state: 'attached'});
+      await p.locator('[data-subj="fish"]:visible').first().click();
+      const told = await p
+        .waitForSelector('.apptoast', {timeout: 30000})
+        .then(() => p.evaluate(() => document.querySelector('.apptoast').textContent))
+        .catch(() => null);
+      if (!told || !/Fish is not available/.test(told))
+        fails.push(`${at}switching to fish said nothing of its data not being there (${told})`);
+      if ((await p.evaluate(() => SUBJ.id)) !== 'coral') fails.push(at + 'the subject changed to fish without its data');
+      // The line is back: fish loads, is kept by the worker.
+      OFFLINE = false;
+      FAIL = null;
+      await p.locator('[data-subj="fish"]:visible').first().click();
+      if (!(await p.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 30000}).catch(() => null)))
+        fails.push(at + 'fish did not open once its data could come');
+      const kept = await p.evaluate(async () => {
+        const k = [];
+        for (const u of ['fish.json?v=6', 'fish-photos.json?v=6', 'fish-game.json?v=1']) k.push(!!(await caches.match(u)));
+        return k;
+      });
+      if (!kept.every(Boolean)) fails.push(`${at}the worker did not keep the fish datasets the page fetched (${kept})`);
+      // A second visit, offline: fish opens from the worker's copies.
+      OFFLINE = true;
+      await p.reload();
+      await ready(p).catch(() => fails.push(at + 'offline, the next visit did not start'));
+      if ((await p.evaluate(() => SUBJ.id).catch(() => '')) !== 'fish')
+        fails.push(at + 'offline, the next visit did not open on fish from the copies kept');
+    }
+    OFFLINE = false;
+    FAIL = null;
+    if (errs.length) fails.push(at + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
   // 12. Photos from R2 (core.js PHOTO_BASE; ROADMAP "Photos out of the repo"). The app asks R2 for its photos; R2 out of

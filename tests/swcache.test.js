@@ -9,6 +9,9 @@ const test = require('node:test'),
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
 const SITE = 'https://example.org/app/';
+// The fish datasets the shell lists (sw.js SHELL: fish.json, fish-photos.json, fish-game.json): optional in the install.
+const FISH_FILE = /^fish[\w-]*\.json\?v=\d+$/;
+const FISH = [...SRC.matchAll(/'(fish[\w-]*\.json\?v=\d+)'/g)].map(m => m[1]);
 
 // One Cache Storage shared by the versions (as a browser keeps it across workers): name -> Map(url -> body). A relative
 // URL is the worker's (SITE), as a browser resolves it.
@@ -72,7 +75,7 @@ function worker(V, store, net, opts = {}) {
     console
   };
   vm.createContext(ctx);
-  vm.runInContext(SRC.replace(/const V = '[^']*';/, `const V = '${V}';`), ctx);
+  vm.runInContext((opts.src || (s => s))(SRC).replace(/const V = '[^']*';/, `const V = '${V}';`), ctx);
   const wait = async e => {
     const L = [];
     on[e.type]({...e, waitUntil: p => L.push(p), respondWith: p => L.push(p)});
@@ -196,6 +199,7 @@ test('a new version installs the deployed page, not an HTTP-cached copy, and cop
   const shell = calls.map(c => c[0]),
     fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
   assert.ok(shell.length > 20 && shell.some(fixed) && shell.some(u => !fixed(u)), shell.join(' '));
+  assert.ok(!shell.some(u => FISH_FILE.test(u)), 'a first install downloads no fish dataset (REE-339)');
   calls.length = 0;
   const v2 = worker('reefid-shell-v2', store, [], {fetch});
   await v2.install();
@@ -211,6 +215,88 @@ test('a new version installs the deployed page, not an HTTP-cached copy, and cop
     'the new shell holds every file'
   );
   assert.ok(!store.all.has('reefid-shell-v1'));
+});
+
+// REE-339: the fish datasets (about 938 KB compressed) are optional in the install. A first install of a coral player
+// completes, and the worker takes over, when every one of them fails (Y7L's empty-cache fixture: fish-game.json answered
+// 503 and the install never activated); none is downloaded for a device that never opened fish; one the device holds is
+// carried to the next version, and a newer one is asked for without ever failing the install.
+const answer = (u, status = 200) => ({
+  ok: status === 200,
+  status,
+  body: 'body of ' + u,
+  clone() {
+    return this;
+  }
+});
+const urlOf = r => String(r.url || r),
+  isFish = u => FISH_FILE.test(u.replace(SITE, ''));
+// The shell files every player needs: SHELL without the optional ones.
+const REQUIRED = [...SRC.slice(SRC.indexOf('const SHELL'), SRC.indexOf('];', SRC.indexOf('const SHELL'))).matchAll(/'([\w./?=-]+)'/g)]
+  .map(m => m[1])
+  .filter(u => (u === './' || u.includes('.')) && !FISH_FILE.test(u)); // (the Lab list's bare names are not files)
+
+test('REE-339: a first install succeeds and takes over when the fish datasets cannot come; the coral shell is all there', async () => {
+  assert.strictEqual(FISH.length, 3, FISH.join(' '));
+  const store = storage(),
+    calls = [],
+    fetch = async r => (calls.push(urlOf(r)), answer(urlOf(r), isFish(urlOf(r)) ? 503 : 200));
+  const w = worker('reefid-shell-v1', store, [], {fetch});
+  await w.install();
+  assert.deepStrictEqual(w.skips, [1], 'the install finished and asked to take over');
+  await w.activate();
+  const kept = [...store.all.get('reefid-shell-v1').keys()].map(u => u.slice(SITE.length));
+  for (const u of REQUIRED) assert.ok(kept.includes(u === './' ? '' : u), `the shell holds ${u}`);
+  assert.deepStrictEqual(calls.filter(isFish), [], 'a device that never opened fish asks for no fish dataset');
+});
+
+test('REE-339: a fish dataset the page fetches when fish is first needed is kept, and reused by the next version without the network', async () => {
+  const store = storage(),
+    net = [];
+  const v1 = worker('reefid-shell-v1', store, net);
+  await v1.install();
+  await v1.activate();
+  net.length = 0;
+  for (const f of FISH) await v1.get(SITE + f); // the page, on the first switch to fish
+  assert.deepStrictEqual(net.sort(), FISH.map(f => SITE + f).sort(), 'fetched from the network once');
+  for (const f of FISH) await v1.get(SITE + f);
+  assert.strictEqual(net.length, FISH.length, 'a second visit reads them from the cache');
+  const v2 = worker('reefid-shell-v2', store, net);
+  net.length = 0;
+  await v2.install();
+  assert.deepStrictEqual(net.filter(isFish), [], 'the same datasets are copied from the version replaced');
+  await v2.activate();
+  const kept = [...store.all.get('reefid-shell-v2').keys()].map(u => u.slice(SITE.length));
+  for (const f of FISH) assert.ok(kept.includes(f), `${f} carried to the new shell`);
+});
+
+test('REE-339: a device that holds fish asks for a newer dataset at install, and a failure never fails the install', async () => {
+  const store = storage(),
+    v1 = worker('reefid-shell-v1', store, []);
+  await v1.install();
+  await v1.activate();
+  for (const f of FISH) await v1.get(SITE + f);
+  const bump = s => s.replace('fish-game.json?v=1', 'fish-game.json?v=2'),
+    calls = [];
+  // The newer dataset is asked for, and the line is down for it.
+  const down = async r => (calls.push(urlOf(r)), answer(urlOf(r), /fish-game/.test(urlOf(r)) ? 503 : 200));
+  const v2 = worker('reefid-shell-v2', store, [], {fetch: down, src: bump});
+  await v2.install();
+  assert.deepStrictEqual(v2.skips, [1], 'the install finished although fish-game.json?v=2 failed');
+  assert.ok(
+    calls.some(u => u === 'fish-game.json?v=2'),
+    'the newer dataset was asked for'
+  );
+  await v2.activate();
+  const kept = [...store.all.get('reefid-shell-v2').keys()].map(u => u.slice(SITE.length));
+  assert.ok(kept.includes('fish.json?v=6') && kept.includes('fish-photos.json?v=6'), 'the unchanged datasets were carried over');
+  assert.ok(!kept.includes('fish-game.json?v=2'), 'the dataset that failed is not claimed');
+  // The line is back: the page's own fetch brings it, kept for the next visit.
+  const net = [];
+  const up = worker('reefid-shell-v2', store, net, {src: bump});
+  await up.get(SITE + 'fish-game.json?v=2');
+  await up.get(SITE + 'fish-game.json?v=2');
+  assert.deepStrictEqual(net, [SITE + 'fish-game.json?v=2']);
 });
 
 // The Coral Finder book crops are out of the app: the activation of the next version deletes the copies a
