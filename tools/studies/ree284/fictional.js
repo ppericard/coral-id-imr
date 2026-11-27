@@ -145,12 +145,14 @@ const CODE = published.filter(isCode),
   CONTENT = published.filter(isContent);
 
 const ORG_RE = /const ORG = \{[^}]*\}/;
-const orgLiteral = o =>
-  '{\n' +
-  Object.entries(o)
-    .map(([k, v]) => `    ${k}: '${v.replace(/'/g, "\\'")}'`)
-    .join(',\n') +
-  '\n  }';
+// ORG as core/keys.js writes it: flat, single-quoted values, which tools/rename_app.py reads with a pattern that allows
+// no quote or backslash inside a value. A value outside plain words is refused rather than escaped.
+const ORG_VALUE = /^[A-Za-z0-9 .&-]+$/;
+const orgLiteral = o => {
+  const bad = Object.entries(o).filter(([k, v]) => !/^\w+$/.test(k) || typeof v !== 'string' || !ORG_VALUE.test(v));
+  if (bad.length) throw new Error(`course.js: ORG values must be plain words: ${bad.map(([k]) => k).join(', ')}`);
+  return '{\n' + Object.entries(o).map(([k, v]) => `    ${k}: '${v}'`).join(',\n') + '\n  }';
+};
 
 // The static pages for an edition: tools/rename_app.py run on a throwaway git repository holding the tool, core.js with
 // the edition's ORG, and the pages it rewrites (as tests/renameorg.test.js does).
@@ -340,13 +342,33 @@ const markersIn = text => [...MARKERS.filter(([, re]) => re.test(text)).map(([n]
         away.push({url: u, type: r.request().resourceType(), worker: !!(r.request().serviceWorker && r.request().serviceWorker())});
         return r.abort('blockedbyclient');
       });
-      // navigator.webdriver hidden: the app then tells a local copy by its address alone (app.js LOCAL, PR #1626).
-      await ctx.addInitScript(() => Object.defineProperty(Navigator.prototype, 'webdriver', {get: () => false, configurable: true}));
       return ctx;
     };
     const newCtx = async (o = {}) => guard(await browser.newContext({viewport: {width: 390, height: 844}, reducedMotion: 'reduce', ...o}));
     const shot = async (p, name) => KEEP && (await p.screenshot({path: path.join(work, `${name}.png`)}).catch(() => {}));
     const ready = p => p.waitForFunction(() => window.APP_READY === true, null, {timeout: 30000});
+
+    // 0. Sub-test "LOCAL by origin alone" (PR #1626): the one context that hides navigator.webdriver, every host but this
+    // server blocked as everywhere. The app must still be a local copy by its address alone and ask nothing of the sheet
+    // through start-up and the sheet's reads (tier 4). Every other context keeps webdriver as the browser reports it.
+    {
+      const c = await newCtx();
+      await c.addInitScript(() => Object.defineProperty(Navigator.prototype, 'webdriver', {get: () => false, configurable: true}));
+      const from = away.length,
+        pg = await c.newPage();
+      await pg.goto(base + 'a/');
+      await ready(pg);
+      await pg.waitForTimeout(4000);
+      F.network.originOnly = {
+        ...(await pg.evaluate(() => ({LOCAL: typeof LOCAL !== 'undefined' ? LOCAL : null, webdriver: navigator.webdriver}))),
+        sheetTried: away.slice(from).filter(x => /^https:\/\/script\.google(usercontent)?\.com\//.test(x.url)).length
+      };
+      const o = F.network.originOnly;
+      if (o.webdriver !== false) fails.push('origin sub-test: navigator.webdriver was not hidden');
+      if (o.LOCAL !== true) fails.push(`origin sub-test: a copy on 127.0.0.1 is not local by its address alone (LOCAL ${o.LOCAL})`);
+      if (o.sheetTried) fails.push(`origin sub-test: ${o.sheetTried} requests to the sheet script`);
+      await c.close();
+    }
 
     // 1-2. Edition a opened by a new player: the tour's first step (what it says of the edition), then, the tour done and
     // the course's genera met (their first-meeting cards are not what this probe reads), Home, the Learn pages, a
@@ -379,6 +401,10 @@ const markersIn = text => [...MARKERS.filter(([, re]) => re.test(text)).map(([n]
     await ready(p);
     F.network.local = await p.evaluate(() => ({LOCAL: typeof LOCAL !== 'undefined' ? LOCAL : null, webdriver: navigator.webdriver}));
     if (F.network.local.LOCAL !== true) fails.push(`the fictional edition is not a local copy (app.js LOCAL ${F.network.local.LOCAL})`);
+    // The play keeps the app's guard against automated runs (navigator.webdriver, app.js LOCAL): only the dedicated
+    // sub-test below hides it.
+    if (F.network.local.webdriver !== true)
+      fails.push(`the play hides navigator.webdriver (${F.network.local.webdriver}): only the origin sub-test may`);
     const ROUTES = [
       ['home', ''],
       ['genera', '#learn/genera'],
@@ -573,7 +599,9 @@ const markersIn = text => [...MARKERS.filter(([, re]) => re.test(text)).map(([n]
   console.log(
     [
       `fictional editions: ${F.files.code} shared code files, ${F.files.contentLeftOut} IMR content files left out; ${F.ms} ms (slot wait ${F.t.slot} ms)`,
-      `sheet: app.js LOCAL ${(F.network.local || {}).LOCAL} with navigator.webdriver ${(F.network.local || {}).webdriver}; ${
+      `sheet: app.js LOCAL ${(F.network.local || {}).LOCAL} in the play (navigator.webdriver ${(F.network.local || {}).webdriver}), ${
+        (F.network.originOnly || {}).LOCAL
+      } by origin alone (webdriver hidden, ${(F.network.originOnly || {}).sheetTried} sheet requests); ${
         Object.keys(F.network.blocked || {}).some(h => /script\.google/.test(h)) ? 'REQUESTS TO THE SHEET SCRIPT' : 'no request to the sheet script'
       } (${F.network.anonQueued} anonymous answer kept unsent)`,
       `blocked destinations: ${JSON.stringify(Object.fromEntries(Object.entries(F.network.blocked || {}).map(([h, v]) => [h, v.n])))}`,

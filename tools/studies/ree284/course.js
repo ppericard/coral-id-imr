@@ -123,6 +123,7 @@ function edition(id) {
   return {id, org, genera: G.map(g => g[0]), files, photos, legacy: legacy(id, G.map(g => g[0]))};
 }
 
+// rename-app: keep-begin (the old storage names on purpose: tools/rename_app.py leaves this block alone)
 // A synthetic export in the legacy format: a device and an account saved before the rename to the app's present
 // storage names (core.js LEGACY_KEYS: imr-coral-* travelled, the other imr-* stayed). The progress names one unit of the
 // edition and one unit it does not hold ("Retiredia", invented), as an export from another edition or an older course
@@ -143,5 +144,6 @@ function legacy(id, names) {
     expect: {device: names[1], account: names[0], foreign: 'Retiredia'}
   };
 }
+// rename-app: keep-end
 
 module.exports = {edition, ORGS, GENERA, VIEWS};

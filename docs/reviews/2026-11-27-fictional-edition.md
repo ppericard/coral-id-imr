@@ -10,8 +10,8 @@ small PR, not done here. Every choice is marked for the integrator or for Pierre
   given with the `core/` part that holds them (`tools/sync_core.py` joins them).
 - **Probe:** [`tools/studies/ree284/fictional.js`](../../tools/studies/ree284/fictional.js), its synthetic courses in
   [`course.js`](../../tools/studies/ree284/course.js), how to run it in the
-  [README](../../tools/studies/ree284/README.md). Run five times on this base: the first stopped on the service worker
-  (finding 3.3), the four others found the same things (the play takes about 40 s once the machine slot is free).
+  [README](../../tools/studies/ree284/README.md). Run seven times on this base: the first stopped on the service worker
+  (finding 3.3), the others found the same things (the play takes about 40 s once the machine slot is free).
 - **Labels (rule W11):** **measured** is what the probe recorded; **read** is read in the code, not seen running;
   **judgement** is my opinion.
 - **Not verified:** a real second origin over https (the probe serves `http://127.0.0.1`, where the app does not register
@@ -32,7 +32,8 @@ look-alike lines and a glossary term. No IMR media, no admin, no progress servic
   (`*.json`, `data/`, `img/`, `og.jpg`) are left out; each edition brings its own `data.json`, curation, `forms.json`,
   `quality.json`, `picks.json` and `calibration-set.json`.
 - **Served** on `127.0.0.1` at `/a/` and `/b/` (one origin). Every request for another host is aborted and recorded by
-  Playwright, and Chromium runs with no proxy and resolves no host but `127.0.0.1`. `navigator.webdriver` is hidden, so
+  Playwright, and Chromium runs with no proxy and resolves no host but `127.0.0.1`. The play keeps `navigator.webdriver`
+  as the browser reports it (the app's guard against automated runs); one dedicated sub-test hides it, to check that
   the app tells a local copy by its address alone (#1626).
 - **Played:** a new player's first screen (the tour), then Home, Genera, a genus sheet, one quiz question answered,
   My progress, the leaderboard, About, Tools; then the service worker, edition b beside a, and a synthetic export in the
@@ -49,10 +50,11 @@ look-alike lines and a glossary term. No IMR media, no admin, no progress servic
 - **The organisation's name is a fork away.** `ORG` and `tools/rename_app.py` changed every place the app names itself
   or the organisation's course words ("The genera on the FFS slate", "ID tips (FFS)", the page title, the manifest).
 - **The admin is not needed by the player page:** no admin file was asked for during the play.
-- **#1626 holds (rule D1).** `LOCAL` is `true` on `http://127.0.0.1` with `navigator.webdriver` false, so the origin
-  check alone (`app.js:3416-3417`) turns the sheet off. Zero requests to `script.google.com` or
-  `script.googleusercontent.com` through start-up, eight pages, a question, the service worker, the second edition and a
-  sign-in. The anonymous answer was kept in `reefid-anonq` and never sent. In the legacy check, the six sheet calls
+- **#1626 holds (rule D1).** In the sub-test "LOCAL by origin alone" (`navigator.webdriver` hidden, every other host
+  blocked), `LOCAL` is `true` on `http://127.0.0.1` and no sheet request is tried through start-up and the sheet's reads:
+  the origin check alone (`app.js:3416-3417`) turns the sheet off. In the play (`navigator.webdriver` true), zero
+  requests to `script.google.com` or `script.googleusercontent.com` through start-up, eight pages, a question, the
+  service worker, the second edition and a sign-in. The anonymous answer was kept in `reefid-anonq` and never sent. In the legacy check, the six sheet calls
   (statistics, the account load, the leaderboard twice, the achievements' shares, the save) reached only the test's
   `window.SHEET_STUB`.
 - **The legacy-format export is read.** Device keys under the old names (`imr-coral-progress`, `imr-coral-theme`,
@@ -65,7 +67,7 @@ look-alike lines and a glossary term. No IMR media, no admin, no progress servic
 
 | Destination | Tried | From | Where it is set |
 |---|---|---|---|
-| `pub-934250f83b884a4f890497f2027ce251.r2.dev` (IMR's R2 bucket) | 61 times in one short play: 43 by the pages (images), 18 by the service worker | every photo of the edition, R2 first, the site's `img/` after the failure | `core/photos.js:181` (`core.js:5708`) `PHOTO_BASE`; `sw.js:23` `R2`; `index.html:6` the CSP's `img-src` and `connect-src` |
+| `pub-934250f83b884a4f890497f2027ce251.r2.dev` (IMR's R2 bucket) | 61 times in the play: 43 by the pages (images), 18 by the service worker (73 with the origin sub-test's start-up) | every photo of the edition, R2 first, the site's `img/` after the failure | `core/photos.js:181` (`core.js:5708`) `PHOTO_BASE`; `sw.js:23` `R2`; `index.html:6` the CSP's `img-src` and `connect-src` |
 
 No other host was tried. **Judgement:** deployed on its own origin with a network, edition b would ask IMR's bucket for
 each of its photos first (a 404 each, then the site), so its photo names reach a host IMR controls, and every photo
