@@ -1940,7 +1940,9 @@ are stated). The fish units are built as the app builds them (`core.js` `treeGen
 cut out as `tests/rareease.js` cuts `model.js`): the families in three circles, their scientific genera, every game
 photo. A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the
 player's π (each genus's and species' μ on a stream of its own, keyed by its id: a version with more or fewer units
-plays the same photos and the same other units, so the arms stay paired); the same seed gives the same world, so two
+plays the same photos and the same other units, so the arms stay paired; each photo file's ε, judged ease and time
+intensity likewise, keyed by its file id, since 2026-11-27, REE-281: a refill of the candidate photos moves no other
+photo's draw, where one stream over the sorted files moved them all); the same seed gives the same world, so two
 versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
 genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the

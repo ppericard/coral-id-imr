@@ -60,6 +60,50 @@ test('the world of a seed: a genus or species added or taken away moves no other
   assert.ok(Math.abs(sd(off) - RW.RATED.SUB) < 0.05 && Math.abs(mean(off)) < 0.06, `${mean(off)} ${sd(off)}`);
 });
 
+// Photos added (a refill by the Candidate photos bot) never move another draw either: each photo file on a stream of its
+// own (REE-281: on one stream over the sorted files, one photo added moved the eps and ease of every later file, and the
+// tests pinned on a seed of the live data went red on main). The synthetic files sort before every real one, so on a
+// shared stream every draw would move.
+test('the world of a seed: photos added (a refill) move no draw of the photos already there, nor any unit’s', () => {
+  for (const subject of ['fish', 'coral']) {
+    const U = RW.unitsOf(subject),
+      units = [...U.slate, ...U.extra],
+      add = Object.fromEntries(units.filter((n, i) => i % 3 === 0).map((n, i) => [n, {f: `a0synthetic${i}`, e: 3}])),
+      grown = {
+        ...U,
+        views: n => {
+          const v = U.views(n);
+          return n in add ? {...v, wide: [add[n], ...(v.wide || [])]} : v;
+        }
+      };
+    assert.ok(Object.keys(add).length > 10, `${subject}: photos added`);
+    for (const photos of ['normal', 'tail', 't3']) {
+      const W = RW.world(U, 3, photos),
+        W1 = RW.world(grown, 3, photos),
+        F = Object.keys(W.eps);
+      assert.strictEqual(
+        Object.keys(W1.eps).length,
+        F.length + Object.keys(add).length,
+        `${subject} ${photos}: the photos added are drawn`
+      );
+      const moved = F.filter(f => W1.eps[f] !== W.eps[f] || W1.ease[f] !== W.ease[f]);
+      assert.strictEqual(
+        moved.length,
+        0,
+        `${subject} ${photos}: ${moved.length} of ${F.length} photos moved (${moved.slice(0, 3).join(', ')})`
+      );
+      assert.deepStrictEqual(W1.mu, W.mu, `${subject} ${photos}: the units' mu`);
+      assert.strictEqual(W1.pi, W.pi);
+    }
+    // The seconds' photo intensities: drawn per file too (timeWorld); rho0 reads the file's own draw alone.
+    const W = RW.world(U, 3),
+      TW = RW.timeWorld(U, W, 3, 'rho0'),
+      TW1 = RW.timeWorld(grown, RW.world(grown, 3), 3, 'rho0'),
+      movedT = Object.keys(TW.beta).filter(f => TW1.beta[f] !== TW.beta[f]);
+    assert.strictEqual(movedT.length, 0, `${subject}: ${movedT.length} photo time intensities moved`);
+  }
+});
+
 // The species level: the species units as the app builds them, drawn after everything else so a world
 // without them is the same; a species opens only once its family is at Advanced, in its family's order; its record names
 // the family it starts from (core.js abilityOf from, passed to scoreAnswer as quiz.js answer does).

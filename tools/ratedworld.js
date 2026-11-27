@@ -215,7 +215,11 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
   const files = [
     ...new Set([...U.slate, ...U.extra].flatMap(n => Object.values(U.views(n)).flat().map(p => p.f)))
   ].sort();
+  // Each photo file on a stream of its own (seed, its file id), like the units below: a refill of the candidate photos
+  // adds files, and on one stream over the sorted files every later photo's eps and ease moved, and with them the runs of
+  // every test that pins a seed on the live data (REE-281).
   files.forEach(f => {
+    const r = photoGen(seed, f);
     let e = RATED.EPS * normal(r);
     if (photos === 'tail' && r() < RATED.TAIL.SHARE) e += RATED.TAIL.ADD;
     if (photos === 't3') {
@@ -233,6 +237,9 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
   (U.ssp || []).filter(n => U.rec(n).parent in mu).forEach(below);
   return {mu, eps, ease, pi: piOf(seed)};
 }
+// A photo file's own stream in a seed's world (world; timeWorld with its own salt), keyed by its file id; the prefix keeps
+// it off every unit's stream (world's below).
+const photoGen = (seed, f, salt = 'photo ') => gen((seed * 2654435761) ^ idHash(salt + f));
 // The player's offset of a seed's world, on a stream of its own (so a test reads it for many seeds without their worlds).
 const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 // The fish units given as built by fishUnits (the tests' X), in the shape of unitsOf.
@@ -805,10 +812,11 @@ function timeWorld(U, W, seed, times, {gap = 0} = {}) {
     d = Object.fromEntries(files.map(f => [f, (W.mu[unitOf[f]] || 0) + W.eps[f]])),
     m = files.reduce((t, f) => t + d[f], 0) / files.length,
     sdd = Math.sqrt(files.reduce((t, f) => t + (d[f] - m) ** 2, 0) / files.length) || 1,
-    r = gen((seed * 1597334677) ^ 0x2545f491),
     beta = {};
+  // each file's draws on a stream of its own, as its eps (world): a photo added moves no other photo's noise
   files.forEach(f => {
-    const z = (d[f] - m) / sdd,
+    const r = photoGen(seed, f, 'time '),
+      z = (d[f] - m) / sdd,
       x = normal(r),
       x2 = normal(r);
     if (times === 'rho25') beta[f] = RT.PHOTO * (RT.RHO * z + Math.sqrt(1 - RT.RHO ** 2) * x);

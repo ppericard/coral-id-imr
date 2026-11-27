@@ -9,6 +9,16 @@ on:
   push:
     branches: ['train/*']
   workflow_dispatch:
+  # Main after each Candidate photos run (REE-281): the two kinds of commits that reach main without a train, Pierre's
+  # Publish (which starts that workflow) and the bot's refill (pushed with GITHUB_TOKEN, which starts no push workflow),
+  # are tested here, on main as it stands when the run ends (a workflow_run checks out the default branch's last commit;
+  # each job's "Tested commit" names it). A train's merge is not run again: main's tree is the train's, tested (rule W26).
+  # Read-only like every run of this file (no secret, contents: read); the train waits for push runs only, so this run
+  # is never taken for a train's.
+  workflow_run:
+    workflows: [Candidate photos]
+    types: [completed]
+    branches: [main]
 permissions:
   contents: read
 # A new push to the same PR cancels the run still going on the older commit (test-suite review, 2026-11-04: 2.9 pushes per
