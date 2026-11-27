@@ -738,6 +738,7 @@ const DOC_MARKS = {
   'docs/spec/service-worker.md': [7, 130],
   'docs/spec/cards.md': [33, 180],
   'docs/spec/sync.md': [82, 220],
+  'docs/spec/answer.md': [13, 160], // new, 2026-11-27: one logged answer's contract (REE-284)
   'docs/spec/content.md': [16, 130],
   'docs/spec/data.md': [34, 140],
   'docs/spec/fish-photos.md': [54, 180],
@@ -788,6 +789,7 @@ const DOC_MARKS = {
   'tools/studies/what-makes-a-5/README.md': [4, 300], // new, 2026-11-24: the "what makes a 5" session page and its data (REE-275)
   'tools/studies/ree255/README.md': [8, 130], // new, 2026-11-25: REE-255's declared method and its study scripts
   'tools/studies/ree241/README.md': [3, 130], // new, 2026-11-26: REE-241's study scripts, what holds for the rule in force
+  'tools/studies/ree319/README.md': [3, 130], // new, 2026-11-27: REE-319's specimen-overlap scripts and their inputs
   'tools/sync/changes/README.md': [2, 130]
 };
 // A record has no entry of its own (every decision PR would add one): the same mark for each. A sheet script change
