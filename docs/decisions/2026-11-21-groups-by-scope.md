@@ -45,12 +45,16 @@ Integrator's calls (2026-11-21 and 2026-11-24), easy to correct, kept:
 - Deleting an empty group that carries rights takes its rights away first through the one write, audited, and asks
   `grant`.
 
-Choices made in this revision (the PR's "Choices I made", for Pierre to confirm or correct):
+Asked of Pierre on 2026-11-27 (the PR's "Choices I made"), built as recommended until he answers:
+- "One write" is a compensating write: the change, then its Audit rows in one write of the tab; when the rows cannot
+  be written the change is taken back and the request answers an error. A true single Sheets batch would need the
+  Sheets advanced service, whose scope is broader than `spreadsheets.currentonly`: a new authorisation for Pierre.
+- A player's own delete with no standby left goes through, the seat left empty, said by an Audit row and a Deploy log
+  line (never trapped wins over never empty; the token gives a seat back).
+
+Integrator's calls of this revision, easy to correct (2026-11-27):
 - A group's list of subjects is a rectangle: each of its rights at each of its subjects (refused otherwise, `scope`),
   so a group has one scope as before, now the instance or a list.
-- "One write" is the change, then its Audit rows in one write of the tab; when the rows cannot be written the change
-  is taken back and the request answers an error. A true single Sheets batch would need the Sheets API's broader
-  scope, a new authorisation for Pierre.
 - Before and After hold the account's whole rights after the change (`content@instance:imr,live@subject:fish`, `-` for
   none), a group's rights for its own row, `on` / `off` for a standby, the seat counts for a stop.
 - The audit id is a keyed hash of the account's generation (`_acct`, made with the account): one per account lifetime,
@@ -59,9 +63,8 @@ Choices made in this revision (the PR's "Choices I made", for Pierre to confirm 
 - `grant` given to a new group (no member yet) is confirmed with its making; to an existing group, by an edit that
   changes nothing else.
 - A standby is a row of the Roles tab (role `standby`), no new column; it holds no right until it takes a seat over.
-- A player's own delete with no standby left goes through, the seat left empty, said by a row and a Deploy log line
-  (never trapped wins over never empty; the token gives a seat back).
 - The live host is checked again at each question and reveal; a right taken since ends the game for everyone.
+- The admin's other Audit rows about an account name it by its audit id too.
 
 ## Consequences
 
