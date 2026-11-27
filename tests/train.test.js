@@ -925,6 +925,8 @@ const prCI = (f, n, {merge, tree, run = {}, job = {}, drop = [], note, cost = tr
         run_attempt: 1,
         head_sha: head,
         html_url: `https://github.com/o/r/actions/runs/0/job/${from + i}`,
+        // a check-run id that is not the job's own (Codex #1634: annotations hang on the check run)
+        check_run_url: `https://api.github.com/repos/o/r/check-runs/${from + i + 70000}`,
         labels: ['ubuntu-26.04'],
         ...job
       }));
@@ -932,7 +934,7 @@ const prCI = (f, n, {merge, tree, run = {}, job = {}, drop = [], note, cost = tr
     sj = cost ? [...jobs(2200, ['answer cost']), {id: 2290, name: 'browser scope', conclusion: 'skipped'}] : [];
   const annotations = Object.fromEntries(
     [...cj, ...sj.filter(j => j.name === 'answer cost')].map(j => [
-      j.id,
+      j.id + 70000,
       note || [{title: 'tested commit', message: `commit=${merge} tree=${tree}`, annotation_level: 'notice'}]
     ])
   );
@@ -1010,7 +1012,10 @@ test('(a) a one-PR train on the tree its PR run tested reuses Checks and answer 
       assert.strictEqual(o.run_url, `https://github.com/o/r/actions/runs/${run}`);
       assert.deepStrictEqual([o.tested_commit, o.tested_tree, o.tested_parents], [ci.merge, rec.tree, [base, head]]);
       assert.deepStrictEqual([o.base, o.head], [base, head]);
-      assert.ok(o.jobs.length === o.required.length && o.jobs.every(j => j.id && j.attempt === 1 && j.conclusion === 'success' && j.url));
+      assert.ok(
+        o.jobs.length === o.required.length &&
+          o.jobs.every(j => j.id && j.check_run === j.id + 70000 && j.attempt === 1 && j.conclusion === 'success' && j.url)
+      );
       assert.match(o.inputs, /no event-dependent input/);
     }
     assert.match(chk.base_mode, /PR --sheet-base HEAD\^1; train --main by main's sheet_version\.py --check --main --base/);
@@ -1052,6 +1057,29 @@ test('(a) shadow, the default: it says what it would reuse, runs every job, and 
     assert.ok(!g.calls().some(c => c.startsWith('PUT')), 'nothing merged');
   } finally {
     g.done();
+  }
+  // A train workflow that failed without any job (Codex #1634): its reused jobs never ran, so no verdict either way.
+  const k = fixture();
+  try {
+    const ci = prCI(k, 1);
+    k.setState({
+      ...ci,
+      train_runs: [
+        {id: 11, name: 'Checks', status: 'completed', conclusion: 'failure'},
+        {id: 12, name: 'Smokes', status: 'completed', conclusion: 'success'}
+      ],
+      jobs: {...ci.jobs, 11: []}
+    });
+    const r = k.train('--sha', k.heads[1], '1');
+    assert.strictEqual(r.status, 1, r.stdout + r.stderr);
+    assert.match(
+      r.stdout,
+      /^Reuse shadow inconclusive: the train did not show the jobs it would have reused \(Checks: Checks: failure\)\.$/m
+    );
+    assert.doesNotMatch(r.stdout, /Reuse shadow (agrees|DISAGREES)/);
+    assert.ok(!k.calls().some(c => c.startsWith('PUT')), 'nothing merged');
+  } finally {
+    k.done();
   }
 });
 
@@ -1125,6 +1153,14 @@ test('(a) anything not proven runs on the train: per obligation, with its reason
       ['untrusted', ['1'], () => prCI(f, 1, {run: {head_repository: {full_name: 'fork/r'}}}), /not this repository's own/, null, ''],
       ['stale age', ['1'], () => prCI(f, 1, {run: {updated_at: '2026-01-01T00:00:00Z'}}), /its PR run is stale \(\d+ h old\)/, null, ''],
       ['no annotation', ['1'], () => prCI(f, 1, {note: [{title: 'other', message: 'x'}]}), /has no tested-commit record/, null, ''],
+      [
+        'check run elsewhere',
+        ['1'],
+        () => prCI(f, 1, {job: {check_run_url: 'https://api.github.com/repos/fork/r/check-runs/1'}}),
+        /has no check run of this repository/,
+        null,
+        ''
+      ],
       [
         'missing merge ref',
         ['1'],

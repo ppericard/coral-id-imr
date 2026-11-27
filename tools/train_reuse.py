@@ -160,6 +160,12 @@ class Plan:
         hit = [b for b in bad for r in self.reused() if any(b.startswith('%s › %s:' % (r['workflow'], j)) for j in r['required'])]
         if hit:
             return 'Reuse shadow DISAGREES: the train failed a job it would have reused: ' + '; '.join(hit)
+        # Any other problem in a reused obligation's workflow (it failed with no job, or a red run, whose expected jobs
+        # wait_green does not list): its reused jobs were not all seen succeeding, so no verdict.
+        unseen = ['%s: %s' % (r['obligation'], b) for r in self.reused() for b in bad
+                  if b.startswith(r['workflow'] + ': ') or b.startswith(r['workflow'] + ' › ')]
+        if unseen:
+            return 'Reuse shadow inconclusive: the train did not show the jobs it would have reused (%s).' % '; '.join(unseen)
         return 'Reuse shadow agrees: the train passed every job it would have reused (%s).' % ', '.join(r['obligation'] for r in self.reused())
 
     def write(self, path, **more):
@@ -260,7 +266,12 @@ def decide(api, git, *, repo, top, prs, base, train, tree, want, sheet_checked, 
                     raise No('%s has no attempt 1 in the PR run' % j)
                 if x.get('head_sha') != head:
                     raise No('%s ran on another head' % j)
-                notes = [m for a in api('check-runs/%s/annotations?per_page=100' % x['id']) if isinstance(a, dict) and a.get('title') == TITLE
+                # The annotations hang on the job's check run, whose id need not be the job's: read it from check_run_url.
+                cr = re.fullmatch(r'https://api\.github\.com/repos/%s/check-runs/(\d+)' % re.escape(repo), x.get('check_run_url') or '')
+                if not cr:
+                    raise No('%s has no check run of this repository' % j)
+                rec['jobs'][-1]['check_run'] = int(cr.group(1))
+                notes = [m for a in api('check-runs/%s/annotations?per_page=100' % cr.group(1)) if isinstance(a, dict) and a.get('title') == TITLE
                          for m in [NOTE.fullmatch((a.get('message') or '').strip())] if m]
                 if len(notes) != 1:
                     raise No('%s has no tested-commit record' % j)
