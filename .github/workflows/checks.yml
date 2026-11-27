@@ -16,8 +16,13 @@ permissions:
 concurrency:
   group: checks-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+# A one-PR train whose tree is the one its PR run tested reuses this workflow's result (Pierre, 2026-11-26, REE-121 (a);
+# tools/train_reuse.py proves it job by job): tools/train.py then names the branch train/<time>-reuse-checks, and each
+# job's `if:` below skips it there only. Every job records the commit it checked out ("Tested commit", an annotation the
+# train reads back). Rollback: TRAIN_REUSE=off (tools/train_reuse.py), and no train branch carries the suffix.
 jobs:
   checks:
+    if: ${{ !(startsWith(github.ref, 'refs/heads/train/') && contains(github.ref, '-reuse-checks')) }}
     # The image named in every workflow, not ubuntu-latest, so the next Ubuntu is a reviewed one-line PR (rule W9).
     runs-on: ubuntu-26.04
     steps:
@@ -27,6 +32,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
+      - name: Tested commit
+        run: echo "::notice title=tested commit::commit=$(git rev-parse HEAD) tree=$(git rev-parse 'HEAD^{tree}')"
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
@@ -82,6 +89,7 @@ jobs:
   # once. tests/smokeparts.test.js fails when the shard list and n disagree.
   unit:
     name: unit tests (${{ matrix.shard }}/2)
+    if: ${{ !(startsWith(github.ref, 'refs/heads/train/') && contains(github.ref, '-reuse-checks')) }}
     runs-on: ubuntu-26.04
     strategy:
       # Every shard reports: one failing shard never hides the other.
@@ -93,6 +101,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
+      - name: Tested commit
+        run: echo "::notice title=tested commit::commit=$(git rev-parse HEAD) tree=$(git rev-parse 'HEAD^{tree}')"
       - uses: actions/setup-node@v7
         with:
           node-version: '26'

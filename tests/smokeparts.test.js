@@ -152,7 +152,11 @@ test('smokes.yml: the browser matrix off PR heads by one line, on trains unless 
   assert.match(smoke, /\n {4}name: smoke \(\$\{\{ matrix\.name \}\}\)\n {4}needs: scope\n/);
   assert.match(smoke, /\n {4}if: needs\.scope\.outputs\.browser != 'false'\n/);
   assert.match(cost, /\n {4}name: answer cost\n/);
-  assert.doesNotMatch(cost, /\n {4}(?:needs|if):/, 'answer cost depends on nothing: it runs on every run of the workflow');
+  assert.doesNotMatch(cost, /\n {4}needs:/, 'answer cost depends on nothing: it runs on every run of the workflow');
+  // Its one condition: skipped only on a train branch tools/train.py named for a proven reuse (REE-121 (a), train.test.js).
+  assert.deepStrictEqual(cost.match(/\n {4}if: .*/g), [
+    "\n    if: ${{ !(startsWith(github.ref, 'refs/heads/train/') && contains(github.ref, '-reuse-cost')) }}"
+  ]);
   const checks = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'checks.yml'), 'utf8');
   assert.doesNotMatch(jobBlock(checks, 'checks'), /\n {4}name:/, 'the checks job keeps the name "checks" (tools/train.py)');
 });
