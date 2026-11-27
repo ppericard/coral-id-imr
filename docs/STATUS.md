@@ -19,6 +19,11 @@ Night report: last sent 2026-11-27 (06:21 Manila, in the integrator's first repl
 Snapshot of 2026-11-27 ~09:50 Manila.
 
 - **Integrator:** the Claude Code cloud session of 2026-11-27 (Manila).
+- **Pause on new launches** (Pierre, 2026-11-27 09:52 Manila, REE-312 comment): «arrêtes de lancer de nouvelles
+  tâches et puis qu'on puisse refaire un point à tête reposée»; the order he wants is 1 working mode, 2 foundations,
+  3 features. No new agent or PR; the queue only merges PRs already green, reviewed and with no open question. Held on
+  purpose: #1644 (a data format), #1554 (Q-a/Q-b), #1642 (CodeQL cutover). Frozen until the global point: REE-26 11(a)
+  with REE-338/343, REE-335, REE-337 twice-weekly backup, REE-256, REE-352/REE-284 seams.
 - **Merged today (27 November):** #1622, #1624, #1623, #1625, #1627, #1626, #1629, #1633, #1632, #1634, #1636 (sheet
   script v237, live and on main), #1638, #1628, #1637 (main 88749ba), #1635 (docs, restore), and any later merge (git
   holds them).
@@ -46,16 +51,24 @@ Snapshot of 2026-11-27 ~09:50 Manila.
 The start order as of 2026-11-27 ~09:50 Manila, from REE-312 and the arbitration point, which keep the longer reasons.
 One line per step: the issues, then the reason after the dash (REE-316; tests/docs.test.js checks the form).
 
-1. REE-311 point 8, REE-26 11(b): #1644 — green and in the queue; merge it first.
-2. REE-26 11(a), REE-338, REE-343: the Find the X fix, in one rules version — after #1644 merges.
-3. REE-335, REE-337: the 14-day keep and the twice-weekly backup — contracts the later work relies on.
-4. REE-121 (c) and (e): the CodeQL cutover with Pierre (#1642) and the budget alert in his settings — only his hands
-   can do them.
-5. REE-31: step 1 (#1554) — after his answers to Q-a and Q-b.
-6. REE-256: the ids — after step 8's decisions.
-7. REE-352, REE-284: the seams, with the test conversion — the foundations the next features must fit.
-8. REE-191, REE-26: the Astra reviews, run by Pierre, then the decisions they ask for — his hands come first.
-9. REE-312: the proposal to restart product work, REE-260 as the first feature — he decides which features resume.
+Since Pierre's pause of 09:52, step 1 comes before every other: nothing launches until the global point.
+
+1. REE-312: the consolidated question dossier and a global question pass with Pierre, in his order 1 working mode, 2
+   foundations, 3 features — he asked for it at 09:52 before any further launch.
+2. REE-311 point 8, REE-26 11(b): #1644 — after the global point (held: a data format); then merge.
+3. REE-26 11(a), REE-338, REE-343: the Find the X fix, in one rules version — after the global point, and after #1644.
+4. REE-335, REE-337: the 14-day keep and the twice-weekly backup — after the global point; contracts the later work
+   relies on.
+5. REE-121 (c) and (e): the CodeQL cutover with Pierre (#1642) and the budget alert in his settings — after the global
+   point; only his hands can do them.
+6. REE-31: step 1 (#1554) — after the global point, and his answers to Q-a and Q-b.
+7. REE-256: the ids — after the global point, and the decisions of step 9.
+8. REE-352, REE-284: the seams, with the test conversion — after the global point; the foundations the next features
+   must fit.
+9. REE-191, REE-26: the Astra reviews, run by Pierre, then the decisions they ask for — after the global point; his
+   hands come first.
+10. REE-312: the proposal to restart product work, REE-260 as the first feature — after the global point; he decides
+    which features resume.
 
 ## Questions for Pierre
 
